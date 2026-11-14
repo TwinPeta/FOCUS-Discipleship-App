@@ -1,0 +1,314 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../../core/providers/repository_providers.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/date_utils.dart';
+import '../../../core/widgets/avatar_with_presence.dart';
+import '../../../core/widgets/round_icon_button.dart';
+import '../domain/message.dart';
+import '../domain/thread.dart';
+import 'providers/messaging_providers.dart';
+
+String _timeLabel(DateTime date) {
+  final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+  final minute = date.minute.toString().padLeft(2, '0');
+  final suffix = date.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:$minute $suffix';
+}
+
+/// Screen 10: Conversation.
+class ConversationScreen extends ConsumerStatefulWidget {
+  const ConversationScreen({super.key, required this.threadId});
+
+  final String threadId;
+
+  @override
+  ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
+}
+
+class _ConversationScreenState extends ConsumerState<ConversationScreen> {
+  final _textController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(threadRepositoryProvider).markRead(widget.threadId);
+      ref.invalidate(threadsProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent + 80,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _send() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
+    _textController.clear();
+    setState(() {});
+    await ref.read(threadMessagesProvider(widget.threadId).notifier).send(text);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final threadAsync = ref.watch(threadByIdProvider(widget.threadId));
+    final messagesAsync = ref.watch(threadMessagesProvider(widget.threadId));
+
+    return Scaffold(
+      backgroundColor: AppColors.page,
+      body: SafeArea(
+        child: Column(
+          children: [
+            threadAsync.when(
+              loading: () => const SizedBox(height: 80),
+              error: (error, stackTrace) => const SizedBox(height: 80),
+              data: (thread) => thread == null
+                  ? const SizedBox(height: 80)
+                  : _ConversationTopBar(thread: thread, threadId: widget.threadId),
+            ),
+            Expanded(
+              child: messagesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => Center(
+                  child: Text('Could not load this conversation.', style: AppTextStyles.body),
+                ),
+                data: (messages) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final showDaySeparator = index == 0 ||
+                          formatDayLabel(messages[index - 1].sentAt) != formatDayLabel(message.sentAt);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (showDaySeparator) _DaySeparator(label: formatDayLabel(message.sentAt)),
+                          _MessageBubble(message: message),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            _InputBar(controller: _textController, onSend: _send),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConversationTopBar extends StatelessWidget {
+  const _ConversationTopBar({required this.thread, required this.threadId});
+
+  final Thread thread;
+  final String threadId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.amber,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+      child: Row(
+        children: [
+          RoundIconButton(
+            icon: Icons.arrow_back_rounded,
+            semanticLabel: 'Back',
+            onPressed: () => context.canPop() ? context.pop() : context.go('/messages'),
+          ),
+          const SizedBox(width: 10),
+          AvatarWithPresence(
+            initials: thread.participant.initials,
+            size: 44,
+            online: thread.participant.online,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  thread.participant.name,
+                  style: AppTextStyles.cardTitle.copyWith(fontSize: 18, fontWeight: FontWeight.w800),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${thread.roleLabel} · ${thread.participant.online ? 'Online now' : 'Offline'}',
+                  style: AppTextStyles.body.copyWith(fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
+          RoundIconButton(
+            icon: Icons.flag_outlined,
+            semanticLabel: 'Report',
+            onPressed: () => context.push('/messages/$threadId/report'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DaySeparator extends StatelessWidget {
+  const _DaySeparator({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.cream,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(label, style: AppTextStyles.chip),
+        ),
+      ),
+    );
+  }
+}
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.message});
+
+  final Message message;
+
+  @override
+  Widget build(BuildContext context) {
+    final mine = message.isMine;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: mine ? AppColors.amber : AppColors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(mine ? 18 : 4),
+                bottomRight: Radius.circular(mine ? 4 : 18),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(message.text, style: const TextStyle(fontSize: 16, height: 1.3)),
+                const SizedBox(height: 4),
+                Text(
+                  message.status == MessageStatus.sending ? 'Sending…' : _timeLabel(message.sentAt),
+                  style: AppTextStyles.body.copyWith(fontSize: 11, color: AppColors.inkDeemphasized80),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InputBar extends StatelessWidget {
+  const _InputBar({required this.controller, required this.onSend});
+
+  final TextEditingController controller;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: TextField(
+                controller: controller,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'Type a message…',
+                  hintStyle: const TextStyle(color: AppColors.placeholder),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  filled: true,
+                  fillColor: AppColors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: const BorderSide(color: AppColors.inputBorder, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: const BorderSide(color: AppColors.inputBorder, width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
+                  ),
+                ),
+                onSubmitted: (_) => onSend(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ValueListenableBuilder(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final canSend = value.text.trim().isNotEmpty;
+              return Semantics(
+                button: true,
+                label: 'Send',
+                child: InkWell(
+                  onTap: canSend ? onSend : null,
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: canSend ? AppColors.amber : AppColors.amber.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.send_rounded, color: AppColors.ink),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

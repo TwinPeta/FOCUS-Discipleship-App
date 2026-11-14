@@ -1,7 +1,7 @@
 /**
  * src/components/layout/UserCard.tsx
  *
- * WHAT: Initials avatar, user full name, role badge, and accessible sign out action
+ * WHAT: Sidebar footer: avatar, name and role. Clicking opens the profile dialog; collapsed mode shows the avatar only.
  * REQUIREMENTS: FR-12
  * SPEC: docs/features/16-shared-ui-brand.md
  * STATUS: implemented
@@ -9,55 +9,46 @@
 
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 import { useSession } from "@/features/auth/hooks/useSession";
-import { ROUTES } from "@/lib/constants/routes";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
+import { useShell } from "./ShellContext";
 
-export function UserCard() {
-  const router = useRouter();
+export function UserCard({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useSession();
-  const [signingOut, setSigningOut] = useState(false);
+  const { setProfileOpen, setMobileNavOpen } = useShell();
 
   if (!user) return null;
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      await fetch("/api/proxy/auth/logout", { method: "POST" });
-    } finally {
-      router.push(ROUTES.login);
-      router.refresh();
-    }
+  const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+
+  function open() {
+    setMobileNavOpen(false);
+    setProfileOpen(true);
   }
 
   return (
-    <div className="flex items-center justify-between gap-2.5 rounded-xl bg-black/10 p-2.5 text-foreground">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <InitialsAvatar name={user.fullName} size="sm" />
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold leading-tight text-foreground">
-            {user.fullName}
-          </p>
-          <p className="truncate text-[11px] text-foreground/80 leading-tight">
-            {ROLE_LABELS[user.role] ?? user.role}
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={handleSignOut}
-        disabled={signingOut}
-        title="Sign out of backoffice"
-        aria-label="Sign out"
-        className="rounded-lg p-1.5 text-foreground/80 hover:bg-black/10 hover:text-foreground transition disabled:opacity-50 shrink-0"
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={open}
+      aria-haspopup="dialog"
+      aria-label={`Open profile for ${user.fullName}`}
+      title={collapsed ? `${user.fullName} · ${roleLabel}` : undefined}
+      className={`group flex w-full items-center gap-2.5 rounded-xl text-left text-foreground transition hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground ${
+        collapsed ? "justify-center p-1.5" : "bg-black/[0.07] p-2"
+      }`}
+    >
+      <InitialsAvatar name={user.fullName} avatarUrl={user.avatarUrl} size="sm" />
+      {!collapsed && (
+        <>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-xs font-bold leading-tight">{user.fullName}</span>
+            <span className="block truncate text-[11px] leading-tight text-foreground/75">{roleLabel}</span>
+          </span>
+          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-foreground/60" aria-hidden="true" />
+        </>
+      )}
+    </button>
   );
 }

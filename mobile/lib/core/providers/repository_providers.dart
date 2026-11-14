@@ -1,0 +1,75 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../features/community/data/community_repository.dart';
+import '../../features/community/data/membership_repository.dart';
+import '../../features/feed/data/post_repository.dart';
+import '../../features/landing/data/stories_repository.dart';
+import '../../features/activity/data/activity_repository.dart';
+import '../../features/messaging/data/messaging_repository.dart';
+import '../../features/messaging/data/moderation_repository.dart';
+import '../../features/messaging/data/report_repository.dart';
+import '../../features/pathways/data/pathway_repository.dart';
+import '../../features/prayer/data/prayer_repository.dart';
+import '../../features/profile/data/profile_repository.dart';
+import '../../features/resources/data/resource_repository.dart';
+import '../../features/testimony/data/testimony_repository.dart';
+
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  return FakeProfileRepository();
+});
+
+final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
+  return FakeCommunityRepository();
+});
+
+final membershipRepositoryProvider = Provider<MembershipRepository>((ref) {
+  return FakeMembershipRepository();
+});
+
+final postRepositoryProvider = Provider<PostRepository>((ref) {
+  return FakePostRepository();
+});
+
+final storiesRepositoryProvider = Provider<StoriesRepository>((ref) {
+  return FakeStoriesRepository();
+});
+
+final resourceRepositoryProvider = Provider<ResourceRepository>((ref) {
+  return FakeResourceRepository();
+});
+
+final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
+  return FakePrayerRepository();
+});
+
+final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {
+  return FakeTestimonyRepository();
+});
+
+final pathwayRepositoryProvider = Provider<PathwayRepository>((ref) {
+  return FakePathwayRepository();
+});
+
+final messagingRepositoryProvider = Provider<FakeMessagingRepository>((ref) {
+  return FakeMessagingRepository();
+});
+
+final threadRepositoryProvider = Provider<ThreadRepository>((ref) {
+  return ref.watch(messagingRepositoryProvider);
+});
+
+final messageRepositoryProvider = Provider<MessageRepository>((ref) {
+  return ref.watch(messagingRepositoryProvider);
+});
+
+final reportRepositoryProvider = Provider<ReportRepository>((ref) {
+  return FakeReportRepository();
+});
+
+final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {
+  return FakeModerationRepository();
+});
+
+final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
+  return FakeActivityRepository();
+});

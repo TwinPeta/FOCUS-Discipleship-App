@@ -28,14 +28,14 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <section className="rounded-card border border-border bg-white p-6">
+      <section id="security" className="scroll-mt-20 rounded-card border border-border bg-white p-6">
         <h2 className="text-base font-semibold text-foreground">Change password</h2>
         <div className="mt-4">
           <ChangePasswordForm />
         </div>
       </section>
 
-      <section className="rounded-card border border-border bg-white p-6">
+      <section id="sessions" className="scroll-mt-20 rounded-card border border-border bg-white p-6">
         <h2 className="text-base font-semibold text-foreground">
           Where you are signed in
         </h2>

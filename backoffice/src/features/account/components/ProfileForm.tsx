@@ -25,7 +25,7 @@ const profileSchema = z.object({
 type ProfileValues = z.infer<typeof profileSchema>;
 
 export function ProfileForm() {
-  const { user } = useSession();
+  const { user, updateUser } = useSession();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,10 +45,9 @@ export function ProfileForm() {
     setSaved(false);
     setError(null);
     try {
-      await updateProfile({
-        fullName: values.fullName,
-        avatarUrl: values.avatarUrl || null,
-      });
+      const patch = { fullName: values.fullName, avatarUrl: values.avatarUrl || null };
+      await updateProfile(patch);
+      updateUser(patch);
       setSaved(true);
     } catch {
       setError("Could not update your profile. Please try again.");

@@ -1,36 +1,67 @@
 /**
  * src/app/globals.css
  *
- * WHAT: Tailwind layers and FCU design tokens (yellow primary, cream background)
+ * WHAT: Tailwind layers, FCU design tokens (yellow primary, cream background), semantic status colours,
+ *       browser UI theming, and native <dialog> entry/exit animations.
  * REQUIREMENTS: FR-12
  * SPEC: docs/features/16-shared-ui-brand.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
+ *
+ * Colour tokens are stored as space-separated RGB channels so Tailwind opacity modifiers
+ * (e.g. `bg-primary/20`, `border-border/50`) work. Use them as `rgb(var(--token))` in raw CSS.
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* FCU backoffice design tokens, taken from the design file (B1-B29) */
 :root {
-  --background: #fffbea;      /* page background (cream) */
-  --surface: #ffffff;         /* cards, inputs, active nav item */
-  --foreground: #111111;      /* text */
-  --muted-foreground: #6a6a6a;/* secondary text, placeholders */
-  --primary: #f4b400;         /* sidebar, primary buttons */
-  --primary-soft: #fff3c4;    /* soft highlights, selected rows */
-  --accent: #fde68a;          /* badges, hover */
-  --border: #e6d48a;          /* borders and dividers */
+  /* Surfaces */
+  --background: 255 253 245;        /* #fffdf5 page background (cream) */
+  --background-subtle: 254 249 231; /* #fef9e7 */
+  --surface: 255 255 255;           /* cards, inputs, active nav item */
+  --surface-glass: 255 255 255;     /* use with /80-/90 opacity + backdrop blur */
+
+  /* Text (contrast checked against cream and white: >= 4.5:1) */
+  --foreground: 15 23 42;           /* #0f172a slate-900 */
+  --muted-foreground: 71 85 105;    /* #475569 slate-600 */
+
+  /* Brand */
+  --primary: 244 180 0;             /* #f4b400 sidebar, primary buttons */
+  --primary-hover: 217 159 0;       /* #d99f00 */
+  --primary-soft: 255 243 196;      /* #fff3c4 soft highlights, selected rows */
+  --accent: 253 230 138;            /* #fde68a badges, hover */
+  --border: 230 212 138;            /* #e6d48a borders and dividers */
+
+  /* Status */
+  --success: 5 150 105;             /* #059669 */
+  --success-soft: 236 253 245;
+  --warning: 217 119 6;             /* #d97706 */
+  --warning-soft: 255 251 235;
+  --danger: 225 29 72;              /* #e11d48 */
+  --danger-soft: 255 241 242;
+  --info: 2 132 199;                /* #0284c7 */
+  --info-soft: 240 249 255;
+
+  /* Layout */
   --sidebar-width: 240px;
+  --sidebar-collapsed-width: 68px;
   --radius-nav: 14px;
   --radius-card: 16px;
+
+  color-scheme: light;
+  accent-color: rgb(var(--primary));
 }
 
 html,
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
   font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html {
+  scrollbar-color: rgb(var(--border)) transparent;
 }
 
 a {
@@ -40,7 +71,100 @@ a {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--muted-foreground);
+  color: rgb(var(--muted-foreground));
 }
 
-/* TODO: status colours (success, warning, error, info) once defined, see docs/brand.md */
+/* Only flag fields after the user has interacted with them */
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: rgb(var(--danger));
+}
+
+/* ---------- Native <dialog> (command palette, profile) ---------- */
+dialog.fcu-dialog {
+  overscroll-behavior: contain;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    overlay 160ms ease-out allow-discrete,
+    display 160ms ease-out allow-discrete;
+}
+
+dialog.fcu-dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  dialog.fcu-dialog[open] {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+/* Drawer variant slides in from the right */
+dialog.fcu-dialog--drawer {
+  transform: translateX(24px);
+}
+@starting-style {
+  dialog.fcu-dialog--drawer[open] {
+    transform: translateX(24px);
+  }
+}
+
+dialog.fcu-dialog::backdrop {
+  background: rgb(15 23 42 / 0);
+  backdrop-filter: blur(0);
+  transition:
+    background 160ms ease-out,
+    backdrop-filter 160ms ease-out,
+    overlay 160ms ease-out allow-discrete,
+    display 160ms ease-out allow-discrete;
+}
+
+dialog.fcu-dialog[open]::backdrop {
+  background: rgb(15 23 42 / 0.35);
+  backdrop-filter: blur(3px);
+}
+
+@starting-style {
+  dialog.fcu-dialog[open]::backdrop {
+    background: rgb(15 23 42 / 0);
+    backdrop-filter: blur(0);
+  }
+}
+
+/* Lock page scroll behind an open modal */
+html:has(dialog.fcu-dialog[open]) {
+  overflow: hidden;
+}
+
+/* ---------- Image shimmer ---------- */
+@keyframes fcu-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+.fcu-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--background-subtle)) 0%,
+    rgb(var(--primary-soft)) 50%,
+    rgb(var(--background-subtle)) 100%
+  );
+  background-size: 200% 100%;
+  animation: fcu-shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

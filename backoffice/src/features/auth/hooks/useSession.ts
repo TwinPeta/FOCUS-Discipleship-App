@@ -13,7 +13,7 @@ import { useSessionContext } from "@/providers/SessionProvider";
 import { getUserCommunityIds } from "@/lib/permissions/scope";
 
 export function useSession() {
-  const { session, user } = useSessionContext();
+  const { session, user, updateUser } = useSessionContext();
   const communityIds = getUserCommunityIds(user);
 
   return {
@@ -22,5 +22,6 @@ export function useSession() {
     role: user?.role ?? null,
     communityIds,
     isAuthenticated: Boolean(user),
+    updateUser,
   };
 }
