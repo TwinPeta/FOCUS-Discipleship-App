@@ -1,5 +1,5 @@
 {
-  "name": "fcu-backoffice-web",
+  "name": "fcu-backoffice",
   "version": "0.2.0",
   "private": true,
   "packageManager": "pnpm@9.12.0",
