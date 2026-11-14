@@ -7,12 +7,17 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - [ ] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
 - [ ] Batch 5: 30 manage, 31 join requests, 32 reports to review (Hide/Warn/Keep/Escalate); super-mentor guard + repository role checks
   - [x] 31 Join requests (`/community/:id/manage/requests`): `JoinRequest` + `JoinRequestRepository` (role-checked), approve/decline notify the student, "Already in" disables Approve; tests in `test/community/join_requests_test.dart`
+  - [x] 32 Reports to review (`/community/:id/manage/reports`): `ModerationCase`, `Warning`, role-checked `ModerationQueueRepository` (Hide / Warn author / Keep / Escalate to admin, each records an outcome and leaves the queue), `WarningRepository`, hidden content filtered in the post and prayer repositories; tests in `test/moderation/reports_to_review_test.dart`
 - [ ] Finish: analyze 0, tests green, wiring rows for prompt 2 cleared, assumptions + stubs recorded
 
 ## Prompt 2 assumptions
 - Screen 31 lives at `/community/:id/manage/requests` (the existing manage guard covers it). Until screen 30 links to it, the debug scenario "Open join requests" switches to super-mentor and opens it.
 - The join-request queue is a seeded fake for Growth Circle (4 students, one already in Life & Faith Circle); it is separate from the signed-in user's own `Membership`, whose approval stays on the "Approve my request" debug scenario.
 - Student notifications carry `recipientId`; `getNotifications()` returns only the signed-in user's (recipientId null), `getNotificationsFor(id)` returns another user's. A backend would push these to that student.
+- Screen 32 lives at `/community/:id/manage/reports`; debug scenario "Open reports to review" opens it until screen 30 links to it. The queue is seeded for Growth Circle (a comment, a post and a prayer request). Batch 4's `ReportFlow` for content will feed new cases into it; today `ReportRepository` submissions do not create cases.
+- **Warn author also hides the content** (screen 61 says "This message was hidden"), creates `Warning(reason, preview, acknowledged:false)` and a `moderatorWarning` notification for the author targeting `/warning/:id` (screen 61, prompt 3). Warn asks for confirmation; Hide, Keep and Escalate act immediately.
+- Hidden content is enforced in `FakePostRepository`/`FakePrayerRepository` via an injected `isHidden` check (from `ModerationQueueRepository`), so it disappears for everyone. Comments don't exist yet (batch 4); their ids are recorded as hidden for when they do.
+- Escalate sets the case to level 2 and puts it in a fake admin queue (`getAdminQueue`). `NotSuperMentor` moved to `user_role.dart`, shared by screens 31 and 32.
 - Approve/decline are idempotent-safe: a second call while one is in flight, or on a decided request, throws `JoinRequestNotPending`. Decline uses the shared `showTextInputDialog`; a blank message is stored as none. Actions are disabled offline.
 - Session is in memory only (no secure storage). Passwords never enter app state: `SignUpController` keeps `fakePasswordDigest` (iterated FNV, explicitly fake; a real backend hashes server-side).
 - Debug demo account: `demo@fcu.test` / `Password1234` (seeded profile "Demo Student"). Fake email code: `123456` (shown on screen in debug builds).

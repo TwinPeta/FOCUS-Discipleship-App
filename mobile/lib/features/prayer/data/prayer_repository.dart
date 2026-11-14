@@ -10,9 +10,16 @@ abstract class PrayerRepository {
 }
 
 class FakePrayerRepository implements PrayerRepository {
-  FakePrayerRepository({this.latency = const Duration(milliseconds: 400)});
+  FakePrayerRepository({
+    this.latency = const Duration(milliseconds: 400),
+    bool Function(String requestId)? isHidden,
+  }) : _isHidden = isHidden ?? _never;
 
   final Duration latency;
+
+  /// Requests hidden by moderation never leave the repository.
+  final bool Function(String requestId) _isHidden;
+  static bool _never(String _) => false;
 
   final Map<String, List<PrayerRequest>> _byCommunity = {};
 
@@ -58,7 +65,9 @@ class FakePrayerRepository implements PrayerRepository {
   Future<List<PrayerRequest>> getRequests(String communityId) async {
     await Future.delayed(latency);
     return List.unmodifiable(
-      _byCommunity.putIfAbsent(communityId, () => _seed(communityId)),
+      _byCommunity
+          .putIfAbsent(communityId, () => _seed(communityId))
+          .where((r) => !_isHidden(r.id)),
     );
   }
 

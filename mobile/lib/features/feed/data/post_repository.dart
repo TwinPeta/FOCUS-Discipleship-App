@@ -19,9 +19,16 @@ abstract class PostRepository {
 }
 
 class FakePostRepository implements PostRepository {
-  FakePostRepository({this.latency = const Duration(milliseconds: 400)});
+  FakePostRepository({
+    this.latency = const Duration(milliseconds: 400),
+    bool Function(String postId)? isHidden,
+  }) : _isHidden = isHidden ?? _never;
 
   final Duration latency;
+
+  /// Content hidden by moderation never leaves the repository.
+  final bool Function(String postId) _isHidden;
+  static bool _never(String _) => false;
 
   final Map<String, List<Post>> _byCommunity = {};
 
@@ -164,7 +171,10 @@ class FakePostRepository implements PostRepository {
     int limit = 20,
   }) async {
     await Future.delayed(latency);
-    final all = _feed(communityId, scope);
+    final all = _feed(
+      communityId,
+      scope,
+    ).where((p) => !_isHidden(p.id)).toList();
     final start = int.tryParse(cursor ?? '') ?? 0;
     final end = (start + limit).clamp(0, all.length);
     return PostPage(

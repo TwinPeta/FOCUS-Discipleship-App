@@ -66,6 +66,22 @@ final communityDebugScenarios = <DebugScenario>[
   ),
   DebugScenario(
     group: 'Accounts',
+    name: 'Open reports to review',
+    description:
+        'Super-mentor moderation queue for your community (until Manage, screen 30, '
+        'links to it).',
+    run: (ref, context) async {
+      final id = ref.read(membershipProvider).valueOrNull?.communityId;
+      if (id == null) return 'Join a community first';
+      ref.read(debugRoleOverrideProvider.notifier).state = UserRole.superMentor;
+      if (context.mounted) {
+        unawaited(context.push('/community/$id/manage/reports'));
+      }
+      return null;
+    },
+  ),
+  DebugScenario(
+    group: 'Accounts',
     name: 'Use the student test account',
     description: 'Your role goes back to student.',
     run: (ref, _) async {

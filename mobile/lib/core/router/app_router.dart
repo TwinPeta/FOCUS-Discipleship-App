@@ -34,6 +34,7 @@ import '../../features/messaging/presentation/conversation_screen.dart';
 import '../../features/messaging/presentation/messages_inbox_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
 import '../../features/messaging/presentation/report_user_screen.dart';
+import '../../features/moderation/presentation/reports_to_review_screen.dart';
 import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
 import '../../features/prayer/presentation/new_prayer_request_screen.dart';
@@ -169,6 +170,10 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/community/:id/manage/requests',
     builder: (context, state) => JoinRequestsScreen(communityId: _id(state)),
+  ),
+  GoRoute(
+    path: '/community/:id/manage/reports',
+    builder: (context, state) => ReportsToReviewScreen(communityId: _id(state)),
   ),
   GoRoute(
     path: '/community/:id/compose',

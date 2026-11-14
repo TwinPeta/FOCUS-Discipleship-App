@@ -62,14 +62,6 @@ class JoinRequest {
   }
 }
 
-/// The acting user is not the super-mentor of this community.
-class NotSuperMentor implements Exception {
-  const NotSuperMentor(this.communityId);
-  final String communityId;
-  @override
-  String toString() => 'NotSuperMentor($communityId)';
-}
-
 /// Approving would put a student in a second specific community.
 class StudentAlreadyInCommunity implements Exception {
   const StudentAlreadyInCommunity(this.communityName);

@@ -12,6 +12,8 @@ import '../../features/activity/data/activity_repository.dart';
 import '../../features/messaging/data/messaging_repository.dart';
 import '../../features/messaging/data/moderation_repository.dart';
 import '../../features/messaging/data/report_repository.dart';
+import '../../features/moderation/data/moderation_queue_repository.dart';
+import '../../features/moderation/data/warning_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../../features/pathways/data/pathway_repository.dart';
 import '../../features/prayer/data/prayer_repository.dart';
@@ -47,8 +49,20 @@ final joinRequestRepositoryProvider = Provider<JoinRequestRepository>((ref) {
   );
 });
 
+final warningRepositoryProvider = Provider<WarningRepository>((ref) {
+  return FakeWarningRepository();
+});
+
+final moderationQueueRepositoryProvider = Provider<ModerationQueueRepository>(
+  (ref) => FakeModerationQueueRepository(
+    notifications: ref.read(notificationRepositoryProvider),
+    warnings: ref.read(warningRepositoryProvider),
+  ),
+);
+
 final postRepositoryProvider = Provider<PostRepository>((ref) {
-  return FakePostRepository();
+  final moderation = ref.read(moderationQueueRepositoryProvider);
+  return FakePostRepository(isHidden: moderation.isHidden);
 });
 
 final storiesRepositoryProvider = Provider<StoriesRepository>((ref) {
@@ -60,7 +74,8 @@ final resourceRepositoryProvider = Provider<ResourceRepository>((ref) {
 });
 
 final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
-  return FakePrayerRepository();
+  final moderation = ref.read(moderationQueueRepositoryProvider);
+  return FakePrayerRepository(isHidden: moderation.isHidden);
 });
 
 final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {
