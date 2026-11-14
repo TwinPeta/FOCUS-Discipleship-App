@@ -1,0 +1,40 @@
+# Checks that the FCU mobile app (mobile/) builds for iOS, on a macOS runner.
+# Unsigned (--no-codesign): this proves the iOS build works but produces
+# nothing installable. Installing on iPhones needs an Apple Developer
+# Program account, signing, and TestFlight (to be added later).
+# Tests run in the Android workflow (mobile-apk.yml); not repeated here.
+name: Mobile iOS build check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.0
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Build iOS (unsigned)
+        run: flutter build ios --no-codesign

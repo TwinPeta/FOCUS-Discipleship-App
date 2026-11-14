@@ -24,7 +24,8 @@ Checked by Agent A on 2026-11-14. No P0 found, so nothing was changed for this r
 ## Before a store release (not needed for phone testing)
 | Item | Status |
 |---|---|
-| App name | Android label is "FCU" (was `focus_1`); iOS display name still to set |
+| App name | "FCU" on Android (label) and iOS (`CFBundleDisplayName`) |
+| iOS | unsigned build check on macOS (`.github/workflows/mobile-ios.yml`); permission texts for photos, camera and microphone added. **To install on iPhones:** Apple Developer Program account, own bundle id (now `com.example.focus1`), signing via App Store Connect API key, TestFlight |
 | Application id | still `com.example.focus_1`. **Must change before Play Store** (renaming touches `build.gradle.kts`, `namespace` and the Kotlin package path) |
 | Icon | default Flutter icon (`mipmap-*/ic_launcher.png`) |
 | Splash | default white launch background |

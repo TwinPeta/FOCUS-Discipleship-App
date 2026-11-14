@@ -7,7 +7,13 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Focus 1</string>
+	<string>FCU</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FCU uses your photos so you can add a profile picture, share photos and videos in posts, or attach a screenshot to a report.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FCU uses the camera so you can take a profile picture.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>FCU uses the microphone only when you record a video to share.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
