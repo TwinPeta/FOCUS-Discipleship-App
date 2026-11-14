@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -13,9 +10,6 @@ import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_secondary_button.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
 import '../../../core/widgets/list_row_card.dart';
-import '../../auth/presentation/providers/auth_providers.dart';
-import '../../messaging/data/messaging_repository.dart';
-import '../../messaging/presentation/providers/messaging_providers.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/person.dart';
 import '../domain/user_role.dart';

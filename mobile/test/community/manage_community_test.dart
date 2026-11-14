@@ -1,14 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:focus_1/core/router/route_guards.dart';
+import 'package:focus_1/core/widgets/list_row_card.dart';
 import 'package:focus_1/features/activity/data/activity_repository.dart';
+import 'package:focus_1/features/auth/domain/auth_models.dart';
 import 'package:focus_1/features/community/domain/community.dart';
+import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/community/domain/user_role.dart';
 import 'package:focus_1/features/community/presentation/join_requests_screen.dart';
 import 'package:focus_1/features/community/presentation/manage_community_screen.dart';
 import 'package:focus_1/features/community/presentation/providers/manage_providers.dart';
 import 'package:focus_1/features/community/presentation/providers/membership_provider.dart';
+import 'package:focus_1/features/messaging/presentation/widgets/message_person_button.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
@@ -88,10 +94,17 @@ void main() {
     expect(find.byType(ManageCommunityScreen), findsOneWidget);
     expect(find.text('Manage Growth Circle'), findsOneWidget);
     expect(find.text('Only super-mentors see this.'), findsOneWidget);
-    expect(find.bySemanticsLabel('Join requests, 4'), findsOneWidget);
-    expect(find.bySemanticsLabel('Reports to review, 3'), findsOneWidget);
+    Finder countOn(String title, String count) => find.descendant(
+      of: find.ancestor(
+        of: find.text(title),
+        matching: find.byType(ListRowCard),
+      ),
+      matching: find.text(count),
+    );
+    expect(countOn('Join requests', '4'), findsOneWidget);
+    expect(countOn('Reports to review', '3'), findsOneWidget);
     // Seed: Peter Ssentongo quiet for 21 days, Isaac Wandera never active.
-    expect(find.bySemanticsLabel('Members to follow up, 2'), findsOneWidget);
+    expect(countOn('Members to follow up', '2'), findsOneWidget);
     expect(
       find.text('Tuesday · 5:00 PM · Room 204, Student Centre'),
       findsOneWidget,
@@ -101,7 +114,7 @@ void main() {
     await settle(tester);
     expect(find.text('Isaac Wandera'), findsOneWidget);
     expect(find.text('Peter Ssentongo'), findsOneWidget);
-    expect(find.bySemanticsLabel('Message Isaac Wandera'), findsOneWidget);
+    expect(find.byType(MessagePersonButton), findsNWidgets(2));
     Navigator.of(tester.element(find.text('Isaac Wandera'))).pop();
     await settle(tester);
 
@@ -110,13 +123,23 @@ void main() {
     expect(find.byType(JoinRequestsScreen), findsOneWidget);
   });
 
-  testWidgets('students are sent back to the feed', (tester) async {
-    final container = await pumpFcuApp(tester);
-    await goTo(tester, container, '/community/growth-circle/manage');
-    expect(find.byType(ManageCommunityScreen), findsNothing);
-    expect(
-      container.read(manageClockProvider)(),
-      isA<DateTime>(),
-    ); // clock is injectable
+  test('guard: only super-mentors reach /community/:id/manage', () {
+    GuardContext ctx(UserRole role) => GuardContext(
+      location: Uri.parse('/community/growth-circle/manage'),
+      profile: AsyncValue.data(testProfile),
+      membership: const AsyncValue.data(
+        Membership(
+          communityId: 'growth-circle',
+          status: MembershipStatus.approved,
+        ),
+      ),
+      session: AsyncValue.data(
+        AuthSession(accountId: testProfile.id, email: testProfile.email),
+      ),
+      role: role,
+    );
+    expect(runGuards(ctx(UserRole.student)), '/community/growth-circle/feed');
+    expect(runGuards(ctx(UserRole.mentor)), '/community/growth-circle/feed');
+    expect(runGuards(ctx(UserRole.superMentor)), isNull);
   });
 }
