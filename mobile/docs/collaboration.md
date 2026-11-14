@@ -81,9 +81,9 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 30 | A | done | see `git log --grep "screen 30"` |
 | 43, 54, 55, 58 | B | done (see `git log --grep "screens 43, 54, 55, 58"`) | |
 | 44, 45 | A | done | see `git log --grep "screens 44"` |
-| 46-50 | B | not started | |
+| 46-50 | A (taken over from B, inactive) | in progress | main |
 | 51 | A | done | see `git log --grep "screen 51"` |
-| 52, 53 | B | not started | |
+| 52, 53 | A (taken over from B, inactive) | in progress | main |
 | 56, 57, 59 | A | done for all non-messaging screens; **B: please apply to Messages inbox and Conversation** (Skeleton + ErrorView instead of the spinner; disable send offline). See progress.md | see `git log --grep "offline, loading and error"` |
 | 60, 61 | A | done | see `git log --grep "screens 60"` |
 | Content reports to moderation | B | done (see `git log --grep "content reports feed moderation"`) | Agent A please review: `fileReport`, `ModeratedContent.testimony`, nullable `ModerationCase.authorId` + `canWarn` (screen 32 shows "Author unknown"). **Reviewed by A: OK.** One nit: a report with no `reporterId` is keyed as `''`, so a second id-less report never raises the count; consider requiring `reporterId` for content reports. |
