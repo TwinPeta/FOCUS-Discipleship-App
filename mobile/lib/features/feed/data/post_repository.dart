@@ -1,5 +1,4 @@
 import '../../community/domain/person.dart';
-import '../domain/comment.dart';
 import '../domain/post.dart';
 
 abstract class PostRepository {
@@ -11,30 +10,27 @@ abstract class PostRepository {
     int limit = 20,
   });
 
-  /// Returns the post with [postId], or null when not found.
-  Future<Post?> getPostById(String postId);
-
   /// Idempotent: sets the current user's like to [liked] and returns the
   /// stored post (calling it twice with the same value changes nothing).
   Future<Post> setLiked(String postId, {required bool liked});
 
   /// Idempotent on the post id: a repeated create returns the stored post.
   Future<Post> createPost(Post post);
-
-  /// Chronological (oldest first) comments for [postId].
-  Future<List<Comment>> getComments(String postId);
-
-  /// Idempotent on [comment.id]: a repeated submit returns the stored comment.
-  Future<Comment> addComment(String postId, Comment comment);
 }
 
 class FakePostRepository implements PostRepository {
-  FakePostRepository({this.latency = const Duration(milliseconds: 400)});
+  FakePostRepository({
+    this.latency = const Duration(milliseconds: 400),
+    bool Function(String postId)? isHidden,
+  }) : _isHidden = isHidden ?? _never;
 
   final Duration latency;
 
+  /// Content hidden by moderation never leaves the repository.
+  final bool Function(String postId) _isHidden;
+  static bool _never(String _) => false;
+
   final Map<String, List<Post>> _byCommunity = {};
-  final Map<String, List<Comment>> _commentsByPost = {};
 
   List<Post> _seedSpecific(String communityId) {
     final now = DateTime.now();
@@ -159,52 +155,6 @@ class FakePostRepository implements PostRepository {
     ];
   }
 
-  List<Comment> _seedComments(String postId) {
-    if (!postId.endsWith('-post-1') && !postId.endsWith('-post-photo')) {
-      return [];
-    }
-    final now = DateTime.now();
-    if (postId.endsWith('-post-photo')) {
-      return [
-        Comment(
-          id: '$postId-c1',
-          postId: postId,
-          author: const Person(
-            id: 'sm-1',
-            name: 'Grace Namuli',
-            role: PersonRole.superMentor,
-          ),
-          body: 'Loved praying together before class — count me in next Saturday!',
-          createdAt: now.subtract(const Duration(hours: 4)),
-        ),
-      ];
-    }
-    return [
-      Comment(
-        id: '$postId-c1',
-        postId: postId,
-        author: const Person(
-          id: 'm-1',
-          name: 'David Okello',
-          role: PersonRole.mentor,
-        ),
-        body: 'Thanks for the heads-up! Bringing extra notebooks for the study.',
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 30)),
-      ),
-      Comment(
-        id: '$postId-c2',
-        postId: postId,
-        author: const Person(
-          id: 'member-1',
-          name: 'Faith Nabirye',
-          role: PersonRole.member,
-        ),
-        body: 'See everyone at 5 in Room 204!',
-        createdAt: now.subtract(const Duration(minutes: 45)),
-      ),
-    ];
-  }
-
   List<Post> _feed(String communityId, PostScope scope) =>
       _byCommunity.putIfAbsent(
         communityId,
@@ -212,35 +162,6 @@ class FakePostRepository implements PostRepository {
             ? _seedGeneral(communityId)
             : _seedSpecific(communityId),
       );
-
-  List<Comment> _commentsFor(String postId) =>
-      _commentsByPost.putIfAbsent(postId, () => _seedComments(postId));
-
-  /// Ensures a seeded community feed is initialized when deep-linking directly
-  /// to a post ID before the feed list has been opened.
-  void _ensureSeededForPostId(String postId) {
-    final marker = postId.indexOf('-post-');
-    if (marker <= 0) return;
-    final communityId = postId.substring(0, marker);
-    if (_byCommunity.containsKey(communityId)) return;
-    final scope = communityId.startsWith('general-')
-        ? PostScope.general
-        : PostScope.specific;
-    _feed(communityId, scope);
-  }
-
-  (List<Post>, int)? _findPost(String postId) {
-    for (final posts in _byCommunity.values) {
-      final index = posts.indexWhere((p) => p.id == postId);
-      if (index != -1) return (posts, index);
-    }
-    _ensureSeededForPostId(postId);
-    for (final posts in _byCommunity.values) {
-      final index = posts.indexWhere((p) => p.id == postId);
-      if (index != -1) return (posts, index);
-    }
-    return null;
-  }
 
   @override
   Future<PostPage> getPosts(
@@ -250,7 +171,10 @@ class FakePostRepository implements PostRepository {
     int limit = 20,
   }) async {
     await Future.delayed(latency);
-    final all = _feed(communityId, scope);
+    final all = _feed(
+      communityId,
+      scope,
+    ).where((p) => !_isHidden(p.id)).toList();
     final start = int.tryParse(cursor ?? '') ?? 0;
     final end = (start + limit).clamp(0, all.length);
     return PostPage(
@@ -261,28 +185,21 @@ class FakePostRepository implements PostRepository {
   }
 
   @override
-  Future<Post?> getPostById(String postId) async {
-    await Future.delayed(latency);
-    final found = _findPost(postId);
-    if (found == null) return null;
-    final (posts, index) = found;
-    return posts[index];
-  }
-
-  @override
   Future<Post> setLiked(String postId, {required bool liked}) async {
     await Future.delayed(latency);
-    final found = _findPost(postId);
-    if (found == null) throw ArgumentError('Unknown post id: $postId');
-    final (posts, index) = found;
-    final current = posts[index];
-    if (current.likedByMe == liked) return current;
-    final updated = current.copyWith(
-      likedByMe: liked,
-      likeCount: current.likeCount + (liked ? 1 : -1),
-    );
-    posts[index] = updated;
-    return updated;
+    for (final posts in _byCommunity.values) {
+      final index = posts.indexWhere((p) => p.id == postId);
+      if (index == -1) continue;
+      final current = posts[index];
+      if (current.likedByMe == liked) return current;
+      final updated = current.copyWith(
+        likedByMe: liked,
+        likeCount: current.likeCount + (liked ? 1 : -1),
+      );
+      posts[index] = updated;
+      return updated;
+    }
+    throw ArgumentError('Unknown post id: $postId');
   }
 
   @override
@@ -293,22 +210,5 @@ class FakePostRepository implements PostRepository {
     if (existing != null) return existing;
     posts.insert(0, post);
     return post;
-  }
-
-  @override
-  Future<List<Comment>> getComments(String postId) async {
-    await Future.delayed(latency);
-    final comments = _commentsFor(postId);
-    return List.unmodifiable(comments);
-  }
-
-  @override
-  Future<Comment> addComment(String postId, Comment comment) async {
-    await Future.delayed(latency);
-    final comments = _commentsFor(postId);
-    final existing = comments.where((c) => c.id == comment.id).firstOrNull;
-    if (existing != null) return existing;
-    comments.add(comment);
-    return comment;
   }
 }
