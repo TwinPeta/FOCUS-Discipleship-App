@@ -1,7 +1,7 @@
 /**
  * src/components/layout/Sidebar.tsx
  *
- * WHAT: Yellow sidebar (240px) with role-filtered navigation, user summary, and sign out
+ * WHAT: Yellow sidebar (240px) with role-filtered grouped navigation, accessible mobile menu, and user card
  * REQUIREMENTS: FR-12
  * SPEC: docs/features/16-shared-ui-brand.md
  * STATUS: implemented
@@ -9,126 +9,130 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
+import { UserCard } from "./UserCard";
+import {
+  getFilteredNavGroups,
+  MY_COMMUNITY_NAV,
+} from "./nav-config";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { ROUTES } from "@/lib/constants/routes";
-import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { Role } from "@/types/enums";
-
-interface NavItem {
-  href: string;
-  label: string;
-}
-
-const BACKOFFICE_NAV: NavItem[] = [
-  { href: ROUTES.dashboard, label: "Dashboard" },
-  { href: ROUTES.reports, label: "Reports" },
-  { href: ROUTES.joinRequests, label: "Join requests" },
-  { href: ROUTES.communities, label: "Communities" },
-  { href: ROUTES.institutions, label: "Institutions" },
-  { href: ROUTES.members, label: "Members" },
-  { href: ROUTES.content, label: "Content" },
-  { href: ROUTES.pathways, label: "Pathways" },
-  { href: ROUTES.badges, label: "Badges" },
-  { href: ROUTES.announcements, label: "Announcements" },
-  { href: ROUTES.notifications, label: "Notifications" },
-  { href: ROUTES.moderationReports, label: "Moderation" },
-  { href: ROUTES.guardianConsents, label: "Privacy & consents" },
-  { href: ROUTES.roles, label: "Roles & permissions" },
-  { href: ROUTES.auditLog, label: "Audit log" },
-  { href: ROUTES.settings, label: "Settings" },
-  { href: ROUTES.account, label: "My account" },
-];
-
-const CONTENT_ADMIN_NAV: NavItem[] = [
-  { href: ROUTES.dashboard, label: "Dashboard" },
-  { href: ROUTES.reports, label: "Reports" },
-  { href: ROUTES.communities, label: "Communities" },
-  { href: ROUTES.content, label: "Content" },
-  { href: ROUTES.pathways, label: "Pathways" },
-  { href: ROUTES.badges, label: "Badges" },
-  { href: ROUTES.announcements, label: "Announcements" },
-  { href: ROUTES.notifications, label: "Notifications" },
-  { href: ROUTES.moderationReports, label: "Moderation" },
-  { href: ROUTES.account, label: "My account" },
-];
-
-const MY_COMMUNITY_NAV: NavItem[] = [
-  { href: ROUTES.myCommunity, label: "My community" },
-  { href: ROUTES.myCommunityJoinRequests, label: "Join requests" },
-  { href: ROUTES.myCommunityMembers, label: "Members" },
-  { href: ROUTES.myCommunityModeration, label: "Moderation" },
-  { href: ROUTES.myCommunityResources, label: "Resources" },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useSession();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const items =
-    user?.role === Role.SuperMentor
-      ? MY_COMMUNITY_NAV
-      : user?.role === Role.ContentAdmin
-        ? CONTENT_ADMIN_NAV
-        : BACKOFFICE_NAV;
-
-  async function handleSignOut() {
-    await fetch("/api/proxy/auth/logout", { method: "POST" });
-    router.push(ROUTES.login);
-    router.refresh();
-  }
+  const isSuperMentor = user?.role === Role.SuperMentor;
+  const navGroups = getFilteredNavGroups(user?.role);
 
   return (
-    <aside className="flex w-full flex-col justify-between bg-primary p-4 text-foreground md:w-sidebar md:min-h-screen md:shrink-0">
-      <div className="space-y-6">
-        <div className="px-2 pt-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-foreground/75">
-            FCU Backoffice
-          </p>
-          <p className="text-base font-bold text-foreground">
-            {user?.role === Role.SuperMentor ? "My Community" : "Staff Portal"}
-          </p>
-        </div>
-
-        <nav aria-label="Main navigation" className="space-y-1">
-          {items.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== ROUTES.myCommunity && pathname.startsWith(`${item.href}/`));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block rounded-nav px-3 py-2 text-sm font-medium transition ${
-                  active
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-foreground/90 hover:bg-white/40"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div className="mt-6 space-y-2 rounded-nav bg-white/60 p-3 text-xs">
-        <div>
-          <p className="font-semibold text-foreground">{user?.fullName ?? "Staff"}</p>
-          <p className="text-foreground/75">
-            {user?.role ? ROLE_LABELS[user.role] : ""}
-          </p>
+    <>
+      {/* Mobile top bar for tablet / phone (<1024px) */}
+      <div className="flex md:hidden items-center justify-between bg-primary px-4 py-3 text-foreground shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-black/80">
+            FCU
+          </span>
+          <span className="font-bold text-sm">
+            {isSuperMentor ? "My Community" : "Staff Portal"}
+          </span>
         </div>
         <button
           type="button"
-          onClick={handleSignOut}
-          className="w-full rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-surface"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-expanded={mobileOpen}
+          aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+          className="rounded p-1 text-foreground hover:bg-black/10 focus:outline-none focus:ring-2 focus:ring-foreground"
         >
-          Sign out
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
-    </aside>
+
+      <aside
+        className={`${
+          mobileOpen ? "block" : "hidden"
+        } md:flex flex-col justify-between bg-primary p-4 text-foreground md:w-sidebar md:min-h-screen md:shrink-0 overflow-y-auto border-r border-amber-400/40`}
+        aria-label="Sidebar Navigation"
+      >
+        <div className="space-y-6">
+          <div className="hidden md:block px-2 pt-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-black/75">
+              FCU Backoffice
+            </p>
+            <p className="text-lg font-black tracking-tight text-foreground">
+              {isSuperMentor ? "My Community" : "Staff Portal"}
+            </p>
+          </div>
+
+          <nav aria-label="Main navigation" className="space-y-4">
+            {isSuperMentor ? (
+              <div className="space-y-1">
+                {MY_COMMUNITY_NAV.map((item) => {
+                  const active =
+                    pathname === item.href ||
+                    (item.href !== ROUTES.myCommunity && pathname.startsWith(`${item.href}/`));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={`block rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                        active
+                          ? "bg-white text-slate-950 shadow-sm"
+                          : "text-slate-900 hover:bg-black/10"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              navGroups.map((group) => (
+                <div key={group.group} className="space-y-1">
+                  <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-black/60">
+                    {group.group}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const active =
+                        pathname === item.href ||
+                        (item.href !== ROUTES.dashboard &&
+                          item.href !== ROUTES.home &&
+                          pathname.startsWith(`${item.href}`));
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          aria-current={active ? "page" : undefined}
+                          className={`block rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                            active
+                              ? "bg-white text-slate-950 shadow-sm"
+                              : "text-slate-900 hover:bg-black/10"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </nav>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-black/10">
+          <UserCard />
+        </div>
+      </aside>
+    </>
   );
 }

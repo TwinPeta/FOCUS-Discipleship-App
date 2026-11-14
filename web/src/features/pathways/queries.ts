@@ -12,7 +12,7 @@ import type { PathwayFormValues, PathwayStepInput } from "./schemas";
 export type PathwayLevel = "Beginner" | "Intermediate" | "Advanced";
 export type UnlockRuleType = "none" | "previous_pathway" | "profile_complete" | "mentor_assigned";
 
-export interface PathwayStep extends PathwayStepInput {}
+export type PathwayStep = PathwayStepInput;
 
 export interface Pathway {
   id: string;
