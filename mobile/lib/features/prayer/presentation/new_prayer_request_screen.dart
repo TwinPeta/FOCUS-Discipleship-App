@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -10,6 +9,7 @@ import '../../../core/widgets/check_row.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/prayer_request.dart';
+import '../../../core/router/navigation.dart';
 import 'providers/prayer_providers.dart';
 
 /// Screen 15: New prayer request, reached from the Prayer wall tab.
@@ -69,12 +69,13 @@ class _NewPrayerRequestScreenState
     }
 
     if (!mounted) return;
-    context.pop();
+    popOr(context, '/community/${widget.communityId}/prayer');
   }
 
   @override
   Widget build(BuildContext context) {
     return AmberHeaderScaffold(
+      backFallback: '/community/${widget.communityId}/prayer',
       title: 'New prayer request',
       subtitle: 'Your community will be able to pray and respond.',
       body: SingleChildScrollView(

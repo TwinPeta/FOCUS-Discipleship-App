@@ -65,7 +65,13 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   int _lastMessageCount = 0;
 
   void _scrollToBottom() {
-    if (!mounted || !_scrollController.hasClients) return;
+    // Offstage (e.g. under a deep-linked report page) the list has no
+    // size yet, so there is nothing to scroll.
+    if (!mounted ||
+        !_scrollController.hasClients ||
+        !_scrollController.position.hasContentDimensions) {
+      return;
+    }
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent + 80,
       duration: const Duration(milliseconds: 200),

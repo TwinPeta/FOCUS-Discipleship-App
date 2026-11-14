@@ -43,6 +43,7 @@ class ReportFlow extends StatefulWidget {
     required this.question,
     required this.onSubmit,
     this.extra,
+    this.backFallback = '/communities',
   });
 
   final String title;
@@ -50,6 +51,9 @@ class ReportFlow extends StatefulWidget {
   final String question;
   final Future<void> Function(ReportReason reason, String? details) onSubmit;
   final Widget? extra;
+
+  /// Back on a deep link (nothing to pop).
+  final String backFallback;
 
   @override
   State<ReportFlow> createState() => _ReportFlowState();
@@ -84,6 +88,7 @@ class _ReportFlowState extends State<ReportFlow> {
   @override
   Widget build(BuildContext context) {
     return AmberHeaderScaffold(
+      backFallback: widget.backFallback,
       title: widget.title,
       subtitleWidget: widget.subtitle,
       body: SingleChildScrollView(

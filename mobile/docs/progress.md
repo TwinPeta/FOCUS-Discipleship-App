@@ -20,6 +20,7 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 58 No messages yet: the empty inbox, **Find a member** -> `/messages/new`
 - [x] 52 Prayer request (`/prayer/:id`, built by A): author or Anonymous, time and community, body, "I prayed" (reuses the wall's once-only logic, "N people prayed"), Responses, pinned "Write an encouraging response" + send
 - [x] 53 Testimony (`/testimony/:id`, built by A): Reviewed badge, title, "name · university", full text, Encouraged toggle, outlined Report (ReportFlow, target testimony); pending stories open only for their author
+- [x] Batch 6 link and Back walk (started early): `test/navigation/link_walk_test.dart` walks 36 legs (deep link + pushed) with no dead ends; fixed a deep-link crash under `/messages/:id/report`, composer/form pop on an empty stack (`popOr`), and deep-link Back targets (`AmberHeaderScaffold.backFallback`). Findings for Agent A: `docs/link_walk.md`
 - [ ] 46-50
 
 ## Prompt 3 assumptions

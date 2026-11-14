@@ -79,6 +79,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final post = postAsync.valueOrNull;
 
     return AmberHeaderScaffold(
+      backFallback: post == null ? '/communities' : feedRouteFor(post),
       title: 'Post',
       headerAction: post == null
           ? null

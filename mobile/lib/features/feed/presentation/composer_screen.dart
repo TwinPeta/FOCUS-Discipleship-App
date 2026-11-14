@@ -1,6 +1,5 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -18,6 +17,7 @@ import '../../community/domain/person.dart';
 import '../../community/presentation/providers/community_providers.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/post.dart';
+import '../../../core/router/navigation.dart';
 import 'providers/feed_providers.dart';
 
 enum _MediaKind { photo, video, document }
@@ -98,6 +98,11 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
 
   bool get _canAttach => _media.length < ComposerScreen.maxAttachments;
 
+  /// The feed this composer posts to (Back / done target on a deep link).
+  String get _feedRoute => widget.scope == PostScope.specific
+      ? '/community/${widget.communityId}/feed'
+      : '/general-feed';
+
   FeedKey? _feedKey() {
     if (widget.scope == PostScope.specific) {
       return (communityId: widget.communityId!, scope: PostScope.specific);
@@ -160,7 +165,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
     if (!mounted) return;
     _discarded = true;
     setState(() {});
-    context.pop();
+    popOr(context, _feedRoute);
   }
 
   bool _discarded = false;
@@ -284,7 +289,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
     if (!mounted) return;
     _discarded = true;
     setState(() {});
-    context.pop();
+    popOr(context, _feedRoute);
   }
 
   @override

@@ -52,6 +52,7 @@ class PathwayStepsScreen extends ConsumerWidget {
     if (pathway.locked) {
       // Deep links can't bypass the unlock rule.
       return AmberHeaderScaffold(
+        backFallback: '/community/$communityId/pathways',
         title: pathway.title,
         subtitle: 'Locked',
         body: const SingleChildScrollView(
@@ -75,6 +76,7 @@ class PathwayStepsScreen extends ConsumerWidget {
     );
 
     return AmberHeaderScaffold(
+      backFallback: '/community/$communityId/pathways',
       title: pathway.title,
       subtitle: pathway.status == PathwayStatus.completed
           ? 'Completed'

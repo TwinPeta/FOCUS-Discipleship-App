@@ -1,9 +1,9 @@
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
+import '../router/navigation.dart';
 import 'round_icon_button.dart';
 
 /// Amber header with 28px bottom corners, a plain back button, a title and
@@ -20,6 +20,7 @@ class AmberHeaderScaffold extends StatelessWidget {
     required this.body,
     this.bottomBar,
     this.onBack,
+    this.backFallback = '/communities',
   });
 
   final String title;
@@ -35,6 +36,10 @@ class AmberHeaderScaffold extends StatelessWidget {
   final Widget body;
   final Widget? bottomBar;
   final VoidCallback? onBack;
+
+  /// Where Back goes when there is nothing to pop (deep link): the
+  /// screen's logical parent.
+  final String backFallback;
 
   @override
   Widget build(BuildContext context) {
@@ -70,10 +75,7 @@ class AmberHeaderScaffold extends StatelessWidget {
                           icon: Icons.arrow_back_rounded,
                           semanticLabel: 'Back',
                           onPressed:
-                              onBack ??
-                              () => context.canPop()
-                                  ? context.pop()
-                                  : context.go('/communities'),
+                              onBack ?? () => popOr(context, backFallback),
                         ),
                         if (headerAction != null) ...[
                           const Spacer(),

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -13,6 +12,7 @@ import '../../../core/widgets/check_row.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
+import '../../../core/router/navigation.dart';
 import 'providers/testimony_providers.dart';
 
 /// Screen 17: Share a testimony, reached from the Testimonies tab.
@@ -96,12 +96,13 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
     }
 
     if (!mounted) return;
-    context.pop();
+    popOr(context, '/community/${widget.communityId}/testimonies');
   }
 
   @override
   Widget build(BuildContext context) {
     return AmberHeaderScaffold(
+      backFallback: '/community/${widget.communityId}/testimonies',
       title: 'Share your story',
       subtitle: 'A story of how your life or heart changed.',
       body: SingleChildScrollView(

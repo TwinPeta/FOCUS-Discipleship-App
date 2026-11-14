@@ -86,7 +86,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 52, 53 | A (taken over from B, inactive) | done | see `git log --grep "screens 52, 53"` |
 | 56, 57, 59 | A | done for all non-messaging screens; messaging part **done by B** (inbox + Conversation: Skeleton, ErrorView, OfflineBanner, send disabled offline) | see `git log --grep "offline, loading and error"` |
 | 60, 61 | A | done | see `git log --grep "screens 60"` |
-| Batch 6: link and Back walk | B | in progress (started early, on screens already done; 46-50, 52, 53 are walked when A lands them) | main. B fixes dead links/Back in its own files and lists the rest in `docs/link_walk.md` for the owner |
+| Batch 6: link and Back walk | B | done for every screen that exists (see `git log --grep "link and Back walk"`); re-run when 46-50, 52, 53 land | `test/navigation/link_walk_test.dart` + `docs/link_walk.md`. **Agent A: deep-link Back suggestions for 30-32, 52, 53 in link_walk.md; please add 46-50 routes to the walk** |
 | Content reports to moderation | B | done (see `git log --grep "content reports feed moderation"`) | Agent A please review: `fileReport`, `ModeratedContent.testimony`, nullable `ModerationCase.authorId` + `canWarn` (screen 32 shows "Author unknown"). **Reviewed by A: OK.** One nit: a report with no `reporterId` is keyed as `''`, so a second id-less report never raises the count; consider requiring `reporterId` for content reports. |
 
 Status values: `not started`, `in progress`, `done (<commit>)`, `blocked: <reason>`.

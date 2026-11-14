@@ -79,6 +79,7 @@ class ContentReportScreen extends ConsumerWidget {
       subtitle = reportSubtitle('a ${type.noun} by ', name);
     }
     return ReportFlow(
+      backFallback: back,
       title: isUser ? 'Report a user' : 'Report this ${type.noun}',
       subtitle: subtitle,
       question: isUser ? 'What happened?' : 'What is wrong?',

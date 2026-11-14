@@ -36,6 +36,7 @@ class MyActivityScreen extends ConsumerWidget {
     final events = eventsAsync.valueOrNull ?? const <ActivityEvent>[];
 
     return AmberHeaderScaffold(
+      backFallback: '/profile',
       title: 'My activity',
       subtitle: 'Your journey, only visible to you.',
       body: CustomScrollView(
