@@ -1,13 +1,20 @@
 import '../domain/app_notification.dart';
 
 abstract class NotificationRepository {
-  /// Newest first.
+  /// The signed-in user's notifications, newest first.
   Future<List<AppNotification>> getNotifications();
+
+  /// Another user's notifications (e.g. a student a super-mentor approved),
+  /// newest first. A real backend delivers these to that user's device.
+  Future<List<AppNotification>> getNotificationsFor(String recipientId);
+
+  /// [recipientId] null means the signed-in user.
   Future<AppNotification> add({
     required NotificationType type,
     required String title,
     required String targetRoute,
     String? body,
+    String? recipientId,
   });
   Future<void> markRead(String id);
   Future<void> markAllRead();
@@ -23,9 +30,18 @@ class FakeNotificationRepository implements NotificationRepository {
   var _counter = 0;
 
   @override
-  Future<List<AppNotification>> getNotifications() async {
+  Future<List<AppNotification>> getNotifications() =>
+      _query((n) => n.recipientId == null);
+
+  @override
+  Future<List<AppNotification>> getNotificationsFor(String recipientId) =>
+      _query((n) => n.recipientId == recipientId);
+
+  Future<List<AppNotification>> _query(
+    bool Function(AppNotification) test,
+  ) async {
     await Future.delayed(latency);
-    final sorted = [..._items]
+    final sorted = _items.where(test).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return List.unmodifiable(sorted);
   }
@@ -36,6 +52,7 @@ class FakeNotificationRepository implements NotificationRepository {
     required String title,
     required String targetRoute,
     String? body,
+    String? recipientId,
   }) async {
     // Recording is synchronous so callers emitting "at the source" never
     // race the screen that reads it next.
@@ -46,6 +63,7 @@ class FakeNotificationRepository implements NotificationRepository {
       body: body,
       targetRoute: targetRoute,
       createdAt: DateTime.now(),
+      recipientId: recipientId,
     );
     _items.add(item);
     return item;

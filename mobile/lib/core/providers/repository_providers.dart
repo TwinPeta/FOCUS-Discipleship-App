@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
+import '../../features/community/data/join_request_repository.dart';
 import '../../features/community/data/membership_repository.dart';
 import '../../features/feed/data/post_repository.dart';
 import '../../features/learning/data/learning_repository.dart';
@@ -11,6 +12,8 @@ import '../../features/activity/data/activity_repository.dart';
 import '../../features/messaging/data/messaging_repository.dart';
 import '../../features/messaging/data/moderation_repository.dart';
 import '../../features/messaging/data/report_repository.dart';
+import '../../features/moderation/data/moderation_queue_repository.dart';
+import '../../features/moderation/data/warning_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../../features/pathways/data/pathway_repository.dart';
 import '../../features/prayer/data/prayer_repository.dart';
@@ -40,8 +43,26 @@ final membershipRepositoryProvider = Provider<MembershipRepository>((ref) {
   );
 });
 
+final joinRequestRepositoryProvider = Provider<JoinRequestRepository>((ref) {
+  return FakeJoinRequestRepository(
+    notifications: ref.read(notificationRepositoryProvider),
+  );
+});
+
+final warningRepositoryProvider = Provider<WarningRepository>((ref) {
+  return FakeWarningRepository();
+});
+
+final moderationQueueRepositoryProvider = Provider<ModerationQueueRepository>(
+  (ref) => FakeModerationQueueRepository(
+    notifications: ref.read(notificationRepositoryProvider),
+    warnings: ref.read(warningRepositoryProvider),
+  ),
+);
+
 final postRepositoryProvider = Provider<PostRepository>((ref) {
-  return FakePostRepository();
+  final moderation = ref.read(moderationQueueRepositoryProvider);
+  return FakePostRepository(isHidden: moderation.isHidden);
 });
 
 final storiesRepositoryProvider = Provider<StoriesRepository>((ref) {
@@ -53,7 +74,8 @@ final resourceRepositoryProvider = Provider<ResourceRepository>((ref) {
 });
 
 final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
-  return FakePrayerRepository();
+  final moderation = ref.read(moderationQueueRepositoryProvider);
+  return FakePrayerRepository(isHidden: moderation.isHidden);
 });
 
 final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {

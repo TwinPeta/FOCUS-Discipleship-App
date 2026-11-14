@@ -19,6 +19,7 @@ class AppNotification {
     required this.createdAt,
     this.body,
     this.readAt,
+    this.recipientId,
   });
 
   final String id;
@@ -31,6 +32,9 @@ class AppNotification {
   final DateTime createdAt;
   final DateTime? readAt;
 
+  /// Who it is for; null means the signed-in user.
+  final String? recipientId;
+
   bool get isRead => readAt != null;
 
   AppNotification copyWith({DateTime? readAt}) => AppNotification(
@@ -41,5 +45,6 @@ class AppNotification {
     targetRoute: targetRoute,
     createdAt: createdAt,
     readAt: readAt ?? this.readAt,
+    recipientId: recipientId,
   );
 }

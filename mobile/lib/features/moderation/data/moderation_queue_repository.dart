@@ -1,0 +1,200 @@
+import '../../community/domain/user_role.dart';
+import '../../messaging/domain/report.dart';
+import '../../notifications/data/notification_repository.dart';
+import '../../notifications/domain/app_notification.dart';
+import '../domain/moderation_case.dart';
+import 'warning_repository.dart';
+
+/// Level 1 moderation for one community (screen 32). Every action takes the
+/// actor's role and throws [NotSuperMentor] unless it is a super-mentor.
+/// Each action records an outcome and removes the case from the queue.
+abstract class ModerationQueueRepository {
+  /// Open cases for [communityId], oldest first.
+  Future<List<ModerationCase>> getOpenCases(
+    String communityId, {
+    required UserRole? actorRole,
+  });
+
+  /// Hides the content for everyone.
+  Future<ModerationCase> hide(String caseId, {required UserRole? actorRole});
+
+  /// Hides the content, creates a [Warning] for the author and notifies
+  /// them.
+  Future<ModerationCase> warnAuthor(
+    String caseId, {
+    required UserRole? actorRole,
+  });
+
+  /// Leaves the content up.
+  Future<ModerationCase> keep(String caseId, {required UserRole? actorRole});
+
+  /// Moves the case to the admin team's queue.
+  Future<ModerationCase> escalate(
+    String caseId, {
+    required UserRole? actorRole,
+  });
+
+  /// Cases waiting for the admin team (a backend owns this queue).
+  Future<List<ModerationCase>> getAdminQueue();
+
+  /// True when moderation hid this post/comment/prayer for everyone. Feeds
+  /// filter on it in the data layer.
+  bool isHidden(String targetId);
+}
+
+class FakeModerationQueueRepository implements ModerationQueueRepository {
+  FakeModerationQueueRepository({
+    this.latency = const Duration(milliseconds: 400),
+    this.notifications,
+    required this.warnings,
+    List<ModerationCase>? seed,
+  }) : _cases = [...(seed ?? _seed())];
+
+  final Duration latency;
+  final NotificationRepository? notifications;
+  final WarningRepository warnings;
+  final List<ModerationCase> _cases;
+  final Set<String> _hidden = {};
+  final Set<String> _inFlight = {};
+
+  static List<ModerationCase> _seed() {
+    final now = DateTime.now();
+    const c = 'growth-circle';
+    return [
+      ModerationCase(
+        id: 'case-1',
+        communityId: c,
+        content: ModeratedContent.comment,
+        targetId: '$c-comment-1',
+        authorId: 'member-4',
+        authorName: 'Ivan Kasozi',
+        preview:
+            'This group is a waste of time, nobody here takes anything '
+            'seriously.',
+        reason: ReportReason.harassment,
+        reportCount: 3,
+        firstReporterName: 'Aisha Nakato',
+        reportedAt: now.subtract(const Duration(days: 2)),
+      ),
+      ModerationCase(
+        id: 'case-2',
+        communityId: c,
+        content: ModeratedContent.post,
+        targetId: '$c-post-3',
+        authorId: 'member-1',
+        authorName: 'Faith Nabirye',
+        preview:
+            'Please keep my family in your prayers this week, my dad is not '
+            'feeling well.',
+        reason: ReportReason.breakingRules,
+        reportCount: 2,
+        firstReporterName: 'Brian Mugisha',
+        reportedAt: now.subtract(const Duration(days: 1)),
+      ),
+      ModerationCase(
+        id: 'case-3',
+        communityId: c,
+        content: ModeratedContent.prayerRequest,
+        targetId: '$c-prayer-3',
+        authorId: 'member-1',
+        authorName: 'Faith Nabirye',
+        preview:
+            "Thankful for how my exams went. Praying for my family's health "
+            'now.',
+        reason: ReportReason.somethingElse,
+        reportCount: 1,
+        firstReporterName: 'Joy Atim',
+        reportedAt: now,
+      ),
+    ];
+  }
+
+  void _requireSuperMentor(UserRole? role, String communityId) {
+    if (role != UserRole.superMentor) throw NotSuperMentor(communityId);
+  }
+
+  @override
+  Future<List<ModerationCase>> getOpenCases(
+    String communityId, {
+    required UserRole? actorRole,
+  }) async {
+    await Future.delayed(latency);
+    _requireSuperMentor(actorRole, communityId);
+    final open =
+        _cases.where((x) => x.communityId == communityId && x.isOpen).toList()
+          ..sort((a, b) => a.reportedAt.compareTo(b.reportedAt));
+    return List.unmodifiable(open);
+  }
+
+  @override
+  Future<ModerationCase> hide(String caseId, {required UserRole? actorRole}) =>
+      _decide(caseId, actorRole, ModerationOutcome.hidden);
+
+  @override
+  Future<ModerationCase> warnAuthor(
+    String caseId, {
+    required UserRole? actorRole,
+  }) => _decide(caseId, actorRole, ModerationOutcome.warned);
+
+  @override
+  Future<ModerationCase> keep(String caseId, {required UserRole? actorRole}) =>
+      _decide(caseId, actorRole, ModerationOutcome.kept);
+
+  @override
+  Future<ModerationCase> escalate(
+    String caseId, {
+    required UserRole? actorRole,
+  }) => _decide(caseId, actorRole, ModerationOutcome.escalated);
+
+  Future<ModerationCase> _decide(
+    String caseId,
+    UserRole? actorRole,
+    ModerationOutcome outcome,
+  ) async {
+    if (!_inFlight.add(caseId)) throw ModerationCaseClosed(caseId);
+    try {
+      await Future.delayed(latency);
+      final i = _cases.indexWhere((x) => x.id == caseId);
+      if (i == -1) throw ArgumentError.value(caseId, 'caseId', 'unknown case');
+      final current = _cases[i];
+      _requireSuperMentor(actorRole, current.communityId);
+      if (!current.isOpen) throw ModerationCaseClosed(caseId);
+
+      if (outcome == ModerationOutcome.hidden ||
+          outcome == ModerationOutcome.warned) {
+        _hidden.add(current.targetId);
+      }
+      if (outcome == ModerationOutcome.warned) {
+        final warning = await warnings.create(
+          userId: current.authorId,
+          reason: current.reason.label,
+          preview: current.preview,
+        );
+        await notifications?.add(
+          recipientId: current.authorId,
+          type: NotificationType.moderatorWarning,
+          title: 'A moderator sent you a warning',
+          body: 'Reason: ${current.reason.label}',
+          targetRoute: '/warning/${warning.id}',
+        );
+      }
+      return _cases[i] = current.copyWith(
+        outcome: outcome,
+        level: outcome == ModerationOutcome.escalated ? 2 : null,
+      );
+    } finally {
+      _inFlight.remove(caseId);
+    }
+  }
+
+  @override
+  Future<List<ModerationCase>> getAdminQueue() async {
+    await Future.delayed(latency);
+    return List.unmodifiable(
+      _cases.where((x) => x.outcome == ModerationOutcome.escalated),
+    );
+  }
+
+  @override
+  bool isHidden(String targetId) => _hidden.contains(targetId);
+}
