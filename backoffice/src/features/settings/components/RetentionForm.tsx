@@ -9,10 +9,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { saveRetentionSettings } from "@/features/settings/queries";
+import { fetchSettings, saveRetentionSettings } from "@/features/settings/queries";
 import {
   retentionSchema,
   type RetentionSettings,
@@ -24,6 +24,7 @@ export function RetentionForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<RetentionSettings>({
     resolver: zodResolver(retentionSchema),
@@ -32,6 +33,16 @@ export function RetentionForm() {
       deletionDeadlineDays: 30,
     },
   });
+
+  useEffect(() => {
+    let active = true;
+    fetchSettings<RetentionSettings>("retention").then((saved) => {
+      if (active && saved) reset(saved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [reset]);
 
   async function onSubmit(values: RetentionSettings) {
     setSaved(false);

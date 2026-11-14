@@ -1,0 +1,1641 @@
+openapi: 3.1.0
+info:
+  title: FCU Back Office – Staff API
+  version: 0.1.0
+  description: |
+    Staff (back-office) API, mounted under `/v1/admin`. The mobile API is documented in `openapi.yaml`.
+
+    **Using it with the back office:** set `API_BASE_URL=http://<host>/v1/admin`; the Next.js proxy then forwards
+    `/api/proxy/<path>` to `<API_BASE_URL>/<path>` with the access cookie as a Bearer token.
+
+    **Auth:** `POST /auth/login` sets httpOnly cookies `fcu_access` (15 min, 7 days with rememberMe) and `fcu_refresh`.
+    Tokens are scoped to the back office; mobile-app tokens are rejected.
+
+    **Roles:** `SYSTEM_ADMIN` (everything), `CONTENT_ADMIN` (content, pathways, badges, announcements, stories, notifications),
+    `SUPER_MENTOR` (own community only: join requests, members, first-level moderation). Out-of-scope resources return 404, wrong role returns 403.
+
+    **Errors:** RFC 7807 problem+json with a stable `code`; validation errors are 422 with an `errors[]` list.
+    Lists return `{ items, total }` (plus `counts` where tabs need them).
+servers:
+  - url: http://localhost:4000/v1/admin
+    description: Local development
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Dashboard
+  - name: Members
+  - name: Institutions
+  - name: Communities
+  - name: Join requests
+  - name: Roles
+  - name: Content
+  - name: Pathways
+  - name: Badges
+  - name: Announcements
+  - name: Stories
+  - name: Notifications
+  - name: Settings
+  - name: Moderation
+  - name: Privacy
+  - name: Audit
+  - name: Reports
+  - name: My community
+  - name: Account
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: postAuthLogin
+      summary: "Staff login (sets httpOnly fcu_access / fcu_refresh cookies)"
+      description: "Roles: public"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: postAuthLogout
+      summary: "Clear session cookies"
+      description: "Roles: public"
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      operationId: postAuthForgotpassword
+      summary: "Request a reset link (always 200)"
+      description: "Roles: public"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      operationId: postAuthResetpassword
+      summary: "Set a new password from a reset token (410 if expired/used)"
+      description: "Roles: public"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: getAuthMe
+      summary: "Current staff user"
+      description: "Roles: any staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboard
+      summary: "KPIs, weekly activity, attention items, inactive members"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /members:
+    get:
+      tags: [Members]
+      operationId: getMembers
+      summary: "List members (q, role, status, communityId, institutionId)"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Members]
+      operationId: postMembers
+      summary: "Create a member; minors get a pending guardian-consent record"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddMember' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /members/inactive:
+    get:
+      tags: [Members]
+      operationId: getMembersInactive
+      summary: "Members inactive beyond 30 days"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /members/import:
+    post:
+      tags: [Members]
+      operationId: postMembersImport
+      summary: "Bulk import rows; returns created/skipped/failed per row"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /members/{id}:
+    get:
+      tags: [Members]
+      operationId: getMembersId
+      summary: "Member detail"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /members/{id}/role:
+    patch:
+      tags: [Members]
+      operationId: patchMembersIdRole
+      summary: "Change role (audited, not your own)"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /members/{id}/community:
+    patch:
+      tags: [Members]
+      operationId: patchMembersIdCommunity
+      summary: "Move to another specific community of the same institution"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommunityIdBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /members/{id}/suspend:
+    post:
+      tags: [Members]
+      operationId: postMembersIdSuspend
+      summary: "Suspend (reason \u22655 chars); revokes sessions, records a sanction"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /members/{id}/remind:
+    post:
+      tags: [Members]
+      operationId: postMembersIdRemind
+      summary: "Send a check-in reminder"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /institutions:
+    get:
+      tags: [Institutions]
+      operationId: getInstitutions
+      summary: "List institutions with counts"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Institutions]
+      operationId: postInstitutions
+      summary: "Create institution (auto-creates its General community)"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InstitutionBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /institutions/{id}:
+    patch:
+      tags: [Institutions]
+      operationId: patchInstitutionsId
+      summary: "Update institution"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InstitutionBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /communities:
+    get:
+      tags: [Communities]
+      operationId: getCommunities
+      summary: "List communities (super-mentors see only their own)"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Communities]
+      operationId: postCommunities
+      summary: "Create community; superMentorId assigns the leader"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommunityBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /communities/{id}:
+    get:
+      tags: [Communities]
+      operationId: getCommunitiesId
+      summary: "Community detail"
+      description: "Roles: staff (scoped)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Communities]
+      operationId: patchCommunitiesId
+      summary: "Update community (super-mentors: details/meeting only)"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (own)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommunityBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /join-requests:
+    get:
+      tags: [Join requests]
+      operationId: getJoinrequests
+      summary: "List requests with conflict info and pending count"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped), CONTENT_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /join-requests/bulk-approve:
+    post:
+      tags: [Join requests]
+      operationId: postJoinrequestsBulkapprove
+      summary: "Approve many; conflicts are skipped with a reason"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IdsBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BulkResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /join-requests/{id}/approve:
+    post:
+      tags: [Join requests]
+      operationId: postJoinrequestsIdApprove
+      summary: "Approve (409 community_limit_reached if already in another specific community)"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /join-requests/{id}/decline:
+    post:
+      tags: [Join requests]
+      operationId: postJoinrequestsIdDecline
+      summary: "Decline with optional reason"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OptReasonBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /roles/staff:
+    post:
+      tags: [Roles]
+      operationId: postRolesStaff
+      summary: "Create a staff account (super-mentor needs communityId)"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StaffBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /content:
+    get:
+      tags: [Content]
+      operationId: getContent
+      summary: "Library list. With ?status= returns a bare array of picker options"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR (published only)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Content]
+      operationId: postContent
+      summary: "Create draft (submitForReview:true to submit)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContentBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /content/{id}:
+    get:
+      tags: [Content]
+      operationId: getContentId
+      summary: "Content detail with approval trail"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Content]
+      operationId: patchContentId
+      summary: "Edit a draft"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContentBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /content/{id}/transition:
+    post:
+      tags: [Content]
+      operationId: postContentIdTransition
+      summary: "Workflow: SUBMIT_FOR_REVIEW, APPROVE_AND_PUBLISH, REQUEST_CHANGES, ARCHIVE, RESTORE_TO_DRAFT. Authors cannot validate their own content (except SYSTEM_ADMIN)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransitionBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /bible-links:
+    get:
+      tags: [Content]
+      operationId: getBiblelinks
+      summary: "Bible character/text options (?q=)"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /pathways:
+    get:
+      tags: [Pathways]
+      operationId: getPathways
+      summary: "List pathways"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Pathways]
+      operationId: postPathways
+      summary: "Create pathway; publishing requires every step's content to be PUBLISHED"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PathwayBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /pathways/{id}:
+    get:
+      tags: [Pathways]
+      operationId: getPathwaysId
+      summary: "Pathway detail"
+      description: "Roles: staff"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Pathways]
+      operationId: patchPathwaysId
+      summary: "Update pathway"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PathwayBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Pathways]
+      operationId: putPathwaysId
+      summary: "Update pathway (alias of PATCH)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PathwayBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Pathways]
+      operationId: deletePathwaysId
+      summary: "Delete (409 if learners are enrolled)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: No content }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /badges:
+    get:
+      tags: [Badges]
+      operationId: getBadges
+      summary: "List badges"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Badges]
+      operationId: postBadges
+      summary: "Create badge"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BadgeBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /badges/{id}:
+    put:
+      tags: [Badges]
+      operationId: putBadgesId
+      summary: "Update badge"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BadgeBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Badges]
+      operationId: deleteBadgesId
+      summary: "Delete (409 if a pathway awards it)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: No content }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /announcements:
+    get:
+      tags: [Announcements]
+      operationId: getAnnouncements
+      summary: "List announcements"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Announcements]
+      operationId: postAnnouncements
+      summary: "Publish now or schedule (future date required)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnnouncementBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /announcements/{id}:
+    patch:
+      tags: [Announcements]
+      operationId: patchAnnouncementsId
+      summary: "Edit a draft/scheduled announcement"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /stories:
+    get:
+      tags: [Stories]
+      operationId: getStories
+      summary: "Landing-page stories in display order"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Stories]
+      operationId: postStories
+      summary: "Add story (consentObtained must be true)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StoryBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /stories/{id}:
+    patch:
+      tags: [Stories]
+      operationId: patchStoriesId
+      summary: "Toggle visibility"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /stories/reorder:
+    put:
+      tags: [Stories]
+      operationId: putStoriesReorder
+      summary: "Set display order"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReorderBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /notifications/rules:
+    get:
+      tags: [Notifications]
+      operationId: getNotificationsRules
+      summary: "List notification rules and templates"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /notifications/rules/{id}:
+    patch:
+      tags: [Notifications]
+      operationId: patchNotificationsRulesId
+      summary: "Edit template / channels / enabled (\u22651 channel required)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /settings/inactivity-threshold:
+    get:
+      tags: [Settings]
+      operationId: getSettingsInactivitythreshold
+      summary: "Days before a member counts as inactive"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Settings]
+      operationId: putSettingsInactivitythreshold
+      summary: "Set the threshold (1\u2013365)"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /settings/{section}:
+    get:
+      tags: [Settings]
+      operationId: getSettingsSection
+      summary: "section = charter | consents | minors | retention"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: section, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Settings]
+      operationId: patchSettingsSection
+      summary: "Update a section (audited)"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: section, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /moderation/reports:
+    get:
+      tags: [Moderation]
+      operationId: getModerationReports
+      summary: "Open/in-review reports in the caller's scope"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /moderation/reports/{id}/action:
+    post:
+      tags: [Moderation]
+      operationId: postModerationReportsIdAction
+      summary: "DISMISS, WARN, HIDE, ESCALATE (any); SUSPEND, DELETE (system admin only). Notes required"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActionBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /moderation/testimonies:
+    get:
+      tags: [Moderation]
+      operationId: getModerationTestimonies
+      summary: "Testimonies awaiting review"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /moderation/testimonies/{id}/review:
+    post:
+      tags: [Moderation]
+      operationId: postModerationTestimoniesIdReview
+      summary: "APPROVE, REQUEST_CHANGES, REJECT (notes required unless approving)"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestimonyReviewBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /moderation/posts:
+    get:
+      tags: [Moderation]
+      operationId: getModerationPosts
+      summary: "Reported or hidden posts, prayer requests and comments"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /moderation/posts/{id}/action:
+    post:
+      tags: [Moderation]
+      operationId: postModerationPostsIdAction
+      summary: "KEEP, HIDE, WARN_AUTHOR, ESCALATE"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActionBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /moderation/sanctions:
+    get:
+      tags: [Moderation]
+      operationId: getModerationSanctions
+      summary: "Warnings and suspensions"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /moderation/sanctions/{id}/reinstate:
+    post:
+      tags: [Moderation]
+      operationId: postModerationSanctionsIdReinstate
+      summary: "Lift a sanction"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /privacy/guardian-consents:
+    get:
+      tags: [Privacy]
+      operationId: getPrivacyGuardianconsents
+      summary: "Guardian consent records for minors"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /privacy/guardian-consents/{id}/remind:
+    post:
+      tags: [Privacy]
+      operationId: postPrivacyGuardianconsentsIdRemind
+      summary: "Remind guardian"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /privacy/data-requests:
+    get:
+      tags: [Privacy]
+      operationId: getPrivacyDatarequests
+      summary: "Export / deletion requests with deadlines"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /privacy/data-requests/{id}/process:
+    post:
+      tags: [Privacy]
+      operationId: postPrivacyDatarequestsIdProcess
+      summary: "Complete a request. DELETION anonymises the account irreversibly"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /audit-log:
+    get:
+      tags: [Audit]
+      operationId: getAuditlog
+      summary: "Audit entries (q, action, role, period=7d|30d|90d)"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /audit-log/export:
+    post:
+      tags: [Audit]
+      operationId: postAuditlogExport
+      summary: "Record an export"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /reports:
+    get:
+      tags: [Reports]
+      operationId: getReports
+      summary: "Analytics (range, campus, community)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR (scoped)"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /reports/export:
+    post:
+      tags: [Reports]
+      operationId: postReportsExport
+      summary: "Export as csv or json (pdf/xlsx \u2192 501)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /reports/schedules:
+    get:
+      tags: [Reports]
+      operationId: getReportsSchedules
+      summary: "Scheduled reports"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Reports]
+      operationId: postReportsSchedules
+      summary: "Schedule a report"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleBody' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /reports/schedules/{id}:
+    delete:
+      tags: [Reports]
+      operationId: deleteReportsSchedulesId
+      summary: "Remove a schedule"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: No content }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /my-community:
+    get:
+      tags: [My community]
+      operationId: getMycommunity
+      summary: "Super-mentor home: KPIs, requests, members, reports, resources"
+      description: "Roles: SUPER_MENTOR"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /my-community/join-requests/{id}/approve:
+    post:
+      tags: [My community]
+      operationId: postMycommunityJoinrequestsIdApprove
+      summary: "Approve a request for your community"
+      description: "Roles: SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /my-community/join-requests/{id}/decline:
+    post:
+      tags: [My community]
+      operationId: postMycommunityJoinrequestsIdDecline
+      summary: "Decline a request"
+      description: "Roles: SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OptReasonBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /my-community/meeting:
+    patch:
+      tags: [My community]
+      operationId: patchMycommunityMeeting
+      summary: "Set next meeting {day,time,place}"
+      description: "Roles: SUPER_MENTOR"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /my-community/members/{id}/remind:
+    post:
+      tags: [My community]
+      operationId: postMycommunityMembersIdRemind
+      summary: "Remind an inactive member"
+      description: "Roles: SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /my-community/announcements:
+    post:
+      tags: [My community]
+      operationId: postMycommunityAnnouncements
+      summary: "Write to the group"
+      description: "Roles: SUPER_MENTOR"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /my-community/moderation/{id}:
+    post:
+      tags: [My community]
+      operationId: postMycommunityModerationId
+      summary: "First-level decision: dismiss | escalate"
+      description: "Roles: SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /account/profile:
+    patch:
+      tags: [Account]
+      operationId: patchAccountProfile
+      summary: "Update own name/avatar"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /account/password:
+    post:
+      tags: [Account]
+      operationId: postAccountPassword
+      summary: "Change password (revokes refresh tokens)"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /account/sessions:
+    get:
+      tags: [Account]
+      operationId: getAccountSessions
+      summary: "Own active sessions"
+      description: "Roles: staff"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Object' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /account/sessions/{id}:
+    delete:
+      tags: [Account]
+      operationId: deleteAccountSessionsId
+      summary: "Revoke a session"
+      description: "Roles: staff"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: fcu_access }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  responses:
+    Problem:
+      description: RFC 7807 problem
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, examples: [validation_failed, forbidden, not_found, ACCOUNT_SUSPENDED] }
+        detail: { type: string }
+        errors: { type: array, items: { type: object, properties: { field: { type: string }, message: { type: string } } } }
+    Ok: { type: object, properties: { ok: { type: boolean } } }
+    Object: { type: object, additionalProperties: true }
+    List: { type: object, properties: { items: { type: array, items: { type: object, additionalProperties: true } }, total: { type: integer }, counts: { type: object, additionalProperties: { type: integer } } } }
+    Role: { type: string, enum: [STUDENT, MENTOR, SUPER_MENTOR, ALUMNI, CONTENT_ADMIN, SYSTEM_ADMIN] }
+    SessionUser:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        fullName: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        status: { type: string, enum: [INVITED, ACTIVE, INACTIVE, SUSPENDED] }
+        communityId: { type: [string, 'null'] }
+        communityIds: { type: array, items: { type: string } }
+        communityName: { type: [string, 'null'] }
+    SessionResponse: { type: object, properties: { user: { $ref: '#/components/schemas/SessionUser' } } }
+    LoginBody: { type: object, required: [email, password], properties: { email: { type: string }, password: { type: string }, rememberMe: { type: boolean } } }
+    EmailBody: { type: object, required: [email], properties: { email: { type: string, format: email } } }
+    ResetBody: { type: object, required: [token, password], properties: { token: { type: string }, password: { type: string, description: '≥8 chars, letter + number' } } }
+    Member:
+      type: object
+      properties:
+        id: { type: string }
+        fullName: { type: string }
+        username: { type: string }
+        email: { type: string }
+        phone: { type: [string, 'null'] }
+        birthdate: { type: [string, 'null'] }
+        isMinor: { type: boolean }
+        guardianConsentStatus: { type: [string, 'null'], enum: [PENDING, RECEIVED, null] }
+        role: { $ref: '#/components/schemas/Role' }
+        status: { type: string, enum: [INVITED, ACTIVE, INACTIVE, SUSPENDED] }
+        institutionId: { type: string }
+        institutionName: { type: string }
+        communityId: { type: [string, 'null'] }
+        communityName: { type: [string, 'null'] }
+        lastActiveAt: { type: string, format: date-time }
+        participation: { type: object, properties: { resourcesCompleted: { type: integer }, meetingsAttended: { type: integer }, badgesEarned: { type: integer } } }
+    MemberList: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/Member' } }, total: { type: integer } } }
+    AddMember:
+      type: object
+      required: [fullName, email, institutionId]
+      properties:
+        fullName: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        birthdate: { type: string, format: date }
+        role: { $ref: '#/components/schemas/Role' }
+        institutionId: { type: string }
+        communityId: { type: string }
+        guardianConsentReceived: { type: boolean }
+        sendInvitation: { type: boolean }
+    ImportBody: { type: object, required: [rows], properties: { rows: { type: array, maxItems: 2000, items: { $ref: '#/components/schemas/AddMember' } } } }
+    ImportResult: { type: object, properties: { createdCount: { type: integer }, skippedCount: { type: integer }, failedRows: { type: array, items: { type: object, properties: { rowNumber: { type: integer }, error: { type: string } } } } } }
+    RoleBody: { type: object, required: [role], properties: { role: { $ref: '#/components/schemas/Role' } } }
+    CommunityIdBody: { type: object, required: [communityId], properties: { communityId: { type: string } } }
+    ReasonBody: { type: object, required: [reason], properties: { reason: { type: string, minLength: 3 } } }
+    OptReasonBody: { type: object, properties: { reason: { type: string } } }
+    IdsBody: { type: object, required: [ids], properties: { ids: { type: array, items: { type: string } } } }
+    BulkResult: { type: object, properties: { approved: { type: array, items: { type: string } }, skipped: { type: array, items: { type: object, properties: { id: { type: string }, reason: { type: string } } } } } }
+    InstitutionBody: { type: object, required: [name, type, city], properties: { name: { type: string }, type: { type: string, enum: [UNIVERSITY, HIGH_SCHOOL] }, country: { type: string, enum: [Uganda, Kenya, Rwanda] }, city: { type: string }, generalCoverUrl: { type: string }, shownInSignup: { type: boolean } } }
+    CommunityBody:
+      type: object
+      required: [institutionId, name]
+      properties:
+        institutionId: { type: string }
+        kind: { type: string, enum: [GENERAL, SPECIFIC] }
+        name: { type: string }
+        description: { type: string }
+        coverPhotoUrl: { type: string }
+        meetingDay: { type: string, examples: [Tuesday] }
+        meetingTime: { type: string, examples: ['17:00'] }
+        meetingPlace: { type: string }
+        superMentorId: { type: string }
+        mentorIds: { type: array, items: { type: string } }
+        openForJoinRequests: { type: boolean }
+        status: { type: string, enum: [ACTIVE, CLOSED] }
+    StaffBody: { type: object, required: [fullName, email, role], properties: { fullName: { type: string }, email: { type: string }, role: { type: string, enum: [SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR] }, communityId: { type: string }, sendInviteEmail: { type: boolean } } }
+    ContentBody:
+      type: object
+      required: [title, type, bibleLink]
+      properties:
+        title: { type: string }
+        type: { type: string, enum: [VIDEO, DEVOTIONAL, QUIZ, DOCUMENT] }
+        bibleLink: { type: string, description: id from /bible-links }
+        language: { type: string }
+        tags: { type: array, items: { type: string } }
+        description: { type: string }
+        validatorName: { type: string }
+        pathwayIds: { type: array, items: { type: string } }
+        body: { type: string }
+        videoUrl: { type: string }
+        thumbnailUrl: { type: string }
+        documentUrl: { type: string }
+        submitForReview: { type: boolean }
+    TransitionBody: { type: object, required: [action], properties: { action: { type: string, enum: [SUBMIT_FOR_REVIEW, APPROVE_AND_PUBLISH, REQUEST_CHANGES, ARCHIVE, RESTORE_TO_DRAFT] }, notes: { type: string } } }
+    PathwayBody:
+      type: object
+      required: [name, theme, steps]
+      properties:
+        name: { type: string }
+        theme: { type: string }
+        level: { type: string, enum: [Beginner, Intermediate, Advanced] }
+        description: { type: string }
+        unlockRule: { type: string, enum: [none, previous_pathway, profile_complete, mentor_assigned] }
+        badgeAwardedId: { type: [string, 'null'] }
+        published: { type: boolean }
+        steps: { type: array, minItems: 1, items: { type: object, required: [contentId, title, contentType], properties: { id: { type: string }, contentId: { type: string }, title: { type: string }, contentType: { type: string, enum: [video, devotional, document, quiz] }, required: { type: boolean } } } }
+    BadgeBody: { type: object, required: [name, description, ruleType, ruleTargetCount], properties: { name: { type: string }, description: { type: string }, ruleType: { type: string, enum: [join_community, finish_quizzes, pray_requests, complete_pathway, attend_meetings_streak] }, ruleTargetCount: { type: integer, minimum: 1, maximum: 1000 }, icon: { type: string }, visibleOnProfile: { type: boolean }, status: { type: string, enum: [active, draft, archived] } } }
+    AnnouncementBody: { type: object, required: [title, message, audienceType], properties: { title: { type: string }, message: { type: string }, audienceType: { type: string, enum: [all, community] }, communityId: { type: string }, imageUrl: { type: string }, publishTiming: { type: string, enum: [now, scheduled] }, scheduledFor: { type: string, format: date-time } } }
+    StoryBody: { type: object, required: [studentName, institution, videoUrl, duration, consentObtained], properties: { studentName: { type: string }, institution: { type: string }, videoUrl: { type: string }, duration: { type: string, examples: ['1:45'] }, consentObtained: { type: boolean, const: true } } }
+    ReorderBody: { type: object, required: [stories], properties: { stories: { type: array, items: { type: object, properties: { id: { type: string }, order: { type: integer } } } } } }
+    ActionBody: { type: object, required: [action, notes], properties: { action: { type: string, description: 'Reports: DISMISS|WARN|HIDE|ESCALATE|SUSPEND|DELETE. Posts: KEEP|HIDE|WARN_AUTHOR|ESCALATE' }, notes: { type: string, minLength: 3 } } }
+    TestimonyReviewBody: { type: object, required: [action], properties: { action: { type: string, enum: [APPROVE, REQUEST_CHANGES, REJECT] }, notes: { type: string } } }
+    ScheduleBody: { type: object, required: [reportType, cadence, recipientEmail], properties: { reportType: { type: string, enum: [discipleship_summary, community_health, content_completions] }, cadence: { type: string, enum: [weekly, monthly, quarterly] }, recipientEmail: { type: string, format: email } } }
+

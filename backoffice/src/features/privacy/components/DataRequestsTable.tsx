@@ -17,13 +17,15 @@ import {
 import { RequestStatus } from "@/types/enums";
 import { DeadlineBadge } from "./DeadlineBadge";
 import { ProcessRequestDialog } from "./ProcessRequestDialog";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchDataRequests } from "@/features/privacy/queries";
 
 interface DataRequestsTableProps {
   initialItems: DataRequestRecord[];
 }
 
 export function DataRequestsTable({ initialItems }: DataRequestsTableProps) {
-  const [items, setItems] = useState<DataRequestRecord[]>(initialItems);
+  const [items, setItems] = useRemoteItems<DataRequestRecord>(initialItems, fetchDataRequests);
   const [target, setTarget] = useState<DataRequestRecord | null>(null);
 
   async function handleProcess(id: string) {

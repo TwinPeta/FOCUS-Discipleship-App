@@ -13,13 +13,15 @@ import { useState } from "react";
 import { InstitutionType, type Institution, type InstitutionInput } from "@/features/institutions/schemas";
 import { updateInstitution } from "@/features/institutions/queries";
 import { InstitutionForm } from "./InstitutionForm";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchInstitutions } from "@/features/institutions/queries";
 
 interface InstitutionTableProps {
   initialItems: Institution[];
 }
 
 export function InstitutionTable({ initialItems }: InstitutionTableProps) {
-  const [items, setItems] = useState<Institution[]>(initialItems);
+  const [items, setItems] = useRemoteItems<Institution>(initialItems, fetchInstitutions);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [search, setSearch] = useState("");
 

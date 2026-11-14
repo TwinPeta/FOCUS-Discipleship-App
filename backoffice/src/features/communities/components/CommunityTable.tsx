@@ -14,12 +14,15 @@ import Link from "next/link";
 import { CommunityStatus, type Community } from "@/features/communities/schemas";
 import { ROUTES } from "@/lib/constants/routes";
 import { CommunityKind } from "@/types/enums";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchCommunities } from "@/features/communities/queries";
 
 interface CommunityTableProps {
   items: Community[];
 }
 
-export function CommunityTable({ items }: CommunityTableProps) {
+export function CommunityTable({ items: seedItems }: CommunityTableProps) {
+  const [items] = useRemoteItems<Community>(seedItems, fetchCommunities);
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<string>("ALL");
 

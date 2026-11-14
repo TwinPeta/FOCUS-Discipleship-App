@@ -16,12 +16,15 @@ import { ROUTES } from "@/lib/constants/routes";
 import { ContentStatus } from "@/types/enums";
 import { ContentFilters } from "./ContentFilters";
 import { WorkflowStatusBadge } from "./WorkflowStatusBadge";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchContentList } from "@/features/content/queries";
 
 interface ContentTableProps {
   initialItems: ContentItem[];
 }
 
-export function ContentTable({ initialItems }: ContentTableProps) {
+export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
+  const [initialItems] = useRemoteItems<ContentItem>(seedItems, fetchContentList);
   const [statusTab, setStatusTab] = useState<string>("ALL");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");

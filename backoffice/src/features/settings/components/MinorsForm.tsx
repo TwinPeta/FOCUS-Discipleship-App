@@ -9,10 +9,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { saveMinorsSettings } from "@/features/settings/queries";
+import { fetchSettings, saveMinorsSettings } from "@/features/settings/queries";
 import { minorsSchema, type MinorsSettings } from "@/features/settings/schemas";
 
 export function MinorsForm() {
@@ -22,6 +22,7 @@ export function MinorsForm() {
     register,
     watch,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<MinorsSettings>({
     resolver: zodResolver(minorsSchema),
@@ -34,6 +35,16 @@ export function MinorsForm() {
   });
 
   const threshold = watch("ageThreshold");
+
+  useEffect(() => {
+    let active = true;
+    fetchSettings<MinorsSettings>("minors").then((saved) => {
+      if (active && saved) reset(saved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [reset]);
 
   async function onSubmit(values: MinorsSettings) {
     setSaved(false);

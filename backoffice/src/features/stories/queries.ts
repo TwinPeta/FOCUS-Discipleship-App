@@ -1,3 +1,4 @@
+import { unwrapList } from "@/lib/api/unwrap";
 /**
  * src/features/stories/queries.ts
  *
@@ -67,7 +68,7 @@ export async function fetchLandingStories(): Promise<LandingStory[]> {
   try {
     const res = await fetch("/api/proxy/stories");
     if (res.ok) {
-      return (await res.json()) as LandingStory[];
+      return unwrapList<LandingStory>(await res.json());
     }
   } catch {
     // Dev mock fallback
@@ -83,7 +84,7 @@ export async function saveLandingStories(stories: LandingStory[]): Promise<Landi
       body: JSON.stringify({ stories }),
     });
     if (res.ok) {
-      return (await res.json()) as LandingStory[];
+      return unwrapList<LandingStory>(await res.json());
     }
   } catch {
     // Dev mock fallback

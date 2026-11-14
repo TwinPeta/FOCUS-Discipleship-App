@@ -26,6 +26,8 @@ import { JoinRequestStatus } from "@/types/enums";
 import { BulkApproveBar } from "./BulkApproveBar";
 import { ConflictBadge } from "./ConflictBadge";
 import { DeclineDialog } from "./DeclineDialog";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchJoinRequests } from "@/features/join-requests/queries";
 
 interface JoinRequestTableProps {
   initialItems: JoinRequestItem[];
@@ -35,7 +37,7 @@ export function JoinRequestTable({ initialItems }: JoinRequestTableProps) {
   const { user } = useSession();
   const hideCommunityFilter = shouldHideCrossCommunityControls(user);
 
-  const [items, setItems] = useState<JoinRequestItem[]>(initialItems);
+  const [items, setItems] = useRemoteItems<JoinRequestItem>(initialItems, fetchJoinRequests);
   const [activeTab, setActiveTab] = useState<JoinRequestStatus>(JoinRequestStatus.Pending);
   const [search, setSearch] = useState("");
   const [communityFilter, setCommunityFilter] = useState("ALL");

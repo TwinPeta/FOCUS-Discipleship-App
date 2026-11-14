@@ -16,13 +16,15 @@ import { MemberStatus, Role } from "@/types/enums";
 import { MemberDetailPanel } from "./MemberDetailPanel";
 import { MemberFilters } from "./MemberFilters";
 import { MinorBadge } from "./MinorBadge";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchMembers } from "@/features/members/queries";
 
 interface MemberTableProps {
   initialItems: Member[];
 }
 
 export function MemberTable({ initialItems }: MemberTableProps) {
-  const [items, setItems] = useState<Member[]>(initialItems);
+  const [items, setItems] = useRemoteItems<Member>(initialItems, fetchMembers);
   const [roleTab, setRoleTab] = useState<string>("ALL");
   const [search, setSearch] = useState("");
   const [institutionFilter, setInstitutionFilter] = useState("ALL");

@@ -9,10 +9,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { saveCharterSettings } from "@/features/settings/queries";
+import { fetchSettings, saveCharterSettings } from "@/features/settings/queries";
 import { charterSchema, type CharterSettings } from "@/features/settings/schemas";
 
 export function CharterForm() {
@@ -21,6 +21,7 @@ export function CharterForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<CharterSettings>({
     resolver: zodResolver(charterSchema),
@@ -32,6 +33,16 @@ export function CharterForm() {
       repromptOnChange: true,
     },
   });
+
+  useEffect(() => {
+    let active = true;
+    fetchSettings<CharterSettings>("charter").then((saved) => {
+      if (active && saved) reset(saved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [reset]);
 
   async function onSubmit(values: CharterSettings) {
     setSaved(false);

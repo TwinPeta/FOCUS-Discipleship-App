@@ -15,13 +15,15 @@ import type { ModerationReport, ReportAction } from "@/features/moderation/schem
 import { ReportStatus } from "@/types/enums";
 import { CommunityFilter } from "./CommunityFilter";
 import { ReportDetail } from "./ReportDetail";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchModerationReports } from "@/features/moderation/queries";
 
 interface ReportQueueProps {
   initialItems: ModerationReport[];
 }
 
 export function ReportQueue({ initialItems }: ReportQueueProps) {
-  const [items, setItems] = useState<ModerationReport[]>(initialItems);
+  const [items, setItems] = useRemoteItems<ModerationReport>(initialItems, fetchModerationReports);
   const [communityFilter, setCommunityFilter] = useState("ALL");
   const [selected, setSelected] = useState<ModerationReport | null>(null);
 

@@ -9,10 +9,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { saveConsentTextsSettings } from "@/features/settings/queries";
+import { fetchSettings, saveConsentTextsSettings } from "@/features/settings/queries";
 import {
   consentTextsSchema,
   type ConsentTextsSettings,
@@ -24,6 +24,7 @@ export function ConsentTextsForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<ConsentTextsSettings>({
     resolver: zodResolver(consentTextsSchema),
@@ -36,6 +37,16 @@ export function ConsentTextsForm() {
         "I consent to being contacted by verified campus mentors for pastoral follow-up.",
     },
   });
+
+  useEffect(() => {
+    let active = true;
+    fetchSettings<ConsentTextsSettings>("consents").then((saved) => {
+      if (active && saved) reset(saved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [reset]);
 
   async function onSubmit(values: ConsentTextsSettings) {
     setSaved(false);

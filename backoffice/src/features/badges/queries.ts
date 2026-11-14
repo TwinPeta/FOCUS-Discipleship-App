@@ -1,3 +1,4 @@
+import { unwrapList } from "@/lib/api/unwrap";
 /**
  * src/features/badges/queries.ts
  *
@@ -141,7 +142,7 @@ export async function fetchBadges(): Promise<Badge[]> {
   try {
     const res = await fetch("/api/proxy/badges");
     if (res.ok) {
-      return (await res.json()) as Badge[];
+      return unwrapList<Badge>(await res.json());
     }
   } catch {
     // Dev mock fallback

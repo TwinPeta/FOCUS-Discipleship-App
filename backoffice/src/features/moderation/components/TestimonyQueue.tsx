@@ -16,13 +16,15 @@ import type {
   TestimonyAction,
 } from "@/features/moderation/schemas";
 import { TestimonyReview } from "./TestimonyReview";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchTestimonies } from "@/features/moderation/queries";
 
 interface TestimonyQueueProps {
   initialItems: ModerationTestimony[];
 }
 
 export function TestimonyQueue({ initialItems }: TestimonyQueueProps) {
-  const [items, setItems] = useState<ModerationTestimony[]>(initialItems);
+  const [items, setItems] = useRemoteItems<ModerationTestimony>(initialItems, fetchTestimonies);
   const [selected, setSelected] = useState<ModerationTestimony | null>(null);
 
   async function handleReview(action: TestimonyAction, notes?: string) {

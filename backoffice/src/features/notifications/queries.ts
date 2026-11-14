@@ -1,3 +1,4 @@
+import { unwrapList } from "@/lib/api/unwrap";
 /**
  * src/features/notifications/queries.ts
  *
@@ -134,7 +135,7 @@ export async function fetchNotificationRules(): Promise<NotificationRule[]> {
   try {
     const res = await fetch("/api/proxy/notifications/rules");
     if (res.ok) {
-      return (await res.json()) as NotificationRule[];
+      return unwrapList<NotificationRule>(await res.json());
     }
   } catch {
     // Dev mock fallback

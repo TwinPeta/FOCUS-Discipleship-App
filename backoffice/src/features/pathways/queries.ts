@@ -8,6 +8,7 @@
  */
 
 import type { PathwayFormValues, PathwayStepInput } from "./schemas";
+import { unwrapList } from "@/lib/api/unwrap";
 
 export type PathwayLevel = "Beginner" | "Intermediate" | "Advanced";
 export type UnlockRuleType = "none" | "previous_pathway" | "profile_complete" | "mentor_assigned";
@@ -91,7 +92,7 @@ export async function fetchPathways(): Promise<Pathway[]> {
   try {
     const res = await fetch("/api/proxy/pathways");
     if (res.ok) {
-      return (await res.json()) as Pathway[];
+      return unwrapList<Pathway>(await res.json());
     }
   } catch {
     // Dev mock fallback

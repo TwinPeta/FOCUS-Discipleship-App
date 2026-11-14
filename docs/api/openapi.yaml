@@ -1,0 +1,1766 @@
+openapi: 3.1.0
+info:
+  title: FCU Student Community App – Mobile API
+  version: 0.1.0
+  description: |
+    REST API backing the FCU (Fellowship of Christian Unions) / FOCUS Uganda mobile app (iOS & Android).
+    Derived from the 22-screen mobile design and BRD v0.4 (FR-01..FR-12 MVP, plus the community,
+    pathway, testimony and activity features shown in the design).
+
+    **Conventions**
+    - Base path `/v1`, JSON over HTTPS, UTF-8. Timestamps are ISO-8601 UTC. IDs are opaque strings.
+    - Auth: `Authorization: Bearer <access_token>` (JWT, 15 min) + rotating refresh token.
+    - Pagination: cursor-based. `?limit=` (default 20, max 100) and `?cursor=`; responses carry `next_cursor` (null at end).
+    - Errors: RFC 7807 `application/problem+json` (see `Problem`).
+    - Idempotency: send `Idempotency-Key` on POSTs that create content (posts, messages, reports).
+    - Offline/low-bandwidth (BRD FR-06): list endpoints support `If-None-Match`/ETag; resources expose `offline_available` and `download_url`.
+    - Moderation states: user content (posts, testimonies, prayer requests) carries `status`. Testimonies are always `pending_review` on creation (BRD 8.1).
+    - Open questions flagged `x-open-question` are assumptions to confirm with FOCUS Uganda.
+servers:
+  - url: https://api.fcu.example/v1
+    description: Production (placeholder)
+  - url: https://staging-api.fcu.example/v1
+    description: Staging (placeholder)
+  - url: http://localhost:4000/v1
+    description: Local development
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Registration, login, OTP, tokens (Landing, Join form)
+  - name: Lookups
+    description: Reference data for the Join form
+  - name: Profile
+    description: My profile, activity and badges
+  - name: Communities
+    description: Communities hub, detail, info & members, join requests
+  - name: Feed
+    description: Posts, likes, comments (Community feed, New post)
+  - name: Prayer
+    description: Prayer wall
+  - name: Testimonies
+    description: Testimonies and Share your story
+  - name: Pathways
+    description: Discipleship pathways
+  - name: Resources
+    description: Videos, devotionals, quizzes, documents
+  - name: Messages
+    description: Direct conversations (Messages, Conversation)
+  - name: Safety
+    description: Report a user, block
+  - name: Media
+    description: Uploads
+  - name: Devices
+    description: Push notifications
+  - name: Landing
+    description: Public marketing content (no auth)
+  - name: Mentor tools
+    description: Super-mentor / mentor actions
+  - name: System
+    description: Service health
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Liveness check
+      security: []
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+  # ───────────────────────── Landing ─────────────────────────
+  /public/landing:
+    get:
+      tags: [Landing]
+      operationId: getLanding
+      summary: Landing screen content
+      description: Student stories (video) shown under "Hear it from students". Screen *FCU landing*.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stories:
+                    type: array
+                    items: { $ref: '#/components/schemas/PublicStory' }
+  # ───────────────────────── Auth ─────────────────────────
+  /auth/username-available:
+    get:
+      tags: [Auth]
+      operationId: checkUsername
+      summary: Check username availability
+      description: Live validation for the `@username` field on the Join form.
+      security: []
+      parameters:
+        - { name: username, in: query, required: true, schema: { type: string, pattern: '^[a-z0-9_.]{3,30}$' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { available: { type: boolean } }
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Create account (Join form, step 1 of 3)
+      description: |
+        Creates the profile and the user is **automatically added to the General community** of their
+        university (landing step 2). Step 3 (choosing one specific community) is a separate call
+        (`POST /communities/{id}/join-requests`).
+
+        Minors (age < 18 from `birthdate`) must supply `guardian` details; the account is created with
+        `minor_status: pending_guardian_consent` and restricted (no direct messaging with unverified adults)
+        until the guardian confirms (BRD §7, FR-10). Phone or email must be provided; at least one is verified by OTP.
+        Photo is uploaded first via `POST /media` and referenced by `photo_media_id`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Password login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string, description: Email, phone (E.164) or username }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/otp/request:
+    post:
+      tags: [Auth]
+      operationId: requestOtp
+      summary: Send a one-time SMS/email code
+      description: Used for phone login (FR-16) and for verifying contact details after registration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel, destination, purpose]
+              properties:
+                channel: { type: string, enum: [sms, email] }
+                destination: { type: string, example: '+256700000000' }
+                purpose: { type: string, enum: [login, verify_contact, password_reset] }
+      responses:
+        '202': { description: Code sent (always 202 to avoid account enumeration) }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyOtp
+      summary: Verify a code
+      description: For `purpose=login` returns a session; otherwise returns 204.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, code, purpose]
+              properties:
+                destination: { type: string }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+                purpose: { type: string, enum: [login, verify_contact, password_reset] }
+      responses:
+        '200':
+          description: Session (login only)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '204': { description: Verified }
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshToken
+      summary: Rotate tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties: { refresh_token: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { refresh_token: { type: string } }
+      responses:
+        '204': { description: Logged out }
+  # ───────────────────────── Lookups ─────────────────────────
+  /lookups/countries:
+    get:
+      tags: [Lookups]
+      operationId: listCountries
+      summary: Countries (Uganda, Kenya, Rwanda)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: { type: string, example: UG }
+                        name: { type: string, example: Uganda }
+                        dial_code: { type: string, example: '+256' }
+  /lookups/institutions:
+    get:
+      tags: [Lookups]
+      operationId: listInstitutions
+      summary: Universities / high schools ("Select your university")
+      security: []
+      parameters:
+        - { name: type, in: query, schema: { type: string, enum: [university, high_school] } }
+        - { name: country, in: query, schema: { type: string, example: UG } }
+        - { name: q, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Institution' }
+  # ───────────────────────── Profile ─────────────────────────
+  /me:
+    get:
+      tags: [Profile]
+      operationId: getMe
+      summary: My profile
+      description: Screen *My profile*. Email/phone are only ever returned to the owner.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyProfile' }
+    patch:
+      tags: [Profile]
+      operationId: updateMe
+      summary: Update profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string }
+                photo_media_id: { type: [string, 'null'] }
+                country: { type: string }
+                phone: { type: string }
+                email: { type: string, format: email }
+                institution_id: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyProfile' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Profile]
+      operationId: deleteMyAccount
+      summary: Request account deletion
+      description: Right to delete (BRD §7). Starts a retention-policy grace period; returns 202.
+      responses:
+        '202': { description: Deletion scheduled }
+  /me/export:
+    post:
+      tags: [Profile]
+      operationId: requestDataExport
+      summary: Request an export of my personal data
+      responses:
+        '202': { description: Export queued; a download link is sent by email/notification }
+  /me/communities:
+    get:
+      tags: [Profile, Communities]
+      operationId: getMyCommunities
+      summary: My communities (General + at most one Specific)
+      description: Used by *Communities hub*, *Communities hub, request pending* and *My profile*.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  general: { $ref: '#/components/schemas/MyMembership' }
+                  specific:
+                    description: Null until a join request is made. `membership_status` shows `pending` while awaiting the super-mentor.
+                    oneOf:
+                      - $ref: '#/components/schemas/MyMembership'
+                      - type: 'null'
+  /me/activity:
+    get:
+      tags: [Profile]
+      operationId: getMyActivity
+      summary: My activity & badges (private)
+      description: Screen *My activity*. Visible only to the user (BRD FR-18).
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  badges:
+                    type: array
+                    items: { $ref: '#/components/schemas/Badge' }
+                  recent:
+                    allOf:
+                      - $ref: '#/components/schemas/Page'
+                      - type: object
+                        properties:
+                          items:
+                            type: array
+                            items: { $ref: '#/components/schemas/ActivityEvent' }
+  /me/join-requests:
+    get:
+      tags: [Communities]
+      operationId: listMyJoinRequests
+      summary: My join requests
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/JoinRequest' }
+  # ───────────────────────── Communities ─────────────────────────
+  /communities:
+    get:
+      tags: [Communities]
+      operationId: listCommunities
+      summary: Browse / search communities
+      description: |
+        Communities hub → "Find a specific community". Defaults to the caller's institution.
+        While the caller has a pending request, entries other than theirs have `can_request: false` ("locked").
+      parameters:
+        - { name: type, in: query, schema: { type: string, enum: [general, specific] } }
+        - { name: institution_id, in: query, schema: { type: string } }
+        - { name: q, in: query, description: 'Matches name, meeting day or place', schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/CommunitySummary' }
+  /communities/{communityId}:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Communities]
+      operationId: getCommunity
+      summary: Community detail / info
+      description: Screens *Community detail* and *Community info and members* (header + About + meeting + leadership + online count).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Community' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /communities/{communityId}/members:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Communities]
+      operationId: listCommunityMembers
+      summary: Members list
+      description: Leaders (super-mentor, mentor) are sorted first. Members only; requires membership.
+      parameters:
+        - { name: role, in: query, schema: { $ref: '#/components/schemas/CommunityRole' } }
+        - { name: online, in: query, schema: { type: boolean } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Member' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /communities/{communityId}/join-requests:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    post:
+      tags: [Communities]
+      operationId: requestToJoin
+      summary: Request to join a specific community
+      description: |
+        Goes to the super-mentor for approval; the user is notified of the decision.
+        Rule: a user may belong to **only one** specific community — returns `409 community_limit_reached`
+        if they already have a pending or approved one.
+      responses:
+        '201':
+          description: Request created (status `pending`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Mentor tools]
+      operationId: listCommunityJoinRequests
+      summary: Pending requests for my community (super-mentor only)
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, approved, rejected] } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/JoinRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /join-requests/{requestId}:
+    parameters:
+      - { name: requestId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Communities]
+      operationId: cancelJoinRequest
+      summary: Cancel my pending request
+      responses:
+        '204': { description: Cancelled; other communities unlock }
+  /join-requests/{requestId}/decision:
+    parameters:
+      - { name: requestId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Mentor tools]
+      operationId: decideJoinRequest
+      summary: Approve or reject a join request (super-mentor)
+      description: Sends an in-app/push notification to the student.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approve, reject] }
+                note: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  # ───────────────────────── Feed ─────────────────────────
+  /communities/{communityId}/posts:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Feed]
+      operationId: listPosts
+      summary: Community feed
+      description: Screens *Community feed* and *General community feed*. Pinned announcements first, then newest.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Post' }
+    post:
+      tags: [Feed]
+      operationId: createPost
+      summary: Create a post (New post screen)
+      description: Text plus optional photos (uploaded first via `/media`). Members of General and Specific communities may post.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 5000 }
+                media_ids:
+                  type: array
+                  maxItems: 4
+                  items: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /posts/{postId}:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    get:
+      tags: [Feed]
+      operationId: getPost
+      summary: Get a post
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+    patch:
+      tags: [Feed]
+      operationId: updatePost
+      summary: Edit my post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { text: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+    delete:
+      tags: [Feed]
+      operationId: deletePost
+      summary: Delete my post (or hide, for community leaders)
+      responses:
+        '204': { description: Deleted }
+  /posts/{postId}/like:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    put:
+      tags: [Feed]
+      operationId: likePost
+      summary: Like
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReactionState' }
+    delete:
+      tags: [Feed]
+      operationId: unlikePost
+      summary: Remove like
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReactionState' }
+  /posts/{postId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    get:
+      tags: [Feed]
+      operationId: listComments
+      summary: Comments on a post
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Comment' }
+    post:
+      tags: [Feed]
+      operationId: createComment
+      summary: Comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties: { text: { type: string, maxLength: 2000 } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+  # ───────────────────────── Prayer ─────────────────────────
+  /communities/{communityId}/prayer-requests:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Prayer]
+      operationId: listPrayerRequests
+      summary: Prayer wall
+      description: "Anonymous requests have `author: null`; the author identity is never exposed to clients (only to moderators)."
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/PrayerRequest' }
+    post:
+      tags: [Prayer]
+      operationId: createPrayerRequest
+      summary: Share a request (New prayer request)
+      description: Visible only to members of the specified community.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 2000 }
+                anonymous: { type: boolean, default: false }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PrayerRequest' }
+  /prayer-requests/{prayerRequestId}/prayed:
+    parameters:
+      - { name: prayerRequestId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Prayer]
+      operationId: markPrayed
+      summary: Mark "I prayed" (idempotent)
+      description: Increments `prayed_count` once per user and logs a "Prayed for a request" activity event.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prayed_count: { type: integer }
+                  prayed_by_me: { type: boolean }
+    delete:
+      tags: [Prayer]
+      operationId: unmarkPrayed
+      summary: Undo "I prayed"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prayed_count: { type: integer }
+                  prayed_by_me: { type: boolean }
+  /prayer-requests/{prayerRequestId}/responses:
+    parameters:
+      - { name: prayerRequestId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Prayer]
+      operationId: listPrayerResponses
+      summary: Responses to a prayer request
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Comment' }
+    post:
+      tags: [Prayer]
+      operationId: respondToPrayerRequest
+      summary: Respond
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties: { text: { type: string, maxLength: 2000 } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+  # ───────────────────────── Testimonies ─────────────────────────
+  /communities/{communityId}/testimonies:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Testimonies]
+      operationId: listTestimonies
+      summary: Testimonies list
+      description: Returns published testimonies plus the caller's own pending ones (drives the banner "Your story is awaiting review by the moderators").
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      has_my_pending: { type: boolean }
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Testimony' }
+    post:
+      tags: [Testimonies]
+      operationId: submitTestimony
+      summary: Share your story
+      description: Always created as `pending_review`; moderators approve before publication. `consent` must be `true`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, body, consent]
+              properties:
+                title: { type: string, maxLength: 120 }
+                body: { type: string, maxLength: 10000 }
+                media_ids:
+                  type: array
+                  description: Photo and/or video (upload via /media)
+                  items: { type: string }
+                consent: { type: boolean, description: '"I agree to share my story with my community."' }
+      responses:
+        '201':
+          description: Submitted for review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Testimony' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /testimonies/{testimonyId}:
+    parameters:
+      - { name: testimonyId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Testimonies]
+      operationId: getTestimony
+      summary: Read story
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Testimony' }
+  # ───────────────────────── Pathways ─────────────────────────
+  /pathways:
+    get:
+      tags: [Pathways]
+      operationId: listPathways
+      summary: All pathways + my current one
+      description: Later pathways are `locked` until prerequisites complete ("Unlocks after the first pathway").
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current:
+                    oneOf:
+                      - $ref: '#/components/schemas/PathwaySummary'
+                      - type: 'null'
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/PathwaySummary' }
+  /pathways/{pathwayId}:
+    parameters:
+      - { name: pathwayId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Pathways]
+      operationId: getPathway
+      summary: Pathway detail with ordered steps
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PathwayDetail' }
+  /pathways/{pathwayId}/enrollment:
+    parameters:
+      - { name: pathwayId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Pathways]
+      operationId: startPathway
+      summary: Start a pathway
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PathwaySummary' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /pathways/{pathwayId}/steps/{stepId}/complete:
+    parameters:
+      - { name: pathwayId, in: path, required: true, schema: { type: string } }
+      - { name: stepId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Pathways]
+      operationId: completeStep
+      summary: Mark a video/devotional step complete
+      description: Quiz steps complete via a passing quiz attempt instead. May award badges.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pathway: { $ref: '#/components/schemas/PathwaySummary' }
+                  next_step_id: { type: [string, 'null'] }
+                  badges_awarded:
+                    type: array
+                    items: { $ref: '#/components/schemas/Badge' }
+  # ───────────────────────── Resources ─────────────────────────
+  /communities/{communityId}/resources:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Resources]
+      operationId: listResources
+      summary: Community resources library
+      description: |
+        Filter chips: All / Videos / Devotionals / Quizzes / Documents. Categories: Bible characters
+        (lives and lessons), Bible texts (study by passage). Only `published` items are returned (BRD §8.1).
+      parameters:
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/ResourceType' } }
+        - { name: category, in: query, schema: { type: string, enum: [bible_characters, bible_texts] } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: tag, in: query, schema: { type: string } }
+        - { name: bible_book, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Resource' }
+  /resources/{resourceId}:
+    parameters:
+      - { name: resourceId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Resources]
+      operationId: getResource
+      summary: Resource detail (stream URL, text body or document URL)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resource' }
+  /resources/{resourceId}/progress:
+    parameters:
+      - { name: resourceId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Resources]
+      operationId: updateResourceProgress
+      summary: Record watch/read progress or completion
+      description: Feeds *My activity* ("Watched …") and tracking (FR-02).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                position_seconds: { type: integer }
+                completed: { type: boolean }
+      responses:
+        '204': { description: Saved }
+  /quizzes/{quizId}:
+    parameters:
+      - { name: quizId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Resources]
+      operationId: getQuiz
+      summary: Quiz questions (correct answers withheld)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Quiz' }
+  /quizzes/{quizId}/attempts:
+    parameters:
+      - { name: quizId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Resources]
+      operationId: submitQuizAttempt
+      summary: Submit answers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [answers]
+              properties:
+                answers:
+                  type: array
+                  items:
+                    type: object
+                    required: [question_id, option_id]
+                    properties:
+                      question_id: { type: string }
+                      option_id: { type: string }
+      responses:
+        '201':
+          description: Scored attempt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score: { type: integer }
+                  total: { type: integer }
+                  passed: { type: boolean }
+                  badges_awarded:
+                    type: array
+                    items: { $ref: '#/components/schemas/Badge' }
+  # ───────────────────────── Messages ─────────────────────────
+  /conversations:
+    get:
+      tags: [Messages]
+      operationId: listConversations
+      summary: Messages inbox
+      description: Tabs All / Mentors / Members; `q` searches member names and message text.
+      parameters:
+        - { name: filter, in: query, schema: { type: string, enum: [all, mentors, members], default: all } }
+        - { name: q, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      unread_total: { type: integer }
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ConversationSummary' }
+    post:
+      tags: [Messages]
+      operationId: startConversation
+      summary: Start (or get existing) 1:1 conversation
+      description: |
+        Returns the existing conversation if one exists. Rejected with 403 `messaging_restricted` when a
+        minor would be matched with an unverified adult (BRD §7) or when either party blocked the other.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties: { user_id: { type: string } }
+      responses:
+        '200':
+          description: Existing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConversationSummary' }
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConversationSummary' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /conversations/{conversationId}/messages:
+    parameters:
+      - { name: conversationId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Messages]
+      operationId: listMessages
+      summary: Conversation history
+      description: Newest first; the client groups by day ("Today"). Cursor pages backwards in time.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      participant: { $ref: '#/components/schemas/UserRef' }
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Message' }
+    post:
+      tags: [Messages]
+      operationId: sendMessage
+      summary: Send a message
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties: { text: { type: string, maxLength: 4000 } }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /conversations/{conversationId}/read:
+    parameters:
+      - { name: conversationId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Messages]
+      operationId: markConversationRead
+      summary: Mark read up to a message
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { up_to_message_id: { type: string } }
+      responses:
+        '204': { description: OK }
+  /realtime:
+    get:
+      tags: [Messages]
+      operationId: realtimeSocket
+      summary: WebSocket for live updates
+      description: |
+        Upgrade to WebSocket with `?token=<access_token>`. Server pushes JSON events:
+        `message.created`, `message.read`, `presence.updated` (community `online_count`),
+        `join_request.decided`, `notification.created`. Clients fall back to polling the REST endpoints
+        and to push notifications when the socket is unavailable (low connectivity).
+      responses:
+        '101': { description: Switching Protocols }
+  # ───────────────────────── Safety ─────────────────────────
+  /reports:
+    post:
+      tags: [Safety]
+      operationId: createReport
+      summary: Report a user or content
+      description: |
+        Screens *Report a user* and *Report sent*. Targets: user, message, post, comment, testimony,
+        prayer_request (BRD §8.2). Screenshot is optional, uploaded first via `/media` (`purpose=report_evidence`).
+        Reviewed by the FCU moderation team; community leaders get first-level visibility for their cohort.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportRequest' }
+      responses:
+        '201':
+          description: Report received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  status: { type: string, enum: [open] }
+  /users/{userId}/block:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Safety]
+      operationId: blockUser
+      summary: 'Block a user ("Block this user" on Report sent)'
+      responses:
+        '204': { description: Blocked }
+    delete:
+      tags: [Safety]
+      operationId: unblockUser
+      summary: Unblock
+      responses:
+        '204': { description: Unblocked }
+  # ───────────────────────── Media ─────────────────────────
+  /media:
+    post:
+      tags: [Media]
+      operationId: createUpload
+      summary: Create a direct-upload slot
+      description: |
+        Returns a pre-signed `upload_url` (PUT the bytes there with the given headers) and a `media_id` to
+        reference in other requests. Media is attached to content only after it passes malware/size checks.
+        Limits: images ≤ 10 MB, video ≤ 200 MB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose, content_type, size_bytes]
+              properties:
+                purpose: { type: string, enum: [profile_photo, post_photo, testimony_photo, testimony_video, report_evidence] }
+                content_type: { type: string, example: image/jpeg }
+                size_bytes: { type: integer }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  media_id: { type: string }
+                  upload_url: { type: string, format: uri }
+                  upload_headers:
+                    type: object
+                    additionalProperties: { type: string }
+                  expires_at: { type: string, format: date-time }
+  /media/{mediaId}/complete:
+    post:
+      tags: [Media]
+      summary: Confirm a direct (R2) upload finished
+      description: Optional. With Cloudflare R2 the client PUTs to a signed URL; the API also verifies the upload lazily when the media is attached. Returns 409 if the file is missing or larger than declared.
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Upload confirmed }
+        '409': { description: Not uploaded yet }
+  /media/{mediaId}/upload:
+    parameters:
+      - { name: mediaId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Media]
+      operationId: uploadMediaBytes
+      summary: Upload file bytes to the slot (local/dev storage)
+      description: Raw body with the declared Content-Type. In production the `upload_url` is a pre-signed object-storage URL instead.
+      requestBody:
+        required: true
+        content:
+          '*/*':
+            schema: { type: string, format: binary }
+      responses:
+        '204': { description: Stored }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  # ───────────────────────── Devices ─────────────────────────
+  /devices:
+    post:
+      tags: [Devices]
+      operationId: registerDevice
+      summary: Register a push token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, push_token]
+              properties:
+                platform: { type: string, enum: [ios, android] }
+                push_token: { type: string }
+                app_version: { type: string }
+                locale: { type: string, example: en }
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { id: { type: string } }
+  /devices/{deviceId}:
+    parameters:
+      - { name: deviceId, in: path, required: true, schema: { type: string } }
+    delete:
+      tags: [Devices]
+      operationId: unregisterDevice
+      summary: Remove a push token (on logout)
+      responses:
+        '204': { description: Removed }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    CommunityId:
+      name: communityId
+      in: path
+      required: true
+      schema: { type: string }
+    PostId:
+      name: postId
+      in: path
+      required: true
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema: { type: string, format: uuid }
+  responses:
+    Unauthorized:
+      description: Missing/invalid credentials
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Not permitted (role, membership, minor restriction, block)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: |
+        State conflict. Codes include `username_taken`, `email_taken`, `phone_taken`,
+        `community_limit_reached`, `already_enrolled`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ValidationError:
+      description: Validation failed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Too many requests; see `Retry-After`
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, example: 'https://api.fcu.example/errors/community_limit_reached' }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, example: community_limit_reached }
+        detail: { type: string }
+        errors:
+          type: array
+          description: Field-level validation errors
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+    Page:
+      type: object
+      properties:
+        next_cursor: { type: [string, 'null'] }
+    Tokens:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer, example: 900 }
+    AuthSession:
+      allOf:
+        - $ref: '#/components/schemas/Tokens'
+        - type: object
+          properties:
+            user: { $ref: '#/components/schemas/MyProfile' }
+    RegisterRequest:
+      type: object
+      required: [full_name, username, birthdate, country, institution_type, institution_id, password, accepted_terms, accepted_code_of_conduct]
+      anyOf:
+        - required: [email]
+        - required: [phone]
+      properties:
+        photo_media_id: { type: string }
+        full_name: { type: string, example: Grace Namuli }
+        username: { type: string, example: gracen }
+        birthdate: { type: string, format: date }
+        country: { type: string, example: UG, description: 'ISO 3166-1 alpha-2 (UG, KE, RW)' }
+        email: { type: string, format: email }
+        phone: { type: string, example: '+256700000000', description: E.164 }
+        institution_type: { type: string, enum: [university, high_school] }
+        institution_id: { type: string }
+        password: { type: string, format: password, minLength: 8 }
+        accepted_terms: { type: boolean }
+        accepted_code_of_conduct: { type: boolean, description: Community guidelines shown at sign-up (BRD §8.2) }
+        guardian:
+          type: object
+          description: Required when the user is a minor (x-open-question - exact definition of minor and consent mechanism TBD with FOCUS Uganda)
+          properties:
+            name: { type: string }
+            relationship: { type: string }
+            phone: { type: string }
+            email: { type: string, format: email }
+    Institution:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [university, high_school] }
+        country: { type: string }
+    UserRef:
+      type: object
+      properties:
+        id: { type: string }
+        full_name: { type: string }
+        username: { type: string }
+        photo_url: { type: [string, 'null'], format: uri }
+        community_role: { $ref: '#/components/schemas/CommunityRole' }
+        online: { type: boolean }
+    MyProfile:
+      type: object
+      properties:
+        id: { type: string }
+        full_name: { type: string }
+        username: { type: string }
+        photo_url: { type: [string, 'null'], format: uri }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'] }
+        email_verified: { type: boolean }
+        phone_verified: { type: boolean }
+        birthdate: { type: string, format: date }
+        country: { type: string }
+        institution: { $ref: '#/components/schemas/Institution' }
+        minor_status:
+          type: string
+          enum: [adult, pending_guardian_consent, minor_consented]
+        platform_role:
+          type: string
+          enum: [student, leader, associate, content_admin, system_admin]
+        created_at: { type: string, format: date-time }
+    CommunityRole:
+      type: string
+      enum: [super_mentor, mentor, member]
+    CommunitySummary:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [general, specific] }
+        name: { type: string, example: Growth Circle }
+        initials: { type: string, example: GC }
+        institution: { $ref: '#/components/schemas/Institution' }
+        super_mentor: { $ref: '#/components/schemas/UserRef' }
+        meeting: { $ref: '#/components/schemas/Meeting' }
+        can_request: { type: boolean, description: False when the caller already has a pending/approved specific community }
+        membership_status: { type: string, enum: [none, pending, member] }
+    Community:
+      allOf:
+        - $ref: '#/components/schemas/CommunitySummary'
+        - type: object
+          properties:
+            description: { type: string }
+            members_count: { type: integer }
+            online_count: { type: integer, example: 12 }
+            online_preview:
+              type: array
+              description: Avatars for the "Online now" strip
+              items: { $ref: '#/components/schemas/UserRef' }
+            leadership:
+              type: array
+              items: { $ref: '#/components/schemas/UserRef' }
+            tabs:
+              type: array
+              description: Tabs shown in the community header (Feed, Prayer, Testimonies, Pathways, Resources, Info & members)
+              items: { type: string }
+    Meeting:
+      type: object
+      properties:
+        recurrence: { type: string, example: weekly }
+        weekday: { type: string, enum: [mon, tue, wed, thu, fri, sat, sun] }
+        start_time: { type: string, example: '17:00' }
+        timezone: { type: string, example: Africa/Kampala }
+        location: { type: string, example: Room 3, Main Building }
+    MyMembership:
+      type: object
+      properties:
+        community: { $ref: '#/components/schemas/CommunitySummary' }
+        membership_status: { type: string, enum: [member, pending] }
+        joined_at: { type: [string, 'null'], format: date-time }
+    Member:
+      allOf:
+        - $ref: '#/components/schemas/UserRef'
+        - type: object
+          properties:
+            joined_at: { type: string, format: date-time }
+    JoinRequest:
+      type: object
+      properties:
+        id: { type: string }
+        community: { $ref: '#/components/schemas/CommunitySummary' }
+        user: { $ref: '#/components/schemas/UserRef' }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        created_at: { type: string, format: date-time }
+        decided_at: { type: [string, 'null'], format: date-time }
+    MediaItem:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [image, video] }
+        url: { type: string, format: uri }
+        thumbnail_url: { type: [string, 'null'], format: uri }
+        duration_seconds: { type: [integer, 'null'] }
+    Post:
+      type: object
+      properties:
+        id: { type: string }
+        community_id: { type: string }
+        author: { $ref: '#/components/schemas/UserRef' }
+        text: { type: string }
+        media:
+          type: array
+          items: { $ref: '#/components/schemas/MediaItem' }
+        pinned: { type: boolean }
+        like_count: { type: integer }
+        comment_count: { type: integer }
+        liked_by_me: { type: boolean }
+        created_at: { type: string, format: date-time }
+    Comment:
+      type: object
+      properties:
+        id: { type: string }
+        author: { $ref: '#/components/schemas/UserRef' }
+        text: { type: string }
+        created_at: { type: string, format: date-time }
+    ReactionState:
+      type: object
+      properties:
+        like_count: { type: integer }
+        liked_by_me: { type: boolean }
+    PrayerRequest:
+      type: object
+      properties:
+        id: { type: string }
+        author:
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+          description: Null when anonymous
+        text: { type: string }
+        prayed_count: { type: integer }
+        prayed_by_me: { type: boolean }
+        response_count: { type: integer }
+        created_at: { type: string, format: date-time }
+    Testimony:
+      type: object
+      properties:
+        id: { type: string }
+        format: { type: string, enum: [video, story] }
+        title: { type: string }
+        excerpt: { type: string }
+        body: { type: [string, 'null'], description: Full text, returned on detail }
+        media:
+          type: array
+          items: { $ref: '#/components/schemas/MediaItem' }
+        author: { $ref: '#/components/schemas/UserRef' }
+        institution_name: { type: string }
+        status: { type: string, enum: [pending_review, published, rejected] }
+        reviewed: { type: boolean, description: Shows the "Reviewed" badge }
+        approved_by: { type: [string, 'null'], description: Approver name (traceability, BRD §8.1) }
+        published_at: { type: [string, 'null'], format: date-time }
+    PathwaySummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string, example: Foundations of faith }
+        steps_total: { type: integer }
+        steps_completed: { type: integer }
+        current_step: { type: [integer, 'null'], example: 3 }
+        status: { type: string, enum: [locked, available, in_progress, completed] }
+        unlock_hint: { type: [string, 'null'], example: Unlocks after the first pathway }
+    PathwayDetail:
+      allOf:
+        - $ref: '#/components/schemas/PathwaySummary'
+        - type: object
+          properties:
+            steps:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  order: { type: integer }
+                  title: { type: string }
+                  type: { $ref: '#/components/schemas/ResourceType' }
+                  resource_id: { type: string }
+                  duration_label: { type: string, example: 8 min }
+                  status: { type: string, enum: [done, current, upcoming] }
+    ResourceType:
+      type: string
+      enum: [video, devotional, quiz, document]
+    Resource:
+      type: object
+      properties:
+        id: { type: string }
+        type: { $ref: '#/components/schemas/ResourceType' }
+        title: { type: string }
+        category: { type: string, enum: [bible_characters, bible_texts] }
+        tags:
+          type: array
+          items: { type: string }
+        bible_book: { type: [string, 'null'] }
+        duration_seconds: { type: [integer, 'null'], description: Video length }
+        read_minutes: { type: [integer, 'null'], description: Devotional length }
+        question_count: { type: [integer, 'null'], description: Quiz only }
+        file_size_bytes: { type: [integer, 'null'], description: Document only }
+        added_by: { $ref: '#/components/schemas/UserRef' }
+        thumbnail_url: { type: [string, 'null'], format: uri }
+        stream_url: { type: [string, 'null'], format: uri, description: Video (HLS) }
+        body_html: { type: [string, 'null'], description: Devotional body, detail only }
+        document_url: { type: [string, 'null'], format: uri }
+        offline_available: { type: boolean }
+        download_url: { type: [string, 'null'], format: uri }
+        language: { type: string, example: en }
+        status: { type: string, enum: [published] }
+        my_progress:
+          type: object
+          properties:
+            position_seconds: { type: integer }
+            completed: { type: boolean }
+    Quiz:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        pass_mark_percent: { type: integer }
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              text: { type: string }
+              options:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    text: { type: string }
+    Badge:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: First steps }
+        icon_url: { type: [string, 'null'], format: uri }
+        earned: { type: boolean }
+        earned_at: { type: [string, 'null'], format: date-time }
+    ActivityEvent:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [video_watched, quiz_completed, meeting_attended, prayed, post_created, pathway_step_completed, testimony_submitted]
+        label: { type: string, example: Watched Daniel in the lions' den }
+        occurred_at: { type: string, format: date-time }
+    ConversationSummary:
+      type: object
+      properties:
+        id: { type: string }
+        participant: { $ref: '#/components/schemas/UserRef' }
+        kind: { type: string, enum: [mentor, member, general_community] }
+        last_message: { type: string }
+        last_message_at: { type: string, format: date-time }
+        unread_count: { type: integer }
+    Message:
+      type: object
+      properties:
+        id: { type: string }
+        conversation_id: { type: string }
+        sender_id: { type: string }
+        text: { type: string }
+        sent_at: { type: string, format: date-time }
+        read_at: { type: [string, 'null'], format: date-time }
+    ReportRequest:
+      type: object
+      required: [target_type, target_id, reason]
+      properties:
+        target_type: { type: string, enum: [user, message, post, comment, testimony, prayer_request] }
+        target_id: { type: string }
+        reason:
+          type: string
+          enum: [harassment_bullying, offensive_content, breaks_community_rules, spam_or_fake_profile, other]
+        details: { type: string, maxLength: 2000 }
+        evidence_media_id: { type: [string, 'null'], description: Chat screenshot }
+    PublicStory:
+      type: object
+      properties:
+        id: { type: string }
+        quote: { type: string }
+        student_name: { type: string }
+        institution_name: { type: string }
+        institution_type: { type: string, enum: [university, high_school] }
+        duration_seconds: { type: integer }
+        thumbnail_url: { type: string, format: uri }
+        video_url: { type: string, format: uri }

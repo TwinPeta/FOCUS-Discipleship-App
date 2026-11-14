@@ -1,3 +1,4 @@
+import { unwrapList } from "@/lib/api/unwrap";
 /**
  * src/features/announcements/queries.ts
  *
@@ -82,7 +83,7 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
   try {
     const res = await fetch("/api/proxy/announcements");
     if (res.ok) {
-      return (await res.json()) as Announcement[];
+      return unwrapList<Announcement>(await res.json());
     }
   } catch {
     // Dev mock fallback

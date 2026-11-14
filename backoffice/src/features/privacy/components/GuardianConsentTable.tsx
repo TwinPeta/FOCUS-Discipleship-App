@@ -15,12 +15,15 @@ import {
   type GuardianConsentRecord,
 } from "@/features/privacy/queries";
 import { GuardianConsentStatus } from "@/types/enums";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchGuardianConsents } from "@/features/privacy/queries";
 
 interface GuardianConsentTableProps {
   initialItems: GuardianConsentRecord[];
 }
 
-export function GuardianConsentTable({ initialItems }: GuardianConsentTableProps) {
+export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsentTableProps) {
+  const [initialItems] = useRemoteItems<GuardianConsentRecord>(seedItems, fetchGuardianConsents);
   const [remindedId, setRemindedId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
 

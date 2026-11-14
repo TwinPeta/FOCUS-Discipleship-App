@@ -13,13 +13,15 @@ import { useState } from "react";
 import { actOnPost } from "@/features/moderation/queries";
 import type { ModerationPost, PostAction } from "@/features/moderation/schemas";
 import { PostReview } from "./PostReview";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchModerationPosts } from "@/features/moderation/queries";
 
 interface PostQueueProps {
   initialItems: ModerationPost[];
 }
 
 export function PostQueue({ initialItems }: PostQueueProps) {
-  const [items, setItems] = useState<ModerationPost[]>(initialItems);
+  const [items, setItems] = useRemoteItems<ModerationPost>(initialItems, fetchModerationPosts);
   const [selected, setSelected] = useState<ModerationPost | null>(null);
 
   async function handleAction(action: PostAction, notes?: string) {

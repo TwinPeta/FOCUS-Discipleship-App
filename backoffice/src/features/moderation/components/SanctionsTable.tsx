@@ -13,13 +13,15 @@ import { useState } from "react";
 import { reinstateSanction } from "@/features/moderation/queries";
 import type { SanctionRecord } from "@/features/moderation/schemas";
 import { ReinstateDialog } from "./ReinstateDialog";
+import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
+import { fetchSanctions } from "@/features/moderation/queries";
 
 interface SanctionsTableProps {
   initialItems: SanctionRecord[];
 }
 
 export function SanctionsTable({ initialItems }: SanctionsTableProps) {
-  const [items, setItems] = useState<SanctionRecord[]>(initialItems);
+  const [items, setItems] = useRemoteItems<SanctionRecord>(initialItems, fetchSanctions);
   const [target, setTarget] = useState<SanctionRecord | null>(null);
 
   async function handleReinstate(reason: string) {
