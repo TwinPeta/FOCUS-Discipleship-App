@@ -1,18 +1,16 @@
 /**
  * src/app/(backoffice)/moderation/sanctions/page.tsx
  *
- * WHAT: B18 Sanctions list with reinstate and details
+ * WHAT: B18 Moderation sanctions: warnings and suspensions with reason, author, date and reinstate
  * REQUIREMENTS: FR-09
  * SPEC: docs/features/11-moderation.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B18 Sanctions list with reinstate and details";
+import { SanctionsTable } from "@/features/moderation/components/SanctionsTable";
+import type { SanctionRecord } from "@/features/moderation/schemas";
 
-export default function Page() {
-  return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
-  );
+export default function ModerationSanctionsPage() {
+  const initialItems: SanctionRecord[] = [];
+  return <SanctionsTable initialItems={initialItems} />;
 }

@@ -1,18 +1,16 @@
 /**
  * src/app/(backoffice)/moderation/posts/page.tsx
  *
- * WHAT: B17 Prayer requests, feed posts and comments that were flagged
+ * WHAT: B17 Moderation prayer and posts: inspect reported prayer requests, feed posts and comments
  * REQUIREMENTS: FR-09
  * SPEC: docs/features/11-moderation.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B17 Prayer requests, feed posts and comments that were flagged";
+import { PostQueue } from "@/features/moderation/components/PostQueue";
+import type { ModerationPost } from "@/features/moderation/schemas";
 
-export default function Page() {
-  return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
-  );
+export default function ModerationPostsPage() {
+  const initialItems: ModerationPost[] = [];
+  return <PostQueue initialItems={initialItems} />;
 }

@@ -1,18 +1,16 @@
 /**
  * src/app/(backoffice)/moderation/reports/page.tsx
  *
- * WHAT: B7 Reports queue and report detail with actions
+ * WHAT: B7 Moderation reports: queue with reason, reporter, reported user, screenshot, L1/L2 actions
  * REQUIREMENTS: FR-09
  * SPEC: docs/features/11-moderation.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B7 Reports queue and report detail with actions";
+import { ReportQueue } from "@/features/moderation/components/ReportQueue";
+import type { ModerationReport } from "@/features/moderation/schemas";
 
-export default function Page() {
-  return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
-  );
+export default function ModerationReportsPage() {
+  const initialItems: ModerationReport[] = [];
+  return <ReportQueue initialItems={initialItems} />;
 }

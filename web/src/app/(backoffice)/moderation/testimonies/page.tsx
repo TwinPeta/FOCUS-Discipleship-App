@@ -1,18 +1,16 @@
 /**
  * src/app/(backoffice)/moderation/testimonies/page.tsx
  *
- * WHAT: B16 Testimonies awaiting moderation: review, approve and publish, request changes, reject
+ * WHAT: B16 Moderation testimonies: review story and video, approve and publish, request changes, reject
  * REQUIREMENTS: FR-09
  * SPEC: docs/features/11-moderation.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B16 Testimonies awaiting moderation: review, approve and publish, request changes, reject";
+import { TestimonyQueue } from "@/features/moderation/components/TestimonyQueue";
+import type { ModerationTestimony } from "@/features/moderation/schemas";
 
-export default function Page() {
-  return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
-  );
+export default function ModerationTestimoniesPage() {
+  const initialItems: ModerationTestimony[] = [];
+  return <TestimonyQueue initialItems={initialItems} />;
 }
