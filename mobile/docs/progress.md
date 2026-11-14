@@ -6,9 +6,14 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - [x] Batch 3: 33 video (PlaybackController fake), 34 devotional (+reflection), 35 quiz, 36 result, 37 document, 38 badge earned (queue); completion -> activity + pathway step + badges; debug "mark step complete"/"attended meeting" removed
 - [ ] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
 - [ ] Batch 5: 30 manage, 31 join requests, 32 reports to review (Hide/Warn/Keep/Escalate); super-mentor guard + repository role checks
+  - [x] 31 Join requests (`/community/:id/manage/requests`): `JoinRequest` + `JoinRequestRepository` (role-checked), approve/decline notify the student, "Already in" disables Approve; tests in `test/community/join_requests_test.dart`
 - [ ] Finish: analyze 0, tests green, wiring rows for prompt 2 cleared, assumptions + stubs recorded
 
 ## Prompt 2 assumptions
+- Screen 31 lives at `/community/:id/manage/requests` (the existing manage guard covers it). Until screen 30 links to it, the debug scenario "Open join requests" switches to super-mentor and opens it.
+- The join-request queue is a seeded fake for Growth Circle (4 students, one already in Life & Faith Circle); it is separate from the signed-in user's own `Membership`, whose approval stays on the "Approve my request" debug scenario.
+- Student notifications carry `recipientId`; `getNotifications()` returns only the signed-in user's (recipientId null), `getNotificationsFor(id)` returns another user's. A backend would push these to that student.
+- Approve/decline are idempotent-safe: a second call while one is in flight, or on a decided request, throws `JoinRequestNotPending`. Decline uses the shared `showTextInputDialog`; a blank message is stored as none. Actions are disabled offline.
 - Session is in memory only (no secure storage). Passwords never enter app state: `SignUpController` keeps `fakePasswordDigest` (iterated FNV, explicitly fake; a real backend hashes server-side).
 - Debug demo account: `demo@fcu.test` / `Password1234` (seeded profile "Demo Student"). Fake email code: `123456` (shown on screen in debug builds).
 - Profiles are keyed by account id (`UserProfile.id == AuthSession.accountId`); `ProfileRepository.getProfile(accountId)` replaced `getCurrentProfile()`.

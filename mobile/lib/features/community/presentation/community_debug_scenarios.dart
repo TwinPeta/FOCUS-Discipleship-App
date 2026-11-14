@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/debug/debug_scenario.dart';
@@ -45,6 +46,22 @@ final communityDebugScenarios = <DebugScenario>[
     run: (ref, _) async {
       ref.read(debugRoleOverrideProvider.notifier).state = UserRole.superMentor;
       return 'Now a super-mentor';
+    },
+  ),
+  DebugScenario(
+    group: 'Accounts',
+    name: 'Open join requests',
+    description:
+        'Super-mentor queue for your community (until Manage, screen 30, '
+        'links to it).',
+    run: (ref, context) async {
+      final id = ref.read(membershipProvider).valueOrNull?.communityId;
+      if (id == null) return 'Join a community first';
+      ref.read(debugRoleOverrideProvider.notifier).state = UserRole.superMentor;
+      if (context.mounted) {
+        unawaited(context.push('/community/$id/manage/requests'));
+      }
+      return null;
     },
   ),
   DebugScenario(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
+import '../../features/community/data/join_request_repository.dart';
 import '../../features/community/data/membership_repository.dart';
 import '../../features/feed/data/post_repository.dart';
 import '../../features/learning/data/learning_repository.dart';
@@ -36,6 +37,12 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 
 final membershipRepositoryProvider = Provider<MembershipRepository>((ref) {
   return FakeMembershipRepository(
+    notifications: ref.read(notificationRepositoryProvider),
+  );
+});
+
+final joinRequestRepositoryProvider = Provider<JoinRequestRepository>((ref) {
+  return FakeJoinRequestRepository(
     notifications: ref.read(notificationRepositoryProvider),
   );
 });
