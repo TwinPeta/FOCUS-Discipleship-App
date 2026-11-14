@@ -23,17 +23,23 @@ interface NavItem {
 
 const BACKOFFICE_NAV: NavItem[] = [
   { href: ROUTES.dashboard, label: "Dashboard" },
+  { href: ROUTES.reports, label: "Reports" },
   { href: ROUTES.joinRequests, label: "Join requests" },
   { href: ROUTES.communities, label: "Communities" },
   { href: ROUTES.institutions, label: "Institutions" },
   { href: ROUTES.members, label: "Members" },
   { href: ROUTES.content, label: "Content" },
   { href: ROUTES.moderationReports, label: "Moderation" },
+  { href: ROUTES.guardianConsents, label: "Privacy & consents" },
+  { href: ROUTES.roles, label: "Roles & permissions" },
+  { href: ROUTES.auditLog, label: "Audit log" },
+  { href: ROUTES.settings, label: "Settings" },
   { href: ROUTES.account, label: "My account" },
 ];
 
 const CONTENT_ADMIN_NAV: NavItem[] = [
   { href: ROUTES.dashboard, label: "Dashboard" },
+  { href: ROUTES.reports, label: "Reports" },
   { href: ROUTES.communities, label: "Communities" },
   { href: ROUTES.content, label: "Content" },
   { href: ROUTES.moderationReports, label: "Moderation" },
