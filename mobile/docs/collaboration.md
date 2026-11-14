@@ -79,7 +79,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | Screen | Owner | Status | Branch / commit |
 |---|---|---|---|
 | 30 | A | done | see `git log --grep "screen 30"` |
-| 43, 54, 55, 58 | B | not started | |
+| 43, 54, 55, 58 | B | in progress | main |
 | 44, 45 | A | done | see `git log --grep "screens 44"` |
 | 46-50 | B | not started | |
 | 51 | A | in progress | main |
