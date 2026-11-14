@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/providers/repository_providers.dart';
@@ -13,6 +12,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../domain/report.dart';
 import 'providers/messaging_providers.dart';
 import 'report_flow.dart';
+import '../../../core/media/photo_picker.dart';
 
 /// Screen 11: Report a user (the [ReportFlow] with a chat screenshot),
 /// reached from a conversation's report button.
@@ -29,13 +29,8 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
   String? _screenshotPath;
 
   Future<void> _pickScreenshot() async {
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1600,
-      maxHeight: 1600,
-      imageQuality: 80,
-    );
-    if (picked == null) return;
+    final picked = await pickPhoto(context);
+    if (picked == null || !mounted) return;
     setState(() => _screenshotPath = picked.path);
   }
 

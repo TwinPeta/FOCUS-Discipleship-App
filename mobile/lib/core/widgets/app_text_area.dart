@@ -4,6 +4,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
 
+import 'package:flutter/services.dart';
+
+import '../media/upload_policy.dart';
+
 /// Multi-line text input. Bordered by default (new prayer request, share a
 /// testimony); set [bordered] to false for the borderless composer body.
 class AppTextArea extends StatelessWidget {
@@ -38,6 +42,9 @@ class AppTextArea extends StatelessWidget {
   Widget build(BuildContext context) {
     final field = TextField(
       controller: controller,
+      inputFormatters: [
+        LengthLimitingTextInputFormatter(UploadPolicy.maxPostChars),
+      ],
       focusNode: focusNode,
       autofocus: autofocus,
       maxLines: null,

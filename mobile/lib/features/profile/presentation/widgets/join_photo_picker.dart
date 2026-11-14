@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/dashed_circle_painter.dart';
 import '../../../../core/widgets/sized_file_image.dart';
+import '../../../../core/media/photo_picker.dart';
 
 /// The Join form's 76px circular photo picker: dashed border, person icon,
 /// amber "+" badge. Tapping opens a gallery/camera sheet via image_picker.
@@ -40,13 +41,8 @@ class JoinPhotoPicker extends StatelessWidget {
       ),
     );
     if (source == null) return;
-    // Profile photos never need more than 800px; recompress on pick.
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 80,
-    );
+    if (!context.mounted) return;
+    final picked = await pickPhoto(context, source: source);
     if (picked != null) {
       onPhotoPicked(picked.path);
     }

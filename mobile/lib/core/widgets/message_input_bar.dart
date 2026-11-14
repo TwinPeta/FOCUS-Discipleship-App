@@ -2,6 +2,10 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 
+import 'package:flutter/services.dart';
+
+import '../media/upload_policy.dart';
+
 /// Rounded text field plus a 50px amber send button. Used by the
 /// conversation (screen 10) and post comments (screen 39). When [enabled]
 /// is false (e.g. offline) both stay visible but inactive.
@@ -35,6 +39,9 @@ class MessageInputBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               enabled: enabled,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(UploadPolicy.maxMessageChars),
+              ],
               textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.send,
               decoration: InputDecoration(

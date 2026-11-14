@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -14,6 +13,7 @@ import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
 import '../../../core/router/navigation.dart';
 import 'providers/testimony_providers.dart';
+import '../../../core/media/photo_picker.dart';
 
 /// Screen 17: Share a testimony, reached from the Testimonies tab.
 class ShareTestimonyScreen extends ConsumerStatefulWidget {
@@ -32,7 +32,6 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
   bool _consent = false;
   bool _isSubmitting = false;
   String? _photoName;
-  String? _videoName;
 
   @override
   void dispose() {
@@ -48,20 +47,9 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
       _consent;
 
   Future<void> _pickPhoto() async {
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1600,
-      maxHeight: 1600,
-      imageQuality: 80,
-    );
-    if (picked == null) return;
+    final picked = await pickPhoto(context);
+    if (picked == null || !mounted) return;
     setState(() => _photoName = picked.name);
-  }
-
-  Future<void> _pickVideo() async {
-    final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
-    if (picked == null) return;
-    setState(() => _videoName = picked.name);
   }
 
   Future<void> _submit() async {
@@ -133,15 +121,6 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
                     icon: Icons.image_outlined,
                     height: 46,
                     onPressed: _pickPhoto,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: AppSecondaryButton(
-                    label: _videoName ?? 'Add video',
-                    icon: Icons.videocam_outlined,
-                    height: 46,
-                    onPressed: _pickVideo,
                   ),
                 ),
               ],

@@ -1,6 +1,4 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/connectivity/connectivity_service.dart';
@@ -20,14 +18,20 @@ import '../domain/post.dart';
 import '../../../core/router/navigation.dart';
 import 'providers/feed_providers.dart';
 
+import 'package:flutter/services.dart';
+
+import '../../../core/media/photo_picker.dart';
+import '../../../core/media/upload_policy.dart';
+
+/// Only photos can be attached for now (see UploadPolicy); the video and
+/// document kinds stay so they can return later.
 enum _MediaKind { photo, video, document }
 
 class _PickedMedia {
-  const _PickedMedia({required this.kind, required this.path, this.name});
+  const _PickedMedia({required this.kind, required this.path});
 
   final _MediaKind kind;
   final String path;
-  final String? name;
 }
 
 const _emojiOptions = [
@@ -60,12 +64,8 @@ class ComposerScreen extends ConsumerStatefulWidget {
   final String? communityId;
   final PostScope scope;
 
-  /// Photos/videos/documents per post.
+  /// Photos per post (photos only for now; see [UploadPolicy]).
   static const maxAttachments = 4;
-
-  /// Picked photos are resized and recompressed before they are attached.
-  static const photoMaxDimension = 1600.0;
-  static const photoQuality = 80;
 
   @override
   ConsumerState<ComposerScreen> createState() => _ComposerScreenState();
@@ -172,44 +172,10 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
 
   Future<void> _pickPhoto() async {
     if (!_checkAttachLimit()) return;
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: ComposerScreen.photoMaxDimension,
-      maxHeight: ComposerScreen.photoMaxDimension,
-      imageQuality: ComposerScreen.photoQuality,
-    );
+    final picked = await pickPhoto(context);
     if (picked == null || !mounted || !_canAttach) return;
     setState(() {
       _media.add(_PickedMedia(kind: _MediaKind.photo, path: picked.path));
-      _emojiPanelOpen = false;
-    });
-  }
-
-  Future<void> _pickVideo() async {
-    if (!_checkAttachLimit()) return;
-    final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
-    if (picked == null || !mounted || !_canAttach) return;
-    setState(() {
-      _media.add(_PickedMedia(kind: _MediaKind.video, path: picked.path));
-      _emojiPanelOpen = false;
-    });
-  }
-
-  Future<void> _pickDocument() async {
-    if (!_checkAttachLimit()) return;
-    final result = await FilePicker.platform.pickFiles();
-    final files = result?.files ?? const [];
-    if (files.isEmpty || !mounted || !_canAttach) return;
-    final file = files.first;
-    if (file.path == null) return;
-    setState(() {
-      _media.add(
-        _PickedMedia(
-          kind: _MediaKind.document,
-          path: file.path!,
-          name: file.name,
-        ),
-      );
       _emojiPanelOpen = false;
     });
   }
@@ -417,6 +383,11 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                         focusNode: _focusNode,
                         autofocus: true,
                         maxLines: null,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                            UploadPolicy.maxPostChars,
+                          ),
+                        ],
                         textCapitalization: TextCapitalization.sentences,
                         onChanged: (_) => setState(() {}),
                         style: const TextStyle(fontSize: 20, height: 1.35),
@@ -492,18 +463,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                       icon: Icons.image_outlined,
                       semanticLabel: 'Photo',
                       onPressed: _pickPhoto,
-                    ),
-                    const SizedBox(width: 8),
-                    _ToolbarButton(
-                      icon: Icons.videocam_outlined,
-                      semanticLabel: 'Video',
-                      onPressed: _pickVideo,
-                    ),
-                    const SizedBox(width: 8),
-                    _ToolbarButton(
-                      icon: Icons.attach_file_outlined,
-                      semanticLabel: 'Document',
-                      onPressed: _pickDocument,
                     ),
                     const SizedBox(width: 8),
                     _ToolbarButton(
@@ -615,7 +574,7 @@ class _MediaPreview extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      media.name ?? 'Document',
+                      'Document',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
