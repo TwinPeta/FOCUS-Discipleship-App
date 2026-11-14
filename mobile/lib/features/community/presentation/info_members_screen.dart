@@ -20,6 +20,7 @@ import '../../profile/presentation/profile_providers.dart';
 import '../domain/person.dart';
 import '../domain/user_role.dart';
 import 'providers/membership_provider.dart';
+import '../../messaging/presentation/widgets/message_person_button.dart';
 import 'widgets/leave_community_sheet.dart';
 import 'providers/community_providers.dart';
 
@@ -182,7 +183,7 @@ class InfoMembersScreen extends ConsumerWidget {
             subtitle: members[i].role.label,
             trailing: members[i].id == profile?.id
                 ? null
-                : _MessageButton(person: members[i]),
+                : MessagePersonButton(person: members[i]),
           ),
           if (i != members.length - 1) const SizedBox(height: 10),
         ],
@@ -222,71 +223,6 @@ class _LeaveButton extends StatelessWidget {
           side: const BorderSide(color: AppColors.error, width: 2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.button),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageButton extends ConsumerWidget {
-  const _MessageButton({required this.person});
-
-  final Person person;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(messagingRestrictedProvider);
-    if (!ref.read(threadRepositoryProvider).canMessage(person)) {
-      // Under-18 limit: visible but disabled, with the reason.
-      return Tooltip(
-        message: MessagingRestricted.message,
-        child: Semantics(
-          button: true,
-          enabled: false,
-          label: 'Message ${person.name}. ${MessagingRestricted.message}',
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.cream,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.lock_clock_outlined,
-              color: AppColors.placeholder,
-              size: 20,
-            ),
-          ),
-        ),
-      );
-    }
-    return Semantics(
-      button: true,
-      label: 'Message ${person.name}',
-      child: InkWell(
-        onTap: () async {
-          final thread = await ref
-              .read(threadRepositoryProvider)
-              .openOrCreateThread(person, person.role.label);
-          ref.invalidate(threadsProvider);
-          if (!context.mounted) return;
-          unawaited(context.push('/messages/${thread.id}'));
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.amber,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.mail_outline_rounded,
-            color: AppColors.ink,
-            size: 20,
           ),
         ),
       ),

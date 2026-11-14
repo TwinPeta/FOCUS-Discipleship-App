@@ -16,6 +16,7 @@ import '../../features/community/presentation/communities_hub_screen.dart';
 import '../../features/community/presentation/community_detail_screen.dart';
 import '../../features/community/presentation/info_members_screen.dart';
 import '../../features/community/presentation/join_requests_screen.dart';
+import '../../features/community/presentation/manage_community_screen.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/community/presentation/request_result_screens.dart';
 import '../../features/feed/domain/post.dart';
@@ -177,6 +178,10 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/communities/:id',
     builder: (context, state) => CommunityDetailScreen(communityId: _id(state)),
+  ),
+  GoRoute(
+    path: '/community/:id/manage',
+    builder: (context, state) => ManageCommunityScreen(communityId: _id(state)),
   ),
   GoRoute(
     path: '/community/:id/manage/requests',

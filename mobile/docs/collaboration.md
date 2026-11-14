@@ -78,7 +78,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 
 | Screen | Owner | Status | Branch / commit |
 |---|---|---|---|
-| 30 | A | in progress | branch `agent-a` (merges to main after section 1) |
+| 30 | A | done | see `git log --grep "screen 30"` |
 | 43, 54, 55, 58 | B | not started | |
 | 44, 45 | A | not started | |
 | 46-50 | B | not started | |

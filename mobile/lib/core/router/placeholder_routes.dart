@@ -12,7 +12,6 @@ class PlaceholderRoute {
 }
 
 const placeholderRoutes = <PlaceholderRoute>[
-  PlaceholderRoute('/community/:id/manage', 'Manage community', 2),
   PlaceholderRoute('/settings', 'Settings', 3),
   PlaceholderRoute('/settings/profile', 'Edit profile', 3),
   PlaceholderRoute('/notifications', 'Notifications', 3),

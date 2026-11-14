@@ -169,13 +169,13 @@ void main() {
     await goTo(tester, container, '/community/$_community/manage/reports');
 
     expect(find.byType(ReportsToReviewScreen), findsOneWidget);
-    expect(find.text('Comment by Ivan Kasozi'), findsOneWidget);
+    expect(find.text('Comment by Isaac Wandera'), findsOneWidget);
     expect(find.text('3 reports · Harassment or bullying'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Keep').first);
     await settle(tester, steps: 12);
     expect(find.text('Comment kept'), findsOneWidget);
-    expect(find.text('Comment by Ivan Kasozi'), findsNothing);
+    expect(find.text('Comment by Isaac Wandera'), findsNothing);
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Warn author').first);
     await settle(tester);

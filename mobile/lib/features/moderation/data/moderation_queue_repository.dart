@@ -67,7 +67,7 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
         content: ModeratedContent.comment,
         targetId: '$c-comment-1',
         authorId: 'member-4',
-        authorName: 'Ivan Kasozi',
+        authorName: 'Isaac Wandera',
         preview:
             'This group is a waste of time, nobody here takes anything '
             'seriously.',
