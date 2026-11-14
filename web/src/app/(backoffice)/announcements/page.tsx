@@ -4,15 +4,116 @@
  * WHAT: B8 Announcements and landing stories: composer, recent list, story videos
  * REQUIREMENTS: -
  * SPEC: docs/features/09-announcements-stories.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B8 Announcements and landing stories: composer, recent list, story videos";
+"use client";
 
-export default function Page() {
+import { useEffect, useState } from "react";
+import { AnnouncementForm } from "@/features/announcements/components/AnnouncementForm";
+import { AnnouncementList } from "@/features/announcements/components/AnnouncementList";
+import {
+  fetchAnnouncements,
+  MOCK_ANNOUNCEMENTS,
+  type Announcement,
+} from "@/features/announcements/queries";
+import { StoryList } from "@/features/stories/components/StoryList";
+import { StoryUploader } from "@/features/stories/components/StoryUploader";
+import {
+  fetchLandingStories,
+  MOCK_STORIES,
+  saveLandingStories,
+  type LandingStory,
+} from "@/features/stories/queries";
+
+export default function AnnouncementsPage() {
+  const [activeTab, setActiveTab] = useState<"announcements" | "stories">("announcements");
+  const [announcements, setAnnouncements] = useState<Announcement[]>(MOCK_ANNOUNCEMENTS);
+  const [stories, setStories] = useState<LandingStory[]>(MOCK_STORIES);
+
+  useEffect(() => {
+    let active = true;
+    fetchAnnouncements().then((res) => {
+      if (active) setAnnouncements(res);
+    });
+    fetchLandingStories().then((res) => {
+      if (active) setStories(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function handleAnnouncementCreated(ann: Announcement) {
+    setAnnouncements((prev) => [ann, ...prev]);
+  }
+
+  function handleStoryCreated(story: LandingStory) {
+    setStories((prev) => [...prev, story]);
+  }
+
+  async function handleStoriesChange(updated: LandingStory[]) {
+    setStories(updated);
+    await saveLandingStories(updated);
+  }
+
   return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
+    <main className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            Announcements &amp; Stories
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Broadcast updates to fellowships and showcase student testimonial videos on the mobile app landing page.
+          </p>
+        </div>
+
+        {activeTab === "stories" && (
+          <StoryUploader onStoryCreated={handleStoryCreated} />
+        )}
+      </div>
+
+      <div className="border-b border-border">
+        <nav className="flex space-x-6 text-sm font-medium" aria-label="Tabs">
+          <button
+            type="button"
+            onClick={() => setActiveTab("announcements")}
+            className={`border-b-2 pb-3 transition ${
+              activeTab === "announcements"
+                ? "border-primary text-foreground font-semibold"
+                : "border-transparent text-muted hover:border-slate-300 hover:text-foreground"
+            }`}
+          >
+            Announcements ({announcements.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("stories")}
+            className={`border-b-2 pb-3 transition ${
+              activeTab === "stories"
+                ? "border-primary text-foreground font-semibold"
+                : "border-transparent text-muted hover:border-slate-300 hover:text-foreground"
+            }`}
+          >
+            Landing Page Stories ({stories.length})
+          </button>
+        </nav>
+      </div>
+
+      {activeTab === "announcements" ? (
+        <div className="space-y-6">
+          <AnnouncementForm onCreated={handleAnnouncementCreated} />
+          <AnnouncementList announcements={announcements} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="text-xs text-muted">
+            Reorder the story videos below to configure how they appear in the &quot;Hear it from students&quot; carousel.
+          </div>
+          <StoryList stories={stories} onChange={handleStoriesChange} />
+        </div>
+      )}
     </main>
   );
 }
