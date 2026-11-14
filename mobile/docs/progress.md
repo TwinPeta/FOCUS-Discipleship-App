@@ -24,9 +24,13 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 46 Settings (`/settings`, built by A): profile card -> Edit profile; Edit profile, Notifications, Language (English, nothing to open), Privacy & data, Help & FAQ; Sign out (confirm -> `/login`); "Version 1.0" (long-press opens `/debug` in debug builds)
 - [x] 47 Edit profile (`/settings/profile`, built by A): photo + Change photo, full name, username (uniqueness check on blur and on save), phone, the Join form's institution picker; read-only email line; Save disabled until changed and valid. `/profile/edit` now redirects here
 - [x] 50 Help & FAQ (`/help`, public, built by A): accordion with the first answer open; "Copy support email" (clipboard, no url_launcher)
-- [ ] 48 Privacy & data, 49 Delete account (batch 3; `/settings/privacy` is a placeholder until then)
+- [x] 48 Privacy & data (`/settings/privacy`, built by A): Download my data (fake export, "We will email you a copy"), My activity & badges, Blocked users, retention note, destructive "Delete my account"
+- [x] 49 Delete account (bottom sheet, built by A): 30-day and "cannot be undone" copy, password confirm; Keep my account; Delete disabled until a password, wrong password shows an inline error; success deletes account, profile and membership, ends the session -> `/login`
+- [x] `docs/wiring.md` has no rows left and no placeholder routes remain. `PlaceholderScreen` itself stays until Agent B's Batch 6 link walk (which still references it) is updated; then delete it
 
 ## Prompt 3 assumptions
+- Delete account (49): `AuthRepository.deleteAccount(password)` checks the password against the signed-in account (generic `InvalidCredentials`, nothing deleted on failure). `AccountDeletion` then deletes the profile, clears the membership (best effort) and signs out. In the fake, other stores (posts, messages, activity) live in memory only; a real backend deletes them server-side within `deletionWindowDays` (30). Deleting is disabled offline.
+- Retention period (`dataRetentionMonths` = 24) and the deletion window are constants in `settings/data/privacy_repository.dart`. "Download my data" goes through `PrivacyRepository.requestDataExport` (fake records the request).
 - Support email is a placeholder (`supportEmail` in `core/config/app_info.dart`); confirm the real address. The version shown is the constant `appVersion` (keep it in step with pubspec; no package_info).
 - The Join form's "I study at" toggle and institution list became the shared `InstitutionPicker` (`profile/presentation/widgets/`), used by Join (2) and Edit profile (47). Country isn't editable on Edit profile, so it lists that country's institutions.
 - `SettingsRow` (icon tile, title, subtitle, chevron) is shared by Settings (46) and Privacy & data (48).

@@ -39,6 +39,11 @@ abstract class AuthRepository {
   Future<AuthSession> signIn(String email, String password);
   Future<void> signOut();
 
+  /// Deletes the signed-in account after checking [password]; throws
+  /// [InvalidCredentials] when it is wrong (nothing is deleted) and ends
+  /// the session on success. Passwords are never logged.
+  Future<void> deleteAccount(String password);
+
   Future<bool> isEmailAvailable(String email);
 
   /// Throws [ResendTooSoon] inside the 30s cooldown.
@@ -132,6 +137,23 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     await Future.delayed(latency);
+    _session = null;
+  }
+
+  @override
+  Future<void> deleteAccount(String password) async {
+    await Future.delayed(latency);
+    final session = _session;
+    if (session == null) throw const InvalidCredentials();
+    final key = _key(session.email);
+    final account = _accounts[key];
+    if (account == null || account.digest != fakePasswordDigest(password)) {
+      throw const InvalidCredentials();
+    }
+    _accounts.remove(key);
+    _verified.remove(key);
+    _guardians.remove(account.id);
+    consents.remove(account.id);
     _session = null;
   }
 

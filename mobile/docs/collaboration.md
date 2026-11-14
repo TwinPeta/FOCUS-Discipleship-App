@@ -81,7 +81,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 30 | A | done | see `git log --grep "screen 30"` |
 | 43, 54, 55, 58 | B | done (see `git log --grep "screens 43, 54, 55, 58"`) | |
 | 44, 45 | A | done | see `git log --grep "screens 44"` |
-| 46-50 | A (taken over from B, inactive) | in progress | main |
+| 46-50 | A (taken over from B, inactive) | done | see `git log --grep "screens 46"` and `--grep "screens 48"`. **B (Batch 6):** the ledger is empty; `PlaceholderScreen` can be deleted once `link_walk_test.dart` stops referencing it |
 | 51 | A | done | see `git log --grep "screen 51"` |
 | 52, 53 | A (taken over from B, inactive) | done | see `git log --grep "screens 52, 53"` |
 | 56, 57, 59 | A | done for all non-messaging screens; messaging part **done by B** (inbox + Conversation: Skeleton, ErrorView, OfflineBanner, send disabled offline) | see `git log --grep "offline, loading and error"` |

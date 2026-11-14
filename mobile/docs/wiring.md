@@ -4,4 +4,3 @@ Every control added ahead of its real screen navigates to a **registered placeho
 
 | Source screen | Control | Temporary route | Resolved in prompt |
 |---|---|---|---|
-| 46 Settings | **Privacy & data** row | `/settings/privacy` | 3 (batch 3: screens 48, 49) |

@@ -11,6 +11,4 @@ class PlaceholderRoute {
   final int owner;
 }
 
-const placeholderRoutes = <PlaceholderRoute>[
-  PlaceholderRoute('/settings/privacy', 'Privacy & data', 3),
-];
+const placeholderRoutes = <PlaceholderRoute>[];

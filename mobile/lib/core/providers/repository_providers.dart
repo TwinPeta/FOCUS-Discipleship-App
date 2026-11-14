@@ -22,6 +22,7 @@ import '../../features/pathways/data/pathway_repository.dart';
 import '../../features/prayer/data/prayer_repository.dart';
 import '../../features/profile/data/profile_repository.dart';
 import '../../features/resources/data/resource_repository.dart';
+import '../../features/settings/data/privacy_repository.dart';
 import '../../features/testimony/data/testimony_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -154,4 +155,8 @@ final learningRepositoryProvider = Provider<LearningRepository>((ref) {
 final meetingRepositoryProvider = Provider<MeetingRepository>((ref) {
   final communities = ref.read(communityRepositoryProvider);
   return FakeMeetingRepository(communityById: communities.getCommunityById);
+});
+
+final privacyRepositoryProvider = Provider<PrivacyRepository>((ref) {
+  return FakePrivacyRepository();
 });

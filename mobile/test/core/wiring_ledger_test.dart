@@ -18,7 +18,8 @@ void main() {
           !l.startsWith('| Source') &&
           !l.startsWith('|---'),
     );
-    expect(rows, isNotEmpty);
+    // Prompt 3 ends with an empty ledger; then no placeholder may remain.
+    if (rows.isEmpty) expect(placeholderRoutes, isEmpty);
     for (final row in rows) {
       final cells = row.split('|').map((c) => c.trim()).toList();
       final route = RegExp(r'`([^`]+)`').firstMatch(cells[3])!.group(1)!;

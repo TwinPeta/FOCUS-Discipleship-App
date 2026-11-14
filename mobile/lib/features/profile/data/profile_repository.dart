@@ -34,6 +34,9 @@ abstract class ProfileRepository {
   Future<UserProfile> createProfile(UserProfile profile);
   Future<UserProfile> updateProfile(UserProfile profile);
 
+  /// Removes the profile and frees its username. Idempotent.
+  Future<void> deleteProfile(String accountId);
+
   /// Stable id derived from the profile's institution, used to look up its
   /// General community and to scope Specific communities.
   String institutionIdFor(UserProfile profile) =>
@@ -140,6 +143,13 @@ class FakeProfileRepository implements ProfileRepository {
     _profiles[profile.id] = profile;
     _taken.add(profile.username.toLowerCase());
     return profile;
+  }
+
+  @override
+  Future<void> deleteProfile(String accountId) async {
+    await Future.delayed(latency);
+    final removed = _profiles.remove(accountId);
+    if (removed != null) _taken.remove(removed.username.toLowerCase());
   }
 
   @override
