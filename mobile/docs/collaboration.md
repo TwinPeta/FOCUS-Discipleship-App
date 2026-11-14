@@ -85,7 +85,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 51 | A | not started | |
 | 52, 53 | B | not started | |
 | 56, 57, 59 | A | not started | |
-| 60, 61 | A | not started | |
+| 60, 61 | A | in progress | main |
 | Content reports to moderation | B | in progress | main. Adds `ModeratedContent.testimony` and nullable `ModerationCase.authorId` (anonymous prayers); Agent A to review |
 
 Status values: `not started`, `in progress`, `done (<commit>)`, `blocked: <reason>`.
