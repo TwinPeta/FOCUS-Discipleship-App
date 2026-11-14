@@ -1,0 +1,46 @@
+/**
+ * src/app/globals.css
+ *
+ * WHAT: Tailwind layers and FCU design tokens (yellow primary, cream background)
+ * REQUIREMENTS: FR-12
+ * SPEC: docs/features/16-shared-ui-brand.md
+ * STATUS: placeholder, not implemented
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FCU backoffice design tokens, taken from the design file (B1-B29) */
+:root {
+  --background: #fffbea;      /* page background (cream) */
+  --surface: #ffffff;         /* cards, inputs, active nav item */
+  --foreground: #111111;      /* text */
+  --muted-foreground: #6a6a6a;/* secondary text, placeholders */
+  --primary: #f4b400;         /* sidebar, primary buttons */
+  --primary-soft: #fff3c4;    /* soft highlights, selected rows */
+  --accent: #fde68a;          /* badges, hover */
+  --border: #e6d48a;          /* borders and dividers */
+  --sidebar-width: 240px;
+  --radius-nav: 14px;
+  --radius-card: 16px;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* TODO: status colours (success, warning, error, info) once defined, see docs/brand.md */

@@ -1,0 +1,12 @@
+/**
+ * src/features/my-community/components/PendingRequestsMini.tsx
+ *
+ * WHAT: Pending requests with approve and decline
+ * REQUIREMENTS: FR-03,FR-04,FR-05
+ * SPEC: docs/features/15-super-mentor-view.md
+ * STATUS: placeholder, not implemented
+ */
+
+export function PendingRequestsMini() {
+  return null;
+}
