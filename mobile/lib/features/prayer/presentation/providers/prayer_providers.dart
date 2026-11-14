@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/connectivity/offline_cache.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../activity/domain/activity_event.dart';
 import '../../../activity/domain/badge.dart';
@@ -12,9 +13,13 @@ class PrayerRequestsController
   @override
   Future<List<PrayerRequest>> build(String communityId) async {
     final blocked = await ref.watch(blockedUserIdsProvider.future);
-    final requests = await ref
-        .watch(prayerRepositoryProvider)
-        .getRequests(communityId);
+    final repo = ref.watch(prayerRepositoryProvider);
+    // Offline: the last loaded wall (screen 56).
+    final requests = await loadWithOfflineCache(
+      ref,
+      'prayer:$communityId',
+      () => repo.getRequests(communityId),
+    );
     return requests
         .where((r) => r.authorId == null || !blocked.contains(r.authorId))
         .toList();

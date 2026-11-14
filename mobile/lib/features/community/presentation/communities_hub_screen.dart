@@ -17,6 +17,8 @@ import 'widgets/community_search_field.dart';
 import 'widgets/general_community_card.dart';
 import 'widgets/hub_header.dart';
 import 'widgets/hub_specific_slot.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/states/error_view.dart';
 
 /// Screen 3 of the brief: Communities hub, including the 3b "pending"
 /// variant of the specific-community slot.
@@ -81,10 +83,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
     final membershipAsync = ref.watch(membershipProvider);
 
     if (membershipAsync.isLoading && !membershipAsync.hasValue) {
-      return const Scaffold(
-        backgroundColor: AppColors.page,
-        body: SafeArea(child: Center(child: CircularProgressIndicator())),
-      );
+      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
     }
 
     final membership = membershipAsync.valueOrNull ?? Membership.empty;
@@ -161,18 +160,11 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                             specificCommunitiesProvider,
                           );
                           return communitiesAsync.when(
-                            loading: () => const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            error: (error, stackTrace) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: Text(
-                                  'Could not load communities.',
-                                  style: AppTextStyles.body,
-                                ),
-                              ),
+                            loading: () =>
+                                const Skeleton(showHeader: false, cardCount: 2),
+                            error: (error, stackTrace) => ErrorView(
+                              onRetry: () =>
+                                  ref.invalidate(specificCommunitiesProvider),
                             ),
                             data: (communities) {
                               var visible = communities;

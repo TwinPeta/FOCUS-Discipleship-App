@@ -13,6 +13,8 @@ import 'providers/community_providers.dart';
 import 'providers/membership_provider.dart';
 import 'widgets/community_cover.dart';
 import 'widgets/leadership_row.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/states/error_view.dart';
 
 /// Screen 4 of the brief: Community detail & request to join.
 class CommunityDetailScreen extends ConsumerStatefulWidget {
@@ -62,12 +64,10 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: communityAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Text(
-            'Could not load this community.',
-            style: AppTextStyles.body,
-          ),
+        loading: () => const Skeleton(),
+        error: (error, stackTrace) => ErrorScreen(
+          onRetry: () =>
+              ref.invalidate(communityByIdProvider(widget.communityId)),
         ),
         data: (community) {
           final membership = membershipAsync.valueOrNull ?? Membership.empty;

@@ -50,6 +50,15 @@ class OfflineBanner extends ConsumerWidget {
                       fontSize: 12.5,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tip: turn on Data saver to use less data on slow '
+                    'connections.',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.white,
+                      fontSize: 12.5,
+                    ),
+                  ),
                 ],
               ),
             ),

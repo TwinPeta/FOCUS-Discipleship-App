@@ -24,30 +24,39 @@ class PillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
+      enabled: onTap != null,
       selected: filled,
       label: semanticLabel ?? label,
       excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-          child: Center(
-            widthFactor: 1,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: filled ? AppColors.amber : AppColors.white,
-                borderRadius: BorderRadius.circular(AppRadii.pill),
-                border: filled
-                    ? null
-                    : Border.all(color: AppColors.ink, width: 2),
-              ),
-              child: Text(
-                label,
-                style: AppTextStyles.chip.copyWith(fontWeight: FontWeight.w800),
+      child: Opacity(
+        opacity: onTap == null ? _disabledOpacity : 1,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+            child: Center(
+              widthFactor: 1,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 36),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: filled ? AppColors.amber : AppColors.white,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: filled
+                      ? null
+                      : Border.all(color: AppColors.ink, width: 2),
+                ),
+                child: Text(
+                  label,
+                  style: AppTextStyles.chip.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ),
           ),
@@ -56,3 +65,6 @@ class PillButton extends StatelessWidget {
     );
   }
 }
+
+/// Disabled pills (e.g. offline) stay visible but faded.
+const _disabledOpacity = 0.45;

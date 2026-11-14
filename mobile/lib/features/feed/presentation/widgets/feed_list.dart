@@ -2,11 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/connectivity/connectivity_service.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/widgets/error_snack.dart';
 import '../../../../core/widgets/post_card.dart';
 import '../../../../core/widgets/states/empty_state.dart';
 import '../../../../core/widgets/states/error_view.dart';
+import '../../../../core/widgets/states/saved_content_note.dart';
 import '../../../../core/widgets/states/skeleton.dart';
 import '../../domain/post.dart';
 import '../providers/feed_providers.dart';
@@ -46,7 +48,11 @@ class FeedList extends ConsumerWidget {
     final posts = postsAsync.valueOrNull ?? const <Post>[];
     final hasMore = controller.hasMore;
     final bodyCount = posts.isEmpty ? 1 : posts.length;
-    final itemCount = header.length + bodyCount + (hasMore ? 1 : 0);
+    // The Saved marker only exists offline, so the online layout is
+    // unchanged.
+    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
+    final rows = [...header, if (!online) const SavedContentNote()];
+    final itemCount = rows.length + bodyCount + (hasMore ? 1 : 0);
 
     Future<void> onRefresh() async {
       try {
@@ -62,13 +68,13 @@ class FeedList extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         itemCount: itemCount,
         itemBuilder: (context, index) {
-          if (index < header.length) {
+          if (index < rows.length) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: header[index],
+              child: rows[index],
             );
           }
-          final i = index - header.length;
+          final i = index - rows.length;
           if (posts.isEmpty && i == 0) {
             return EmptyState(
               icon: Icons.forum_outlined,

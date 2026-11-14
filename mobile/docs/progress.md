@@ -8,7 +8,9 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 60 Account suspended (`/suspended`, full screen): reason and end date, "Read the charter", "Sign out"; suspended guard first in the chain, releases on its own when `until` passes
 - [x] Final guard chain: suspended -> unacknowledged warning -> signed out -> onboarding incomplete -> membership (tests in `test/moderation/enforcement_test.dart`)
 - [x] 51 Meetings (`/community/:id/meetings`): Next meeting (day, time, room) with "I am going" (RSVP toggle) and "Add to calendar" (stub); "At the meeting?" with "I am here" only inside the check-in window, once per meeting, recorded as an `ActivityEvent` (badges go to screen 38); Past meetings with Attended / Missed; back goes to Info
-- [ ] 56, 57, 59 Offline, loading and error audit
+- [x] 57 Loading / 59 Error audit: every async screen now shows `Skeleton` while loading and `ErrorView` / `ErrorScreen` with Try again on failure. Fixed: community shell, hub (whole page and communities list), community detail, Info & members, Resources, and the My activity badges row. Already compliant: feeds, prayer wall, testimonies, pathways, viewers 33-38, 30-32, 44, 45, 51, 60, 61, post detail
+- [x] 56 Offline: `OfflineBanner` (in both shells) now carries the tip "Turn on Data saver to use less data on slow connections."; the last feed and prayer wall are cached in memory (`OfflineCache`) and marked "Saved"; composer row, New post button, "Share a request" and "I prayed" are disabled (faded, labelled), not hidden. Debug scenario "Go offline" already exists. Tests: `test/core/offline_test.dart`
+- [ ] 56/57/59 left for Agent B (messaging, B's active files): Messages inbox and Conversation still use a bare spinner (should be `Skeleton` + `ErrorView`), and Conversation "send" is not disabled offline
 
 ## Agent B
 - [ ] Content reports to moderation queue
@@ -17,6 +19,9 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [ ] 46-50
 
 ## Prompt 3 assumptions
+- Offline cache is in-memory and keyed per list (`feed:<community>:<scope>`, `prayer:<community>`). Offline, a list is served from it (no paging); with nothing cached the call still runs, which a real backend would fail into `ErrorView`. The "Saved" marker appears only offline, so online layout and goldens are unchanged.
+- `PillButton` and `TabSectionHeader` now show a faded, semantically disabled state when their callback is null (previously a null callback looked enabled).
+- Offline write paths not reachable from a disabled entry point (New prayer request and Share testimony forms) are left as they were; their entry buttons are the gate. Comment input (post detail) was already offline-aware.
 - Meetings are generated weekly from the community's `meetingDay` / `meetingTime` / `room` (e.g. "Every Tuesday", "5:00 PM"). A meeting stays "next" until its check-in window closes, then the next week's takes over. The fake seeds the 3 earlier weeks as attended, missed, attended. Only RSVPs and check-ins are stored (`MeetingRepository`, ids `communityId@yyyy-mm-dd`).
 - Check-in window: 30 minutes before the start to 2 hours after (`CheckInWindow`, configurable; the screen reads the repository's window). The clock is injected (`meetingClockProvider`) and the screen re-checks it every minute. The repository rejects check-ins outside the window and repeat check-ins (including a double tap in flight).
 - "Add to calendar" is a stub snackbar (no calendar package without approval). RSVP and check-in are disabled offline.

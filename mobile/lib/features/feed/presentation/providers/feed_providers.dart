@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/connectivity/connectivity_service.dart';
+import '../../../../core/connectivity/offline_cache.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../messaging/presentation/providers/moderation_providers.dart';
 import '../../domain/post.dart';
@@ -12,11 +14,18 @@ class FeedPostsController extends FamilyAsyncNotifier<List<Post>, FeedKey> {
 
   bool get hasMore => _nextCursor != null;
 
+  /// The first page; offline it is the last loaded copy (screen 56), with
+  /// no further paging until back online.
   Future<List<Post>> _firstPage() async {
-    final page = await ref
-        .read(postRepositoryProvider)
-        .getPosts(arg.communityId, arg.scope);
-    _nextCursor = page.nextCursor;
+    final page = await loadWithOfflineCache(
+      ref,
+      'feed:${arg.communityId}:${arg.scope.name}',
+      () =>
+          ref.read(postRepositoryProvider).getPosts(arg.communityId, arg.scope),
+    );
+    _nextCursor = ref.read(connectivityServiceProvider).isOnline
+        ? page.nextCursor
+        : null;
     return page.items;
   }
 

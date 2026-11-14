@@ -17,6 +17,8 @@ import 'providers/membership_provider.dart';
 import '../../messaging/presentation/widgets/message_person_button.dart';
 import 'widgets/leave_community_sheet.dart';
 import 'providers/community_providers.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/states/error_view.dart';
 
 /// Screen 6: Info & members tab inside [CommunityShell].
 class InfoMembersScreen extends ConsumerWidget {
@@ -32,18 +34,19 @@ class InfoMembersScreen extends ConsumerWidget {
     final isSuperMentor =
         ref.watch(currentRoleProvider) == UserRole.superMentor;
 
-    if (communityAsync.isLoading || membersAsync.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
     final community = communityAsync.valueOrNull;
     final members = membersAsync.valueOrNull;
+    if (communityAsync.hasError || membersAsync.hasError) {
+      if (community == null || members == null) {
+        return ErrorView(
+          onRetry: () => ref
+            ..invalidate(communityByIdProvider(communityId))
+            ..invalidate(communityMembersProvider(communityId)),
+        );
+      }
+    }
     if (community == null || members == null) {
-      return Center(
-        child: Text(
-          'Could not load this community.',
-          style: AppTextStyles.body,
-        ),
-      );
+      return const Skeleton(showHeader: false, cardCount: 2);
     }
 
     final onlineMembers = members.where((m) => m.online).toList();

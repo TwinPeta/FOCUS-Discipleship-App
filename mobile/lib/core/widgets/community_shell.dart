@@ -6,12 +6,13 @@ import '../../features/community/domain/user_role.dart';
 import '../../features/community/presentation/providers/community_providers.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
 import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
 import 'community_tab_bar.dart';
 import 'round_icon_button.dart';
 import 'states/offline_banner.dart';
+import 'states/error_view.dart';
+import 'states/skeleton.dart';
 
 /// The amber header + 6-tab shell wrapping every `/community/:id/*` screen.
 /// Pass a [StatefulNavigationShell] so switching tabs keeps this header
@@ -35,12 +36,9 @@ class CommunityShell extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.page,
       body: communityAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Text(
-            'Could not load this community.',
-            style: AppTextStyles.body,
-          ),
+        loading: () => const Skeleton(),
+        error: (error, stackTrace) => ErrorScreen(
+          onRetry: () => ref.invalidate(communityByIdProvider(communityId)),
         ),
         data: (community) {
           return SafeArea(

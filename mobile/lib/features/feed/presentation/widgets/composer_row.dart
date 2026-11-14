@@ -1,11 +1,13 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/connectivity/connectivity_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 
-class ComposerRow extends StatelessWidget {
+class ComposerRow extends ConsumerWidget {
   const ComposerRow({
     super.key,
     required this.initials,
@@ -18,12 +20,16 @@ class ComposerRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     return Semantics(
       button: true,
-      label: 'Share something',
+      enabled: online,
+      label: online
+          ? 'Share something'
+          : 'Share something. Posting is paused while offline',
       child: InkWell(
-        onTap: onTap,
+        onTap: online ? onTap : null,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -54,7 +60,7 @@ class ComposerRow extends StatelessWidget {
                   ),
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Share something…',
+                    online ? 'Share something…' : 'Posting is paused offline',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.placeholder,
                     ),

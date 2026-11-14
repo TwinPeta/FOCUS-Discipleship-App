@@ -8,6 +8,8 @@ import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/list_row_card.dart';
 import '../domain/resource.dart';
 import 'providers/resource_providers.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/states/error_view.dart';
 
 /// Screen 7: Resources tab inside [CommunityShell].
 class ResourcesScreen extends ConsumerStatefulWidget {
@@ -52,9 +54,9 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
     final resourcesAsync = ref.watch(resourcesProvider(widget.communityId));
 
     return resourcesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Center(
-        child: Text('Could not load resources.', style: AppTextStyles.body),
+      loading: () => const Skeleton(showHeader: false, cardCount: 3),
+      error: (error, stackTrace) => ErrorView(
+        onRetry: () => ref.invalidate(resourcesProvider(widget.communityId)),
       ),
       data: (resources) {
         final filtered = filterResources(

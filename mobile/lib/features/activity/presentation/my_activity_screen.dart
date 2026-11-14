@@ -54,10 +54,8 @@ class MyActivityScreen extends ConsumerWidget {
                 Text('My badges', style: AppTextStyles.sectionHeading),
                 const SizedBox(height: 12),
                 badgesAsync.when(
-                  loading: () => const SizedBox(
-                    height: 96,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+                  loading: () =>
+                      const Skeleton(showHeader: false, cardCount: 1),
                   error: (error, stackTrace) =>
                       ErrorView(onRetry: () => ref.invalidate(badgesProvider)),
                   data: (badges) => SingleChildScrollView(

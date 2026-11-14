@@ -35,17 +35,21 @@ class TabSectionHeader extends StatelessWidget {
         if (actionLabel != null)
           Semantics(
             button: true,
+            enabled: onAction != null,
             label: actionLabel,
-            child: Material(
-              color: AppColors.amber,
-              borderRadius: BorderRadius.circular(AppRadii.md),
-              child: InkWell(
-                onTap: onAction,
+            child: Opacity(
+              opacity: onAction == null ? 0.45 : 1,
+              child: Material(
+                color: AppColors.amber,
                 borderRadius: BorderRadius.circular(AppRadii.md),
-                child: const SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Icon(Icons.add, color: AppColors.ink),
+                child: InkWell(
+                  onTap: onAction,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  child: const SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(Icons.add, color: AppColors.ink),
+                  ),
                 ),
               ),
             ),

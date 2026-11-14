@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/connectivity/connectivity_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
@@ -13,6 +14,7 @@ import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/pill_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/saved_content_note.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/tab_section_header.dart';
 import '../../../core/widgets/report_icon_button.dart';
@@ -43,6 +45,8 @@ class PrayerWallScreen extends ConsumerWidget {
       return ErrorView(onRetry: () => ref.invalidate(provider));
     }
     final requests = requestsAsync.valueOrNull ?? const <PrayerRequest>[];
+    // Offline: sharing and "I prayed" are disabled, not hidden (screen 56).
+    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     void newRequest() => context.push('/community/$communityId/prayer/new');
 
     Future<void> onPrayed(PrayerRequest request) async {
@@ -67,10 +71,20 @@ class PrayerWallScreen extends ConsumerWidget {
           if (index == 0) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: TabSectionHeader(
-                title: 'Prayer wall',
-                actionLabel: 'Share a request',
-                onAction: newRequest,
+              child: Column(
+                children: [
+                  TabSectionHeader(
+                    title: 'Prayer wall',
+                    actionLabel: online
+                        ? 'Share a request'
+                        : 'Share a request. Paused while offline',
+                    onAction: online ? newRequest : null,
+                  ),
+                  if (!online) ...[
+                    const SizedBox(height: 8),
+                    const SavedContentNote(),
+                  ],
+                ],
               ),
             );
           }
@@ -80,7 +94,7 @@ class PrayerWallScreen extends ConsumerWidget {
               title: 'No prayer requests yet',
               body: 'Be the first to share one.',
               actionLabel: 'Share a request',
-              onAction: newRequest,
+              onAction: online ? newRequest : null,
             );
           }
           final request = requests[index - 1];
@@ -89,7 +103,7 @@ class PrayerWallScreen extends ConsumerWidget {
             child: _PrayerCard(
               key: ValueKey(request.id),
               request: request,
-              onPrayedTap: () => onPrayed(request),
+              onPrayedTap: online ? () => onPrayed(request) : null,
               onRespondTap: () => context.push('/prayer/${request.id}'),
               // Not on the user's own (named) requests.
               onReportTap: request.authorId != null && request.authorId == me
@@ -119,13 +133,15 @@ class _PrayerCard extends StatelessWidget {
   const _PrayerCard({
     super.key,
     required this.request,
-    required this.onPrayedTap,
+    this.onPrayedTap,
     required this.onRespondTap,
     required this.onReportTap,
   });
 
   final PrayerRequest request;
-  final VoidCallback onPrayedTap;
+
+  /// Null while offline: the pill stays visible but disabled.
+  final VoidCallback? onPrayedTap;
   final VoidCallback onRespondTap;
   final VoidCallback? onReportTap;
 
