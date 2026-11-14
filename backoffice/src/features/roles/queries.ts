@@ -8,6 +8,7 @@
  */
 
 import { Role } from "@/types/enums";
+import { requireBackend } from "@/lib/api/mockFallback";
 
 export type PermissionCode = "V" | "C" | "E" | "A" | "D" | "X";
 
@@ -309,6 +310,7 @@ export async function createStaffAccount(
   } catch {
     // Fall back to mock response in dev mode when backend is offline
   }
+  requireBackend();
 
   return {
     id: `staff-${Date.now()}`,

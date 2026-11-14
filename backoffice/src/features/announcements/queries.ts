@@ -1,4 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
+import { requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/announcements/queries.ts
  *
@@ -107,6 +108,7 @@ export async function createAnnouncement(input: AnnouncementInput): Promise<Anno
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 
   return {
     id: `ann-${Date.now()}`,

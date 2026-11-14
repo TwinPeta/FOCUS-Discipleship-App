@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import type { Member } from "@/features/members/schemas";
+import { formatRelativeTime } from "@/lib/format/date";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { MemberStatus, Role } from "@/types/enums";
 import { MemberDetailPanel } from "./MemberDetailPanel";
@@ -147,7 +148,7 @@ export function MemberTable({ initialItems }: MemberTableProps) {
                       {member.institutionName}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {member.lastActiveAt ?? "—"}
+                      {member.lastActiveAt ? formatRelativeTime(member.lastActiveAt) : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span

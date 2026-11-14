@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,6 +25,7 @@ import { CommunityKind } from "@/types/enums";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { MeetingFields } from "./MeetingFields";
 import { TeamPicker, type StaffOption } from "./TeamPicker";
+import { useLookups } from "@/lib/hooks/useLookups";
 
 interface CommunityFormProps {
   initial?: Community | null;
@@ -36,12 +37,15 @@ interface CommunityFormProps {
 
 export function CommunityForm({
   initial,
-  institutions = [],
-  staffCandidates = [],
+  institutions: institutionsProp,
+  staffCandidates: staffProp,
   onSubmit,
   onCancel,
 }: CommunityFormProps) {
   const { user } = useSession();
+  const lookups = useLookups({ institutions: true, staff: true });
+  const institutions = institutionsProp ?? lookups.institutions;
+  const staffCandidates = staffProp ?? lookups.staff;
   const [error, setError] = useState<string | null>(null);
   const canEditCover = can(user, "coverPhotos", "modify");
   const meetingOnly = shouldHideCrossCommunityControls(user);
@@ -50,6 +54,7 @@ export function CommunityForm({
     register,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<CommunityInput>({
@@ -69,6 +74,11 @@ export function CommunityForm({
       status: initial?.status ?? CommunityStatus.Active,
     },
   });
+
+  // Dropdowns load after first render: preselect the first institution once it arrives (new communities only).
+  useEffect(() => {
+    if (!initial && institutions.length && !getValues("institutionId")) setValue("institutionId", institutions[0].id);
+  }, [initial, institutions, getValues, setValue]);
 
   const superMentorId = watch("superMentorId");
   const mentorIds = watch("mentorIds");

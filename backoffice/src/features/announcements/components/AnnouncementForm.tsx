@@ -13,9 +13,9 @@ import { useState, type FormEvent } from "react";
 import { Megaphone } from "lucide-react";
 import {
   createAnnouncement,
-  MOCK_COMMUNITIES_SELECT,
   type Announcement,
 } from "../queries";
+import { useLookups } from "@/lib/hooks/useLookups";
 
 interface AnnouncementFormProps {
   onCreated: (announcement: Announcement) => void;
@@ -23,14 +23,16 @@ interface AnnouncementFormProps {
 }
 
 export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFormProps) {
+  const { communities } = useLookups({ communities: true });
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [audienceType, setAudienceType] = useState<"all" | "community">(
     userCommunityId ? "community" : "all",
   );
   const [communityId, setCommunityId] = useState<string>(
-    userCommunityId ?? MOCK_COMMUNITIES_SELECT[0].id,
+    userCommunityId ?? "",
   );
+  const selectedCommunityId = communityId || communities[0]?.id || "";
   const [publishTiming, setPublishTiming] = useState<"now" | "scheduled">("now");
   const [scheduledFor, setScheduledFor] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
         title: title.trim(),
         message: message.trim(),
         audienceType,
-        communityId: audienceType === "community" ? communityId : null,
+        communityId: audienceType === "community" ? selectedCommunityId : null,
         publishTiming,
         scheduledFor: publishTiming === "scheduled" ? scheduledFor : undefined,
       });
@@ -111,12 +113,12 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
             </label>
             <select
               id="ann-community"
-              value={communityId}
+              value={selectedCommunityId}
               disabled={Boolean(userCommunityId)}
               onChange={(e) => setCommunityId(e.target.value)}
               className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary"
             >
-              {MOCK_COMMUNITIES_SELECT.map((c) => (
+              {communities.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

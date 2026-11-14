@@ -17,6 +17,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { Role } from "@/types/enums";
 import { createStaffAccount, type StaffAccountResult } from "../queries";
+import { useLookups } from "@/lib/hooks/useLookups";
 
 const STAFF_ROLES: Role[] = [
   Role.SuperMentor,
@@ -24,14 +25,9 @@ const STAFF_ROLES: Role[] = [
   Role.SystemAdmin,
 ];
 
-const MOCK_COMMUNITIES = [
-  { id: "comm-makerere", name: "Makerere University" },
-  { id: "comm-kyambogo", name: "Kyambogo University" },
-  { id: "comm-mubs", name: "MUBS Kampala" },
-  { id: "comm-gulu", name: "Gulu University" },
-];
 
 export function StaffAccountForm() {
+  const { communities } = useLookups({ communities: true });
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>(Role.ContentAdmin);
@@ -176,7 +172,7 @@ export function StaffAccountForm() {
               required
             >
               <option value="">Select community…</option>
-              {MOCK_COMMUNITIES.map((c) => (
+              {communities.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

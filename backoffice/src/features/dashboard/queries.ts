@@ -8,6 +8,7 @@
  */
 
 import { ROUTES } from "@/lib/constants/routes";
+import { requireBackend } from "@/lib/api/mockFallback";
 
 export interface DashboardKpi {
   id: string;
@@ -154,10 +155,12 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
 export async function sendMemberReminder(memberId: string): Promise<void> {
   try {
-    await fetch(`/api/proxy/members/${memberId}/remind`, {
+    const res = await fetch(`/api/proxy/members/${memberId}/remind`, {
       method: "POST",
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }

@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createMember } from "@/features/members/queries";
@@ -20,6 +20,7 @@ import {
 } from "@/features/members/schemas";
 import { Role } from "@/types/enums";
 import { RoleSelector } from "./RoleSelector";
+import { useLookups } from "@/lib/hooks/useLookups";
 
 interface AddUserFormProps {
   institutions?: { id: string; name: string }[];
@@ -28,16 +29,20 @@ interface AddUserFormProps {
 }
 
 export function AddUserForm({
-  institutions = [],
-  communities = [],
+  institutions: institutionsProp,
+  communities: communitiesProp,
   onSuccess,
 }: AddUserFormProps) {
+  const lookups = useLookups({ institutions: true, communities: true });
+  const institutions = institutionsProp ?? lookups.institutions;
+  const communities = communitiesProp ?? lookups.communities;
   const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<AddUserInput>({
@@ -54,6 +59,11 @@ export function AddUserForm({
       sendInvitation: true,
     },
   });
+
+  // Dropdowns load after first render: preselect the first institution once it arrives.
+  useEffect(() => {
+    if (institutions.length && !getValues("institutionId")) setValue("institutionId", institutions[0].id);
+  }, [institutions, getValues, setValue]);
 
   const birthdate = watch("birthdate");
   const role = watch("role");

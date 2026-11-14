@@ -8,6 +8,7 @@
  */
 
 import type { ReportFiltersState, ScheduleReportInput } from "./schemas";
+import { requireBackend } from "@/lib/api/mockFallback";
 
 export interface MembersTimePoint {
   period: string;
@@ -183,6 +184,7 @@ export async function createScheduledReport(
   } catch {
     // Fall back to local object in dev mode
   }
+  requireBackend();
   return {
     id: `sched-${Date.now()}`,
     reportType: input.reportType,

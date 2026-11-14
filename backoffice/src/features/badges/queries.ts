@@ -1,4 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
+import { requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/badges/queries.ts
  *
@@ -168,6 +169,7 @@ export async function saveBadge(input: BadgeInput, id?: string): Promise<Badge> 
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 
   return {
     id: id ?? `bdg-${Date.now()}`,
@@ -186,8 +188,10 @@ export async function saveBadge(input: BadgeInput, id?: string): Promise<Badge> 
 
 export async function deleteBadge(id: string): Promise<void> {
   try {
-    await fetch(`/api/proxy/badges/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/proxy/badges/${id}`, { method: "DELETE" });
+    if (res.ok) return;
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 }

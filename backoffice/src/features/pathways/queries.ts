@@ -9,6 +9,7 @@
 
 import type { PathwayFormValues, PathwayStepInput } from "./schemas";
 import { unwrapList } from "@/lib/api/unwrap";
+import { requireBackend } from "@/lib/api/mockFallback";
 
 export type PathwayLevel = "Beginner" | "Intermediate" | "Advanced";
 export type UnlockRuleType = "none" | "previous_pathway" | "profile_complete" | "mentor_assigned";
@@ -143,6 +144,7 @@ export async function savePathway(
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 
   return {
     id: id ?? `pw-${Date.now()}`,
@@ -163,8 +165,10 @@ export async function savePathway(
 
 export async function deletePathway(id: string): Promise<void> {
   try {
-    await fetch(`/api/proxy/pathways/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/proxy/pathways/${id}`, { method: "DELETE" });
+    if (res.ok) return;
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 }

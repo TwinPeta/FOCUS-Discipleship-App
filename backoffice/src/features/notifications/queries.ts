@@ -1,4 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
+import { requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/notifications/queries.ts
  *
@@ -159,6 +160,7 @@ export async function updateNotificationRule(
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 
   const existing = MOCK_NOTIFICATION_RULES.find((r) => r.id === id);
   if (!existing) throw new Error("Notification rule not found");
@@ -192,5 +194,6 @@ export async function updateInactivityDays(days: number): Promise<number> {
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
   return days;
 }

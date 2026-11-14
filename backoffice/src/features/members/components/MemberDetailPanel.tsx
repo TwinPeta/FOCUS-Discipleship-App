@@ -23,6 +23,7 @@ import { ChangeRoleDialog } from "./ChangeRoleDialog";
 import { MinorBadge } from "./MinorBadge";
 import { MoveCommunityDialog } from "./MoveCommunityDialog";
 import { SuspendDialog } from "./SuspendDialog";
+import { useLookups } from "@/lib/hooks/useLookups";
 
 interface MemberDetailPanelProps {
   member: Member;
@@ -33,10 +34,12 @@ interface MemberDetailPanelProps {
 
 export function MemberDetailPanel({
   member,
-  communities = [],
+  communities: communitiesProp,
   onUpdated,
   onClose,
 }: MemberDetailPanelProps) {
+  const lookups = useLookups({ communities: true });
+  const communities = communitiesProp ?? lookups.communities;
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);

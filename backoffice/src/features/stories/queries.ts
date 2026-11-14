@@ -1,4 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
+import { requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/stories/queries.ts
  *
@@ -89,6 +90,7 @@ export async function saveLandingStories(stories: LandingStory[]): Promise<Landi
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
   return stories;
 }
 
@@ -105,6 +107,7 @@ export async function createLandingStory(input: StoryInput): Promise<LandingStor
   } catch {
     // Dev mock fallback
   }
+  requireBackend();
 
   return {
     id: `sty-${Date.now()}`,

@@ -1,3 +1,4 @@
+import { requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/my-community/queries.ts
  *
@@ -215,12 +216,14 @@ export async function fetchMyCommunityOverview(): Promise<MyCommunityOverview> {
 
 export async function approveOwnJoinRequest(requestId: string): Promise<void> {
   try {
-    await fetch(`/api/proxy/my-community/join-requests/${requestId}/approve`, {
+    const res = await fetch(`/api/proxy/my-community/join-requests/${requestId}/approve`, {
       method: "POST",
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }
 
 export async function declineOwnJoinRequest(
@@ -228,14 +231,16 @@ export async function declineOwnJoinRequest(
   reason?: string,
 ): Promise<void> {
   try {
-    await fetch(`/api/proxy/my-community/join-requests/${requestId}/decline`, {
+    const res = await fetch(`/api/proxy/my-community/join-requests/${requestId}/decline`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }),
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }
 
 export async function updateNextMeeting(
@@ -253,17 +258,20 @@ export async function updateNextMeeting(
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
   return details;
 }
 
 export async function sendFollowUpReminder(memberId: string): Promise<void> {
   try {
-    await fetch(`/api/proxy/my-community/members/${memberId}/remind`, {
+    const res = await fetch(`/api/proxy/my-community/members/${memberId}/remind`, {
       method: "POST",
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }
 
 export async function writeToCommunityGroup(payload: {
@@ -271,14 +279,16 @@ export async function writeToCommunityGroup(payload: {
   message: string;
 }): Promise<void> {
   try {
-    await fetch("/api/proxy/my-community/announcements", {
+    const res = await fetch("/api/proxy/my-community/announcements", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }
 
 export async function resolveOwnReportL1(
@@ -287,12 +297,14 @@ export async function resolveOwnReportL1(
   note?: string,
 ): Promise<void> {
   try {
-    await fetch(`/api/proxy/my-community/moderation/${reportId}`, {
+    const res = await fetch(`/api/proxy/my-community/moderation/${reportId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ decision, note }),
     });
+    if (res.ok) return;
   } catch {
     // Non-blocking in dev mode
   }
+  requireBackend();
 }
