@@ -7,20 +7,26 @@ import '../../features/community/presentation/providers/membership_provider.dart
 import '../theme/app_colors.dart';
 import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
+import 'states/offline_banner.dart';
 
 /// The amber header used by the General feed: same chrome as
 /// [CommunityShell] but without a tab bar. Tapping the "specific community"
 /// segment goes to the user's approved community, or to the hub if they
 /// don't have one yet.
 class GeneralShell extends ConsumerWidget {
-  const GeneralShell({super.key, required this.body, this.floatingActionButton});
+  const GeneralShell({
+    super.key,
+    required this.body,
+    this.floatingActionButton,
+  });
 
   final Widget body;
   final Widget? floatingActionButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final membership = ref.watch(membershipProvider).valueOrNull ?? Membership.empty;
+    final membership =
+        ref.watch(membershipProvider).valueOrNull ?? Membership.empty;
     final hasApprovedSpecific =
         membership.status == MembershipStatus.approved &&
         membership.communityId != null;
@@ -39,13 +45,15 @@ class GeneralShell extends ConsumerWidget {
               specificLabel: 'Specific community',
               onSelectGeneral: () {},
               onSelectSpecific: () {
+                // `go`, not `push`: switching scope must not grow the stack.
                 if (hasApprovedSpecific) {
-                  context.push('/community/${membership.communityId}/feed');
+                  context.go('/community/${membership.communityId}/feed');
                 } else {
-                  context.push('/communities');
+                  context.go('/communities');
                 }
               },
             ),
+            const OfflineBanner(),
             Expanded(child: body),
           ],
         ),

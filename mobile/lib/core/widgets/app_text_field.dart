@@ -21,6 +21,9 @@ class AppTextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.focusNode,
     this.prefixText,
+    this.autofillHints,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   final String label;
@@ -36,6 +39,9 @@ class AppTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final FocusNode? focusNode;
   final String? prefixText;
+  final Iterable<String>? autofillHints;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +51,9 @@ class AppTextField extends StatelessWidget {
       children: [
         Text(label, style: AppTextStyles.fieldLabel),
         const SizedBox(height: 6),
-        SizedBox(
-          height: 46,
+        ConstrainedBox(
+          // Min height, not a fixed one, so large text scales never clip.
+          constraints: const BoxConstraints(minHeight: 46),
           child: TextField(
             controller: controller,
             focusNode: focusNode,
@@ -55,6 +62,9 @@ class AppTextField extends StatelessWidget {
             readOnly: readOnly,
             onTap: onTap,
             onChanged: onChanged,
+            onSubmitted: onSubmitted,
+            autofillHints: autofillHints,
+            textInputAction: textInputAction,
             textCapitalization: textCapitalization,
             style: AppTextStyles.bodyMedium,
             decoration: InputDecoration(
@@ -75,21 +85,21 @@ class AppTextField extends StatelessWidget {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadii.input),
                 borderSide: BorderSide(
-                  color: hasError ? Colors.red : AppColors.inputBorder,
+                  color: hasError ? AppColors.error : AppColors.inputBorder,
                   width: 1.5,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadii.input),
                 borderSide: BorderSide(
-                  color: hasError ? Colors.red : AppColors.inputBorder,
+                  color: hasError ? AppColors.error : AppColors.inputBorder,
                   width: 1.5,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadii.input),
                 borderSide: BorderSide(
-                  color: hasError ? Colors.red : AppColors.ink,
+                  color: hasError ? AppColors.error : AppColors.ink,
                   width: 1.5,
                 ),
               ),
@@ -101,7 +111,7 @@ class AppTextField extends StatelessWidget {
           Text(
             errorText!,
             style: AppTextStyles.fieldLabel.copyWith(
-              color: Colors.red,
+              color: AppColors.error,
               fontWeight: FontWeight.w600,
             ),
           ),

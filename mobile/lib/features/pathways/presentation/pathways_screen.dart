@@ -6,7 +6,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_secondary_button.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
 import '../domain/pathway.dart';
+import 'widgets/pathway_progress_bar.dart';
 import 'providers/pathway_providers.dart';
 
 /// Screen 18: Pathways tab inside [CommunityShell].
@@ -19,52 +23,54 @@ class PathwaysScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pathwaysAsync = ref.watch(pathwaysProvider);
 
-    return pathwaysAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Center(
-        child: Text('Could not load pathways.', style: AppTextStyles.body),
-      ),
-      data: (pathways) {
-        if (pathways.isEmpty) {
-          return Center(
-            child: Text('No pathways yet.', style: AppTextStyles.body),
-          );
-        }
-        final firstPathwayId = pathways.first.id;
-        bool isLocked(Pathway pathway) {
-          if (pathway.unlocksAfterPathwayId == null) return false;
-          final prerequisite = pathways.firstWhere(
-            (p) => p.id == pathway.unlocksAfterPathwayId,
-            orElse: () => pathway,
-          );
-          return prerequisite.status != PathwayStatus.completed;
-        }
+    if (pathwaysAsync.isLoading && !pathwaysAsync.hasValue) {
+      return const Skeleton(showHeader: false);
+    }
+    if (pathwaysAsync.hasError && !pathwaysAsync.hasValue) {
+      return ErrorView(onRetry: () => ref.invalidate(pathwaysProvider));
+    }
+    final pathways = pathwaysAsync.valueOrNull ?? const <Pathway>[];
+    if (pathways.isEmpty) {
+      return const EmptyState(
+        icon: Icons.route_rounded,
+        title: 'No pathways yet',
+        body: 'Your mentors will add pathways soon.',
+      );
+    }
+    final firstPathwayId = pathways.first.id;
+    final current =
+        pathways
+            .where((p) => p.status == PathwayStatus.inProgress)
+            .firstOrNull ??
+        pathways
+            .where((p) => !p.locked && p.status == PathwayStatus.notStarted)
+            .firstOrNull;
+    void open(Pathway p) =>
+        context.push('/community/$communityId/pathways/${p.id}');
 
-        final current = pathways.where((p) => p.status == PathwayStatus.inProgress).firstOrNull ??
-            pathways.where((p) => !isLocked(p) && p.status == PathwayStatus.notStarted).firstOrNull;
+    final header = <Widget>[
+      if (current != null) ...[
+        _CurrentPathwayCard(pathway: current, onContinue: () => open(current)),
+        const SizedBox(height: 20),
+      ],
+      Text('All pathways', style: AppTextStyles.sectionHeading),
+      const SizedBox(height: 10),
+    ];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            if (current != null) ...[
-              _CurrentPathwayCard(pathway: current, communityId: communityId),
-              const SizedBox(height: 20),
-            ],
-            Text(
-              'All pathways',
-              style: AppTextStyles.cardTitle.copyWith(fontSize: 20, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < pathways.length; i++) ...[
-              _PathwayRow(
-                pathway: pathways[i],
-                locked: isLocked(pathways[i]),
-                unlocksAfterFirst: pathways[i].unlocksAfterPathwayId == firstPathwayId,
-                onTap: () => context.push('/community/$communityId/pathways/${pathways[i].id}'),
-              ),
-              if (i != pathways.length - 1) const SizedBox(height: 10),
-            ],
-          ],
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      itemCount: header.length + pathways.length,
+      itemBuilder: (context, index) {
+        if (index < header.length) return header[index];
+        final pathway = pathways[index - header.length];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _PathwayRow(
+            key: ValueKey(pathway.id),
+            pathway: pathway,
+            unlocksAfterFirst: pathway.unlocksAfterPathwayId == firstPathwayId,
+            onTap: () => open(pathway),
+          ),
         );
       },
     );
@@ -72,17 +78,13 @@ class PathwaysScreen extends ConsumerWidget {
 }
 
 class _CurrentPathwayCard extends StatelessWidget {
-  const _CurrentPathwayCard({required this.pathway, required this.communityId});
+  const _CurrentPathwayCard({required this.pathway, required this.onContinue});
 
   final Pathway pathway;
-  final String communityId;
+  final VoidCallback onContinue;
 
   @override
   Widget build(BuildContext context) {
-    final progress = pathway.stepCount == 0
-        ? 0.0
-        : pathway.currentStepIndex / pathway.stepCount;
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -96,7 +98,10 @@ class _CurrentPathwayCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             pathway.title,
-            style: AppTextStyles.cardTitle.copyWith(fontSize: 24, fontWeight: FontWeight.w900),
+            style: AppTextStyles.cardTitle.copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -104,27 +109,12 @@ class _CurrentPathwayCard extends StatelessWidget {
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: Container(
-              height: 10,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: AppColors.ink, width: 2),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progress.clamp(0, 1),
-                child: Container(color: AppColors.ink),
-              ),
-            ),
-          ),
+          PathwayProgressBar(progress: pathway.progress),
           const SizedBox(height: 14),
           AppSecondaryButton(
             label: 'Continue',
             height: 46,
-            onPressed: () => context.push('/community/$communityId/pathways/${pathway.id}'),
+            onPressed: onContinue,
           ),
         ],
       ),
@@ -134,19 +124,19 @@ class _CurrentPathwayCard extends StatelessWidget {
 
 class _PathwayRow extends StatelessWidget {
   const _PathwayRow({
+    super.key,
     required this.pathway,
-    required this.locked,
     required this.unlocksAfterFirst,
     required this.onTap,
   });
 
   final Pathway pathway;
-  final bool locked;
   final bool unlocksAfterFirst;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final locked = pathway.locked;
     final row = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -176,7 +166,10 @@ class _PathwayRow extends StatelessWidget {
               children: [
                 Text(
                   pathway.title,
-                  style: AppTextStyles.cardTitle.copyWith(fontSize: 16, fontWeight: FontWeight.w800),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -208,7 +201,11 @@ class _PathwayRow extends StatelessWidget {
     return Semantics(
       button: true,
       label: pathway.title,
-      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: row),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: row,
+      ),
     );
   }
 }
@@ -225,15 +222,16 @@ class _StatusPill extends StatelessWidget {
       PathwayStatus.completed => 'Completed',
       PathwayStatus.notStarted => 'Start',
     };
-    final color = status == PathwayStatus.notStarted ? AppColors.cream : AppColors.honey;
+    final color = status == PathwayStatus.notStarted
+        ? AppColors.cream
+        : AppColors.honey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Text(label, style: AppTextStyles.chip),
     );
   }
-}
-
-extension on Iterable<Pathway> {
-  Pathway? get firstOrNull => isEmpty ? null : first;
 }

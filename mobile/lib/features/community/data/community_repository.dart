@@ -1,4 +1,4 @@
-import '../../../core/utils/slug.dart';
+import '../../../core/utils/initials.dart';
 import '../domain/community.dart';
 import '../domain/person.dart';
 
@@ -92,7 +92,7 @@ class FakeCommunityRepository implements CommunityRepository {
     return Community(
       id: 'general-$institutionId',
       name: 'General community',
-      initials: slugify(institutionName).substring(0, 2).toUpperCase(),
+      initials: initialsOf(institutionName),
       type: CommunityType.general,
       institutionId: institutionId,
       description: 'Everyone on your campus, open to all.',
@@ -128,9 +128,19 @@ class FakeCommunityRepository implements CommunityRepository {
         mentor.copyWith(online: true),
     ];
     const extraMembers = [
-      Person(id: 'member-1', name: 'Faith Nabirye', role: PersonRole.member, online: true),
+      Person(
+        id: 'member-1',
+        name: 'Faith Nabirye',
+        role: PersonRole.member,
+        online: true,
+      ),
       Person(id: 'member-2', name: 'Peter Ssentongo', role: PersonRole.member),
-      Person(id: 'member-3', name: 'Joy Atim', role: PersonRole.member, online: true),
+      Person(
+        id: 'member-3',
+        name: 'Joy Atim',
+        role: PersonRole.member,
+        online: true,
+      ),
       Person(id: 'member-4', name: 'Isaac Wandera', role: PersonRole.member),
     ];
     return [...leadership, ...extraMembers];

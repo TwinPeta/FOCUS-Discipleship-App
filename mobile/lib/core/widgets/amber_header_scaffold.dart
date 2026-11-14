@@ -38,6 +38,9 @@ class AmberHeaderScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // While the keyboard is up the header shrinks to the back row and a
+    // one-line title, so the field being typed in is never squeezed out.
+    final compact = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       backgroundColor: AppColors.page,
       body: Column(
@@ -52,7 +55,12 @@ class AmberHeaderScaffold extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  compact ? 8 : 16,
+                  16,
+                  compact ? 10 : 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -73,21 +81,23 @@ class AmberHeaderScaffold extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: compact ? 6 : 16),
                     Text(
                       title,
                       style: AppTextStyles.amberHeaderTitle,
-                      maxLines: 2,
+                      maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (subtitleWidget != null) ...[
+                    if (compact)
+                      const SizedBox.shrink()
+                    else if (subtitleWidget != null) ...[
                       const SizedBox(height: 6),
                       subtitleWidget!,
                     ] else if (subtitle != null) ...[
                       const SizedBox(height: 6),
                       Text(subtitle!, style: AppTextStyles.amberHeaderSubtitle),
                     ],
-                    if (headerExtra != null) ...[
+                    if (headerExtra != null && !compact) ...[
                       const SizedBox(height: 14),
                       headerExtra!,
                     ],
@@ -102,7 +112,9 @@ class AmberHeaderScaffold extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               decoration: const BoxDecoration(
                 color: AppColors.white,
-                border: Border(top: BorderSide(color: AppColors.cream, width: 1)),
+                border: Border(
+                  top: BorderSide(color: AppColors.cream, width: 1),
+                ),
               ),
               child: SafeArea(top: false, child: bottomBar!),
             ),

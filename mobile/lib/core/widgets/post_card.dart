@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_text_styles.dart';
 import 'avatar_with_presence.dart';
@@ -24,6 +25,9 @@ class PostCard extends StatelessWidget {
     this.likeCount = 0,
     this.onLikeTap,
     this.onCommentTap,
+    this.photo,
+    this.onOpen,
+    this.onMore,
   });
 
   final String authorName;
@@ -38,6 +42,15 @@ class PostCard extends StatelessWidget {
   final int likeCount;
   final VoidCallback? onLikeTap;
   final VoidCallback? onCommentTap;
+
+  /// Shown 150px tall above the caption (radius 12).
+  final Widget? photo;
+
+  /// Tapping the caption or photo opens the post.
+  final VoidCallback? onOpen;
+
+  /// The 44px "..." button (post options).
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -79,11 +92,47 @@ class PostCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (roleBadgeLabel != null) RoleBadge(label: roleBadgeLabel!),
+              if (roleBadgeLabel != null)
+                Flexible(child: RoleBadge(label: roleBadgeLabel!)),
+              if (onMore != null)
+                IconButton(
+                  onPressed: onMore,
+                  tooltip: 'Post options',
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  icon: const Icon(
+                    Icons.more_horiz_rounded,
+                    color: AppColors.ink,
+                  ),
+                ),
             ],
           ),
+          if (photo != null) ...[
+            const SizedBox(height: 10),
+            Semantics(
+              button: onOpen != null,
+              label: 'Photo. Open post',
+              child: GestureDetector(
+                onTap: onOpen,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  child: SizedBox(
+                    height: 150,
+                    width: double.infinity,
+                    child: photo,
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
-          Text(body, style: AppTextStyles.body.copyWith(height: 1.5)),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            child: Text(body, style: AppTextStyles.body.copyWith(height: 1.5)),
+          ),
           if (media.isNotEmpty) ...[
             const SizedBox(height: 10),
             ClipRRect(
@@ -103,7 +152,8 @@ class PostCard extends StatelessWidget {
           ],
           if (showActions) ...[
             const SizedBox(height: 10),
-            Row(
+            Wrap(
+              spacing: 0,
               children: [
                 _ActionButton(
                   icon: liked
@@ -143,28 +193,31 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlighted ? Colors.red : AppColors.inkDeemphasized80;
+    final color = highlighted ? AppColors.error : AppColors.inkDeemphasized80;
     return Semantics(
       button: true,
       label: label,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: AppTextStyles.body.copyWith(
-                  fontSize: 12.5,
-                  color: color,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppTextStyles.body.copyWith(
+                    fontSize: 12.5,
+                    color: color,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

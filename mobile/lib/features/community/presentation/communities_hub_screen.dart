@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -47,12 +48,23 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
     }).toList();
   }
 
-  Future<void> _debugApprove() async {
-    await ref.read(membershipProvider.notifier).debugApprove();
-    final membership = ref.read(membershipProvider).valueOrNull;
-    if (membership?.communityId != null && mounted) {
-      context.push('/community/${membership!.communityId}/feed');
-    }
+  bool _resultShown = false;
+
+  /// Shows the approved/declined result once, the first time the hub sees
+  /// an unseen result (the screen itself marks it seen).
+  void _maybeShowResult(Membership membership) {
+    if (_resultShown || !membership.hasUnseenResult) return;
+    _resultShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        context.push(
+          membership.status == MembershipStatus.approved
+              ? '/request/approved'
+              : '/request/declined',
+        ),
+      );
+    });
   }
 
   @override
@@ -76,6 +88,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
     }
 
     final membership = membershipAsync.valueOrNull ?? Membership.empty;
+    _maybeShowResult(membership);
 
     return Scaffold(
       backgroundColor: AppColors.page,
@@ -208,22 +221,6 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                           );
                         },
                       ),
-                      if (kDebugMode &&
-                          membership.status == MembershipStatus.pending) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: TextButton(
-                            onPressed: _debugApprove,
-                            child: const Text(
-                              'Prototype: super-mentor approves',
-                              style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ],
                 ),

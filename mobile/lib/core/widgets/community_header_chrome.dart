@@ -22,6 +22,7 @@ class CommunityHeaderChrome extends StatelessWidget {
     required this.onSelectSpecific,
     this.tabBar,
     this.onBack,
+    this.extraAction,
   });
 
   final String title;
@@ -33,6 +34,9 @@ class CommunityHeaderChrome extends StatelessWidget {
   final Widget? tabBar;
   final VoidCallback? onBack;
 
+  /// Role-only action shown before Messages (e.g. super-mentor Manage).
+  final Widget? extraAction;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -41,9 +45,11 @@ class CommunityHeaderChrome extends StatelessWidget {
           child: IgnorePointer(
             child: Container(
               color: AppColors.honey,
-              child: CustomPaint(
-                painter: const CommunityCoverPainter(),
-                size: Size.infinite,
+              child: const RepaintBoundary(
+                child: CustomPaint(
+                  painter: CommunityCoverPainter(),
+                  size: Size.infinite,
+                ),
               ),
             ),
           ),
@@ -95,15 +101,19 @@ class CommunityHeaderChrome extends StatelessWidget {
                                 width: 8,
                                 height: 8,
                                 decoration: const BoxDecoration(
-                                  color: Colors.green,
+                                  color: AppColors.success,
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                '$onlineCount online now',
-                                style: AppTextStyles.body.copyWith(
-                                  fontSize: 12,
+                              Flexible(
+                                child: Text(
+                                  '$onlineCount online now',
+                                  style: AppTextStyles.body.copyWith(
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -112,6 +122,10 @@ class CommunityHeaderChrome extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (extraAction != null) ...[
+                    const SizedBox(width: 10),
+                    extraAction!,
+                  ],
                   const SizedBox(width: 10),
                   RoundIconButton(
                     icon: Icons.mail_outline_rounded,

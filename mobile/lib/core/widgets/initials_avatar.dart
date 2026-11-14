@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'sized_file_image.dart';
 
 /// Circular (or rounded-square) avatar that shows a photo when [photoPath]
 /// is set, otherwise falls back to [initials] on a flat fill.
@@ -47,7 +46,7 @@ class InitialsAvatar extends StatelessWidget {
             : null,
         image: hasPhoto
             ? DecorationImage(
-                image: FileImage(File(photoPath!)),
+                image: sizedFileImage(context, photoPath!, logicalSize: size),
                 fit: BoxFit.cover,
               )
             : null,

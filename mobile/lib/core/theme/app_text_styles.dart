@@ -66,6 +66,23 @@ class AppTextStyles {
 
   static TextStyle sectionHeading = _base(size: 20, weight: FontWeight.w900);
 
+  /// Big title at the top of a community tab (Prayer wall, Testimonies).
+  static TextStyle tabTitle = _base(size: 24, weight: FontWeight.w900);
+
+  /// Result screens (request approved, badge earned, report sent).
+  static TextStyle celebrationTitle = _base(
+    size: 34,
+    weight: FontWeight.w900,
+    height: 1.05,
+  );
+
+  /// Title of a learning viewer (video, devotional, quiz, document).
+  static TextStyle viewerTitle = _base(
+    size: 28,
+    weight: FontWeight.w900,
+    height: 1.1,
+  );
+
   static TextStyle cardTitle = _base(size: 17, weight: FontWeight.w800);
 
   static TextStyle body = _base(
@@ -97,5 +114,8 @@ class AppTextStyles {
     letterSpacingEm: -0.6 / 30,
   );
 
-  static TextStyle amberHeaderSubtitle = _base(size: 16, weight: FontWeight.w500);
+  static TextStyle amberHeaderSubtitle = _base(
+    size: 16,
+    weight: FontWeight.w500,
+  );
 }

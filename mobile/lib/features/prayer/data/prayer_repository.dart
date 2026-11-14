@@ -4,13 +4,15 @@ abstract class PrayerRepository {
   Future<List<PrayerRequest>> getRequests(String communityId);
   Future<PrayerRequest> createRequest(PrayerRequest request);
 
-  /// Toggles the current user's "I prayed" mark. A user can only ever
-  /// contribute one count to a request, however many times they tap.
-  Future<PrayerRequest> togglePrayed(String requestId);
+  /// Sets the current user's "I prayed" mark to [prayed]. Idempotent, so a
+  /// user contributes at most one count to a request however often they tap.
+  Future<PrayerRequest> setPrayed(String requestId, {required bool prayed});
 }
 
 class FakePrayerRepository implements PrayerRepository {
-  static const _latency = Duration(milliseconds: 400);
+  FakePrayerRepository({this.latency = const Duration(milliseconds: 400)});
+
+  final Duration latency;
 
   final Map<String, List<PrayerRequest>> _byCommunity = {};
 
@@ -54,33 +56,42 @@ class FakePrayerRepository implements PrayerRepository {
 
   @override
   Future<List<PrayerRequest>> getRequests(String communityId) async {
-    await Future.delayed(_latency);
-    return _byCommunity.putIfAbsent(communityId, () => _seed(communityId));
+    await Future.delayed(latency);
+    return List.unmodifiable(
+      _byCommunity.putIfAbsent(communityId, () => _seed(communityId)),
+    );
   }
 
   @override
   Future<PrayerRequest> createRequest(PrayerRequest request) async {
-    await Future.delayed(_latency);
-    final requests = _byCommunity.putIfAbsent(request.communityId, () => []);
+    await Future.delayed(latency);
+    final requests = _byCommunity.putIfAbsent(
+      request.communityId,
+      () => _seed(request.communityId),
+    );
+    final existing = requests.where((r) => r.id == request.id).firstOrNull;
+    if (existing != null) return existing;
     requests.insert(0, request);
     return request;
   }
 
   @override
-  Future<PrayerRequest> togglePrayed(String requestId) async {
-    await Future.delayed(_latency);
+  Future<PrayerRequest> setPrayed(
+    String requestId, {
+    required bool prayed,
+  }) async {
+    await Future.delayed(latency);
     for (final requests in _byCommunity.values) {
       final index = requests.indexWhere((r) => r.id == requestId);
       if (index == -1) continue;
       final current = requests[index];
-      final toggled = current.copyWith(
-        prayedByMe: !current.prayedByMe,
-        prayedCount: current.prayedByMe
-            ? current.prayedCount - 1
-            : current.prayedCount + 1,
+      if (current.prayedByMe == prayed) return current;
+      final updated = current.copyWith(
+        prayedByMe: prayed,
+        prayedCount: current.prayedCount + (prayed ? 1 : -1),
       );
-      requests[index] = toggled;
-      return toggled;
+      requests[index] = updated;
+      return updated;
     }
     throw ArgumentError('Unknown prayer request id: $requestId');
   }

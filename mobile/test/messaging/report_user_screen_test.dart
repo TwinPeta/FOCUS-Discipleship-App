@@ -9,7 +9,9 @@ import 'package:focus_1/features/messaging/presentation/report_user_screen.dart'
 import '../support/pump_utils.dart';
 
 void main() {
-  testWidgets('Send report stays disabled until a reason is chosen', (tester) async {
+  testWidgets('Send report stays disabled until a reason is chosen', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp.router(
@@ -35,6 +37,9 @@ void main() {
     await tester.tap(find.text('Harassment or bullying'));
     await settle(tester);
 
-    expect(tester.widget<ElevatedButton>(sendButtonFinder).onPressed, isNotNull);
+    expect(
+      tester.widget<ElevatedButton>(sendButtonFinder).onPressed,
+      isNotNull,
+    );
   });
 }

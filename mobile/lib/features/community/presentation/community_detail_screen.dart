@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_primary_button.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../domain/membership.dart';
 import '../domain/person.dart';
 import '../../profile/presentation/profile_providers.dart';
@@ -28,12 +29,27 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
   bool _isRequesting = false;
 
   Future<void> _requestToJoin() async {
+    if (_isRequesting) return;
     setState(() => _isRequesting = true);
-    await ref
-        .read(membershipProvider.notifier)
-        .requestToJoin(widget.communityId);
+    try {
+      await ref
+          .read(membershipProvider.notifier)
+          .requestToJoin(widget.communityId);
+    } on MembershipLimitReached {
+      if (mounted) {
+        showErrorSnack(
+          context,
+          'You already have a pending request or a specific community.',
+        );
+      }
+      return;
+    } catch (_) {
+      if (mounted) showErrorSnack(context);
+      return;
+    } finally {
+      if (mounted) setState(() => _isRequesting = false);
+    }
     if (!mounted) return;
-    setState(() => _isRequesting = false);
     context.go('/communities');
   }
 

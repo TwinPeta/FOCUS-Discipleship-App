@@ -1,9 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/initials_avatar.dart';
+import '../../../notifications/presentation/notification_providers.dart';
 import '../../../profile/domain/user_profile.dart';
 
 class HubHeader extends StatelessWidget {
@@ -32,6 +34,8 @@ class HubHeader extends StatelessWidget {
                   style: AppTextStyles.eyebrow,
                 ),
               ),
+              const _NotificationBell(),
+              const SizedBox(width: 10),
               Semantics(
                 button: true,
                 label: 'Open my profile',
@@ -58,6 +62,57 @@ class HubHeader extends StatelessWidget {
             style: AppTextStyles.body,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 48px white bell; an ink dot (plus the count in its label) when there
+/// are unread notifications. The Notifications screen is prompt 3.
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(unreadNotificationCountProvider);
+    return Semantics(
+      button: true,
+      label: unread == 0 ? 'Notifications' : 'Notifications, $unread unread',
+      excludeSemantics: true,
+      child: Material(
+        color: AppColors.white,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => context.push('/notifications'),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.notifications_none_rounded,
+                  color: AppColors.ink,
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 11,
+                    right: 12,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

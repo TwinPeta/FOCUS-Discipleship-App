@@ -2,12 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../features/community/domain/user_role.dart';
 import '../../features/community/presentation/providers/community_providers.dart';
+import '../../features/community/presentation/providers/membership_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
 import 'community_tab_bar.dart';
+import 'round_icon_button.dart';
+import 'states/offline_banner.dart';
 
 /// The amber header + 6-tab shell wrapping every `/community/:id/*` screen.
 /// Pass a [StatefulNavigationShell] so switching tabs keeps this header
@@ -25,6 +29,8 @@ class CommunityShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final communityAsync = ref.watch(communityByIdProvider(communityId));
+    final isSuperMentor =
+        ref.watch(currentRoleProvider) == UserRole.superMentor;
 
     return Scaffold(
       backgroundColor: AppColors.page,
@@ -46,8 +52,16 @@ class CommunityShell extends ConsumerWidget {
                   onlineCount: estimateOnlineCount(community.id),
                   generalSelected: false,
                   specificLabel: community.name,
-                  onSelectGeneral: () => context.push('/general-feed'),
+                  onSelectGeneral: () => context.go('/general-feed'),
                   onSelectSpecific: () {},
+                  extraAction: isSuperMentor
+                      ? RoundIconButton(
+                          icon: Icons.tune_rounded,
+                          semanticLabel: 'Manage community',
+                          onPressed: () =>
+                              context.push('/community/$communityId/manage'),
+                        )
+                      : null,
                   tabBar: CommunityTabBar(
                     selectedIndex: navigationShell.currentIndex,
                     onTap: (index) => navigationShell.goBranch(
@@ -56,6 +70,7 @@ class CommunityShell extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const OfflineBanner(),
                 Expanded(child: navigationShell),
               ],
             ),

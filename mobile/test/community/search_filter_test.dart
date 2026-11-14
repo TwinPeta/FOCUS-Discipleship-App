@@ -26,7 +26,12 @@ Widget _wrap() {
       theme: AppTheme.light(),
       routerConfig: GoRouter(
         initialLocation: '/x',
-        routes: [GoRoute(path: '/x', builder: (context, state) => const CommunitiesHubScreen())],
+        routes: [
+          GoRoute(
+            path: '/x',
+            builder: (context, state) => const CommunitiesHubScreen(),
+          ),
+        ],
       ),
     ),
   );

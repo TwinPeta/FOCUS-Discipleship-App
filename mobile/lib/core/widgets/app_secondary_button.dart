@@ -26,9 +26,9 @@ class AppSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
+    // Min height (not fixed) so 2.0x text never clips the label.
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: height, minWidth: double.infinity),
       child: OutlinedButton(
         onPressed: _isDisabled ? null : onPressed,
         style: OutlinedButton.styleFrom(

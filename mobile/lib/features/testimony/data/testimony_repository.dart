@@ -2,13 +2,21 @@ import '../domain/testimony.dart';
 
 abstract class TestimonyRepository {
   /// Reviewed stories are visible to everyone; a pending story is visible
-  /// only to its own author.
-  Future<List<Testimony>> getTestimonies(String communityId);
+  /// only to the viewer who wrote it ([viewerId] == `authorId`).
+  Future<List<Testimony>> getTestimonies(
+    String communityId, {
+    required String? viewerId,
+  });
+
+  /// Always stored as [TestimonyStatus.pending], whatever the caller sends;
+  /// only moderation can mark a story reviewed.
   Future<Testimony> submitStory(Testimony testimony);
 }
 
 class FakeTestimonyRepository implements TestimonyRepository {
-  static const _latency = Duration(milliseconds: 400);
+  FakeTestimonyRepository({this.latency = const Duration(milliseconds: 400)});
+
+  final Duration latency;
 
   final Map<String, List<Testimony>> _byCommunity = {};
 
@@ -44,19 +52,30 @@ class FakeTestimonyRepository implements TestimonyRepository {
   }
 
   @override
-  Future<List<Testimony>> getTestimonies(String communityId) async {
-    await Future.delayed(_latency);
+  Future<List<Testimony>> getTestimonies(
+    String communityId, {
+    required String? viewerId,
+  }) async {
+    await Future.delayed(latency);
     final all = _byCommunity.putIfAbsent(communityId, () => _seed(communityId));
-    return all
-        .where((t) => t.status == TestimonyStatus.reviewed || t.isMine)
-        .toList();
+    return List.unmodifiable(
+      all.where(
+        (t) => t.status == TestimonyStatus.reviewed || t.isAuthoredBy(viewerId),
+      ),
+    );
   }
 
   @override
   Future<Testimony> submitStory(Testimony testimony) async {
-    await Future.delayed(_latency);
-    final list = _byCommunity.putIfAbsent(testimony.communityId, () => []);
-    list.insert(0, testimony);
-    return testimony;
+    await Future.delayed(latency);
+    final list = _byCommunity.putIfAbsent(
+      testimony.communityId,
+      () => _seed(testimony.communityId),
+    );
+    final existing = list.where((t) => t.id == testimony.id).firstOrNull;
+    if (existing != null) return existing;
+    final stored = testimony.withStatus(TestimonyStatus.pending);
+    list.insert(0, stored);
+    return stored;
   }
 }

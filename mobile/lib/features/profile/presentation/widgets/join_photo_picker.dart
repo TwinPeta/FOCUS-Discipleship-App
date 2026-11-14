@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/dashed_circle_painter.dart';
+import '../../../../core/widgets/sized_file_image.dart';
 
 /// The Join form's 76px circular photo picker: dashed border, person icon,
 /// amber "+" badge. Tapping opens a gallery/camera sheet via image_picker.
@@ -41,7 +40,13 @@ class JoinPhotoPicker extends StatelessWidget {
       ),
     );
     if (source == null) return;
-    final picked = await ImagePicker().pickImage(source: source);
+    // Profile photos never need more than 800px; recompress on pick.
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 80,
+    );
     if (picked != null) {
       onPhotoPicked(picked.path);
     }
@@ -70,16 +75,20 @@ class JoinPhotoPicker extends StatelessWidget {
                       shape: BoxShape.circle,
                       image: hasPhoto
                           ? DecorationImage(
-                              image: FileImage(File(photoPath!)),
+                              image: sizedFileImage(
+                                context,
+                                photoPath!,
+                                logicalSize: 76,
+                              ),
                               fit: BoxFit.cover,
                             )
                           : null,
                     ),
                     child: hasPhoto
                         ? null
-                        : CustomPaint(
-                            painter: const DashedCirclePainter(),
-                            child: const Center(
+                        : const CustomPaint(
+                            painter: DashedCirclePainter(),
+                            child: Center(
                               child: Icon(
                                 Icons.person_outline_rounded,
                                 size: 32,

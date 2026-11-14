@@ -64,6 +64,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Source Sans 3 is bundled so text renders offline; google_fonts loads
+  # these instead of fetching at runtime (see main.dart).
+  assets:
+    - assets/google_fonts/
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

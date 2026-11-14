@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -9,6 +8,9 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/dashed_circle_painter.dart';
 import '../../../core/widgets/info_banner.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
 import '../domain/activity_event.dart';
 import '../domain/badge.dart';
 import 'providers/activity_providers.dart';
@@ -17,106 +19,97 @@ import 'providers/activity_providers.dart';
 class MyActivityScreen extends ConsumerWidget {
   const MyActivityScreen({super.key});
 
-  IconData _iconFor(String type) => switch (type) {
-    'video_watched' => Icons.play_circle_outline_rounded,
-    'quiz_completed' => Icons.quiz_outlined,
-    'prayed' => Icons.favorite_border_rounded,
-    'pathway_completed' => Icons.flag_outlined,
-    'meeting_attended' => Icons.groups_outlined,
-    _ => Icons.timeline_rounded,
+  IconData _iconFor(ActivityType type) => switch (type) {
+    ActivityType.videoWatched => Icons.play_circle_outline_rounded,
+    ActivityType.devotionalRead => Icons.menu_book_outlined,
+    ActivityType.documentRead => Icons.description_outlined,
+    ActivityType.quizCompleted => Icons.quiz_outlined,
+    ActivityType.prayed => Icons.favorite_border_rounded,
+    ActivityType.pathwayCompleted => Icons.flag_outlined,
+    ActivityType.meetingAttended => Icons.groups_outlined,
   };
-
-  Future<void> _recordMeetingAttended(BuildContext context, WidgetRef ref) async {
-    final newlyEarned = await recordActivity(
-      ref,
-      ActivityEvent(
-        type: 'meeting_attended',
-        label: 'Attended a community meeting',
-        at: DateTime.now(),
-      ),
-    );
-    if (!context.mounted) return;
-    for (final badge in newlyEarned) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('New badge earned: ${badge.name}!')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final badgesAsync = ref.watch(badgesProvider);
     final eventsAsync = ref.watch(activityEventsProvider);
+    final events = eventsAsync.valueOrNull ?? const <ActivityEvent>[];
 
     return AmberHeaderScaffold(
       title: 'My activity',
       subtitle: 'Your journey, only visible to you.',
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          InfoBanner(
-            icon: Icons.lock_outline_rounded,
-            child: const Text(
-              'Only you can see this. FCU records your participation to help you follow your growth.',
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text('My badges', style: AppTextStyles.sectionHeading),
-          const SizedBox(height: 12),
-          badgesAsync.when(
-            loading: () => const SizedBox(height: 96, child: Center(child: CircularProgressIndicator())),
-            error: (error, stackTrace) => Text('Could not load badges.', style: AppTextStyles.body),
-            data: (badges) => SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: badges.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                itemBuilder: (context, index) => _BadgeItem(badge: badges[index]),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text('Recent activity', style: AppTextStyles.sectionHeading),
-          const SizedBox(height: 12),
-          eventsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => Text('Could not load activity.', style: AppTextStyles.body),
-            data: (events) {
-              if (events.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      'Nothing recorded yet. Your activity will show up here.',
-                      style: AppTextStyles.body,
-                      textAlign: TextAlign.center,
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            sliver: SliverList.list(
+              children: [
+                const InfoBanner(
+                  icon: Icons.lock_outline_rounded,
+                  child: Text(
+                    'Only you can see this. FCU records your participation to help you follow your growth.',
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text('My badges', style: AppTextStyles.sectionHeading),
+                const SizedBox(height: 12),
+                badgesAsync.when(
+                  loading: () => const SizedBox(
+                    height: 96,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (error, stackTrace) =>
+                      ErrorView(onRetry: () => ref.invalidate(badgesProvider)),
+                  data: (badges) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < badges.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          _BadgeItem(badge: badges[i]),
+                        ],
+                      ],
                     ),
                   ),
-                );
-              }
-              return Column(
-                children: [
-                  for (var i = 0; i < events.length; i++) ...[
-                    _ActivityRow(event: events[i], icon: _iconFor(events[i].type)),
-                    if (i != events.length - 1) const SizedBox(height: 10),
-                  ],
-                ],
-              );
-            },
+                ),
+                const SizedBox(height: 24),
+                Text('Recent activity', style: AppTextStyles.sectionHeading),
+              ],
+            ),
           ),
-          if (kDebugMode) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () => _recordMeetingAttended(context, ref),
-                child: const Text(
-                  'Prototype: record meeting attended',
-                  style: TextStyle(decoration: TextDecoration.underline, color: AppColors.ink),
+          if (eventsAsync.isLoading && !eventsAsync.hasValue)
+            const SliverToBoxAdapter(
+              child: Skeleton(showHeader: false, cardCount: 1),
+            )
+          else if (eventsAsync.hasError && !eventsAsync.hasValue)
+            SliverToBoxAdapter(
+              child: ErrorView(
+                onRetry: () => ref.invalidate(activityEventsProvider),
+              ),
+            )
+          else if (events.isEmpty)
+            const SliverToBoxAdapter(
+              child: EmptyState(
+                icon: Icons.timeline_rounded,
+                title: 'Nothing recorded yet',
+                body: 'Your activity will show up here.',
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList.separated(
+                itemCount: events.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, index) => _ActivityRow(
+                  event: events[index],
+                  icon: _iconFor(events[index].type),
                 ),
               ),
             ),
-          ],
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
     );
@@ -153,16 +146,26 @@ class _BadgeItem extends StatelessWidget {
                     child: Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                      ),
                       alignment: Alignment.center,
-                      child: const Icon(Icons.lock_outline_rounded, color: AppColors.placeholder, size: 20),
+                      child: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppColors.placeholder,
+                        size: 20,
+                      ),
                     ),
                   ),
           ),
           const SizedBox(height: 6),
           Text(
             badge.name,
-            style: AppTextStyles.fieldLabel.copyWith(fontSize: 12, fontWeight: FontWeight.w700),
+            style: AppTextStyles.fieldLabel.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -193,17 +196,21 @@ class _ActivityRow extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(12),
+            ),
             alignment: Alignment.center,
             child: Icon(icon, color: AppColors.ink, size: 20),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(event.label, style: AppTextStyles.bodyMedium),
-          ),
+          Expanded(child: Text(event.label, style: AppTextStyles.bodyMedium)),
           Text(
             formatDayLabel(event.at),
-            style: AppTextStyles.body.copyWith(fontSize: 12.5, color: AppColors.inkDeemphasized80),
+            style: AppTextStyles.body.copyWith(
+              fontSize: 12.5,
+              color: AppColors.inkDeemphasized80,
+            ),
           ),
         ],
       ),

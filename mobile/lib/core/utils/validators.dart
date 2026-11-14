@@ -26,7 +26,7 @@ class Validators {
   static String? phone(String? value) {
     final requiredError = required(value, 'Phone number');
     if (requiredError != null) return requiredError;
-    final digitsOnly = value!.trim().replaceAll(' ', '');
+    final digitsOnly = value!.trim().replaceAll(RegExp(r'[\s\-().]'), '');
     if (!_phonePattern.hasMatch(digitsOnly)) {
       return 'Enter a valid phone number';
     }

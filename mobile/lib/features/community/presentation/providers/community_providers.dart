@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/repository_providers.dart';
+import '../../../messaging/presentation/providers/moderation_providers.dart';
 import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/community.dart';
 import '../../domain/person.dart';
@@ -41,9 +42,12 @@ final generalCommunityProvider = FutureProvider<Community>((ref) async {
       .getGeneralCommunity(institutionId, profile.institutionName);
 });
 
-final communityMembersProvider = FutureProvider.family<List<Person>, String>((
-  ref,
-  communityId,
-) {
-  return ref.watch(communityRepositoryProvider).getMembers(communityId);
-});
+/// Members with blocked users removed.
+final communityMembersProvider = FutureProvider.autoDispose
+    .family<List<Person>, String>((ref, communityId) async {
+      final blocked = await ref.watch(blockedUserIdsProvider.future);
+      final members = await ref
+          .watch(communityRepositoryProvider)
+          .getMembers(communityId);
+      return members.where((m) => !blocked.contains(m.id)).toList();
+    });

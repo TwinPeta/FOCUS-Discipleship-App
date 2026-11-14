@@ -7,6 +7,7 @@ import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_text_area.dart';
 import '../../../core/widgets/check_row.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/prayer_request.dart';
 import 'providers/prayer_providers.dart';
@@ -52,9 +53,20 @@ class _NewPrayerRequestScreenState
       createdAt: DateTime.now(),
     );
 
-    await ref
-        .read(prayerRequestsProvider(widget.communityId).notifier)
-        .createRequest(request);
+    try {
+      await ref
+          .read(prayerRequestsProvider(widget.communityId).notifier)
+          .createRequest(request);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isPosting = false);
+        showErrorSnack(
+          context,
+          'Your request was not posted. Please try again.',
+        );
+      }
+      return;
+    }
 
     if (!mounted) return;
     context.pop();
@@ -85,11 +97,15 @@ class _NewPrayerRequestScreenState
               onChanged: (value) => setState(() => _anonymous = value),
             ),
             const SizedBox(height: 14),
-            Row(
+            const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.placeholder),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 16,
+                  color: AppColors.placeholder,
+                ),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Requests are visible to members of your specific community.',

@@ -11,6 +11,9 @@ class AppColors {
   static const ink = Color(0xFF111111);
   static const inputBorder = Color(0xFFE6D48A);
   static const placeholder = Color(0xFF6A6A6A);
+  static const error = Color(0xFFF44336);
+  static const success = Color(0xFF4CAF50);
+  static const skeletonBlock = Color(0xFFEEEDE8);
 
   static const inkDeemphasized85 = Color(0xD9111111);
   static const inkDeemphasized80 = Color(0xCC111111);

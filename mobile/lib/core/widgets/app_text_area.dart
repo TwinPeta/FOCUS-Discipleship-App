@@ -43,7 +43,10 @@ class AppTextArea extends StatelessWidget {
       maxLines: null,
       onChanged: onChanged,
       textCapitalization: textCapitalization,
-      style: AppTextStyles.body.copyWith(fontSize: fontSize, height: textHeight),
+      style: AppTextStyles.body.copyWith(
+        fontSize: fontSize,
+        height: textHeight,
+      ),
       decoration: InputDecoration(
         isCollapsed: true,
         border: InputBorder.none,

@@ -8,6 +8,10 @@ class AppRadii {
   static const double searchInput = 16;
   static const double headerBottom = 28;
   static const double button = 16;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double tile = 14;
+  static const double pill = 999;
 
   // Bold style (landing only)
   static const double boldCardMin = 22;

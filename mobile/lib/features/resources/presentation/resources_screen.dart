@@ -1,13 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/list_row_card.dart';
-import '../../activity/domain/activity_event.dart';
-import '../../activity/presentation/providers/activity_providers.dart';
 import '../domain/resource.dart';
 import 'providers/resource_providers.dart';
 
@@ -44,18 +42,9 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
     ResourceType.devotional || ResourceType.document => AppColors.cream,
   };
 
-  Future<void> _openResource(Resource resource) async {
-    if (resource.type == ResourceType.video) {
-      await ref.read(activityRepositoryProvider).record(
-        ActivityEvent(type: 'video_watched', label: 'Watched "${resource.title}"', at: DateTime.now()),
-      );
-      ref.invalidate(activityEventsProvider);
-      ref.invalidate(badgesProvider);
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${resource.title} coming soon')),
-    );
+  void _openResource(Resource resource) {
+    // Completion (and its activity) is recorded by the viewer itself.
+    context.push(resourceRoute(resource, communityId: widget.communityId));
   }
 
   @override
@@ -68,13 +57,11 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
         child: Text('Could not load resources.', style: AppTextStyles.body),
       ),
       data: (resources) {
-        var filtered = resources;
-        if (_typeFilter != null) {
-          filtered = filtered.where((r) => r.type == _typeFilter).toList();
-        }
-        if (_topicFilter != null) {
-          filtered = filtered.where((r) => r.topic == _topicFilter).toList();
-        }
+        final filtered = filterResources(
+          resources,
+          type: _typeFilter,
+          topic: _topicFilter,
+        );
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -97,39 +84,41 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
               onChanged: (value) => setState(() => _typeFilter = value),
             ),
             const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _TopicTile(
-                    icon: Icons.groups_rounded,
-                    title: 'Bible characters',
-                    subtitle: 'People of faith',
-                    color: AppColors.amber,
-                    selected: _topicFilter == ResourceTopic.characters,
-                    onTap: () => setState(() {
-                      _topicFilter = _topicFilter == ResourceTopic.characters
-                          ? null
-                          : ResourceTopic.characters;
-                    }),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _TopicTile(
+                      icon: Icons.groups_rounded,
+                      title: 'Bible characters',
+                      subtitle: 'People of faith',
+                      color: AppColors.amber,
+                      selected: _topicFilter == ResourceTopic.characters,
+                      onTap: () => setState(() {
+                        _topicFilter = _topicFilter == ResourceTopic.characters
+                            ? null
+                            : ResourceTopic.characters;
+                      }),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _TopicTile(
-                    icon: Icons.menu_book_rounded,
-                    title: 'Bible texts',
-                    subtitle: 'Key passages',
-                    color: AppColors.honey,
-                    selected: _topicFilter == ResourceTopic.texts,
-                    onTap: () => setState(() {
-                      _topicFilter = _topicFilter == ResourceTopic.texts
-                          ? null
-                          : ResourceTopic.texts;
-                    }),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _TopicTile(
+                      icon: Icons.menu_book_rounded,
+                      title: 'Bible texts',
+                      subtitle: 'Key passages',
+                      color: AppColors.honey,
+                      selected: _topicFilter == ResourceTopic.texts,
+                      onTap: () => setState(() {
+                        _topicFilter = _topicFilter == ResourceTopic.texts
+                            ? null
+                            : ResourceTopic.texts;
+                      }),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -160,10 +149,14 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     alignment: Alignment.center,
-                    child: Icon(_typeIcon(filtered[i].type), color: AppColors.ink),
+                    child: Icon(
+                      _typeIcon(filtered[i].type),
+                      color: AppColors.ink,
+                    ),
                   ),
                   title: filtered[i].title,
-                  subtitle: '${_typeLabel(filtered[i].type)} · ${filtered[i].meta}',
+                  subtitle:
+                      '${_typeLabel(filtered[i].type)} · ${filtered[i].meta}',
                   onTap: filtered[i].type == ResourceType.quiz
                       ? null
                       : () => _openResource(filtered[i]),
@@ -175,8 +168,10 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                             onTap: () => _openResource(filtered[i]),
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
-                              height: 40,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: AppColors.amber,
@@ -184,12 +179,17 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                               ),
                               child: Text(
                                 'Start',
-                                style: AppTextStyles.chip.copyWith(fontWeight: FontWeight.w800),
+                                style: AppTextStyles.chip.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ),
                         )
-                      : const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+                      : const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.ink,
+                        ),
                 ),
                 if (i != filtered.length - 1) const SizedBox(height: 10),
               ],
@@ -231,7 +231,9 @@ class _TopicTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(20),
-            border: selected ? Border.all(color: AppColors.ink, width: 2) : null,
+            border: selected
+                ? Border.all(color: AppColors.ink, width: 2)
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

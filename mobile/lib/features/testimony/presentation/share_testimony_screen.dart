@@ -10,6 +10,7 @@ import '../../../core/widgets/app_secondary_button.dart';
 import '../../../core/widgets/app_text_area.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/check_row.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
 import 'providers/testimony_providers.dart';
@@ -47,7 +48,12 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
       _consent;
 
   Future<void> _pickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
+    );
     if (picked == null) return;
     setState(() => _photoName = picked.name);
   }
@@ -70,16 +76,24 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
       type: TestimonyType.story,
       title: _titleController.text.trim(),
       excerpt: _storyController.text.trim(),
+      authorId: profile.id,
       authorName: profile.fullName,
       institution: profile.institutionName,
       status: TestimonyStatus.pending,
       createdAt: DateTime.now(),
-      isMine: true,
     );
 
-    await ref
-        .read(testimoniesProvider(widget.communityId).notifier)
-        .submitStory(testimony);
+    try {
+      await ref
+          .read(testimoniesProvider(widget.communityId).notifier)
+          .submitStory(testimony);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        showErrorSnack(context, 'Your story was not sent. Please try again.');
+      }
+      return;
+    }
 
     if (!mounted) return;
     context.pop();

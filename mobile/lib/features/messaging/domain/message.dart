@@ -1,4 +1,4 @@
-enum MessageStatus { sending, sent }
+enum MessageStatus { sending, sent, failed }
 
 /// Sent by the current user when [senderId] is [Message.meId].
 class Message {

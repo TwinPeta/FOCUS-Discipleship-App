@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/bold_button.dart';
+import 'bold_style.dart';
 import 'illustration_collage.dart';
 
 class LandingHeroSection extends StatelessWidget {
@@ -69,11 +71,13 @@ class LandingHeroSection extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      'Watch student stories',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        decoration: TextDecoration.underline,
-                        fontWeight: FontWeight.w700,
+                    Flexible(
+                      child: Text(
+                        'Watch student stories',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -120,6 +124,8 @@ class _LogoRow extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(width: 10),
+        const _SignInPill(),
       ],
     );
   }
@@ -147,6 +153,44 @@ class _Headline extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// White bold-style pill opening sign in (built in prompt 2).
+class _SignInPill extends StatelessWidget {
+  const _SignInPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Sign in',
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/login'),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            alignment: Alignment.center,
+            decoration: boldCardDecoration(
+              color: AppColors.white,
+              radius: AppRadii.pill,
+              shadowOffset: const Offset(2, 2),
+            ),
+            child: Text(
+              'Sign in',
+              style: AppTextStyles.cardTitle.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

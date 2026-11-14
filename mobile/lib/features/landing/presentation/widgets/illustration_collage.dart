@@ -36,7 +36,7 @@ class IllustrationCollage extends StatelessWidget {
               top: 58,
               child: Transform.rotate(
                 angle: _deg(-6),
-                child: _StudentCard(
+                child: const _StudentCard(
                   width: 122,
                   height: 160,
                   color: AppColors.cream,
@@ -48,7 +48,7 @@ class IllustrationCollage extends StatelessWidget {
               top: 38,
               child: Transform.rotate(
                 angle: _deg(5),
-                child: _StudentCard(
+                child: const _StudentCard(
                   width: 122,
                   height: 160,
                   color: AppColors.white,
@@ -124,9 +124,11 @@ class _StudentCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: CustomPaint(
-              size: Size(width, height),
-              painter: StudentFacePainter(fillColor: AppColors.amber),
+            child: RepaintBoundary(
+              child: CustomPaint(
+                size: Size(width, height),
+                painter: const StudentFacePainter(fillColor: AppColors.amber),
+              ),
             ),
           ),
           if (playButtonOnTap != null)

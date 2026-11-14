@@ -3,24 +3,61 @@ import '../domain/message.dart';
 import '../domain/thread.dart';
 
 abstract class ThreadRepository {
-  /// Threads belonging to blocked users are filtered out elsewhere (see
-  /// `threadsProvider`), not in this method, so moderation stays a
-  /// separate concern from thread storage.
+  /// Most recent activity first. Threads belonging to blocked users are
+  /// filtered out by `threadsProvider`, so moderation stays a separate
+  /// concern from thread storage.
   Future<List<Thread>> getThreads();
   Future<Thread?> getThreadById(String id);
+
+  /// Throws [MessagingRestricted] when the under-18 limit applies.
   Future<Thread> openOrCreateThread(Person participant, String roleLabel);
   Future<void> markRead(String threadId);
+
+  /// False while the current user may not message [person] (under-18
+  /// limit). The UI disables composers with [MessagingRestricted.message].
+  bool canMessage(Person person);
+}
+
+/// The under-18 limit: no starting or replying to conversations with adults
+/// until a guardian confirms.
+class MessagingRestricted implements Exception {
+  const MessagingRestricted();
+  static const message = "Waiting for your guardian's confirmation";
+  @override
+  String toString() => 'MessagingRestricted';
 }
 
 abstract class MessageRepository {
   Future<List<Message>> getMessages(String threadId);
+
+  /// Throws [MessagingRestricted] when the under-18 limit applies.
   Future<Message> sendMessage(String threadId, String text);
 }
 
-/// Backs both [ThreadRepository] and [MessageRepository] so a sent message
-/// can update its thread's `lastMessage`/`lastAt` in one place.
-class FakeMessagingRepository implements ThreadRepository, MessageRepository {
-  static const _latency = Duration(milliseconds: 400);
+/// One store behind both interfaces, so a sent message can update its
+/// thread's `lastMessage`/`lastAt` in one place.
+abstract class MessagingRepository
+    implements ThreadRepository, MessageRepository {}
+
+class FakeMessagingRepository implements MessagingRepository {
+  FakeMessagingRepository({
+    this.latency = const Duration(milliseconds: 400),
+    bool Function()? isRestricted,
+  }) : _isRestricted = isRestricted ?? _never;
+
+  static bool _never() => false;
+
+  final Duration latency;
+
+  /// Whether the under-18 limit currently applies to the signed-in user.
+  final bool Function() _isRestricted;
+
+  @override
+  bool canMessage(Person person) => !(_isRestricted() && person.isAdult);
+
+  void _checkAllowed(Person person) {
+    if (!canMessage(person)) throw const MessagingRestricted();
+  }
 
   final List<Thread> _threads = [
     Thread(
@@ -79,13 +116,15 @@ class FakeMessagingRepository implements ThreadRepository, MessageRepository {
 
   @override
   Future<List<Thread>> getThreads() async {
-    await Future.delayed(_latency);
-    return List.unmodifiable(_threads);
+    await Future.delayed(latency);
+    // Most recent activity first.
+    final sorted = [..._threads]..sort((a, b) => b.lastAt.compareTo(a.lastAt));
+    return List.unmodifiable(sorted);
   }
 
   @override
   Future<Thread?> getThreadById(String id) async {
-    await Future.delayed(_latency);
+    await Future.delayed(latency);
     for (final thread in _threads) {
       if (thread.id == id) return thread;
     }
@@ -93,8 +132,12 @@ class FakeMessagingRepository implements ThreadRepository, MessageRepository {
   }
 
   @override
-  Future<Thread> openOrCreateThread(Person participant, String roleLabel) async {
-    await Future.delayed(_latency);
+  Future<Thread> openOrCreateThread(
+    Person participant,
+    String roleLabel,
+  ) async {
+    await Future.delayed(latency);
+    _checkAllowed(participant);
     for (final thread in _threads) {
       if (thread.participant.id == participant.id) return thread;
     }
@@ -111,7 +154,7 @@ class FakeMessagingRepository implements ThreadRepository, MessageRepository {
 
   @override
   Future<void> markRead(String threadId) async {
-    await Future.delayed(_latency);
+    await Future.delayed(latency);
     final index = _threads.indexWhere((t) => t.id == threadId);
     if (index != -1) {
       _threads[index] = _threads[index].copyWith(unread: 0);
@@ -120,13 +163,15 @@ class FakeMessagingRepository implements ThreadRepository, MessageRepository {
 
   @override
   Future<List<Message>> getMessages(String threadId) async {
-    await Future.delayed(_latency);
+    await Future.delayed(latency);
     return List.unmodifiable(_messages[threadId] ?? const []);
   }
 
   @override
   Future<Message> sendMessage(String threadId, String text) async {
-    await Future.delayed(_latency);
+    await Future.delayed(latency);
+    final thread = _threads.where((t) => t.id == threadId).firstOrNull;
+    if (thread != null) _checkAllowed(thread.participant);
     final message = Message(
       id: 'msg-${DateTime.now().microsecondsSinceEpoch}',
       threadId: threadId,

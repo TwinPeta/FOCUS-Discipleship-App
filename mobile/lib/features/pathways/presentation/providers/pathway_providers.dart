@@ -7,59 +7,54 @@ import '../../../activity/presentation/providers/activity_providers.dart';
 import '../../domain/pathway.dart';
 import '../../domain/pathway_step.dart';
 
-class PathwaysController extends AsyncNotifier<List<Pathway>> {
-  @override
-  Future<List<Pathway>> build() {
-    return ref.watch(pathwayRepositoryProvider).getPathways();
-  }
+final pathwaysProvider = FutureProvider<List<Pathway>>((ref) {
+  return ref.watch(pathwayRepositoryProvider).getPathways();
+});
 
-  Future<void> refresh() async {
-    state = AsyncValue.data(await ref.read(pathwayRepositoryProvider).getPathways());
-  }
-}
+class PathwayStepsController
+    extends FamilyAsyncNotifier<List<PathwayStep>, String> {
+  bool _completing = false;
 
-final pathwaysProvider = AsyncNotifierProvider<PathwaysController, List<Pathway>>(
-  PathwaysController.new,
-);
-
-class PathwayStepsController extends FamilyAsyncNotifier<List<PathwayStep>, String> {
   @override
   Future<List<PathwayStep>> build(String pathwayId) {
     return ref.watch(pathwayRepositoryProvider).getSteps(pathwayId);
   }
 
-  /// Marks [stepId] done, refreshes both this pathway's steps and the
-  /// pathway list (progress bar / unlock rules may have changed), and
-  /// returns any badges newly earned.
+  /// Completes the current step (the repository rejects anything else),
+  /// refreshes progress and records "pathway completed" on the last step.
+  /// The step's own activity (video, quiz…) is recorded by the viewer that
+  /// completed it. A second call while one is in flight is ignored.
+  /// Returns badges newly earned.
   Future<List<AppBadge>> completeStep(String stepId) async {
-    final before = state.valueOrNull ?? const <PathwayStep>[];
-    final completedStep = before.firstWhere((s) => s.id == stepId, orElse: () => before.first);
-    final isLastStep = before.isNotEmpty && completedStep.index == before.length - 1;
+    if (_completing) return const [];
+    _completing = true;
+    try {
+      final repo = ref.read(pathwayRepositoryProvider);
+      final result = await repo.completeStep(arg, stepId);
+      state = AsyncValue.data(await repo.getSteps(arg));
+      ref.invalidate(pathwaysProvider);
 
-    await ref.read(pathwayRepositoryProvider).completeStep(arg, stepId);
-    state = AsyncValue.data(await ref.read(pathwayRepositoryProvider).getSteps(arg));
-    ref.invalidate(pathwaysProvider);
-
-    final newlyEarned = <AppBadge>[];
-    if (completedStep.type == PathwayStepType.quiz) {
-      newlyEarned.addAll(await ref.read(activityRepositoryProvider).record(
-        ActivityEvent(type: 'quiz_completed', label: 'Completed "${completedStep.title}"', at: DateTime.now()),
-      ));
+      final recorder = ref.read(activityRecorderProvider);
+      final earned = <AppBadge>[];
+      if (result.pathwayCompleted) {
+        earned.addAll(
+          await recorder.record(
+            ActivityType.pathwayCompleted,
+            'Completed a pathway',
+            sourceId: arg,
+          ),
+        );
+      }
+      return earned;
+    } finally {
+      _completing = false;
     }
-    if (isLastStep) {
-      newlyEarned.addAll(await ref.read(activityRepositoryProvider).record(
-        ActivityEvent(type: 'pathway_completed', label: 'Completed a pathway', at: DateTime.now()),
-      ));
-    }
-    if (newlyEarned.isNotEmpty) {
-      ref.invalidate(activityEventsProvider);
-      ref.invalidate(badgesProvider);
-    }
-    return newlyEarned;
   }
 }
 
-final pathwayStepsProvider = AsyncNotifierProvider.family<
-    PathwayStepsController, List<PathwayStep>, String>(
-  PathwayStepsController.new,
-);
+final pathwayStepsProvider =
+    AsyncNotifierProvider.family<
+      PathwayStepsController,
+      List<PathwayStep>,
+      String
+    >(PathwayStepsController.new);

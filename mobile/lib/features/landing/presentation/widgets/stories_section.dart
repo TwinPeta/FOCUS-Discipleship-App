@@ -43,7 +43,8 @@ class StoriesSection extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 392,
+            // 250 art + text block; the text part grows with text scale.
+            height: 322 + MediaQuery.textScalerOf(context).scale(70),
             child: storiesAsync.when(
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.ink),
@@ -115,12 +116,14 @@ class _StoryCard extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Container(color: artBackground),
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: CustomPaint(
-                        size: const Size(202, 202),
-                        painter: const StudentFacePainter(
-                          fillColor: AppColors.white,
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: RepaintBoundary(
+                        child: CustomPaint(
+                          size: Size(202, 202),
+                          painter: StudentFacePainter(
+                            fillColor: AppColors.white,
+                          ),
                         ),
                       ),
                     ),

@@ -48,9 +48,7 @@ class CheckRow extends StatelessWidget {
                     : null,
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(label, style: AppTextStyles.bodyMedium),
-              ),
+              Expanded(child: Text(label, style: AppTextStyles.bodyMedium)),
             ],
           ),
         ),

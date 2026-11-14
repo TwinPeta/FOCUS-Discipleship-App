@@ -34,6 +34,30 @@ class _MarqueeStripState extends State<MarqueeStrip>
     super.dispose();
   }
 
+  double? _cachedWidth;
+  TextStyle? _cachedStyle;
+  TextScaler? _cachedScaler;
+
+  /// Laid out once per style/scale, not on every build.
+  double _textWidth(TextStyle style, TextScaler scaler) {
+    if (_cachedWidth != null &&
+        style == _cachedStyle &&
+        scaler == _cachedScaler) {
+      return _cachedWidth!;
+    }
+    final painter = TextPainter(
+      text: TextSpan(text: _marqueeText, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    _cachedStyle = style;
+    _cachedScaler = scaler;
+    _cachedWidth = painter.width;
+    painter.dispose();
+    return _cachedWidth!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = AppTextStyles.sectionHeading.copyWith(
@@ -42,7 +66,7 @@ class _MarqueeStripState extends State<MarqueeStrip>
     );
     final reduceMotion = MediaQuery.of(context).disableAnimations;
 
-    final decoration = const BoxDecoration(
+    const decoration = BoxDecoration(
       color: AppColors.white,
       border: Border(bottom: BorderSide(color: AppColors.ink, width: 2.5)),
     );
@@ -61,47 +85,31 @@ class _MarqueeStripState extends State<MarqueeStrip>
       );
     }
 
-    final textPainter = TextPainter(
-      text: TextSpan(text: _marqueeText, style: style),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
-    final textWidth = textPainter.width;
+    final textWidth = _textWidth(style, MediaQuery.textScalerOf(context));
 
     return Container(
       decoration: decoration,
-      height: style.fontSize! * 1.6,
+      height: MediaQuery.textScalerOf(context).scale(style.fontSize!) * 1.6,
       child: ClipRect(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final dx = -_controller.value * textWidth;
-            return OverflowBox(
-              minWidth: 0,
-              maxWidth: double.infinity,
-              alignment: Alignment.centerLeft,
-              child: Transform.translate(
-                offset: Offset(dx, 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _marqueeText,
-                      style: style,
-                      maxLines: 1,
-                      softWrap: false,
-                    ),
-                    Text(
-                      _marqueeText,
-                      style: style,
-                      maxLines: 1,
-                      softWrap: false,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        child: OverflowBox(
+          minWidth: 0,
+          maxWidth: double.infinity,
+          alignment: Alignment.centerLeft,
+          // Only the offset animates; the two Text widgets are built once.
+          child: AnimatedBuilder(
+            animation: _controller,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_marqueeText, style: style, maxLines: 1, softWrap: false),
+                Text(_marqueeText, style: style, maxLines: 1, softWrap: false),
+              ],
+            ),
+            builder: (context, row) => Transform.translate(
+              offset: Offset(-_controller.value * textWidth, 0),
+              child: row,
+            ),
+          ),
         ),
       ),
     );
