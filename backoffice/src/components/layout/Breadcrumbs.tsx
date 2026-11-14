@@ -48,7 +48,10 @@ export function Breadcrumbs() {
                 className={`flex min-w-0 items-center gap-1 ${isLast ? "" : "hidden sm:flex"}`}
               >
                 {index > 0 && (
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+                  <ChevronRight
+                    className={`h-3.5 w-3.5 shrink-0 text-muted-foreground/60 ${isLast ? "hidden sm:block" : ""}`}
+                    aria-hidden="true"
+                  />
                 )}
                 {crumb.href && !isLast ? (
                   <Link

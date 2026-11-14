@@ -38,12 +38,15 @@ export interface Command {
   run: () => void;
 }
 
-/** Every word typed must appear somewhere in the label, hint, keywords or section. Label matches rank first. */
+/**
+ * Every word typed must appear somewhere in the label, hint, keywords or section.
+ * Label matches rank first; sections stay together, ordered by their best match.
+ */
 export function filterCommands(commands: Command[], query: string): Command[] {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return commands;
 
-  return commands
+  const scored = commands
     .filter((cmd) => {
       const haystack = [cmd.label, cmd.hint, cmd.section, ...(cmd.keywords ?? [])].join(" ").toLowerCase();
       return words.every((word) => haystack.includes(word));
@@ -52,8 +55,22 @@ export function filterCommands(commands: Command[], query: string): Command[] {
       const label = cmd.label.toLowerCase();
       const score = label.startsWith(words[0]) ? 0 : label.includes(words[0]) ? 1 : 2;
       return { cmd, score, index };
-    })
-    .sort((a, b) => a.score - b.score || a.index - b.index)
+    });
+
+  // Rank each section by its best match, falling back to the original section order on ties.
+  const sectionRank = new Map<string, number>();
+  scored.forEach(({ cmd, score }, i) => {
+    const rank = score * 1000 + i;
+    sectionRank.set(cmd.section, Math.min(rank, sectionRank.get(cmd.section) ?? Infinity));
+  });
+
+  return scored
+    .sort(
+      (a, b) =>
+        sectionRank.get(a.cmd.section)! - sectionRank.get(b.cmd.section)! ||
+        a.score - b.score ||
+        a.index - b.index,
+    )
     .map(({ cmd }) => cmd);
 }
 

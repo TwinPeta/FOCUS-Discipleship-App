@@ -10,7 +10,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CommandPalette } from "@/components/layout/CommandPalette";
+import { CommandPalette, filterCommands, type Command } from "@/components/layout/CommandPalette";
 import { ShellProvider } from "@/components/layout/ShellContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SessionProvider } from "@/providers/SessionProvider";
@@ -71,6 +71,25 @@ describe("Sidebar", () => {
     renderShell(<Sidebar />, Role.ContentAdmin);
     expect(screen.queryByRole("link", { name: "Members" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Content library" })).toBeInTheDocument();
+  });
+});
+
+describe("filterCommands", () => {
+  const cmd = (label: string, section: Command["section"]): Command => ({
+    id: label, label, section, icon: () => null, run: () => {},
+  } as unknown as Command);
+
+  it("keeps sections together, best-matching section first", () => {
+    const list = [
+      cmd("Notification rules", "Pages"),
+      cmd("Members", "Pages"),
+      cmd("Add member", "Quick actions"),
+    ];
+    const labels = filterCommands(list, "mem").map((c) => c.label);
+    expect(labels).toEqual(["Members", "Add member"]);
+
+    const sections = filterCommands([...list, cmd("Members tips", "Pages")], "mem").map((c) => c.section);
+    expect(sections).toEqual(["Pages", "Pages", "Quick actions"]);
   });
 });
 

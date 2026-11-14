@@ -144,23 +144,23 @@ export function Sidebar() {
             <Fragment key={group.group}>
               {/* Collapsed rail: hairline between groups instead of headings */}
               {groupIndex > 0 && collapsed && (
-                <div className="mx-1.5 my-1.5 hidden border-t border-black/15 md:block" aria-hidden="true" />
+                <div className="mx-1.5 my-1 hidden border-t border-black/15 md:block" aria-hidden="true" />
               )}
               <div
                 role="group"
                 aria-label={group.group}
-                className={groupIndex > 0 ? (collapsed ? "mt-3 md:mt-0" : "mt-3") : ""}
+                className={groupIndex > 0 ? (collapsed ? "mt-3 md:mt-0" : "mt-3 md:mt-2") : ""}
               >
                 {!isSuperMentor && (
                   <p
-                    className={`px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-black/60 ${
+                    className={`px-2.5 pb-1 text-[10px] md:pb-0.5 font-bold uppercase tracking-wider text-black/60 ${
                       collapsed ? "md:hidden" : ""
                     }`}
                   >
                     {group.group}
                   </p>
                 )}
-                <ul className="space-y-0.5">
+                <ul className="space-y-0.5 md:space-y-px">
                   {group.items.map((item) => {
                     const active = isNavActive(pathname, item.href);
                     const Icon = item.icon;
@@ -173,7 +173,7 @@ export function Sidebar() {
                           onMouseLeave={hideTooltip}
                           onFocus={(e) => showTooltip(e, item.label)}
                           onBlur={hideTooltip}
-                          className={`flex h-10 items-center gap-3 rounded-lg px-2.5 text-sm font-semibold transition md:h-[clamp(30px,4.4dvh,36px)] md:text-[13px]
+                          className={`flex h-10 items-center gap-3 rounded-lg px-2.5 text-sm font-semibold transition md:h-[clamp(26px,3.9dvh,36px)] md:text-[13px]
                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground
                             ${collapsed ? "md:justify-center md:px-0" : ""}
                             ${active ? "bg-white text-slate-950 shadow-sm" : "text-slate-900 hover:bg-black/10"}`}
