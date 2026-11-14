@@ -13,6 +13,7 @@ import 'round_icon_button.dart';
 import 'states/offline_banner.dart';
 import 'states/error_view.dart';
 import 'states/skeleton.dart';
+import 'app_bottom_nav.dart';
 
 /// The amber header + 6-tab shell wrapping every `/community/:id/*` screen.
 /// Pass a [StatefulNavigationShell] so switching tabs keeps this header
@@ -35,6 +36,7 @@ class CommunityShell extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.page,
+      bottomNavigationBar: const AppBottomNav(current: AppTab.community),
       body: communityAsync.when(
         loading: () => const Skeleton(),
         error: (error, stackTrace) => ErrorScreen(

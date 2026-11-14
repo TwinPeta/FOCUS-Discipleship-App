@@ -19,6 +19,7 @@ import 'widgets/hub_header.dart';
 import 'widgets/hub_specific_slot.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/app_bottom_nav.dart';
 
 /// Screen 3 of the brief: Communities hub, including the 3b "pending"
 /// variant of the specific-community slot.
@@ -91,6 +92,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.page,
+      bottomNavigationBar: const AppBottomNav(current: AppTab.community),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

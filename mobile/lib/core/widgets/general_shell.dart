@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
 import 'states/offline_banner.dart';
+import 'app_bottom_nav.dart';
 
 /// The amber header used by the General feed: same chrome as
 /// [CommunityShell] but without a tab bar. Tapping the "specific community"
@@ -34,6 +35,7 @@ class GeneralShell extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.page,
       floatingActionButton: floatingActionButton,
+      bottomNavigationBar: const AppBottomNav(current: AppTab.home),
       body: SafeArea(
         bottom: false,
         child: Column(

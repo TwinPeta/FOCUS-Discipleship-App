@@ -13,6 +13,7 @@ import '../../community/presentation/providers/community_providers.dart';
 import '../../community/presentation/providers/membership_provider.dart';
 import '../domain/user_profile.dart';
 import 'profile_providers.dart';
+import '../../../core/widgets/app_bottom_nav.dart';
 
 /// Screen 2b of the brief: "My profile".
 class MyProfileScreen extends ConsumerWidget {
@@ -52,6 +53,7 @@ class MyProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.page,
+      bottomNavigationBar: const AppBottomNav(current: AppTab.profile),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
