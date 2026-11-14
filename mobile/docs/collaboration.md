@@ -82,7 +82,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 43, 54, 55, 58 | B | not started | |
 | 44, 45 | A | done | see `git log --grep "screens 44"` |
 | 46-50 | B | not started | |
-| 51 | A | not started | |
+| 51 | A | in progress | main |
 | 52, 53 | B | not started | |
 | 56, 57, 59 | A | not started | |
 | 60, 61 | A | done | see `git log --grep "screens 60"` |
