@@ -43,7 +43,8 @@ abstract class ModerationQueueRepository {
   /// common one. A second report from the same person changes nothing, and
   /// a repeated call while one is in flight returns the same result.
   /// Throws [ArgumentError] for targets that are not community content, for
-  /// a report without a community, or for reporting your own content.
+  /// a report without a community or a reporter id, or for reporting your
+  /// own content.
   Future<ModerationCase> fileReport(Report report);
 
   /// True when moderation hid this post/comment/prayer for everyone. Feeds
@@ -238,8 +239,12 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
         'only community content with a community id is moderated here',
       );
     }
+    // Counting is per reporter, so a report must say who sent it.
     final reporter = report.reporterId ?? '';
-    if (reporter.isNotEmpty && reporter == report.targetUserId) {
+    if (reporter.isEmpty) {
+      throw ArgumentError.value(reporter, 'reporterId', 'required');
+    }
+    if (reporter == report.targetUserId) {
       throw ArgumentError.value(reporter, 'reporterId', 'own content');
     }
 

@@ -49,13 +49,23 @@ class FakePostRepository implements PostRepository {
   FakePostRepository({
     this.latency = const Duration(milliseconds: 400),
     bool Function(String postId)? isHidden,
-  }) : _isHidden = isHidden ?? _never;
+    bool Function(String userId)? isBlocked,
+  }) : _isHidden = isHidden ?? _never,
+       _isBlocked = isBlocked ?? _never;
 
   final Duration latency;
 
   /// Content hidden by moderation never leaves the repository.
   final bool Function(String postId) _isHidden;
+
+  /// Posts and comments by people the user blocked never leave it either.
+  final bool Function(String userId) _isBlocked;
   static bool _never(String _) => false;
+
+  bool _visible(Post p) =>
+      !_hiddenForMe.contains(p.id) &&
+      !_isHidden(p.id) &&
+      !_isBlocked(p.author.id);
 
   final Map<String, List<Post>> _byCommunity = {};
   final Map<String, List<Comment>> _comments = {};
@@ -75,7 +85,7 @@ class FakePostRepository implements PostRepository {
             postId: postId,
             author: const Person(
               id: 'member-2',
-              name: 'Brian Ssemanda',
+              name: 'Peter Ssentongo',
               role: PersonRole.member,
             ),
             text: 'Thanks for letting us know, see you there!',
@@ -86,7 +96,7 @@ class FakePostRepository implements PostRepository {
             postId: postId,
             author: const Person(
               id: 'member-3',
-              name: 'Sarah Akello',
+              name: 'Joy Atim',
               role: PersonRole.member,
             ),
             text: 'Will there be snacks again? Asking for a friend.',
@@ -237,10 +247,7 @@ class FakePostRepository implements PostRepository {
     int limit = 20,
   }) async {
     await Future.delayed(latency);
-    final all = _feed(
-      communityId,
-      scope,
-    ).where((p) => !_hiddenForMe.contains(p.id) && !_isHidden(p.id)).toList();
+    final all = _feed(communityId, scope).where(_visible).toList();
     final start = int.tryParse(cursor ?? '') ?? 0;
     final end = (start + limit).clamp(0, all.length);
     return PostPage(
@@ -283,10 +290,9 @@ class FakePostRepository implements PostRepository {
   @override
   Future<Post?> getPost(String postId) async {
     await Future.delayed(latency);
-    if (_hiddenForMe.contains(postId) || _isHidden(postId)) return null;
     for (final posts in _byCommunity.values) {
       final post = posts.where((p) => p.id == postId).firstOrNull;
-      if (post != null) return _withCount(post);
+      if (post != null) return _visible(post) ? _withCount(post) : null;
     }
     return null;
   }
@@ -295,7 +301,8 @@ class FakePostRepository implements PostRepository {
   Future<List<Comment>> getComments(String postId) async {
     await Future.delayed(latency);
     return List.unmodifiable(
-      _commentsFor(postId).where((c) => !_isHidden(c.id)),
+      _commentsFor(postId)
+          .where((c) => !_isHidden(c.id) && !_isBlocked(c.author.id)),
     );
   }
 

@@ -1,26 +1,21 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
-import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/role_badge.dart';
+import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
-import '../../community/domain/membership.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
 import '../../community/domain/person.dart';
-import '../../community/presentation/providers/community_providers.dart';
-import '../../community/presentation/providers/membership_provider.dart';
-import '../data/messaging_repository.dart';
 import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
 
@@ -46,101 +41,6 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
     super.dispose();
   }
 
-  Future<void> _openNewMessageSheet() async {
-    final membership =
-        ref.read(membershipProvider).valueOrNull ?? Membership.empty;
-    // Only approved members may message a community's members (a pending
-    // request is not membership).
-    if (membership.status != MembershipStatus.approved ||
-        membership.communityId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Join a specific community to message its members.'),
-        ),
-      );
-      return;
-    }
-    final members = await ref.read(
-      communityMembersProvider(membership.communityId!).future,
-    );
-
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'New message',
-                      style: AppTextStyles.sectionHeading,
-                    ),
-                  ),
-                  // TODO(prompt3): /messages/new replaces this sheet.
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.ink,
-                      minimumSize: const Size(44, 44),
-                    ),
-                    onPressed: () {
-                      Navigator.of(sheetContext).pop();
-                      context.push('/messages/new');
-                    },
-                    child: const Text('Full screen'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 360),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: members.length,
-                  itemBuilder: (context, index) {
-                    final person = members[index];
-                    return ListTile(
-                      leading: AvatarWithPresence(
-                        initials: person.initials,
-                        size: 40,
-                        online: person.online,
-                      ),
-                      title: Text(person.name),
-                      onTap: () async {
-                        Navigator.of(sheetContext).pop();
-                        try {
-                          final thread = await ref
-                              .read(threadRepositoryProvider)
-                              .openOrCreateThread(person, person.role.label);
-                          ref.invalidate(threadsProvider);
-                          if (!context.mounted) return;
-                          unawaited(context.push('/messages/${thread.id}'));
-                        } on MessagingRestricted {
-                          if (context.mounted) {
-                            showErrorSnack(
-                              context,
-                              MessagingRestricted.message,
-                            );
-                          }
-                        }
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final threadsAsync = ref.watch(threadsProvider);
@@ -150,42 +50,17 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
       headerAction: RoundIconButton(
         icon: Icons.edit_outlined,
         semanticLabel: 'New message',
-        onPressed: _openNewMessageSheet,
+        onPressed: () => context.push('/messages/new'),
       ),
-      headerExtra: SizedBox(
-        height: 50,
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => _query = value),
-          style: AppTextStyles.bodyMedium,
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: 'Search a member or message',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.placeholder,
-            ),
-            prefixIcon: const Icon(
-              Icons.search_rounded,
-              color: AppColors.placeholder,
-            ),
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
+      headerExtra: SearchField(
+        controller: _searchController,
+        hintText: 'Search a member or message',
+        onChanged: (value) => setState(() => _query = value),
       ),
       body: threadsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Text('Could not load messages.', style: AppTextStyles.body),
-        ),
+        loading: () => const Skeleton(showHeader: false),
+        error: (error, stackTrace) =>
+            ErrorView(onRetry: () => ref.invalidate(threadsProvider)),
         data: (threads) {
           var filtered = threads;
           if (_roleFilter == _RoleFilter.mentors) {
@@ -208,6 +83,16 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
                 .toList();
           }
 
+          if (threads.isEmpty) {
+            return EmptyState(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'No messages yet',
+              body: 'Say hello to a mentor or a member of your community.',
+              actionLabel: 'Find a member',
+              onAction: () => context.push('/messages/new'),
+            );
+          }
+
           final header = <Widget>[
             FilterChips<_RoleFilter>(
               options: const [
@@ -226,14 +111,10 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
             itemBuilder: (context, index) {
               if (index < header.length) return header[index];
               if (filtered.isEmpty) {
-                return EmptyState(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: threads.isEmpty
-                      ? 'No conversations yet'
-                      : 'No matches',
-                  body: threads.isEmpty
-                      ? 'Message a mentor or member to start one.'
-                      : 'No messages match your search.',
+                return const EmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: 'No matches',
+                  body: 'No messages match your search.',
                 );
               }
               final thread = filtered[index - header.length];

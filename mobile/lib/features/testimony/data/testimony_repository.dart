@@ -17,7 +17,12 @@ class FakeTestimonyRepository implements TestimonyRepository {
   FakeTestimonyRepository({
     this.latency = const Duration(milliseconds: 400),
     bool Function(String testimonyId)? isHidden,
-  }) : _isHidden = isHidden ?? _never;
+    bool Function(String userId)? isBlocked,
+  }) : _isHidden = isHidden ?? _never,
+       _isBlocked = isBlocked ?? _never;
+
+  /// Stories by people the user blocked are left out.
+  final bool Function(String userId) _isBlocked;
 
   final Duration latency;
 
@@ -35,6 +40,7 @@ class FakeTestimonyRepository implements TestimonyRepository {
         communityId: communityId,
         type: TestimonyType.video,
         title: 'How FCU became my second family',
+        authorId: 'student-2',
         authorName: 'Patience Achieng',
         institution: 'Makerere University',
         duration: '2:10',
@@ -50,6 +56,7 @@ class FakeTestimonyRepository implements TestimonyRepository {
             'I walked into my first small group meeting not expecting much, but '
             'the people there walked with me through the hardest months of my '
             'degree. I am not the same person I was a year ago.',
+        authorId: 'm-1',
         authorName: 'David Okello',
         institution: 'Makerere University',
         status: TestimonyStatus.reviewed,
@@ -69,6 +76,7 @@ class FakeTestimonyRepository implements TestimonyRepository {
       all.where(
         (t) =>
             !_isHidden(t.id) &&
+            (t.authorId == null || !_isBlocked(t.authorId!)) &&
             (t.status == TestimonyStatus.reviewed || t.isAuthoredBy(viewerId)),
       ),
     );

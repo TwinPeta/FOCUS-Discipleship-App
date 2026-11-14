@@ -17,6 +17,7 @@ import '../../features/auth/presentation/verify_email_screen.dart';
 import '../../features/community/presentation/communities_hub_screen.dart';
 import '../../features/community/presentation/community_detail_screen.dart';
 import '../../features/community/presentation/info_members_screen.dart';
+import '../../features/community/presentation/member_profile_screen.dart';
 import '../../features/community/presentation/join_requests_screen.dart';
 import '../../features/community/presentation/manage_community_screen.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
@@ -38,7 +39,9 @@ import '../../features/messaging/domain/report.dart';
 import '../../features/messaging/presentation/content_report_screens.dart';
 import '../../features/meetings/presentation/meetings_screen.dart';
 import '../../features/messaging/presentation/conversation_screen.dart';
+import '../../features/messaging/presentation/blocked_users_screen.dart';
 import '../../features/messaging/presentation/messages_inbox_screen.dart';
+import '../../features/messaging/presentation/new_message_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
 import '../../features/messaging/presentation/report_user_screen.dart';
 import '../../features/moderation/presentation/account_suspended_screen.dart';
@@ -300,6 +303,11 @@ final List<RouteBase> appRoutes = [
     path: '/messages',
     builder: (context, state) => const MessagesInboxScreen(),
     routes: [
+      // Before ':threadId' so 'new' is not read as a thread id.
+      GoRoute(
+        path: 'new',
+        builder: (context, state) => const NewMessageScreen(),
+      ),
       GoRoute(
         path: ':threadId',
         builder: (context, state) =>
@@ -346,9 +354,18 @@ final List<RouteBase> appRoutes = [
           type: ReportTargetType.fromSlug(_id(state, 'type'))!,
           id: _id(state),
           back: _backOf(state),
+          name: state.uri.queryParameters['name'],
         ),
       ),
     ],
+  ),
+  GoRoute(
+    path: '/members/:id',
+    builder: (context, state) => MemberProfileScreen(memberId: _id(state)),
+  ),
+  GoRoute(
+    path: '/settings/blocked',
+    builder: (context, state) => const BlockedUsersScreen(),
   ),
   GoRoute(
     path: '/activity',

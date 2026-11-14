@@ -126,6 +126,10 @@ void main() {
       queue.fileReport(_report('author-1')), // own content
       throwsArgumentError,
     );
+    await expectLater(
+      queue.fileReport(_report('')), // no reporter id
+      throwsArgumentError,
+    );
     expect(await open(), isEmpty);
   });
 

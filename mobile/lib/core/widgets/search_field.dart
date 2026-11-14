@@ -1,19 +1,23 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
-class CommunitySearchField extends StatelessWidget {
-  const CommunitySearchField({
+/// The 50px rounded search field used on the hub, the inbox and New
+/// message. Turns cream while [enabled] is false.
+class SearchField extends StatelessWidget {
+  const SearchField({
     super.key,
     required this.controller,
-    required this.enabled,
+    required this.hintText,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
-  final bool enabled;
+  final String hintText;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +27,11 @@ class CommunitySearchField extends StatelessWidget {
         controller: controller,
         enabled: enabled,
         onChanged: onChanged,
+        textInputAction: TextInputAction.search,
         style: AppTextStyles.bodyMedium,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search by name, day or place',
+          hintText: hintText,
           hintStyle: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.placeholder,
           ),

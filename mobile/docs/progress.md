@@ -13,8 +13,11 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [ ] 56/57/59 left for Agent B (messaging, B's active files): Messages inbox and Conversation still use a bare spinner (should be `Skeleton` + `ErrorView`), and Conversation "send" is not disabled offline
 
 ## Agent B
-- [ ] Content reports to moderation queue
-- [ ] 43, 54, 55, 58
+- [x] Content reports to moderation queue (`fileReport`; reviewed by A; reporter id now required)
+- [x] 43 Member profile (`/members/:id`): header message button, avatar, @username, role badge + Verified for mentors/super-mentors, About, institution and community chips, earned badges only; Message (respects `canMessage`), Report (user `ReportFlow`), Block (confirm, pop, Undo). Own profile: no Message/Report/Block. A blocked member's profile shows "You blocked this person" + Unblock
+- [x] 54 New message (`/messages/new`): search, "Your mentors" and "Members of {community}"; tap opens or creates the thread (replaces this page); blocked people excluded by the repository; rows failing `canMessage` are disabled with the note. The old bottom sheet is deleted
+- [x] 55 Blocked users (`/settings/blocked`): rows with Unblock, empty state
+- [x] 58 No messages yet: the empty inbox, **Find a member** -> `/messages/new`
 - [ ] 52, 53
 - [ ] 46-50
 
@@ -37,6 +40,12 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - Delivery channels are `NotificationChannel` implementations (`FakeEmailChannel` records "sent" emails). Push = one more `DeliveryChannel` value plus a channel class; nothing else changes.
 - Sections: "New" = unread, "Earlier" = read. "Mark all as read" sits on the New header.
 - New shared widget `SwitchRow` (`core/widgets/switch_row.dart`): an amber switch where the whole row is the target. Agent B can reuse it for Settings (46).
+- (B) Blocking lives in the repositories now: `ModerationRepository.isBlocked` (sync) is injected like `isHidden` into posts (+ comments), prayer requests, testimonies, messaging and member rosters. Threads with a blocked person are hidden, `getThreadById` returns null, and open/send throw `PersonBlocked`. You cannot block yourself. Provider-level filters stay so lists refresh when the block list changes. Anonymous prayer requests have no author id, so blocking cannot hide them.
+- (B) `MemberRepository` / `MemberProfile`: a fake directory keyed by the ids the other fakes use (bio, username, community name, earned badge ids). Institution is not stored per member: profiles show the viewer's institution (members of your communities are on your campus). Unknown ids show "Member not available". Your own profile is built from your account and your own earned badges.
+- (B) Seed names aligned with the community roster: comment authors `member-2` = Peter Ssentongo and `member-3` = Joy Atim; seeded testimonies now carry author ids (`student-2`, `m-1`). Agent A's moderation seed calls `member-4` "Ivan Kasozi"; the roster says Isaac Wandera.
+- (B) The user report from a profile uses the shared content route (`/report/user/:id`): "Report a user" / "What happened?"; the sent page offers **Back to profile** and **Block this user**. User reports never enter the community moderation queue.
+- (B) Shared widgets: `SearchField` (moved from the hub's `CommunitySearchField`, now takes `hintText`; hub, inbox and New message use it), `openConversation` (the one way to open a thread; handles `MessagingRestricted` and `PersonBlocked`), `confirmAndBlock` (confirm, block, Undo snackbar). `kBadgeCatalog` is the one badge list.
+- (B) `/settings/blocked` is reachable by route and from 48 Privacy / 46 Settings once those land (Agent B, next).
 
 # Prompt 2 (screens 21-42) progress
 Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear every "resolved in 2" row).

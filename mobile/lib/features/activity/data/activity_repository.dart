@@ -76,12 +76,7 @@ class FakeActivityRepository implements ActivityRepository {
   }
 
   final List<ActivityEvent> _events = [];
-  final List<AppBadge> _badges = const [
-    AppBadge(id: 'first-steps', name: 'First steps'),
-    AppBadge(id: 'quiz-finisher', name: 'Quiz finisher'),
-    AppBadge(id: 'prayer-partner', name: 'Prayer partner'),
-    AppBadge(id: 'pathway-complete', name: 'Pathway complete'),
-  ].toList();
+  final List<AppBadge> _badges = const [...kBadgeCatalog].toList();
 
   @override
   Future<List<ActivityEvent>> getEvents() async {

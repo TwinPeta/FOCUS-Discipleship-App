@@ -13,12 +13,18 @@ class FakePrayerRepository implements PrayerRepository {
   FakePrayerRepository({
     this.latency = const Duration(milliseconds: 400),
     bool Function(String requestId)? isHidden,
-  }) : _isHidden = isHidden ?? _never;
+    bool Function(String userId)? isBlocked,
+  }) : _isHidden = isHidden ?? _never,
+       _isBlocked = isBlocked ?? _never;
 
   final Duration latency;
 
   /// Requests hidden by moderation never leave the repository.
   final bool Function(String requestId) _isHidden;
+
+  /// Named requests by blocked people are left out (anonymous ones have no
+  /// author id, so they cannot be matched).
+  final bool Function(String userId) _isBlocked;
   static bool _never(String _) => false;
 
   final Map<String, List<PrayerRequest>> _byCommunity = {};
@@ -67,7 +73,11 @@ class FakePrayerRepository implements PrayerRepository {
     return List.unmodifiable(
       _byCommunity
           .putIfAbsent(communityId, () => _seed(communityId))
-          .where((r) => !_isHidden(r.id)),
+          .where(
+            (r) =>
+                !_isHidden(r.id) &&
+                (r.authorId == null || !_isBlocked(r.authorId!)),
+          ),
     );
   }
 

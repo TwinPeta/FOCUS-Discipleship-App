@@ -125,8 +125,8 @@ void main() {
 
     expect(find.text('Post'), findsOneWidget);
     expect(find.textContaining('Room 204'), findsOneWidget);
-    expect(find.text('Brian Ssemanda'), findsNothing); // inside a rich text
-    expect(find.textContaining('Brian Ssemanda'), findsOneWidget);
+    expect(find.text('Peter Ssentongo'), findsNothing); // inside a rich text
+    expect(find.textContaining('Peter Ssentongo'), findsOneWidget);
     expect(find.text('2 comments'), findsOneWidget);
 
     final field = find.byType(TextField);

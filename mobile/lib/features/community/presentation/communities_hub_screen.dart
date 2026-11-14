@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/info_banner.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/community.dart';
@@ -13,7 +14,6 @@ import '../domain/membership.dart';
 import 'providers/community_providers.dart';
 import 'providers/membership_provider.dart';
 import 'widgets/community_list_card.dart';
-import 'widgets/community_search_field.dart';
 import 'widgets/general_community_card.dart';
 import 'widgets/hub_header.dart';
 import 'widgets/hub_specific_slot.dart';
@@ -148,7 +148,8 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      CommunitySearchField(
+                      SearchField(
+                        hintText: 'Search by name, day or place',
                         controller: _searchController,
                         enabled: membership.status != MembershipStatus.pending,
                         onChanged: (value) => setState(() => _query = value),

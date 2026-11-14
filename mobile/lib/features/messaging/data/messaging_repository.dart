@@ -39,13 +39,27 @@ abstract class MessageRepository {
 abstract class MessagingRepository
     implements ThreadRepository, MessageRepository {}
 
+/// Opening or writing to a conversation with someone you blocked.
+class PersonBlocked implements Exception {
+  const PersonBlocked(this.userId);
+  final String userId;
+  @override
+  String toString() => 'PersonBlocked($userId)';
+}
+
 class FakeMessagingRepository implements MessagingRepository {
   FakeMessagingRepository({
     this.latency = const Duration(milliseconds: 400),
     bool Function()? isRestricted,
-  }) : _isRestricted = isRestricted ?? _never;
+    bool Function(String userId)? isBlocked,
+  }) : _isRestricted = isRestricted ?? _never,
+       _isBlocked = isBlocked ?? _nobody;
 
   static bool _never() => false;
+  static bool _nobody(String _) => false;
+
+  /// Threads with blocked people are hidden and cannot be written to.
+  final bool Function(String userId) _isBlocked;
 
   final Duration latency;
 
@@ -56,6 +70,7 @@ class FakeMessagingRepository implements MessagingRepository {
   bool canMessage(Person person) => !(_isRestricted() && person.isAdult);
 
   void _checkAllowed(Person person) {
+    if (_isBlocked(person.id)) throw PersonBlocked(person.id);
     if (!canMessage(person)) throw const MessagingRestricted();
   }
 
@@ -118,7 +133,8 @@ class FakeMessagingRepository implements MessagingRepository {
   Future<List<Thread>> getThreads() async {
     await Future.delayed(latency);
     // Most recent activity first.
-    final sorted = [..._threads]..sort((a, b) => b.lastAt.compareTo(a.lastAt));
+    final sorted = [..._threads.where((t) => !_isBlocked(t.participant.id))]
+      ..sort((a, b) => b.lastAt.compareTo(a.lastAt));
     return List.unmodifiable(sorted);
   }
 
@@ -126,7 +142,9 @@ class FakeMessagingRepository implements MessagingRepository {
   Future<Thread?> getThreadById(String id) async {
     await Future.delayed(latency);
     for (final thread in _threads) {
-      if (thread.id == id) return thread;
+      if (thread.id == id) {
+        return _isBlocked(thread.participant.id) ? null : thread;
+      }
     }
     return null;
   }

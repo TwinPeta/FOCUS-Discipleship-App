@@ -4,24 +4,28 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/widgets/error_snack.dart';
+import '../../community/domain/person.dart';
 import '../../feed/presentation/providers/feed_providers.dart';
 import '../../feed/presentation/widgets/post_options_sheet.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/report.dart';
 import 'report_flow.dart';
+import 'widgets/block_person.dart';
 
-/// The route for reporting a piece of content (post, comment, prayer
-/// request, testimony). [back] is where "Back to community" returns.
+/// The route for reporting a member or a piece of content (post, comment,
+/// prayer request, testimony). Content passes its [communityId] and a
+/// [preview] for the moderation queue. [back] is where the sent screen
+/// returns.
 String contentReportLocation({
   required ReportTargetType type,
   required String id,
   String? authorId,
   String? authorName,
-  required String communityId,
-  required String preview,
+  String? communityId,
+  String? preview,
   required String back,
 }) {
-  final excerpt = preview.length > _previewLength
+  final excerpt = preview != null && preview.length > _previewLength
       ? '${preview.substring(0, _previewLength).trimRight()}…'
       : preview;
   return Uri(
@@ -29,8 +33,8 @@ String contentReportLocation({
     queryParameters: {
       'user': ?authorId,
       'name': ?authorName,
-      'community': communityId,
-      'preview': excerpt,
+      'community': ?communityId,
+      'preview': ?excerpt,
       'back': back,
     },
   ).toString();
@@ -40,7 +44,8 @@ String contentReportLocation({
 const _previewLength = 160;
 
 /// Screen 41: Report content (the [ReportFlow] for post, comment, prayer
-/// request or testimony). Every report lands in the same repository.
+/// request or testimony), and the user report from a member profile (43).
+/// Every report lands in the same repository.
 class ContentReportScreen extends ConsumerWidget {
   const ContentReportScreen({
     super.key,
@@ -64,12 +69,19 @@ class ContentReportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = authorName;
+    final isUser = type == ReportTargetType.user;
+    final Widget subtitle;
+    if (isUser) {
+      subtitle = reportSubtitle('', name ?? 'this member');
+    } else if (name == null || name.isEmpty) {
+      subtitle = reportSubtitle('a ', type.noun);
+    } else {
+      subtitle = reportSubtitle('a ${type.noun} by ', name);
+    }
     return ReportFlow(
-      title: 'Report this ${type.noun}',
-      subtitle: name == null || name.isEmpty
-          ? reportSubtitle('a ', type.noun)
-          : reportSubtitle('a ${type.noun} by ', name),
-      question: 'What is wrong?',
+      title: isUser ? 'Report a user' : 'Report this ${type.noun}',
+      subtitle: subtitle,
+      question: isUser ? 'What happened?' : 'What is wrong?',
       onSubmit: (reason, details) async {
         final me = ref.read(currentProfileProvider);
         await ref
@@ -92,7 +104,7 @@ class ContentReportScreen extends ConsumerWidget {
         context.pushReplacement(
           Uri(
             path: '/report/${type.slug}/$id/sent',
-            queryParameters: {'back': back},
+            queryParameters: {'back': back, 'name': ?authorName},
           ).toString(),
         );
       },
@@ -100,18 +112,23 @@ class ContentReportScreen extends ConsumerWidget {
   }
 }
 
-/// Screen 42: Report sent (content). Posts also offer **Hide this post**.
+/// Screen 42: Report sent (content). Posts also offer **Hide this post**;
+/// a user report offers **Block this user**.
 class ContentReportSentScreen extends ConsumerStatefulWidget {
   const ContentReportSentScreen({
     super.key,
     required this.type,
     required this.id,
     required this.back,
+    this.name,
   });
 
   final ReportTargetType type;
   final String id;
   final String back;
+
+  /// The reported person's name (user reports).
+  final String? name;
 
   @override
   ConsumerState<ContentReportSentScreen> createState() =>
@@ -143,18 +160,38 @@ class _ContentReportSentScreenState
     router.go(widget.back);
   }
 
+  Future<void> _blockUser() async {
+    final router = GoRouter.of(context);
+    final person = Person(
+      id: widget.id,
+      name: widget.name ?? 'this member',
+      role: PersonRole.member,
+    );
+    if (await confirmAndBlock(context, ref, person)) router.go(widget.back);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPost = widget.type == ReportTargetType.post;
+    final isUser = widget.type == ReportTargetType.user;
+    String? secondaryLabel;
+    VoidCallback? onSecondary;
+    if (isPost) {
+      secondaryLabel = 'Hide this post';
+      onSecondary = _hidePost;
+    } else if (isUser) {
+      secondaryLabel = 'Block this user';
+      onSecondary = _blockUser;
+    }
     return ReportSentView(
       message:
           'Thank you for helping keep the community safe. A moderator will '
           'review it.',
-      primaryLabel: 'Back to community',
+      primaryLabel: isUser ? 'Back to profile' : 'Back to community',
       onPrimary: () => context.go(widget.back),
-      secondaryLabel: isPost ? 'Hide this post' : null,
+      secondaryLabel: secondaryLabel,
       secondaryLoading: _hiding,
-      onSecondary: isPost ? _hidePost : null,
+      onSecondary: onSecondary,
     );
   }
 }

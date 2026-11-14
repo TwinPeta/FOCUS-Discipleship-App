@@ -18,6 +18,12 @@ class ModerationActions {
     await _ref.read(moderationRepositoryProvider).blockUser(userId);
     _ref.invalidate(blockedUserIdsProvider);
   }
+
+  /// Undoes [block]; the person's content comes back everywhere.
+  Future<void> unblock(String userId) async {
+    await _ref.read(moderationRepositoryProvider).unblockUser(userId);
+    _ref.invalidate(blockedUserIdsProvider);
+  }
 }
 
 final moderationActionsProvider = Provider<ModerationActions>(

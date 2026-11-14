@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
+import '../../features/community/data/member_repository.dart';
 import '../../features/community/data/join_request_repository.dart';
 import '../../features/community/data/membership_repository.dart';
 import '../../features/feed/data/post_repository.dart';
@@ -33,6 +34,13 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
   return FakeCommunityRepository();
+});
+
+final memberRepositoryProvider = Provider<MemberRepository>((ref) {
+  return FakeMemberRepository(
+    roster: ref.read(communityRepositoryProvider).getMembers,
+    isBlocked: ref.read(moderationRepositoryProvider).isBlocked,
+  );
 });
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
@@ -68,7 +76,11 @@ final moderationQueueRepositoryProvider = Provider<ModerationQueueRepository>(
 
 final postRepositoryProvider = Provider<PostRepository>((ref) {
   final moderation = ref.read(moderationQueueRepositoryProvider);
-  return FakePostRepository(isHidden: moderation.isHidden);
+  final blocks = ref.read(moderationRepositoryProvider);
+  return FakePostRepository(
+    isHidden: moderation.isHidden,
+    isBlocked: blocks.isBlocked,
+  );
 });
 
 final storiesRepositoryProvider = Provider<StoriesRepository>((ref) {
@@ -81,12 +93,20 @@ final resourceRepositoryProvider = Provider<ResourceRepository>((ref) {
 
 final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
   final moderation = ref.read(moderationQueueRepositoryProvider);
-  return FakePrayerRepository(isHidden: moderation.isHidden);
+  final blocks = ref.read(moderationRepositoryProvider);
+  return FakePrayerRepository(
+    isHidden: moderation.isHidden,
+    isBlocked: blocks.isBlocked,
+  );
 });
 
 final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {
   final moderation = ref.read(moderationQueueRepositoryProvider);
-  return FakeTestimonyRepository(isHidden: moderation.isHidden);
+  final blocks = ref.read(moderationRepositoryProvider);
+  return FakeTestimonyRepository(
+    isHidden: moderation.isHidden,
+    isBlocked: blocks.isBlocked,
+  );
 });
 
 final pathwayRepositoryProvider = Provider<PathwayRepository>((ref) {
@@ -97,6 +117,7 @@ final messagingRepositoryProvider = Provider<MessagingRepository>((ref) {
   // Read lazily so the store survives profile/guardian changes.
   return FakeMessagingRepository(
     isRestricted: () => ref.read(messagingRestrictedProvider),
+    isBlocked: ref.read(moderationRepositoryProvider).isBlocked,
   );
 });
 
@@ -115,7 +136,10 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 });
 
 final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {
-  return FakeModerationRepository();
+  return FakeModerationRepository(
+    currentUserId: () =>
+        ref.read(authControllerProvider).valueOrNull?.accountId,
+  );
 });
 
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
