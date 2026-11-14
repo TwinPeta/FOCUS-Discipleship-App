@@ -1,18 +1,16 @@
 /**
  * src/app/(backoffice)/privacy/guardian-consents/page.tsx
  *
- * WHAT: B23 Guardian consents for users under 18: received or pending, send reminder
+ * WHAT: B23 Guardian consents: minors consent status and reminders
  * REQUIREMENTS: FR-10
  * SPEC: docs/features/12-privacy-consents.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B23 Guardian consents for users under 18: received or pending, send reminder";
+import { GuardianConsentTable } from "@/features/privacy/components/GuardianConsentTable";
+import type { GuardianConsentRecord } from "@/features/privacy/queries";
 
-export default function Page() {
-  return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
-  );
+export default function GuardianConsentsPage() {
+  const initialItems: GuardianConsentRecord[] = [];
+  return <GuardianConsentTable initialItems={initialItems} />;
 }
