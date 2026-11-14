@@ -37,6 +37,7 @@ const _approvedRoutes = [
   '/community/growth-circle/pathways/pathway-3',
   '/general-feed',
   '/general-feed/compose',
+  '/post/growth-circle-post-1',
   '/messages',
   '/messages/thread-sm-1',
   '/messages/thread-sm-1/report',
@@ -143,6 +144,7 @@ void main() {
       '/community/growth-circle/compose',
       '/community/growth-circle/prayer/new',
       '/community/growth-circle/testimonies/new',
+      '/post/growth-circle-post-1',
       '/messages/thread-sm-1',
       '/messages/thread-sm-1/report',
     ]) {

@@ -4,7 +4,7 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - [x] Batch 1: AuthRepository/session, SignUpController, 21 password, 22 verify (OTP), 23 consent, 24 guardian, 25 sign in, 26 forgot password, `/charter`; signed-out + onboarding guards; under-18 `canMessage` in MessageRepository; Join form stops creating the account
 - [x] Batch 2: 27 approved, 28 declined (shown once, `seen`), 29 leave sheet; NotificationRepository + hub bell dot; debug "Approve/Decline my request", "Guardian confirms"; pending-hub debug link removed
 - [x] Batch 3: 33 video (PlaybackController fake), 34 devotional (+reflection), 35 quiz, 36 result, 37 document, 38 badge earned (queue); completion -> activity + pathway step + badges; debug "mark step complete"/"attended meeting" removed
-- [ ] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
+- [ ] Batch 4: **39 post & comments (done)**, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
 - [ ] Batch 5: 30 manage, 31 join requests, 32 reports to review (Hide/Warn/Keep/Escalate); super-mentor guard + repository role checks
   - [x] 31 Join requests (`/community/:id/manage/requests`): `JoinRequest` + `JoinRequestRepository` (role-checked), approve/decline notify the student, "Already in" disables Approve; tests in `test/community/join_requests_test.dart`
   - [x] 32 Reports to review (`/community/:id/manage/reports`): `ModerationCase`, `Warning`, role-checked `ModerationQueueRepository` (Hide / Warn author / Keep / Escalate to admin, each records an outcome and leaves the queue), `WarningRepository`, hidden content filtered in the post and prayer repositories; tests in `test/moderation/reports_to_review_test.dart`
@@ -41,6 +41,7 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - Viewers are not membership-gated (Resources content is campus-wide in the fake).
 - "Download" on the document viewer is a stub snackbar; no PDF or video package added.
 - "Say hello to my mentor" opens or creates the super-mentor thread; when the under-18 limit applies the button is disabled and reads "Waiting for your guardian's confirmation".
+- Batch 4 (screen 39): `Comment` model added in `features/feed/domain/comment.dart`; `PostRepository` extended with `getPostById`, `getComments`, `addComment` (deep-linked seeded post IDs lazily initialize their community feed). `PostDetailController` and `PostCommentsController` filter blocked authors via `blockedUserIdsProvider`, perform optimistic likes/comments with rollback, and sync post likes back to `feedPostsProvider`. While offline, `PostDetailScreen` shows `OfflineBanner` and disables (without hiding) like and comment actions.
 
 ---
 

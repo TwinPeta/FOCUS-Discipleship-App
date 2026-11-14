@@ -1,0 +1,380 @@
+Prompt 2: not built yet (Note: Screen 31 is now built)
+
+┌─────┬──────────────────────────────────────────┬─────────────────────────────────┬─────────────┐
+│  #  │                  Screen                  │              Route              │   Status    │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 30  │ Manage community (super-mentors)         │ /community/:id/manage           │ Placeholder │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 31  │ Join requests                            │ /community/:id/manage/requests  │ Built       │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 32  │ Reports to review (Hide / Warn / Keep /  │ /community/:id/manage/reports   │ Not built   │
+│     │ Escalate)                                │ (under manage)                  │             │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 39  │ Post & comments                          │ /post/:id                       │ Built       │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 40  │ Post options sheet                       │ /post/:id/options (or sheet)    │ Placeholder │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 41  │ Report a post                            │ ReportFlow                      │ Not built   │
+├─────┼──────────────────────────────────────────┼─────────────────────────────────┼─────────────┤
+│ 42  │ Report sent (post)                       │ ReportFlow                      │ Not built   │
+└─────┴──────────────────────────────────────────┴─────────────────────────────────┴─────────────┘
+
+### Prompt 2 — Detailed Screen Breakdown (What It Does & What It Connects To)
+
+30. Manage community (super-mentors) — `/community/:id/manage`
+  • What it does:
+    - Super-mentor dashboard ("Only super-mentors see this.") displaying 4 tappable summary cards with live counters:
+      1. Join requests ("Approve or decline students")
+      2. Reports to review ("Level 1 moderation")
+      3. Members to follow up ("No activity for 14+ days" — lists inactive members with a direct Message button per row, computed from activity events)
+      4. Meeting details ("Tuesday · 5:00 PM · {room}")
+    - Shows footer note: "Cover photos and community creation are managed by the admin team."
+  • What it connects to:
+    - Incoming navigation: `CommunityShell` header "Manage" action button on `/community/:id/feed` (visible only when `currentRoleProvider == UserRole.superMentor`).
+    - Outgoing navigation:
+      • Card 1 -> Screen 31 (`/community/:id/manage/requests`)
+      • Card 2 -> Screen 32 (`/community/:id/manage/reports`)
+      • Card 3 "Message" button -> Screen 10 (`/messages/:threadId` via `ThreadRepository`)
+    - Guards & Repositories: Protected by `MembershipGuard` (requires approved membership in `:id` + `UserRole.superMentor`); reads from `CommunityRepository`, `JoinRequestRepository` (`pendingJoinRequestsProvider`), `ReportRepository` / `ModerationRepository`, `ActivityRepository`, and `MessagingRepository`.
+
+31. Join requests — `/community/:id/manage/requests` [Already Built in `join_requests_screen.dart`]
+  • What it does:
+    - Lists pending student join requests for the community ("A student can be in only one specific community.").
+    - Each card displays student initials avatar, full name, `@username · {institution}`, relative request date, amber "Approve" button, and outlined "Decline" button.
+    - If the student is already in another specific community (`existingCommunityName != null`), displays "Already in {community}" and disables "Approve".
+    - "Approve" transitions request to `approved` and notifies the student; "Decline" opens `showTextInputDialog` for an optional message, sets status to `declined`, and notifies the student.
+  • What it connects to:
+    - Incoming navigation: Screen 30 (`/community/:id/manage`) Join requests card.
+    - Outgoing side-effects & triggers: Emits `NotificationType.requestApproved` (target `/request/approved`, Screen 27) or `NotificationType.requestDeclined` (target `/request/declined`, Screen 28) via `NotificationRepository`.
+    - Guards & Repositories: `MembershipGuard` (`UserRole.superMentor`), `JoinRequestRepository` (`joinRequestRepositoryProvider`, `pendingJoinRequestsProvider`), `NotificationRepository` (`notificationsProvider`), `ConnectivityService` (`isOnlineProvider` + `OfflineBanner`).
+
+32. Reports to review (Hide / Warn / Keep / Escalate) — `/community/:id/manage/reports` (under manage)
+  • What it does:
+    - Level 1 moderation queue for super-mentors ("You can hide content and warn members. Admins handle suspensions.").
+    - Displays moderation case cards showing "{Post|Comment|Prayer request} by {name}", "Level 1" pill, "{date} · Reported by {reporter}", content preview, and "[N] reports · {reason}".
+    - Provides 4 moderation actions per case (each records an outcome and removes the case from the queue):
+      1. "Hide": hides the reported post/comment/content for everyone.
+      2. "Warn author": creates an unacknowledged `Warning(reason, preview, acknowledged: false)` and sends a moderator warning notification to the author.
+      3. "Keep": dismisses the reports and keeps the content visible.
+      4. "Escalate to admin": moves the case to the admin moderation queue (Level 2 / backoffice).
+  • What it connects to:
+    - Incoming navigation: Screen 30 (`/community/:id/manage`) Reports to review card; populated by reports submitted via Screen 41 (`ReportFlow`).
+    - Outgoing side-effects & routes: "Warn author" triggers `UnacknowledgedWarningGuard` and emits a notification routing the author to Screen 61 (`/warning/:id`); "Hide" updates `PostRepository` / comment / prayer visibility.
+    - Guards & Repositories: `MembershipGuard` (`UserRole.superMentor`), `ReportRepository`, `ModerationRepository` (`ModerationCase`, `Warning`), `PostRepository`, `NotificationRepository`.
+
+39. Post & comments — `/post/:id`
+  • What it does:
+    - Displays full post detail: header with Back button and "..." options button, tappable author row (avatar, name, role badge, "{time} · {community}"), full caption, optional photo, like & comment counts row, chronological comments list (avatar, "name · time", comment text), and a pinned bottom comment input ("Write a comment" + send button).
+    - Supports optimistic likes and optimistic comment creation.
+    - Automatically hides comments authored by users in the current user's blocked list.
+    - Disables (without hiding) like and comment submission while offline.
+  • What it connects to:
+    - Incoming navigation: Tapping a post card's caption, photo, or comment button on Screen 5 (`CommunityFeedScreen` at `/community/:id/feed`) or Screen 8 (`GeneralFeedScreen` at `/general-feed`).
+    - Outgoing navigation:
+      • "..." button -> Screen 40 (`PostOptionsSheet` / `/post/:id/options`)
+      • Author or commenter avatar/name -> Screen 43 (`/members/:id`)
+      • Comment report action -> Screen 41 (`ReportFlow` with target = `comment`)
+    - Repositories & Providers: `PostRepository` (`postRepositoryProvider`, `Comment` list), `ModerationRepository` (`blockedUserIdsProvider` to filter blocked users), `ConnectivityService` (`isOnlineProvider`).
+
+40. Post options sheet — `/post/:id/options` (`BottomSheetScaffold`)
+  • What it does:
+    - Modal bottom sheet presenting actions for a post:
+      1. "Report post" -> opens the content report flow.
+      2. "Hide this post" -> hides the post from the current user's feed and shows a snackbar with an "Undo" action.
+      3. "Copy link" -> copies a placeholder deep link for the post to the system clipboard and shows confirmation.
+      4. "Delete post" -> (shown only if the current user is the post author) opens `ConfirmDialog` and deletes the post.
+      5. "Cancel" -> closes the sheet.
+  • What it connects to:
+    - Incoming navigation: "..." button on `PostCard` in Screen 5 (`/community/:id/feed`), Screen 8 (`/general-feed`), or Screen 39 (`/post/:id`).
+    - Outgoing navigation: "Report post" -> Screen 41 (`ReportFlow` with target = `post`).
+    - Repositories & Widgets: `BottomSheetScaffold`, `ConfirmDialog`, `PostRepository` (hide-for-me / delete post), `AuthRepository` / `currentProfileProvider` (author ownership check).
+
+41. Report a post (Content ReportFlow) — `ReportFlow` (target = `post` | `comment` | `prayer` | `testimony` | `user`)
+  • What it does:
+    - Unified, reusable reporting screen ("Report this post" / "You are reporting a post by **{name}**." / "What is wrong?").
+    - Presents the 5 standard report reasons (radio/check selection) plus an optional details text area (`AppTextArea`).
+    - Keeps "Send report" disabled until a reason is selected; prevents double submission and shows loading state while submitting.
+  • What it connects to:
+    - Incoming navigation:
+      • Screen 40 (Post options sheet "Report post")
+      • Screen 39 (Comment report)
+      • Screen 52 (Prayer request report)
+      • Screen 53 (Testimony detail "Report" button)
+      • Screen 10 / 43 (User / conversation report at `/messages/:threadId/report`, refactored from Screen 11)
+    - Outgoing navigation: On submit -> Screen 42 (`Report sent` step of `ReportFlow`).
+    - Repositories: `ReportRepository.submitReport(Report(targetType, targetId, reason, details))` which feeds into the super-mentor moderation queue on Screen 32.
+
+42. Report sent (post) — `ReportFlow` completion state
+  • What it does:
+    - Confirmation screen shown immediately after submitting a content report ("Report sent" / "Thank you for helping keep the community safe. A moderator will review it.").
+    - Provides two actions:
+      1. "Back to community" -> pops back to the originating feed or community screen.
+      2. "Hide this post" -> hides the reported post from the user's feed immediately and returns to the feed.
+  • What it connects to:
+    - Incoming navigation: Screen 41 (`ReportFlow` submit success).
+    - Outgoing navigation: Returns to Screen 5 (`/community/:id/feed`), Screen 8 (`/general-feed`), or originating screen.
+    - Repositories: `PostRepository` (hides post locally for the reporting user when "Hide this post" is tapped).
+
+
+================================================================================
+
+Prompt 3: not started
+
+┌─────┬─────────────────────┬─────────────────────────┬───────────────────────────────┐
+│  #  │       Screen        │          Route          │            Status             │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 43  │ Member profile      │ /members/:id            │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 44  │ Notifications       │ /notifications          │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 45  │ Notification        │ /notifications/settings │ Not built                     │
+│     │ settings            │                         │                               │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 46  │ Settings            │ /settings               │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 47  │ Edit profile        │ /settings/profile       │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 48  │ Privacy & data      │ /settings/privacy       │ Not built                     │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 49  │ Delete account      │ —                       │ Not built                     │
+│     │ (bottom sheet)      │                         │                               │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 50  │ Help & FAQ          │ /help                   │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 51  │ Meetings            │ /community/:id/meetings │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 52  │ Prayer request      │ /prayer/:id             │ Placeholder                   │
+│     │ detail              │                         │                               │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 53  │ Testimony detail    │ /testimony/:id          │ Placeholder                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 54  │ New message         │ /messages/new           │ Placeholder (the old bottom   │
+│     │                     │                         │ sheet still works)            │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 55  │ Blocked users       │ /settings/blocked       │ Not built                     │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│     │                     │                         │ Partial (banner and service   │
+│ 56  │ Offline state       │ applied across screens  │ exist, not applied            │
+│     │                     │                         │ everywhere)                   │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 57  │ Loading state       │ applied across screens  │ Partial (Skeleton exists, not │
+│     │                     │                         │  audited everywhere)          │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 58  │ No messages yet     │ inside /messages        │ Not built                     │
+│     │ (empty inbox)       │                         │                               │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 59  │ Error state         │ applied across screens  │ Partial (ErrorView exists,    │
+│     │                     │                         │ not audited everywhere)       │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 60  │ Account suspended   │ /suspended              │ Not built                     │
+├─────┼─────────────────────┼─────────────────────────┼───────────────────────────────┤
+│ 61  │ Moderator warning   │ /warning/:id            │ Not built                     │
+└─────┴─────────────────────┴─────────────────────────┴───────────────────────────────┘
+
+### Prompt 3 — Detailed Screen Breakdown (What It Does & What It Connects To)
+
+43. Member profile — `/members/:id`
+  • What it does:
+    - Displays another member's public profile: avatar, full name, `@username`, `RoleBadge` + "Verified" pill for mentors/super-mentors, "About" bio, institution and community chips, and earned Badges (activity history is strictly private and never shown to others).
+    - Provides actions: amber "Message" button (disabled with explanatory text if `MessageRepository.canMessage` is false due to the under-18 guardian rule), outlined "Report" button, and outlined "Block" button (opens `ConfirmDialog`, blocks user, pops screen, shows snackbar with Undo). Hides Message/Block when viewing one's own profile.
+  • What it connects to:
+    - Incoming navigation: Tapping a member's avatar/name in Screen 10 (`ConversationScreen` header), Screen 6 (`InfoMembersScreen`), Screen 5/8 (`PostCard`), or Screen 39 (`Post & comments`).
+    - Outgoing navigation:
+      • "Message" -> opens/creates 1-on-1 thread in Screen 10 (`/messages/:threadId`)
+      • "Report" -> opens `ReportFlow` (target = `user`)
+    - Repositories: `ProfileRepository`, `CommunityRepository`, `ActivityRepository` (earned badges only), `MessageRepository.canMessage`, `ModerationRepository.blockUser`.
+
+44. Notifications — `/notifications`
+  • What it does:
+    - Displays in-app notification feed split into "New" (with "Mark all as read" action) and "Earlier" sections, or an `EmptyState` when none exist.
+    - Each row shows an icon tile, notification text, relative timestamp ("Today · 9:15", "Yesterday", "Mon"), and an unread indicator dot.
+    - Tapping a notification marks it read and navigates to its `targetRoute`.
+  • What it connects to:
+    - Incoming navigation: Notification bell icon on Screen 3/3b (`CommunitiesHubScreen` at `/communities`, which also shows the unread dot from `unreadNotificationsCountProvider`).
+    - Outgoing navigation:
+      • Top-right settings icon -> Screen 45 (`/notifications/settings`)
+      • Request approved / declined notification -> Screen 27 (`/request/approved`) or Screen 28 (`/request/declined`)
+      • Prayer response / "prayed for your request" -> Screen 52 (`/prayer/:id`)
+      • Campus announcement -> Screen 8 (`/general-feed`)
+      • Meeting reminder -> Screen 51 (`/community/:id/meetings`)
+      • Inactivity reminder ("We missed you...") -> Screen 5 (`/community/:id/feed`)
+      • Moderator warning -> Screen 61 (`/warning/:id`)
+    - Repositories: `NotificationRepository` (`notificationsProvider`, `unreadNotificationsCountProvider`).
+
+45. Notification settings — `/notifications/settings`
+  • What it does:
+    - Allows the user to configure notification preferences ("Choose what you hear about.") using amber switches:
+      • Channels: In-app (default on), Email (default on).
+      • Notify me about: Join request updates, Replies and comments, Prayer responses, Announcements, Meeting reminders (default on), and Inactivity reminders (default off).
+    - Persists preferences in `NotificationRepository`; muting a notification type prevents new records of that type from being created for the user.
+  • What it connects to:
+    - Incoming navigation: Settings icon button on Screen 44 (`/notifications`) and "Notifications" row on Screen 46 (`/settings`).
+    - Repositories: `NotificationRepository` (notification preferences state & filtering).
+
+46. Settings — `/settings`
+  • What it does:
+    - Main account and app settings hub:
+      • Top profile card (avatar, name, `@username · {university}`) -> navigates to Edit profile.
+      • Navigation rows (icon tile, title, subtitle, chevron):
+        1. Edit profile ("Photo, name, phone")
+        2. Notifications ("In-app and email")
+        3. Language ("English")
+        4. Privacy & data ("Download or delete my data")
+        5. Help & FAQ ("Answers and contact")
+      • Outlined "Sign out" button (opens confirmation dialog, clears auth session, redirects to `/login`).
+      • Footer showing "Version 1.0" (long-pressing in `kDebugMode` opens `/debug` `DebugScenariosScreen`).
+  • What it connects to:
+    - Incoming navigation: Settings icon button on Screen 2b (`MyProfileScreen` at `/profile`).
+    - Outgoing navigation:
+      • Top card / Edit profile row -> Screen 47 (`/settings/profile`)
+      • Notifications row -> Screen 45 (`/notifications/settings`)
+      • Privacy & data row -> Screen 48 (`/settings/privacy`)
+      • Help & FAQ row -> Screen 50 (`/help`)
+      • Sign out -> Screen 25 (`/login`)
+      • Long-press version (`kDebugMode`) -> `/debug`
+    - Repositories: `AuthRepository` (`authControllerProvider.signOut`), `ProfileRepository` (`currentProfileProvider`).
+
+47. Edit profile — `/settings/profile` (replaces temporary `/profile/edit`)
+  • What it does:
+    - Allows editing user profile fields: avatar + "Change photo" picker, Full name, Username (with async uniqueness check), Phone number, and Institution picker (reusing the Join form widget).
+    - Shows email as read-only ("Email: {email} · cannot be changed here.").
+    - "Save changes" button stays disabled until a field has changed and all inputs are valid.
+  • What it connects to:
+    - Incoming navigation: Screen 2b (`MyProfileScreen` Edit profile & camera buttons) and Screen 46 (`Settings` top card & Edit profile row).
+    - Outgoing navigation: Saves changes and pops back to `/profile` or `/settings`.
+    - Repositories: `ProfileRepository` (`profileControllerProvider`, username uniqueness validation, profile update).
+
+48. Privacy & data — `/settings/privacy`
+  • What it does:
+    - Data control & privacy screen ("You control your information.") with action rows:
+      1. "Download my data" ("Get a copy of your information" -> triggers fake export in repository and confirms "We will email you a copy").
+      2. "My activity & badges" -> opens the user's private activity screen.
+      3. "Blocked users" -> opens blocked users management list.
+    - Displays data retention note: "Only you can see your activity history. Your data is kept for 24 months after your last activity."
+    - Outlined destructive "Delete my account" button at the bottom.
+  • What it connects to:
+    - Incoming navigation: Screen 46 (`/settings`) "Privacy & data" row.
+    - Outgoing navigation:
+      • "My activity & badges" -> Screen 20 (`/activity`)
+      • "Blocked users" -> Screen 55 (`/settings/blocked`)
+      • "Delete my account" -> opens Screen 49 (`DeleteAccountSheet`)
+    - Repositories: `ProfileRepository` / `AuthRepository` (data export request).
+
+49. Delete account (bottom sheet) — Modal `BottomSheetScaffold` over `/settings/privacy`
+  • What it does:
+    - Destructive confirmation bottom sheet ("Delete your account?"):
+      • Explains consequences: "Your profile, posts and messages are deleted within 30 days." and "You leave all communities. This cannot be undone."
+      • Requires password re-authentication ("Enter your password to confirm"), showing an inline error if the password is wrong.
+      • Buttons: amber "Keep my account" (closes sheet) and outlined "Delete my account" (disabled until password is entered; on success wipes user data/session and redirects to `/login`).
+  • What it connects to:
+    - Incoming trigger: "Delete my account" button on Screen 48 (`/settings/privacy`).
+    - Outgoing navigation: On successful deletion -> Screen 25 (`/login` via `SignedOutGuard`).
+    - Repositories: `AuthRepository` (password verification & account deletion), `ProfileRepository`, `MembershipRepository`.
+
+50. Help & FAQ — `/help`
+  • What it does:
+    - Displays an expandable accordion list of frequently asked questions (first item open by default):
+      1. "Why can I join only one specific community?"
+      2. "How do I join a specific community?"
+      3. "How do I report a post or a person?"
+      4. "How do I change my photo?"
+    - Footer: "Still need help? Write to the support team." (copies support email address to clipboard with a confirmation snackbar).
+  • What it connects to:
+    - Incoming navigation:
+      • Screen 46 (`/settings`) "Help & FAQ" row
+      • `ErrorView` "Contact support" button across all async screens in the app
+      • Publicly accessible while signed out (`publicPaths` in `route_guards.dart`).
+
+51. Meetings — `/community/:id/meetings`
+  • What it does:
+    - Shows the community's in-person meeting schedule and attendance tracker:
+      • "Next meeting" card: day/time and room, with an "I am going" RSVP toggle button and an "Add to calendar" stub button.
+      • "At the meeting?" check-in card: "Confirm you are here. Your attendance is recorded in your activity." The "I am here" button is enabled only within the active window (30 minutes before to 2 hours after start time, using an injected clock), allows one check-in per meeting, and records a `meetingAttended` `ActivityEvent`.
+      • "Past meetings" list showing each past session with an `Attended` or `Missed` badge.
+  • What it connects to:
+    - Incoming navigation: "View meetings" button on Screen 6 (`InfoMembersScreen` at `/community/:id/info`) and meeting reminder notifications from Screen 44 (`/notifications`).
+    - Outgoing navigation: If checking in earns a badge, queues and opens Screen 38 (`/badge/:id/earned`).
+    - Guards & Repositories: `MembershipGuard`, `CommunityRepository`, `ActivityRepository.record(ActivityType.meetingAttended)` (which evaluates badge rules and updates Screen 20 `/activity`).
+
+52. Prayer request detail — `/prayer/:id`
+  • What it does:
+    - Displays a full prayer request: author name (or "Anonymous"), timestamp + community name, full prayer text, amber "I prayed" button (once-only toggle showing "[N] people prayed"), chronological "Responses" list, and a pinned bottom input ("Write an encouraging response" + send button).
+    - Strictly preserves anonymity: if the request is anonymous, the author remains anonymous in the detail header, responses, and notifications.
+  • What it connects to:
+    - Incoming navigation: Tapping a prayer card or "Respond" button on Screen 14 (`PrayerWallScreen` at `/community/:id/prayer`) or tapping a prayer notification in Screen 44 (`/notifications`).
+    - Outgoing navigation:
+      • "I prayed" -> records prayer activity and opens Screen 38 (`/badge/:id/earned`) if a prayer badge is unlocked; emits notification to the author.
+      • Report action -> opens Screen 41 (`ReportFlow` with target = `prayer`).
+    - Repositories: `PrayerRepository` (`prayerRepositoryProvider`), `ActivityRepository`, `NotificationRepository`, `ConnectivityService` (disables "I prayed" and response input when offline).
+
+53. Testimony detail — `/testimony/:id`
+  • What it does:
+    - Displays a full student testimony: header with "Reviewed" badge, testimony title, "{name} · {university}", full story text, "Encouraged" toggle button (with count), and an outlined "Report" button.
+    - Enforces visibility privacy: `pending` testimonies can only be opened by their author; other members can only open `reviewed` testimonies.
+  • What it connects to:
+    - Incoming navigation: "Read story" button on Screen 16 (`TestimoniesScreen` at `/community/:id/testimonies`).
+    - Outgoing navigation: "Report" button -> Screen 41 (`ReportFlow` with target = `testimony`).
+    - Repositories: `TestimonyRepository` (`testimonyRepositoryProvider`).
+
+54. New message — `/messages/new`
+  • What it does:
+    - Full-screen member directory for starting a new conversation (replaces the temporary bottom sheet in `MessagesInboxScreen`):
+      • Search field ("Search a member") that live-filters both sections.
+      • Section 1: "Your mentors" (Super-mentors and Mentors with role badges).
+      • Section 2: "Members of {community}" (name + `@username`).
+    - Excludes blocked users automatically.
+    - Rows that fail `MessageRepository.canMessage` (e.g., an under-18 student whose guardian has not yet confirmed) are rendered disabled with an explanatory note.
+  • What it connects to:
+    - Incoming navigation: Compose / "New message" button on Screen 9 (`MessagesInboxScreen` at `/messages`) and "Find a member" button on Screen 58 (empty inbox state).
+    - Outgoing navigation: Tapping a member opens or creates a thread and navigates to Screen 10 (`ConversationScreen` at `/messages/:threadId`).
+    - Repositories: `ThreadRepository` / `MessageRepository` (`canMessage`), `CommunityRepository.getMembers`, `ModerationRepository` (`blockedUserIdsProvider`).
+
+55. Blocked users — `/settings/blocked`
+  • What it does:
+    - Lists all users blocked by the current user ("Blocked people cannot message you."), showing avatar, name, `@username`, and an "Unblock" button per row (or an `EmptyState` if no users are blocked).
+    - Unblocking removes the user from `ModerationRepository` and immediately refreshes feeds, comments, and message threads.
+  • What it connects to:
+    - Incoming navigation: "Blocked users" row on Screen 48 (`/settings/privacy`); populated when blocking a user from Screen 10 (`/messages/:threadId`) or Screen 43 (`/members/:id`).
+    - Repositories & Providers: `ModerationRepository` (`moderationRepositoryProvider`, `blockedUserIdsProvider`), invalidates `threadsProvider` and feed/comment providers on change.
+
+56. Offline state — Applied across screens (`OfflineBanner` + `ConnectivityService`)
+  • What it does:
+    - Displays `OfflineBanner` on community and feed screens when the device has no connection, surfaces cached feed and prayer wall items marked `[saved]`, shows a Data saver tip ("Turn on Data saver to use less data on slow connections."), and disables (without hiding) write actions (composer, Post, comment, send message, "I prayed") with an explanatory state.
+  • What it connects to:
+    - Connects to `ConnectivityService` (`isOnlineProvider`), `OfflineBanner` (`lib/core/widgets/states/offline_banner.dart`), in-memory caches in `PostRepository` and `PrayerRepository`, and the "Go offline" scenario in `DebugScenariosScreen` (`/debug`).
+
+57. Loading state — Applied across all 61 screens (`Skeleton`)
+  • What it does:
+    - Displays shimmer/placeholder `Skeleton` cards while async Riverpod providers are in the `AsyncLoading` state, and holds route transitions on `/loading` while initial auth/profile/membership state resolves.
+  • What it connects to:
+    - Connects to `Skeleton` (`lib/core/widgets/states/skeleton.dart`), `/loading` route in `app_router.dart`, and every screen's `AsyncValue.when(loading: ...)` handler.
+
+58. No messages yet (empty inbox) — Inside `/messages` (`MessagesInboxScreen`)
+  • What it does:
+    - Renders an empty state inside the messages inbox when the user has no active conversation threads: title "No messages yet", body "Say hello to a mentor or a member of your community.", and an amber "Find a member" primary CTA button.
+  • What it connects to:
+    - Displayed inside Screen 9 (`MessagesInboxScreen` at `/messages`) when `threadsProvider` returns an empty list.
+    - Outgoing navigation: "Find a member" button -> Screen 54 (`/messages/new`).
+
+59. Error state — Applied across all 61 screens (`ErrorView`)
+  • What it does:
+    - Displays a consistent error screen/card when an async repository call fails or an unknown route is opened, with a "Try again" button (which invalidates/retries the failed provider) and a "Contact support" button.
+  • What it connects to:
+    - Connects to `ErrorView` / `ErrorScreen` (`lib/core/widgets/states/error_view.dart`), `GoRouter.errorBuilder`, and Screen 50 (`/help` when "Contact support" is tapped).
+
+60. Account suspended — `/suspended`
+  • What it does:
+    - Full-screen enforcement gate that blocks access to the entire app when an admin suspends the user's account ("Your account is suspended" / "Reason: {reason}. Until {date}." / "You can read the community charter or write to the support team if you think this is a mistake.").
+    - Provides two actions: "Read the charter" and "Sign out". Automatically releases when the `until` timestamp passes.
+  • What it connects to:
+    - Triggered by `SuspendedGuard` (first guard in `defaultGuardChain` in `lib/core/router/route_guards.dart`).
+    - Outgoing navigation: "Read the charter" -> `/charter` (`CharterScreen`); "Sign out" -> `/login` (`SignInScreen`).
+    - Repositories: `AuthRepository` / `ModerationRepository` (suspension state & debug scenario in `/debug`).
+
+61. Moderator warning — `/warning/:id`
+  • What it does:
+    - Full-screen enforcement gate shown when a super-mentor warns the user ("A moderator sent you a warning" / "Reason: {reason}. This message was hidden:" + content preview).
+    - Blocks normal app navigation until acknowledged via "I understand" (marks the warning acknowledged and continues to the app) or allows viewing rules via "Read the charter".
+  • What it connects to:
+    - Triggered by `UnacknowledgedWarningGuard` (second guard in `defaultGuardChain`, right after `SuspendedGuard`) or by tapping a warning notification in Screen 44 (`/notifications`); created when a super-mentor clicks "Warn author" on Screen 32 (`/community/:id/manage/reports`).
+    - Outgoing navigation: "I understand" -> acknowledges warning in `ModerationRepository` and redirects to `/communities` (or original destination); "Read the charter" -> `/charter`.

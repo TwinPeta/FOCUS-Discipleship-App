@@ -123,9 +123,7 @@ class FeedList extends ConsumerWidget {
                   }
                 }
               },
-              onCommentTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Comments coming soon')),
-              ),
+              onCommentTap: () => context.push('/post/${post.id}'),
             ),
           );
         },
