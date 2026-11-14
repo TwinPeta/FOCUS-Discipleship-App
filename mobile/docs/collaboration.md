@@ -11,6 +11,8 @@ This file is the contract between them. Read it at the start of every session, b
 
 ## 1. First: repair `main` (Agent B, before anything else)
 
+> **Done (`fd56789`, 2026-11-14).** `.gitignore` now has `/lib/`; the nine files are committed; a clean checkout gives `flutter analyze` 0 issues and 134 tests green. Agent A can merge `extend`.
+
 `main` does not compile right now. The root `.gitignore` contains `lib/`, which silently ignores every **new** file under `mobile/lib`. The commits for screens 39-42 went in without these files, which exist only on Agent B's disk:
 
 ```
@@ -117,7 +119,7 @@ Already built, so reuse it instead of rebuilding:
 1. **Use your own working folder.** Never run two agents in the same folder. Use a separate clone or `git worktree add ../fcu-agent-b main`. In a shared folder, one agent's commit sweeps in the other's half-finished files.
 2. **Work on `main` in small steps.** Run `git pull --rebase origin main` before starting a screen, before editing a shared file, and before every push.
 3. **Stage by explicit path.** Never use `git add -u`, `git add .` or `git add -A`. Check `git status` and `git diff --staged` before committing.
-4. **New files under `mobile/lib`:** until `.gitignore` is fixed, use `git add -f <path>`. After the fix, use plain `git add <path>`.
+4. **New files under `mobile/lib`:** `.gitignore` is fixed (`/lib/`), so use plain `git add <path>`.
 5. **Never push red.** `flutter analyze` must show 0 issues and `flutter test` must be all green before a push. Work in progress that doesn't compile stays local; don't push "wip" to `main`.
 6. **Check before pushing that nothing is missing:**
    - `git status --short --ignored mobile/lib` must print nothing.
@@ -126,7 +128,7 @@ Already built, so reuse it instead of rebuilding:
 8. **No force-pushes to `main`.** To undo, make a new commit (`git revert`, or `git restore --source=<rev> --staged <paths>`).
 9. If a pull brings conflicts in the other agent's files, **keep their version** and rebase your change on top. Ask the user if unsure.
 
-Tooling on this machine: Flutter is at `F:\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat`. Set `PUB_CACHE=F:/.pub-cache` first, because the C: drive is full. The formatter is `dart format`, not `flutter format`.
+Tooling on this machine: Flutter is at `F:\Projects\Focus\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat` (also on PATH as `flutter`). Set `PUB_CACHE=F:/.pub-cache` first, because the C: drive is full. The formatter is `dart format`, not `flutter format`.
 
 ---
 

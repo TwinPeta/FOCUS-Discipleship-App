@@ -6,6 +6,6 @@ Key rules (details in that file):
 - Use your own working folder (a separate clone or `git worktree`); never share a folder with the other agent.
 - `git pull --rebase origin main` before starting, before editing shared files, and before pushing.
 - Stage files by explicit path. Never use `git add -u`, `git add .` or `git add -A`.
-- New files under `mobile/lib` need `git add -f` until the root `.gitignore` `lib/` rule is fixed. `git status --short --ignored mobile/lib` must print nothing before you push.
+- The root `.gitignore` rule is now `/lib/` (fixed in `fd56789`), so new files under `mobile/lib` are staged with a plain `git add <path>`. `git status --short --ignored mobile/lib` must still print nothing before you push.
 - Never push to `main` unless `flutter analyze` shows 0 issues and `flutter test` is green.
-- Flutter: `F:\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat`, with `PUB_CACHE=F:/.pub-cache`.
+- Flutter: `F:\Projects\Focus\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat` (also on PATH as `flutter`), with `PUB_CACHE=F:/.pub-cache`.
