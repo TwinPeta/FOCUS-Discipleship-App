@@ -56,9 +56,12 @@ import '../../features/prayer/presentation/new_prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
+import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
+import '../../features/settings/presentation/help_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/testimony/presentation/share_testimony_screen.dart';
 import '../../features/testimony/presentation/testimonies_screen.dart';
 import '../../features/testimony/presentation/testimony_screen.dart';
@@ -191,14 +194,8 @@ final List<RouteBase> appRoutes = [
     path: '/profile',
     builder: (context, state) => const MyProfileScreen(),
     routes: [
-      GoRoute(
-        path: 'edit',
-        builder: (context, state) => Consumer(
-          builder: (context, ref, _) => JoinFormScreen(
-            existingProfile: ref.watch(currentProfileProvider),
-          ),
-        ),
-      ),
+      // Folded into Edit profile (47).
+      GoRoute(path: 'edit', redirect: (_, _) => '/settings/profile'),
     ],
   ),
   GoRoute(
@@ -227,6 +224,17 @@ final List<RouteBase> appRoutes = [
       ),
     ],
   ),
+  GoRoute(
+    path: '/settings',
+    builder: (context, state) => const SettingsScreen(),
+    routes: [
+      GoRoute(
+        path: 'profile',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+    ],
+  ),
+  GoRoute(path: '/help', builder: (context, state) => const HelpScreen()),
   GoRoute(
     path: '/prayer/:id',
     builder: (context, state) => PrayerRequestScreen(requestId: _id(state)),

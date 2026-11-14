@@ -94,7 +94,7 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadii.cardSmall),
-      child: ColoredBox(
+      child: Material(
         color: AppColors.white,
         child: Column(
           children: [

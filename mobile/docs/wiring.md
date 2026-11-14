@@ -4,7 +4,4 @@ Every control added ahead of its real screen navigates to a **registered placeho
 
 | Source screen | Control | Temporary route | Resolved in prompt |
 |---|---|---|---|
-| 2b My profile | **Edit profile** round button | `/settings/profile` | 3 |
-| 2b My profile | **Settings** round button | `/settings` | 3 |
-| 2b My profile | Camera button (keeps the working edit form for now) | `/profile/edit` | 3 (folds into `/settings/profile`) |
-| ErrorView (all screens) | **Contact support** | `/help` | 3 |
+| 46 Settings | **Privacy & data** row | `/settings/privacy` | 3 (batch 3: screens 48, 49) |

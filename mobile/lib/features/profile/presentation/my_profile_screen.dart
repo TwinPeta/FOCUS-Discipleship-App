@@ -153,8 +153,7 @@ class _Header extends StatelessWidget {
                   size: 44,
                   borderColor: AppColors.ink,
                   borderWidth: 2,
-                  // TODO(prompt3): moves into /settings/profile.
-                  onPressed: () => context.push('/profile/edit'),
+                  onPressed: () => context.push('/settings/profile'),
                 ),
               ),
             ],

@@ -12,7 +12,5 @@ class PlaceholderRoute {
 }
 
 const placeholderRoutes = <PlaceholderRoute>[
-  PlaceholderRoute('/settings', 'Settings', 3),
-  PlaceholderRoute('/settings/profile', 'Edit profile', 3),
-  PlaceholderRoute('/help', 'Help & support', 3),
+  PlaceholderRoute('/settings/privacy', 'Privacy & data', 3),
 ];

@@ -12,13 +12,13 @@ import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/round_icon_button.dart';
-import '../../../core/widgets/segmented_toggle.dart';
 import '../../../core/widgets/step_progress.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../data/institution_data.dart';
 import '../data/profile_repository.dart';
 import '../domain/user_profile.dart';
 import 'profile_providers.dart';
+import 'widgets/institution_picker.dart';
 import 'widgets/join_photo_picker.dart';
 import '../../../core/widgets/labeled_dropdown.dart';
 
@@ -139,13 +139,6 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
     if (!node.hasFocus) {
       setState(() => _errors[key] = validate());
     }
-  }
-
-  List<String> get _institutionOptions {
-    final byCountry = _institutionType == InstitutionType.university
-        ? InstitutionData.universitiesByCountry
-        : InstitutionData.highSchoolsByCountry;
-    return byCountry[_country] ?? const [];
   }
 
   Map<String, String?> _validateAll() {
@@ -421,40 +414,18 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                         errorText: _errors['phone'],
                       ),
                       const SizedBox(height: 16),
-                      Text('I study at', style: AppTextStyles.fieldLabel),
-                      const SizedBox(height: 6),
-                      SegmentedToggle<InstitutionType>(
-                        value: _institutionType,
-                        options: const [
-                          SegmentedOption(
-                            label: 'University',
-                            value: InstitutionType.university,
-                          ),
-                          SegmentedOption(
-                            label: 'High school',
-                            value: InstitutionType.highSchool,
-                          ),
-                        ],
-                        onChanged: (type) {
+                      InstitutionPicker(
+                        country: _country,
+                        type: _institutionType,
+                        name: _institutionName,
+                        errorText: _errors['institutionName'],
+                        onTypeChanged: (type) {
                           setState(() {
                             _institutionType = type;
                             _institutionName = null;
                           });
                         },
-                      ),
-                      const SizedBox(height: 16),
-                      LabeledDropdown<String>(
-                        label: _institutionType == InstitutionType.university
-                            ? 'University'
-                            : 'High school',
-                        value: _institutionName,
-                        items: _institutionOptions,
-                        itemLabel: (name) => name,
-                        hint: _institutionType == InstitutionType.university
-                            ? 'Select your university'
-                            : 'Select your high school',
-                        errorText: _errors['institutionName'],
-                        onChanged: (name) =>
+                        onNameChanged: (name) =>
                             setState(() => _institutionName = name),
                       ),
                     ],

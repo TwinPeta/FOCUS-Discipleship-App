@@ -21,9 +21,16 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 52 Prayer request (`/prayer/:id`, built by A): author or Anonymous, time and community, body, "I prayed" (reuses the wall's once-only logic, "N people prayed"), Responses, pinned "Write an encouraging response" + send
 - [x] 53 Testimony (`/testimony/:id`, built by A): Reviewed badge, title, "name · university", full text, Encouraged toggle, outlined Report (ReportFlow, target testimony); pending stories open only for their author
 - [x] Batch 6 link and Back walk (started early): `test/navigation/link_walk_test.dart` walks 36 legs (deep link + pushed) with no dead ends; fixed a deep-link crash under `/messages/:id/report`, composer/form pop on an empty stack (`popOr`), and deep-link Back targets (`AmberHeaderScaffold.backFallback`). Findings for Agent A: `docs/link_walk.md`
-- [ ] 46-50
+- [x] 46 Settings (`/settings`, built by A): profile card -> Edit profile; Edit profile, Notifications, Language (English, nothing to open), Privacy & data, Help & FAQ; Sign out (confirm -> `/login`); "Version 1.0" (long-press opens `/debug` in debug builds)
+- [x] 47 Edit profile (`/settings/profile`, built by A): photo + Change photo, full name, username (uniqueness check on blur and on save), phone, the Join form's institution picker; read-only email line; Save disabled until changed and valid. `/profile/edit` now redirects here
+- [x] 50 Help & FAQ (`/help`, public, built by A): accordion with the first answer open; "Copy support email" (clipboard, no url_launcher)
+- [ ] 48 Privacy & data, 49 Delete account (batch 3; `/settings/privacy` is a placeholder until then)
 
 ## Prompt 3 assumptions
+- Support email is a placeholder (`supportEmail` in `core/config/app_info.dart`); confirm the real address. The version shown is the constant `appVersion` (keep it in step with pubspec; no package_info).
+- The Join form's "I study at" toggle and institution list became the shared `InstitutionPicker` (`profile/presentation/widgets/`), used by Join (2) and Edit profile (47). Country isn't editable on Edit profile, so it lists that country's institutions.
+- `SettingsRow` (icon tile, title, subtitle, chevron) is shared by Settings (46) and Privacy & data (48).
+- FAQ answers 2-4 are written by A (the brief gave only the first); review the wording.
 - Prayer anonymity (52): `PrayerRepository.createRequest(ownerId:)` keeps the real owner **inside the repository only** (`_ownerOf`); `PrayerRequest` and `PrayerResponse` drop author fields when anonymous. The anonymous owner's own replies are stored as "Anonymous". Response notifications go to the owner by id and never name anyone. New responses appear only once stored (no optimistic row), so the owner's name never shows even briefly.
 - 52/53 deep links work before the wall or testimonies tab was opened (seeds are built from the id prefix). A missing or hidden item shows an "not available" empty state.
 - 53 "full text" is `Testimony.excerpt` (the list truncates it). `Testimony` gained `encouragedCount` / `encouragedByMe`; "Encouraged" is one per member. The Report button is hidden on your own story.
