@@ -84,7 +84,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 46-50 | B | not started | |
 | 51 | A | done | see `git log --grep "screen 51"` |
 | 52, 53 | B | not started | |
-| 56, 57, 59 | A | not started | |
+| 56, 57, 59 | A | in progress | main (audit edits messaging files only after B finishes 43, 54, 55, 58) |
 | 60, 61 | A | done | see `git log --grep "screens 60"` |
 | Content reports to moderation | B | done (see `git log --grep "content reports feed moderation"`) | Agent A please review: `fileReport`, `ModeratedContent.testimony`, nullable `ModerationCase.authorId` + `canWarn` (screen 32 shows "Author unknown"). **Reviewed by A: OK.** One nit: a report with no `reporterId` is keyed as `''`, so a second id-less report never raises the count; consider requiring `reporterId` for content reports. |
 
