@@ -14,6 +14,7 @@ import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/offline_banner.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../community/domain/person.dart';
 import '../domain/thread.dart';
@@ -94,6 +95,8 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
           }
 
           final header = <Widget>[
+            const OfflineBanner(),
+            const SizedBox(height: 4),
             FilterChips<_RoleFilter>(
               options: const [
                 FilterChipOption(label: 'All', value: _RoleFilter.all),

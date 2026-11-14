@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/connectivity/connectivity_service.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
@@ -11,6 +12,9 @@ import '../../../core/widgets/avatar_with_presence.dart';
 import '../../../core/widgets/message_input_bar.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/offline_banner.dart';
+import '../../../core/widgets/states/skeleton.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../data/messaging_repository.dart';
 import '../domain/message.dart';
@@ -88,6 +92,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   Widget build(BuildContext context) {
     final threadAsync = ref.watch(threadByIdProvider(widget.threadId));
     final messagesAsync = ref.watch(threadMessagesProvider(widget.threadId));
+    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
 
     return Scaffold(
       backgroundColor: AppColors.page,
@@ -104,6 +109,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                       threadId: widget.threadId,
                     ),
             ),
+            const OfflineBanner(),
             if (threadAsync.hasValue && threadAsync.value == null)
               const Expanded(
                 child: EmptyState(
@@ -116,12 +122,11 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               Expanded(
                 child: messagesAsync.when(
                   loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Could not load this conversation.',
-                      style: AppTextStyles.body,
-                    ),
+                      const Skeleton(showHeader: false, cardCount: 3),
+                  error: (error, stackTrace) => ErrorView(
+                    title: 'Could not load this conversation',
+                    onRetry: () =>
+                        ref.invalidate(threadMessagesProvider(widget.threadId)),
                   ),
                   data: (messages) {
                     if (messages.length > _lastMessageCount) {
@@ -169,10 +174,12 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               else
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  // Offline: visible but inactive, like every other write.
                   child: MessageInputBar(
                     controller: _textController,
                     onSend: _send,
-                    hintText: 'Type a message…',
+                    hintText: online ? 'Type a message…' : 'You are offline',
+                    enabled: online,
                   ),
                 ),
           ],
