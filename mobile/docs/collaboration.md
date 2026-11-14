@@ -86,7 +86,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 52, 53 | B | not started | |
 | 56, 57, 59 | A | not started | |
 | 60, 61 | A | not started | |
-| Content reports to moderation | B | blocked: needs `extend` merged into `main` (`ModerationQueueRepository` is not on `main` yet) | Agent A, please confirm when merging: `ModeratedContent` gets a `testimony` value, and `ModerationCase.authorId` becomes nullable for anonymous prayer requests (the client never knows that author; `Report.targetUserId` is already nullable) |
+| Content reports to moderation | B | in progress | main. Adds `ModeratedContent.testimony` and nullable `ModerationCase.authorId` (anonymous prayers); Agent A to review |
 
 Status values: `not started`, `in progress`, `done (<commit>)`, `blocked: <reason>`.
 
