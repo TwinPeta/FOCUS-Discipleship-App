@@ -4,15 +4,48 @@
  * WHAT: B25 My account: profile, change password, where you are signed in with sign-out per session
  * REQUIREMENTS: FR-07
  * SPEC: docs/features/01-staff-access.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B25 My account: profile, change password, where you are signed in with sign-out per session";
+import { ChangePasswordForm } from "@/features/account/components/ChangePasswordForm";
+import { ProfileForm } from "@/features/account/components/ProfileForm";
+import { SessionsList } from "@/features/account/components/SessionsList";
 
-export default function Page() {
+export default function AccountPage() {
   return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
+    <div className="mx-auto max-w-3xl space-y-8 p-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">My account</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your profile, password, and active staff sessions.
+        </p>
+      </div>
+
+      <section className="rounded-card border border-border bg-white p-6">
+        <h2 className="text-base font-semibold text-foreground">Profile</h2>
+        <div className="mt-4">
+          <ProfileForm />
+        </div>
+      </section>
+
+      <section className="rounded-card border border-border bg-white p-6">
+        <h2 className="text-base font-semibold text-foreground">Change password</h2>
+        <div className="mt-4">
+          <ChangePasswordForm />
+        </div>
+      </section>
+
+      <section className="rounded-card border border-border bg-white p-6">
+        <h2 className="text-base font-semibold text-foreground">
+          Where you are signed in
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Sign out any device you no longer recognise.
+        </p>
+        <div className="mt-4">
+          <SessionsList />
+        </div>
+      </section>
+    </div>
   );
 }

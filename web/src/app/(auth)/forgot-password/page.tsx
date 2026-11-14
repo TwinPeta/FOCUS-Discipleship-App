@@ -4,15 +4,22 @@
  * WHAT: B27 Forgot password: work email, send reset link, back to sign in
  * REQUIREMENTS: FR-07
  * SPEC: docs/features/01-staff-access.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B27 Forgot password: work email, send reset link, back to sign in";
+import { ForgotPasswordForm } from "@/features/auth/components/ForgotPasswordForm";
 
-export default function Page() {
+export default function ForgotPasswordPage() {
   return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-foreground">Forgot password</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Enter your work email and we will send you a single-use reset link.
+        </p>
+      </div>
+
+      <ForgotPasswordForm />
+    </div>
   );
 }

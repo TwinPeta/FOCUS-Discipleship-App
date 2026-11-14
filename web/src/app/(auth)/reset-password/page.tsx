@@ -4,15 +4,30 @@
  * WHAT: B28 Reset password: single-use link expiring in 1 hour, password rules checklist
  * REQUIREMENTS: FR-07
  * SPEC: docs/features/01-staff-access.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "B28 Reset password: single-use link expiring in 1 hour, password rules checklist";
+import { ResetPasswordForm } from "@/features/auth/components/ResetPasswordForm";
 
-export default function Page() {
+interface ResetPasswordPageProps {
+  searchParams: Promise<{ token?: string }>;
+}
+
+export default async function ResetPasswordPage({
+  searchParams,
+}: ResetPasswordPageProps) {
+  const params = await searchParams;
+
   return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-foreground">Reset password</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose a strong password you have not used recently.
+        </p>
+      </div>
+
+      <ResetPasswordForm token={params.token ?? ""} />
+    </div>
   );
 }
