@@ -23,6 +23,7 @@ class PostCard extends StatelessWidget {
     this.showActions = true,
     this.liked = false,
     this.likeCount = 0,
+    this.commentCount = 0,
     this.onLikeTap,
     this.onCommentTap,
     this.photo,
@@ -40,6 +41,7 @@ class PostCard extends StatelessWidget {
   final bool showActions;
   final bool liked;
   final int likeCount;
+  final int commentCount;
   final VoidCallback? onLikeTap;
   final VoidCallback? onCommentTap;
 
@@ -155,7 +157,7 @@ class PostCard extends StatelessWidget {
             Wrap(
               spacing: 0,
               children: [
-                _ActionButton(
+                PostActionButton(
                   icon: liked
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
@@ -164,9 +166,11 @@ class PostCard extends StatelessWidget {
                   onTap: onLikeTap,
                 ),
                 const SizedBox(width: 18),
-                _ActionButton(
+                PostActionButton(
                   icon: Icons.mode_comment_outlined,
-                  label: 'Comment',
+                  label: commentCount > 0
+                      ? 'Comment ($commentCount)'
+                      : 'Comment',
                   onTap: onCommentTap,
                 ),
               ],
@@ -178,8 +182,11 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
+/// The 44px icon + label buttons under a post (like, comment). Inactive
+/// when [onTap] is null.
+class PostActionButton extends StatelessWidget {
+  const PostActionButton({
+    super.key,
     required this.icon,
     required this.label,
     this.onTap,
@@ -196,7 +203,9 @@ class _ActionButton extends StatelessWidget {
     final color = highlighted ? AppColors.error : AppColors.inkDeemphasized80;
     return Semantics(
       button: true,
+      enabled: onTap != null,
       label: label,
+      excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),

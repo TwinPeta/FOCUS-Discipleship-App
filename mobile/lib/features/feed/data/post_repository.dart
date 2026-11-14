@@ -1,4 +1,5 @@
 import '../../community/domain/person.dart';
+import '../domain/comment.dart';
 import '../domain/post.dart';
 
 abstract class PostRepository {
@@ -16,6 +17,15 @@ abstract class PostRepository {
 
   /// Idempotent on the post id: a repeated create returns the stored post.
   Future<Post> createPost(Post post);
+
+  /// The stored post, or null if it does not exist (or was deleted).
+  Future<Post?> getPost(String postId);
+
+  /// Oldest first.
+  Future<List<Comment>> getComments(String postId);
+
+  /// Idempotent on the comment id. Raises the post's comment count.
+  Future<Comment> addComment(Comment comment);
 }
 
 class FakePostRepository implements PostRepository {
@@ -24,6 +34,44 @@ class FakePostRepository implements PostRepository {
   final Duration latency;
 
   final Map<String, List<Post>> _byCommunity = {};
+  final Map<String, List<Comment>> _comments = {};
+
+  /// Seeded posts ending in `-post-1` or `-post-photo` start with two
+  /// comments each; every other post starts with none.
+  List<Comment> _commentsFor(String postId) =>
+      _comments.putIfAbsent(postId, () {
+        if (!postId.endsWith('-post-1') && !postId.endsWith('-post-photo')) {
+          return <Comment>[];
+        }
+        final now = DateTime.now();
+        return [
+          Comment(
+            id: '$postId-comment-1',
+            postId: postId,
+            author: const Person(
+              id: 'member-2',
+              name: 'Brian Ssemanda',
+              role: PersonRole.member,
+            ),
+            text: 'Thanks for letting us know, see you there!',
+            createdAt: now.subtract(const Duration(minutes: 90)),
+          ),
+          Comment(
+            id: '$postId-comment-2',
+            postId: postId,
+            author: const Person(
+              id: 'member-3',
+              name: 'Sarah Akello',
+              role: PersonRole.member,
+            ),
+            text: 'Will there be snacks again? Asking for a friend.',
+            createdAt: now.subtract(const Duration(minutes: 40)),
+          ),
+        ];
+      });
+
+  Post _withCount(Post post) =>
+      post.copyWith(commentCount: _commentsFor(post.id).length);
 
   List<Post> _seedSpecific(String communityId) {
     final now = DateTime.now();
@@ -169,7 +217,9 @@ class FakePostRepository implements PostRepository {
     final end = (start + limit).clamp(0, all.length);
     return PostPage(
       // A copy: callers never share (or mutate) the stored list.
-      items: List.unmodifiable(all.sublist(start.clamp(0, all.length), end)),
+      items: List.unmodifiable(
+        all.sublist(start.clamp(0, all.length), end).map(_withCount),
+      ),
       nextCursor: end < all.length ? '$end' : null,
     );
   }
@@ -181,13 +231,13 @@ class FakePostRepository implements PostRepository {
       final index = posts.indexWhere((p) => p.id == postId);
       if (index == -1) continue;
       final current = posts[index];
-      if (current.likedByMe == liked) return current;
+      if (current.likedByMe == liked) return _withCount(current);
       final updated = current.copyWith(
         likedByMe: liked,
         likeCount: current.likeCount + (liked ? 1 : -1),
       );
       posts[index] = updated;
-      return updated;
+      return _withCount(updated);
     }
     throw ArgumentError('Unknown post id: $postId');
   }
@@ -197,8 +247,34 @@ class FakePostRepository implements PostRepository {
     await Future.delayed(latency);
     final posts = _feed(post.communityId, post.scope);
     final existing = posts.where((p) => p.id == post.id).firstOrNull;
-    if (existing != null) return existing;
+    if (existing != null) return _withCount(existing);
     posts.insert(0, post);
-    return post;
+    return _withCount(post);
+  }
+
+  @override
+  Future<Post?> getPost(String postId) async {
+    await Future.delayed(latency);
+    for (final posts in _byCommunity.values) {
+      final post = posts.where((p) => p.id == postId).firstOrNull;
+      if (post != null) return _withCount(post);
+    }
+    return null;
+  }
+
+  @override
+  Future<List<Comment>> getComments(String postId) async {
+    await Future.delayed(latency);
+    return List.unmodifiable(_commentsFor(postId));
+  }
+
+  @override
+  Future<Comment> addComment(Comment comment) async {
+    await Future.delayed(latency);
+    final comments = _commentsFor(comment.postId);
+    final existing = comments.where((c) => c.id == comment.id).firstOrNull;
+    if (existing != null) return existing;
+    comments.add(comment);
+    return comment;
   }
 }

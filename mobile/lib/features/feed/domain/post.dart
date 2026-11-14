@@ -37,6 +37,7 @@ class Post {
     this.photo,
     this.likeCount = 0,
     this.likedByMe = false,
+    this.commentCount = 0,
   });
 
   final String id;
@@ -53,6 +54,7 @@ class Post {
   final PostPhoto? photo;
   final int likeCount;
   final bool likedByMe;
+  final int commentCount;
 
   Post copyWith({
     String? id,
@@ -66,6 +68,7 @@ class Post {
     PostPhoto? photo,
     int? likeCount,
     bool? likedByMe,
+    int? commentCount,
   }) {
     return Post(
       id: id ?? this.id,
@@ -79,6 +82,7 @@ class Post {
       photo: photo ?? this.photo,
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
+      commentCount: commentCount ?? this.commentCount,
     );
   }
 }

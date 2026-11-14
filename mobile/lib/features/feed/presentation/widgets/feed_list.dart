@@ -5,13 +5,12 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/widgets/error_snack.dart';
 import '../../../../core/widgets/post_card.dart';
-import '../../../../core/widgets/post_photo_art.dart';
-import '../../../../core/widgets/sized_file_image.dart';
 import '../../../../core/widgets/states/empty_state.dart';
 import '../../../../core/widgets/states/error_view.dart';
 import '../../../../core/widgets/states/skeleton.dart';
 import '../../domain/post.dart';
 import '../providers/feed_providers.dart';
+import 'post_photo_view.dart';
 
 /// The post list shared by the General and specific-community feeds:
 /// virtualized, pull-to-refresh, loads the next page near the end.
@@ -96,19 +95,7 @@ class FeedList extends ConsumerWidget {
               body: post.body,
               roleBadgeLabel: post.roleLabel,
               media: post.media,
-              photo: switch (post.photo) {
-                null => null,
-                PostPhoto(isArt: true) => const PostPhotoArt(),
-                PostPhoto(:final path?) => Image(
-                  image: sizedFileImage(
-                    context,
-                    path,
-                    logicalSize: MediaQuery.sizeOf(context).width,
-                  ),
-                  fit: BoxFit.cover,
-                ),
-                PostPhoto() => null,
-              },
+              photo: postPhotoView(context, post.photo),
               onOpen: () => context.push('/post/${post.id}'),
               // TODO(prompt2): replace with the post options sheet.
               onMore: () => context.push('/post/${post.id}/options'),
@@ -123,9 +110,8 @@ class FeedList extends ConsumerWidget {
                   }
                 }
               },
-              onCommentTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Comments coming soon')),
-              ),
+              commentCount: post.commentCount,
+              onCommentTap: () => context.push('/post/${post.id}'),
             ),
           );
         },

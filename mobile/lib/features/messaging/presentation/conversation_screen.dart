@@ -8,6 +8,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
+import '../../../core/widgets/message_input_bar.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
@@ -166,7 +167,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               if (_restrictedWith(threadAsync.valueOrNull))
                 const _RestrictedBar()
               else
-                _InputBar(controller: _textController, onSend: _send),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  child: MessageInputBar(
+                    controller: _textController,
+                    onSend: _send,
+                    hintText: 'Type a message…',
+                  ),
+                ),
           ],
         ),
       ),
@@ -351,93 +359,6 @@ class _RestrictedBar extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InputBar extends StatelessWidget {
-  const _InputBar({required this.controller, required this.onSend});
-
-  final TextEditingController controller;
-  final VoidCallback onSend;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              height: 50,
-              child: TextField(
-                controller: controller,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'Type a message…',
-                  hintStyle: const TextStyle(color: AppColors.placeholder),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(
-                      color: AppColors.inputBorder,
-                      width: 1.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(
-                      color: AppColors.inputBorder,
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(
-                      color: AppColors.ink,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-                onSubmitted: (_) => onSend(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ValueListenableBuilder(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              final canSend = value.text.trim().isNotEmpty;
-              return Semantics(
-                button: true,
-                label: 'Send',
-                child: InkWell(
-                  onTap: canSend ? onSend : null,
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: canSend
-                          ? AppColors.amber
-                          : AppColors.amber.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.send_rounded, color: AppColors.ink),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
       ),
     );
   }

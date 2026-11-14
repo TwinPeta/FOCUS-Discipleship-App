@@ -5,6 +5,9 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - [x] Batch 2: 27 approved, 28 declined (shown once, `seen`), 29 leave sheet; NotificationRepository + hub bell dot; debug "Approve/Decline my request", "Guardian confirms"; pending-hub debug link removed
 - [x] Batch 3: 33 video (PlaybackController fake), 34 devotional (+reflection), 35 quiz, 36 result, 37 document, 38 badge earned (queue); completion -> activity + pathway step + badges; debug "mark step complete"/"attended meeting" removed
 - [ ] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
+  - [x] 39 post & comments (`/post/:id`)
+  - [ ] 40 post options sheet
+  - [ ] 41/42 ReportFlow + post skin; 11/12 refactor; comment/prayer/testimony reuse
 - [ ] Batch 5: 30 manage, 31 join requests, 32 reports to review (Hide/Warn/Keep/Escalate); super-mentor guard + repository role checks
 - [ ] Finish: analyze 0, tests green, wiring rows for prompt 2 cleared, assumptions + stubs recorded
 
@@ -30,6 +33,10 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - Prayer-wall badges also open screen 38 (snackbar removed). The "Record meeting attended" debug *scenario* stays in the registry; the on-screen shortcut is gone. Testimony video cards are unchanged (testimony detail is prompt 3).
 - Viewers are not membership-gated (Resources content is campus-wide in the fake).
 - "Download" on the document viewer is a stub snackbar; no PDF or video package added.
+- Batch 4 / 39: `PostRepository` gained `getPost`, `getComments`, `addComment`; `Post.commentCount` is derived from stored comments. Seeded posts ending in `-post-1`/`-post-photo` start with two comments. `getPost` only finds posts in a feed that has loaded at least once (fake seeds lazily); otherwise the screen shows "Post not available".
+- Likes and comments on the post screen are optimistic and copied into the loaded feed (`FeedPostsController.replacePost`). Feed "Comment" now opens `/post/:id` and shows the count. A blocked author's post shows "Post not available"; blocked commenters are filtered in the provider.
+- Offline: like and the comment field are disabled (not hidden) and the hint reads "You are offline".
+- `MessageInputBar` extracted to `core/widgets` (conversation + comments); `PostActionButton` made public; `postPhotoView` shared by feed and post screen.
 - "Say hello to my mentor" opens or creates the super-mentor thread; when the under-18 limit applies the button is disabled and reads "Waiting for your guardian's confirmation".
 
 ---

@@ -65,6 +65,10 @@ class FeedPostsController extends FamilyAsyncNotifier<List<Post>, FeedKey> {
     ]);
   }
 
+  /// Swaps in a newer copy of a post (e.g. after a like or comment on the
+  /// post screen) without reloading the feed.
+  void replacePost(Post post) => _replace(post.id, (_) => post);
+
   /// Flips the like locally, persists the *intended* value, and restores
   /// the previous post if the repository fails.
   Future<void> toggleLike(String postId) async {
