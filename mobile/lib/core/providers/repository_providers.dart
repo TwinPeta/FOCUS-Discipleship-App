@@ -97,6 +97,7 @@ final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
   return FakePrayerRepository(
     isHidden: moderation.isHidden,
     isBlocked: blocks.isBlocked,
+    notifications: ref.read(notificationRepositoryProvider),
   );
 });
 

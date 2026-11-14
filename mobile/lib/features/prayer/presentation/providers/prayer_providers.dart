@@ -6,6 +6,7 @@ import '../../../activity/domain/activity_event.dart';
 import '../../../activity/domain/badge.dart';
 import '../../../activity/presentation/providers/activity_providers.dart';
 import '../../../messaging/presentation/providers/moderation_providers.dart';
+import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/prayer_request.dart';
 
 class PrayerRequestsController
@@ -34,7 +35,12 @@ class PrayerRequestsController
       ...current.where((r) => r.id != request.id),
     ]);
     try {
-      await ref.read(prayerRepositoryProvider).createRequest(request);
+      await ref
+          .read(prayerRepositoryProvider)
+          .createRequest(
+            request,
+            ownerId: ref.read(currentProfileProvider)?.id,
+          );
     } catch (_) {
       state = AsyncValue.data(
         (state.valueOrNull ?? const <PrayerRequest>[])

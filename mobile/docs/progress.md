@@ -18,10 +18,14 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 54 New message (`/messages/new`): search, "Your mentors" and "Members of {community}"; tap opens or creates the thread (replaces this page); blocked people excluded by the repository; rows failing `canMessage` are disabled with the note. The old bottom sheet is deleted
 - [x] 55 Blocked users (`/settings/blocked`): rows with Unblock, empty state
 - [x] 58 No messages yet: the empty inbox, **Find a member** -> `/messages/new`
-- [ ] 52, 53
+- [x] 52 Prayer request (`/prayer/:id`, built by A): author or Anonymous, time and community, body, "I prayed" (reuses the wall's once-only logic, "N people prayed"), Responses, pinned "Write an encouraging response" + send
+- [x] 53 Testimony (`/testimony/:id`, built by A): Reviewed badge, title, "name · university", full text, Encouraged toggle, outlined Report (ReportFlow, target testimony); pending stories open only for their author
 - [ ] 46-50
 
 ## Prompt 3 assumptions
+- Prayer anonymity (52): `PrayerRepository.createRequest(ownerId:)` keeps the real owner **inside the repository only** (`_ownerOf`); `PrayerRequest` and `PrayerResponse` drop author fields when anonymous. The anonymous owner's own replies are stored as "Anonymous". Response notifications go to the owner by id and never name anyone. New responses appear only once stored (no optimistic row), so the owner's name never shows even briefly.
+- 52/53 deep links work before the wall or testimonies tab was opened (seeds are built from the id prefix). A missing or hidden item shows an "not available" empty state.
+- 53 "full text" is `Testimony.excerpt` (the list truncates it). `Testimony` gained `encouragedCount` / `encouragedByMe`; "Encouraged" is one per member. The Report button is hidden on your own story.
 - Offline cache is in-memory and keyed per list (`feed:<community>:<scope>`, `prayer:<community>`). Offline, a list is served from it (no paging); with nothing cached the call still runs, which a real backend would fail into `ErrorView`. The "Saved" marker appears only offline, so online layout and goldens are unchanged.
 - `PillButton` and `TabSectionHeader` now show a faded, semantically disabled state when their callback is null (previously a null callback looked enabled).
 - Offline write paths not reachable from a disabled entry point (New prayer request and Share testimony forms) are left as they were; their entry buttons are the gate. Comment input (post detail) was already offline-aware.

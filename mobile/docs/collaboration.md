@@ -83,7 +83,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 44, 45 | A | done | see `git log --grep "screens 44"` |
 | 46-50 | A (taken over from B, inactive) | in progress | main |
 | 51 | A | done | see `git log --grep "screen 51"` |
-| 52, 53 | A (taken over from B, inactive) | in progress | main |
+| 52, 53 | A (taken over from B, inactive) | done | see `git log --grep "screens 52, 53"` |
 | 56, 57, 59 | A | done for all non-messaging screens; messaging part **done by B** (inbox + Conversation: Skeleton, ErrorView, OfflineBanner, send disabled offline) | see `git log --grep "offline, loading and error"` |
 | 60, 61 | A | done | see `git log --grep "screens 60"` |
 | Batch 6: link and Back walk | B | in progress (started early, on screens already done; 46-50, 52, 53 are walked when A lands them) | main. B fixes dead links/Back in its own files and lists the rest in `docs/link_walk.md` for the owner |

@@ -11,6 +11,13 @@ abstract class TestimonyRepository {
   /// Always stored as [TestimonyStatus.pending], whatever the caller sends;
   /// only moderation can mark a story reviewed.
   Future<Testimony> submitStory(Testimony testimony);
+
+  /// One testimony, or null unless it is reviewed or written by [viewerId]
+  /// (and not hidden, nor by someone the viewer blocked).
+  Future<Testimony?> getTestimony(String id, {required String? viewerId});
+
+  /// Sets the viewer's "Encouraged" reaction. Idempotent.
+  Future<Testimony> setEncouraged(String id, {required bool encouraged});
 }
 
 class FakeTestimonyRepository implements TestimonyRepository {
@@ -94,5 +101,50 @@ class FakeTestimonyRepository implements TestimonyRepository {
     final stored = testimony.withStatus(TestimonyStatus.pending);
     list.insert(0, stored);
     return stored;
+  }
+
+  bool _visible(Testimony t, String? viewerId) =>
+      !_isHidden(t.id) &&
+      (t.authorId == null || !_isBlocked(t.authorId!)) &&
+      (t.status == TestimonyStatus.reviewed || t.isAuthoredBy(viewerId));
+
+  (List<Testimony>, int)? _locate(String id) {
+    for (final list in _byCommunity.values) {
+      final i = list.indexWhere((t) => t.id == id);
+      if (i != -1) return (list, i);
+    }
+    // A deep link can arrive before the community's seed is built.
+    final cut = id.indexOf('-testimony-');
+    if (cut > 0) {
+      final communityId = id.substring(0, cut);
+      final list = _byCommunity.putIfAbsent(
+        communityId,
+        () => _seed(communityId),
+      );
+      final i = list.indexWhere((t) => t.id == id);
+      if (i != -1) return (list, i);
+    }
+    return null;
+  }
+
+  @override
+  Future<Testimony?> getTestimony(
+    String id, {
+    required String? viewerId,
+  }) async {
+    await Future.delayed(latency);
+    final found = _locate(id);
+    if (found == null) return null;
+    final t = found.$1[found.$2];
+    return _visible(t, viewerId) ? t : null;
+  }
+
+  @override
+  Future<Testimony> setEncouraged(String id, {required bool encouraged}) async {
+    await Future.delayed(latency);
+    final found = _locate(id);
+    if (found == null) throw ArgumentError.value(id, 'id', 'unknown');
+    final (list, i) = found;
+    return list[i] = list[i].withEncouraged(encouraged);
   }
 }

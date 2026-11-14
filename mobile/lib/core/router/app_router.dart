@@ -53,6 +53,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
 import '../../features/prayer/presentation/new_prayer_request_screen.dart';
+import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
@@ -60,6 +61,7 @@ import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
 import '../../features/testimony/presentation/share_testimony_screen.dart';
 import '../../features/testimony/presentation/testimonies_screen.dart';
+import '../../features/testimony/presentation/testimony_screen.dart';
 import '../debug/debug_scenarios_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/community_shell.dart';
@@ -224,6 +226,14 @@ final List<RouteBase> appRoutes = [
         builder: (context, state) => const NotificationSettingsScreen(),
       ),
     ],
+  ),
+  GoRoute(
+    path: '/prayer/:id',
+    builder: (context, state) => PrayerRequestScreen(requestId: _id(state)),
+  ),
+  GoRoute(
+    path: '/testimony/:id',
+    builder: (context, state) => TestimonyScreen(testimonyId: _id(state)),
   ),
   GoRoute(
     path: '/community/:id/meetings',

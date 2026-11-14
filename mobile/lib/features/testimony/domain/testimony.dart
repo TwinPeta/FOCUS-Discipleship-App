@@ -15,6 +15,8 @@ class Testimony {
     this.duration,
     required this.status,
     required this.createdAt,
+    this.encouragedCount = 0,
+    this.encouragedByMe = false,
   });
 
   final String id;
@@ -32,7 +34,28 @@ class Testimony {
   final TestimonyStatus status;
   final DateTime createdAt;
 
+  /// "Encouraged" reactions (screen 53); one per member.
+  final int encouragedCount;
+  final bool encouragedByMe;
+
   bool isAuthoredBy(String? userId) => userId != null && authorId == userId;
+
+  Testimony withEncouraged(bool on) => Testimony(
+    id: id,
+    communityId: communityId,
+    type: type,
+    title: title,
+    excerpt: excerpt,
+    authorId: authorId,
+    authorName: authorName,
+    institution: institution,
+    duration: duration,
+    status: status,
+    createdAt: createdAt,
+    encouragedByMe: on,
+    encouragedCount:
+        encouragedCount + (on == encouragedByMe ? 0 : (on ? 1 : -1)),
+  );
 
   Testimony withStatus(TestimonyStatus status) => Testimony(
     id: id,
@@ -46,5 +69,7 @@ class Testimony {
     duration: duration,
     status: status,
     createdAt: createdAt,
+    encouragedCount: encouragedCount,
+    encouragedByMe: encouragedByMe,
   );
 }
