@@ -25,11 +25,16 @@ class DashedCirclePainter extends CustomPainter {
     final circumference = 2 * 3.1415926535 * radius;
     final dashLength = circumference / dashCount * (1 - gapFraction);
     final path = Path()
-      ..addOval(Rect.fromCircle(center: Offset(radius, radius), radius: radius - 1));
+      ..addOval(
+        Rect.fromCircle(center: Offset(radius, radius), radius: radius - 1),
+      );
     final metrics = path.computeMetrics().first;
     var distance = 0.0;
     while (distance < metrics.length) {
-      canvas.drawPath(metrics.extractPath(distance, distance + dashLength), paint);
+      canvas.drawPath(
+        metrics.extractPath(distance, distance + dashLength),
+        paint,
+      );
       distance += circumference / dashCount;
     }
   }

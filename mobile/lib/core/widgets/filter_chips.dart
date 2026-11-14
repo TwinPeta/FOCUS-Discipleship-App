@@ -27,8 +27,10 @@ class FilterChips<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 40px chips (per design) inside a 44px hit area; grows with text scale.
+    final height = 44 + 12 * (MediaQuery.textScalerOf(context).scale(1) - 1);
     return SizedBox(
-      height: 40,
+      height: height,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: options.length,
@@ -44,6 +46,7 @@ class FilterChips<T> extends StatelessWidget {
               onTap: () => onChanged(option.value),
               borderRadius: BorderRadius.circular(999),
               child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(

@@ -1,7 +1,8 @@
 /// Formats a timestamp as short relative text ("2 hours ago", "Yesterday",
 /// "2 days ago"), matching the feed's seeded post captions.
-String formatRelativeTime(DateTime dateTime) {
-  final difference = DateTime.now().difference(dateTime);
+/// [now] is injectable for tests. Future times read as "Just now".
+String formatRelativeTime(DateTime dateTime, {DateTime? now}) {
+  final difference = (now ?? DateTime.now()).difference(dateTime);
 
   if (difference.inMinutes < 1) return 'Just now';
   if (difference.inMinutes < 60) {
@@ -18,8 +19,8 @@ String formatRelativeTime(DateTime dateTime) {
 
 /// "Today", "Yesterday", a weekday name, or a short date — used for
 /// conversation day separators and the activity log.
-String formatDayLabel(DateTime date) {
-  final now = DateTime.now();
+String formatDayLabel(DateTime date, {DateTime? clock}) {
+  final now = clock ?? DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final day = DateTime(date.year, date.month, date.day);
   final difference = today.difference(day).inDays;

@@ -30,9 +30,11 @@ class CommunityCover extends StatelessWidget {
             width: double.infinity,
             child: Container(
               color: AppColors.honey,
-              child: CustomPaint(
-                painter: const CommunityCoverPainter(),
-                size: Size.infinite,
+              child: const RepaintBoundary(
+                child: CustomPaint(
+                  painter: CommunityCoverPainter(),
+                  size: Size.infinite,
+                ),
               ),
             ),
           ),

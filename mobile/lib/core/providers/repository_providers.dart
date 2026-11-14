@@ -1,18 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/auth/data/auth_repository.dart';
+import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
 import '../../features/community/data/membership_repository.dart';
 import '../../features/feed/data/post_repository.dart';
+import '../../features/learning/data/learning_repository.dart';
 import '../../features/landing/data/stories_repository.dart';
 import '../../features/activity/data/activity_repository.dart';
 import '../../features/messaging/data/messaging_repository.dart';
 import '../../features/messaging/data/moderation_repository.dart';
 import '../../features/messaging/data/report_repository.dart';
+import '../../features/notifications/data/notification_repository.dart';
 import '../../features/pathways/data/pathway_repository.dart';
 import '../../features/prayer/data/prayer_repository.dart';
 import '../../features/profile/data/profile_repository.dart';
 import '../../features/resources/data/resource_repository.dart';
 import '../../features/testimony/data/testimony_repository.dart';
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return FakeAuthRepository();
+});
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return FakeProfileRepository();
@@ -22,8 +30,14 @@ final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
   return FakeCommunityRepository();
 });
 
+final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+  return FakeNotificationRepository();
+});
+
 final membershipRepositoryProvider = Provider<MembershipRepository>((ref) {
-  return FakeMembershipRepository();
+  return FakeMembershipRepository(
+    notifications: ref.read(notificationRepositoryProvider),
+  );
 });
 
 final postRepositoryProvider = Provider<PostRepository>((ref) {
@@ -50,8 +64,11 @@ final pathwayRepositoryProvider = Provider<PathwayRepository>((ref) {
   return FakePathwayRepository();
 });
 
-final messagingRepositoryProvider = Provider<FakeMessagingRepository>((ref) {
-  return FakeMessagingRepository();
+final messagingRepositoryProvider = Provider<MessagingRepository>((ref) {
+  // Read lazily so the store survives profile/guardian changes.
+  return FakeMessagingRepository(
+    isRestricted: () => ref.read(messagingRestrictedProvider),
+  );
 });
 
 final threadRepositoryProvider = Provider<ThreadRepository>((ref) {
@@ -72,4 +89,8 @@ final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {
 
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
   return FakeActivityRepository();
+});
+
+final learningRepositoryProvider = Provider<LearningRepository>((ref) {
+  return FakeLearningRepository();
 });

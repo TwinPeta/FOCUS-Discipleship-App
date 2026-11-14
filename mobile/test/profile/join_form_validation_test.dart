@@ -15,8 +15,15 @@ Widget _wrap() {
       routerConfig: GoRouter(
         initialLocation: '/x',
         routes: [
-          GoRoute(path: '/x', builder: (context, state) => const JoinFormScreen()),
-          GoRoute(path: '/communities', builder: (context, state) => const Scaffold(body: Text('HUB'))),
+          GoRoute(
+            path: '/x',
+            builder: (context, state) => const JoinFormScreen(),
+          ),
+          GoRoute(
+            path: '/join/password',
+            builder: (context, state) =>
+                const Scaffold(body: Text('PASSWORD STEP')),
+          ),
         ],
       ),
     ),
@@ -24,11 +31,13 @@ Widget _wrap() {
 }
 
 void main() {
-  testWidgets('shows required-field errors when submitting empty', (tester) async {
+  testWidgets('shows required-field errors when submitting empty', (
+    tester,
+  ) async {
     await tester.pumpWidget(_wrap());
     await settle(tester);
 
-    await tester.tap(find.text('Submit'));
+    await tester.tap(find.text('Continue'));
     await settle(tester);
 
     expect(find.text('Full name is required'), findsOneWidget);
@@ -37,7 +46,7 @@ void main() {
     expect(find.text('Email is required'), findsOneWidget);
     expect(find.text('Phone number is required'), findsOneWidget);
     // Still on the Join form, not navigated away.
-    expect(find.text('HUB'), findsNothing);
+    expect(find.text('PASSWORD STEP'), findsNothing);
   });
 
   testWidgets('rejects an invalid username and email', (tester) async {
@@ -45,20 +54,32 @@ void main() {
     await settle(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'username'), 'ab');
-    await tester.enterText(find.widgetWithText(TextField, 'you@example.com'), 'not-an-email');
-    await tester.tap(find.text('Submit'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'you@example.com'),
+      'not-an-email',
+    );
+    await tester.tap(find.text('Continue'));
     await settle(tester);
 
-    expect(find.text('3-20 characters: letters, numbers and underscores only'), findsOneWidget);
+    expect(
+      find.text('3-20 characters: letters, numbers and underscores only'),
+      findsOneWidget,
+    );
     expect(find.text('Enter a valid email address'), findsOneWidget);
   });
 
-  testWidgets('submits successfully with valid data and leaves the form', (tester) async {
+  testWidgets('valid details continue to the password step', (tester) async {
     await tester.pumpWidget(_wrap());
     await settle(tester);
 
-    await tester.enterText(find.widgetWithText(TextField, 'e.g. Grace Namuli'), 'Grace Namuli');
-    await tester.enterText(find.widgetWithText(TextField, 'username'), 'gracenamuli');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. Grace Namuli'),
+      'Grace Namuli',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'username'),
+      'gracenamuli',
+    );
 
     // Birthdate via the date picker, before scrolling moves it off-screen.
     final birthdateField = find.widgetWithText(TextField, 'DD / MM / YYYY');
@@ -69,8 +90,14 @@ void main() {
     await tester.tap(find.text('OK'));
     await settle(tester);
 
-    await tester.enterText(find.widgetWithText(TextField, 'you@example.com'), 'grace@example.com');
-    await tester.enterText(find.widgetWithText(TextField, '+256 700 000 000'), '+256700000000');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'you@example.com'),
+      'grace@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, '+256 700 000 000'),
+      '+256700000000',
+    );
 
     // Pick a university from the seeded list for the default country (Uganda).
     final universityDropdown = find.text('Select your university');
@@ -81,9 +108,10 @@ void main() {
     await tester.tap(find.text('Makerere University').last);
     await settle(tester);
 
-    await tester.tap(find.text('Submit'));
+    await tester.tap(find.text('Continue'));
     await settle(tester);
 
-    expect(find.text('HUB'), findsOneWidget);
+    // Sign-up continues to the password step; nothing is created yet.
+    expect(find.text('PASSWORD STEP'), findsOneWidget);
   });
 }

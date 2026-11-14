@@ -2,15 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/initials.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
 import '../../../core/widgets/info_banner.dart';
-import '../../activity/domain/activity_event.dart';
-import '../../activity/presentation/providers/activity_providers.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/tab_section_header.dart';
+import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
 import 'providers/testimony_providers.dart';
 
@@ -22,99 +26,85 @@ class TestimoniesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final testimoniesAsync = ref.watch(testimoniesProvider(communityId));
+    final provider = testimoniesProvider(communityId);
+    final testimoniesAsync = ref.watch(provider);
+    final viewerId = ref.watch(currentProfileProvider)?.id;
 
-    return testimoniesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Center(
-        child: Text('Could not load testimonies.', style: AppTextStyles.body),
+    if (testimoniesAsync.isLoading && !testimoniesAsync.hasValue) {
+      return const Skeleton(showHeader: false);
+    }
+    if (testimoniesAsync.hasError && !testimoniesAsync.hasValue) {
+      return ErrorView(onRetry: () => ref.invalidate(provider));
+    }
+    final testimonies = testimoniesAsync.valueOrNull ?? const <Testimony>[];
+    final hasPendingMine = testimonies.any(
+      (t) => t.isAuthoredBy(viewerId) && t.status == TestimonyStatus.pending,
+    );
+    void share() => context.push('/community/$communityId/testimonies/new');
+
+    final header = <Widget>[
+      TabSectionHeader(
+        title: 'Testimonies',
+        actionLabel: 'Share your story',
+        onAction: share,
       ),
-      data: (testimonies) {
-        final hasPendingMine = testimonies.any(
-          (t) => t.isMine && t.status == TestimonyStatus.pending,
-        );
+      if (hasPendingMine)
+        const InfoBanner(
+          icon: Icons.hourglass_top_rounded,
+          child: Text('Your story is awaiting review by the moderators.'),
+        ),
+    ];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Testimonies',
-                  style: AppTextStyles.cardTitle.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(provider.future),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        itemCount:
+            header.length + (testimonies.isEmpty ? 1 : testimonies.length),
+        itemBuilder: (context, index) {
+          if (index < header.length) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: header[index],
+            );
+          }
+          if (testimonies.isEmpty) {
+            return EmptyState(
+              icon: Icons.auto_stories_outlined,
+              title: 'No testimonies yet',
+              body: 'Be the first to share yours.',
+              actionLabel: 'Share your story',
+              onAction: share,
+            );
+          }
+          final testimony = testimonies[index - header.length];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: testimony.type == TestimonyType.video
+                ? _VideoTestimonyCard(
+                    key: ValueKey(testimony.id),
+                    testimony: testimony,
+                    onPlay: () =>
+                        ref.read(provider.notifier).openVideo(testimony),
+                  )
+                : _StoryTestimonyCard(
+                    key: ValueKey(testimony.id),
+                    testimony: testimony,
+                    onRead: () => context.push('/testimony/${testimony.id}'),
                   ),
-                ),
-                const Spacer(),
-                Semantics(
-                  button: true,
-                  label: 'Share your story',
-                  child: InkWell(
-                    onTap: () => context.push('/community/$communityId/testimonies/new'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.amber,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.add, color: AppColors.ink),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (hasPendingMine) ...[
-              const SizedBox(height: 16),
-              InfoBanner(
-                icon: Icons.hourglass_top_rounded,
-                child: const Text('Your story is awaiting review by the moderators.'),
-              ),
-            ],
-            const SizedBox(height: 16),
-            if (testimonies.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Center(
-                  child: Text(
-                    'No testimonies yet. Be the first to share yours.',
-                    style: AppTextStyles.body,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else
-              for (var i = 0; i < testimonies.length; i++) ...[
-                testimonies[i].type == TestimonyType.video
-                    ? _VideoTestimonyCard(
-                        testimony: testimonies[i],
-                        onPlay: () async {
-                          await ref.read(activityRepositoryProvider).record(
-                            ActivityEvent(
-                              type: 'video_watched',
-                              label: 'Watched "${testimonies[i].title}"',
-                              at: DateTime.now(),
-                            ),
-                          );
-                          ref.invalidate(activityEventsProvider);
-                          ref.invalidate(badgesProvider);
-                        },
-                      )
-                    : _StoryTestimonyCard(testimony: testimonies[i]),
-                if (i != testimonies.length - 1) const SizedBox(height: 12),
-              ],
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
 
 class _VideoTestimonyCard extends StatelessWidget {
-  const _VideoTestimonyCard({required this.testimony, required this.onPlay});
+  const _VideoTestimonyCard({
+    super.key,
+    required this.testimony,
+    required this.onPlay,
+  });
 
   final Testimony testimony;
   final VoidCallback onPlay;
@@ -143,18 +133,21 @@ class _VideoTestimonyCard extends StatelessWidget {
               },
               child: Stack(
                 children: [
-                  Container(height: 130, width: double.infinity, color: AppColors.amber),
-                  const Positioned.fill(
-                    child: Center(
-                      child: _PlayButton(),
-                    ),
+                  Container(
+                    height: 130,
+                    width: double.infinity,
+                    color: AppColors.amber,
                   ),
+                  const Positioned.fill(child: Center(child: _PlayButton())),
                   if (testimony.duration != null)
                     Positioned(
                       top: 10,
                       left: 10,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(999),
@@ -176,7 +169,10 @@ class _VideoTestimonyCard extends StatelessWidget {
               children: [
                 Text(
                   testimony.title,
-                  style: AppTextStyles.cardTitle.copyWith(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -209,15 +205,24 @@ class _PlayButton extends StatelessWidget {
         border: Border.all(color: AppColors.ink, width: 2.5),
       ),
       alignment: Alignment.center,
-      child: const Icon(Icons.play_arrow_rounded, color: AppColors.ink, size: 30),
+      child: const Icon(
+        Icons.play_arrow_rounded,
+        color: AppColors.ink,
+        size: 30,
+      ),
     );
   }
 }
 
 class _StoryTestimonyCard extends StatelessWidget {
-  const _StoryTestimonyCard({required this.testimony});
+  const _StoryTestimonyCard({
+    super.key,
+    required this.testimony,
+    required this.onRead,
+  });
 
   final Testimony testimony;
+  final VoidCallback onRead;
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +238,10 @@ class _StoryTestimonyCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              AvatarWithPresence(initials: testimony.authorName, size: 40),
+              AvatarWithPresence(
+                initials: initialsOf(testimony.authorName),
+                size: 40,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -259,7 +267,10 @@ class _StoryTestimonyCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             testimony.title,
-            style: AppTextStyles.cardTitle.copyWith(fontSize: 18, fontWeight: FontWeight.w800),
+            style: AppTextStyles.cardTitle.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           if (testimony.excerpt != null) ...[
             const SizedBox(height: 6),
@@ -274,15 +285,19 @@ class _StoryTestimonyCard extends StatelessWidget {
           Semantics(
             button: true,
             label: 'Read story',
+            excludeSemantics: true,
             child: InkWell(
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Full story coming soon')),
-              ),
-              child: Text(
-                'Read story',
-                style: AppTextStyles.fieldLabel.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+              onTap: onRead,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Read story',
+                  style: AppTextStyles.fieldLabel.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -311,12 +326,17 @@ class _StatusBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            reviewed ? Icons.check_circle_outline_rounded : Icons.hourglass_top_rounded,
+            reviewed
+                ? Icons.check_circle_outline_rounded
+                : Icons.hourglass_top_rounded,
             size: 13,
             color: AppColors.ink,
           ),
           const SizedBox(width: 4),
-          Text(reviewed ? 'Reviewed' : 'Pending review', style: AppTextStyles.chip),
+          Text(
+            reviewed ? 'Reviewed' : 'Pending review',
+            style: AppTextStyles.chip,
+          ),
         ],
       ),
     );

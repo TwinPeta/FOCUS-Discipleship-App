@@ -24,17 +24,23 @@ Widget _wrapHub(Membership membership) {
   return ProviderScope(
     overrides: [
       currentProfileProvider.overrideWith((ref) => testProfile),
-      membershipProvider.overrideWith(() => _FakeMembershipController(membership)),
+      membershipProvider.overrideWith(
+        () => _FakeMembershipController(membership),
+      ),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light(),
       routerConfig: GoRouter(
         initialLocation: '/x',
         routes: [
-          GoRoute(path: '/x', builder: (context, state) => const CommunitiesHubScreen()),
+          GoRoute(
+            path: '/x',
+            builder: (context, state) => const CommunitiesHubScreen(),
+          ),
           GoRoute(
             path: '/communities/:id',
-            builder: (context, state) => Scaffold(body: Text('DETAIL:${state.pathParameters['id']}')),
+            builder: (context, state) =>
+                Scaffold(body: Text('DETAIL:${state.pathParameters['id']}')),
           ),
         ],
       ),
@@ -46,15 +52,24 @@ Widget _wrapDetail(Membership membership, String communityId) {
   return ProviderScope(
     overrides: [
       currentProfileProvider.overrideWith((ref) => testProfile),
-      membershipProvider.overrideWith(() => _FakeMembershipController(membership)),
+      membershipProvider.overrideWith(
+        () => _FakeMembershipController(membership),
+      ),
     ],
     child: MaterialApp.router(
       theme: AppTheme.light(),
       routerConfig: GoRouter(
         initialLocation: '/x',
         routes: [
-          GoRoute(path: '/x', builder: (context, state) => CommunityDetailScreen(communityId: communityId)),
-          GoRoute(path: '/communities', builder: (context, state) => const Scaffold(body: Text('HUB'))),
+          GoRoute(
+            path: '/x',
+            builder: (context, state) =>
+                CommunityDetailScreen(communityId: communityId),
+          ),
+          GoRoute(
+            path: '/communities',
+            builder: (context, state) => const Scaffold(body: Text('HUB')),
+          ),
         ],
       ),
     ),
@@ -62,23 +77,38 @@ Widget _wrapDetail(Membership membership, String communityId) {
 }
 
 void main() {
-  testWidgets('hub: while pending, other communities are locked and cannot be opened', (tester) async {
+  testWidgets(
+    'hub: while pending, other communities are locked and cannot be opened',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrapHub(
+          const Membership(
+            communityId: 'growth-circle',
+            status: MembershipStatus.pending,
+          ),
+        ),
+      );
+      await settle(tester);
+
+      // Still visible (at reduced opacity) but tapping must not navigate away.
+      await tester.tap(find.text('Life & Faith Circle'));
+      await settle(tester);
+
+      expect(find.textContaining('DETAIL:'), findsNothing);
+      expect(find.text('Pending approval'), findsOneWidget);
+    },
+  );
+
+  testWidgets('hub: the search field is disabled while pending', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      _wrapHub(const Membership(communityId: 'growth-circle', status: MembershipStatus.pending)),
-    );
-    await settle(tester);
-
-    // Still visible (at reduced opacity) but tapping must not navigate away.
-    await tester.tap(find.text('Life & Faith Circle'));
-    await settle(tester);
-
-    expect(find.textContaining('DETAIL:'), findsNothing);
-    expect(find.text('Pending approval'), findsOneWidget);
-  });
-
-  testWidgets('hub: the search field is disabled while pending', (tester) async {
-    await tester.pumpWidget(
-      _wrapHub(const Membership(communityId: 'growth-circle', status: MembershipStatus.pending)),
+      _wrapHub(
+        const Membership(
+          communityId: 'growth-circle',
+          status: MembershipStatus.pending,
+        ),
+      ),
     );
     await settle(tester);
 
@@ -86,30 +116,47 @@ void main() {
     expect(searchField.enabled, isFalse);
   });
 
-  testWidgets('detail: Request to join is disabled once already pending', (tester) async {
+  testWidgets('detail: Request to join is disabled once already pending', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      _wrapDetail(const Membership(communityId: 'growth-circle', status: MembershipStatus.pending), 'life-faith-circle'),
+      _wrapDetail(
+        const Membership(
+          communityId: 'growth-circle',
+          status: MembershipStatus.pending,
+        ),
+        'life-faith-circle',
+      ),
     );
     await settle(tester);
 
-    final button = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Request to join'));
+    final button = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'Request to join'),
+    );
     expect(button.onPressed, isNull);
     expect(
-      find.text('You already have a pending request or have joined a specific community.'),
+      find.text(
+        'You already have a pending request or have joined a specific community.',
+      ),
       findsOneWidget,
     );
   });
 
-  testWidgets('detail: Request to join is enabled when the user has no membership', (tester) async {
-    await tester.pumpWidget(_wrapDetail(Membership.empty, 'growth-circle'));
-    await settle(tester);
+  testWidgets(
+    'detail: Request to join is enabled when the user has no membership',
+    (tester) async {
+      await tester.pumpWidget(_wrapDetail(Membership.empty, 'growth-circle'));
+      await settle(tester);
 
-    final button = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Request to join'));
-    expect(button.onPressed, isNotNull);
+      final button = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Request to join'),
+      );
+      expect(button.onPressed, isNotNull);
 
-    await tester.tap(find.text('Request to join'));
-    await settle(tester);
+      await tester.tap(find.text('Request to join'));
+      await settle(tester);
 
-    expect(find.text('HUB'), findsOneWidget);
-  });
+      expect(find.text('HUB'), findsOneWidget);
+    },
+  );
 }

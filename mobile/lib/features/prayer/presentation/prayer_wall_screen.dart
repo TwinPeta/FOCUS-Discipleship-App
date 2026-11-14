@@ -3,10 +3,20 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/initials.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
+import '../../../core/widgets/error_snack.dart';
+import '../../../core/widgets/pill_button.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../../core/widgets/tab_section_header.dart';
+import '../../learning/presentation/learning_providers.dart';
+import '../../learning/presentation/widgets/viewer_parts.dart';
 import '../domain/prayer_request.dart';
 import 'providers/prayer_providers.dart';
 
@@ -18,86 +28,65 @@ class PrayerWallScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final requestsAsync = ref.watch(prayerRequestsProvider(communityId));
+    final provider = prayerRequestsProvider(communityId);
+    final requestsAsync = ref.watch(provider);
+
+    if (requestsAsync.isLoading && !requestsAsync.hasValue) {
+      return const Skeleton(showHeader: false);
+    }
+    if (requestsAsync.hasError && !requestsAsync.hasValue) {
+      return ErrorView(onRetry: () => ref.invalidate(provider));
+    }
+    final requests = requestsAsync.valueOrNull ?? const <PrayerRequest>[];
+    void newRequest() => context.push('/community/$communityId/prayer/new');
+
+    Future<void> onPrayed(PrayerRequest request) async {
+      try {
+        final newlyEarned = await ref
+            .read(provider.notifier)
+            .togglePrayed(request.id);
+        if (!context.mounted || newlyEarned.isEmpty) return;
+        ref.read(badgeQueueProvider.notifier).addAll(newlyEarned);
+        showQueuedBadges(context, ref);
+      } catch (_) {
+        if (context.mounted) showErrorSnack(context);
+      }
+    }
 
     return RefreshIndicator(
-      onRefresh: () async =>
-          ref.invalidate(prayerRequestsProvider(communityId)),
-      child: requestsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => ListView(
-          children: [
-            const SizedBox(height: 80),
-            Center(
-              child: Text('Could not load the prayer wall.', style: AppTextStyles.body),
-            ),
-          ],
-        ),
-        data: (requests) {
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Prayer wall',
-                    style: AppTextStyles.cardTitle.copyWith(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const Spacer(),
-                  Semantics(
-                    button: true,
-                    label: 'Share a request',
-                    child: InkWell(
-                      onTap: () => context.push('/community/$communityId/prayer/new'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.amber,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.add, color: AppColors.ink),
-                      ),
-                    ),
-                  ),
-                ],
+      onRefresh: () => ref.refresh(provider.future),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        itemCount: 1 + (requests.isEmpty ? 1 : requests.length),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: TabSectionHeader(
+                title: 'Prayer wall',
+                actionLabel: 'Share a request',
+                onAction: newRequest,
               ),
-              const SizedBox(height: 16),
-              if (requests.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Center(
-                    child: Text(
-                      'No prayer requests yet. Be the first to share one.',
-                      style: AppTextStyles.body,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              else
-                for (var i = 0; i < requests.length; i++) ...[
-                  _PrayerCard(
-                    request: requests[i],
-                    onPrayedTap: () async {
-                      final newlyEarned = await ref
-                          .read(prayerRequestsProvider(communityId).notifier)
-                          .togglePrayed(requests[i].id);
-                      if (!context.mounted) return;
-                      for (final badge in newlyEarned) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('New badge earned: ${badge.name}!')),
-                        );
-                      }
-                    },
-                  ),
-                  if (i != requests.length - 1) const SizedBox(height: 12),
-                ],
-            ],
+            );
+          }
+          if (requests.isEmpty) {
+            return EmptyState(
+              icon: Icons.volunteer_activism_outlined,
+              title: 'No prayer requests yet',
+              body: 'Be the first to share one.',
+              actionLabel: 'Share a request',
+              onAction: newRequest,
+            );
+          }
+          final request = requests[index - 1];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _PrayerCard(
+              key: ValueKey(request.id),
+              request: request,
+              onPrayedTap: () => onPrayed(request),
+              onRespondTap: () => context.push('/prayer/${request.id}'),
+            ),
           );
         },
       ),
@@ -106,18 +95,25 @@ class PrayerWallScreen extends ConsumerWidget {
 }
 
 class _PrayerCard extends StatelessWidget {
-  const _PrayerCard({required this.request, required this.onPrayedTap});
+  const _PrayerCard({
+    super.key,
+    required this.request,
+    required this.onPrayedTap,
+    required this.onRespondTap,
+  });
 
   final PrayerRequest request;
   final VoidCallback onPrayedTap;
+  final VoidCallback onRespondTap;
 
   @override
   Widget build(BuildContext context) {
+    final name = request.anonymous ? 'Anonymous' : (request.authorName ?? '');
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.cardSmall),
         boxShadow: AppShadows.soft,
       ),
       child: Column(
@@ -126,7 +122,7 @@ class _PrayerCard extends StatelessWidget {
           Row(
             children: [
               AvatarWithPresence(
-                initials: request.anonymous ? '?' : (request.authorName ?? '?'),
+                initials: request.anonymous ? '?' : initialsOf(name),
                 size: 40,
               ),
               const SizedBox(width: 10),
@@ -135,8 +131,10 @@ class _PrayerCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      request.anonymous ? 'Anonymous' : (request.authorName ?? ''),
+                      name,
                       style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       formatRelativeTime(request.createdAt),
@@ -152,66 +150,24 @@ class _PrayerCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(request.body, style: AppTextStyles.body.copyWith(height: 1.4)),
-          const SizedBox(height: 12),
-          Row(
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
             children: [
-              _PillButton(
+              PillButton(
                 label: request.prayedCount > 0
                     ? '${request.prayedCount} prayed'
                     : 'I prayed',
+                semanticLabel: request.prayedByMe
+                    ? 'You prayed. ${request.prayedCount} prayed in total'
+                    : 'I prayed. ${request.prayedCount} prayed so far',
                 filled: request.prayedByMe,
                 onTap: onPrayedTap,
               ),
-              const SizedBox(width: 10),
-              _PillButton(
-                label: 'Respond',
-                filled: false,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Responding coming soon')),
-                ),
-              ),
+              PillButton(label: 'Respond', onTap: onRespondTap),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.label,
-    required this.filled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool filled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: filled,
-      label: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: filled ? AppColors.amber : AppColors.white,
-            borderRadius: BorderRadius.circular(999),
-            border: filled ? null : Border.all(color: AppColors.ink, width: 2),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.chip.copyWith(fontWeight: FontWeight.w800),
-          ),
-        ),
       ),
     );
   }

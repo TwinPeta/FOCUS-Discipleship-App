@@ -4,53 +4,92 @@ import '../../../../core/providers/repository_providers.dart';
 import '../../../activity/domain/activity_event.dart';
 import '../../../activity/domain/badge.dart';
 import '../../../activity/presentation/providers/activity_providers.dart';
+import '../../../messaging/presentation/providers/moderation_providers.dart';
 import '../../domain/prayer_request.dart';
 
 class PrayerRequestsController
     extends FamilyAsyncNotifier<List<PrayerRequest>, String> {
   @override
-  Future<List<PrayerRequest>> build(String communityId) {
-    return ref.watch(prayerRepositoryProvider).getRequests(communityId);
+  Future<List<PrayerRequest>> build(String communityId) async {
+    final blocked = await ref.watch(blockedUserIdsProvider.future);
+    final requests = await ref
+        .watch(prayerRepositoryProvider)
+        .getRequests(communityId);
+    return requests
+        .where((r) => r.authorId == null || !blocked.contains(r.authorId))
+        .toList();
   }
 
+  /// Optimistic insert (deduped by id); removed again and rethrown on
+  /// failure.
   Future<void> createRequest(PrayerRequest request) async {
-    final current = state.valueOrNull ?? [];
-    state = AsyncValue.data([request, ...current]);
-    await ref.read(prayerRepositoryProvider).createRequest(request);
+    final current = state.valueOrNull ?? const <PrayerRequest>[];
+    state = AsyncValue.data([
+      request,
+      ...current.where((r) => r.id != request.id),
+    ]);
+    try {
+      await ref.read(prayerRepositoryProvider).createRequest(request);
+    } catch (_) {
+      state = AsyncValue.data(
+        (state.valueOrNull ?? const <PrayerRequest>[])
+            .where((r) => r.id != request.id)
+            .toList(),
+      );
+      rethrow;
+    }
   }
 
-  /// Returns any badges newly earned (only possible when marking "I
-  /// prayed", not when un-marking it).
-  Future<List<AppBadge>> togglePrayed(String requestId) async {
+  void _replace(String id, PrayerRequest Function(PrayerRequest) update) {
     final current = state.valueOrNull;
-    if (current == null) return const [];
-    final index = current.indexWhere((r) => r.id == requestId);
-    if (index == -1) return const [];
+    if (current == null) return;
+    state = AsyncValue.data([
+      for (final r in current) r.id == id ? update(r) : r,
+    ]);
+  }
 
-    final willBePrayed = !current[index].prayedByMe;
-    final toggled = current[index].copyWith(
-      prayedByMe: willBePrayed,
-      prayedCount: willBePrayed
-          ? current[index].prayedCount + 1
-          : current[index].prayedCount - 1,
+  /// Toggles "I prayed" optimistically and rolls back on failure. Activity
+  /// is recorded once per request (the first time it is marked), so
+  /// un-marking and re-marking can never farm the Prayer partner badge.
+  /// Returns any badges newly earned.
+  Future<List<AppBadge>> togglePrayed(String requestId) async {
+    final before = state.valueOrNull
+        ?.where((r) => r.id == requestId)
+        .firstOrNull;
+    if (before == null) return const [];
+    final prayed = !before.prayedByMe;
+    _replace(
+      requestId,
+      (r) => r.copyWith(
+        prayedByMe: prayed,
+        prayedCount: r.prayedCount + (prayed ? 1 : -1),
+      ),
     );
-    final optimistic = [...current];
-    optimistic[index] = toggled;
-    state = AsyncValue.data(optimistic);
 
-    await ref.read(prayerRepositoryProvider).togglePrayed(requestId);
+    try {
+      final saved = await ref
+          .read(prayerRepositoryProvider)
+          .setPrayed(requestId, prayed: prayed);
+      _replace(requestId, (_) => saved);
+    } catch (_) {
+      _replace(requestId, (_) => before);
+      rethrow;
+    }
 
-    if (!willBePrayed) return const [];
-    final newlyEarned = await ref.read(activityRepositoryProvider).record(
-      ActivityEvent(type: 'prayed', label: 'Prayed for a request', at: DateTime.now()),
-    );
-    ref.invalidate(activityEventsProvider);
-    ref.invalidate(badgesProvider);
-    return newlyEarned;
+    if (!prayed) return const [];
+    return ref
+        .read(activityRecorderProvider)
+        .record(
+          ActivityType.prayed,
+          'Prayed for a request',
+          sourceId: requestId,
+        );
   }
 }
 
-final prayerRequestsProvider = AsyncNotifierProvider.family<
-    PrayerRequestsController, List<PrayerRequest>, String>(
-  PrayerRequestsController.new,
-);
+final prayerRequestsProvider =
+    AsyncNotifierProvider.family<
+      PrayerRequestsController,
+      List<PrayerRequest>,
+      String
+    >(PrayerRequestsController.new);

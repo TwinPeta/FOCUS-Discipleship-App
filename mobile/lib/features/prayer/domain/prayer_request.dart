@@ -1,24 +1,24 @@
 class PrayerRequest {
+  /// Anonymous requests never keep an author: [authorId] and [authorName]
+  /// are dropped here (not by an assert, which release builds strip), so no
+  /// model, log or screen can expose them.
   const PrayerRequest({
     required this.id,
     required this.communityId,
-    this.authorId,
-    this.authorName,
+    String? authorId,
+    String? authorName,
     required this.anonymous,
     required this.body,
     required this.createdAt,
     this.prayedCount = 0,
     this.prayedByMe = false,
-  }) : assert(
-         anonymous ? authorId == null && authorName == null : true,
-         'Anonymous requests must not carry an author.',
-       );
+  }) : authorId = anonymous ? null : authorId,
+       authorName = anonymous ? null : authorName;
 
   final String id;
   final String communityId;
 
-  /// Null whenever [anonymous] is true — anonymous requests must never
-  /// expose the author in any model, log or UI.
+  /// Always null when [anonymous] is true.
   final String? authorId;
   final String? authorName;
   final bool anonymous;
@@ -40,4 +40,8 @@ class PrayerRequest {
       prayedByMe: prayedByMe ?? this.prayedByMe,
     );
   }
+
+  @override
+  String toString() =>
+      'PrayerRequest($id, anonymous: $anonymous, prayed: $prayedCount)';
 }

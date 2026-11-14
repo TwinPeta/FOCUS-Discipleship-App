@@ -51,9 +51,9 @@ class JoinStepsSection extends StatelessWidget {
             if (step != _steps.last) const SizedBox(height: 18),
           ],
           const SizedBox(height: 24),
-          Row(
+          const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Expanded(
                 child: _MiniCard(
                   title: 'General',

@@ -2,13 +2,26 @@ import '../../community/domain/person.dart';
 import '../domain/post.dart';
 
 abstract class PostRepository {
-  Future<List<Post>> getPosts(String communityId, PostScope scope);
-  Future<Post> toggleLike(Post post);
+  /// Newest first. Pass the previous page's `nextCursor` to continue.
+  Future<PostPage> getPosts(
+    String communityId,
+    PostScope scope, {
+    String? cursor,
+    int limit = 20,
+  });
+
+  /// Idempotent: sets the current user's like to [liked] and returns the
+  /// stored post (calling it twice with the same value changes nothing).
+  Future<Post> setLiked(String postId, {required bool liked});
+
+  /// Idempotent on the post id: a repeated create returns the stored post.
   Future<Post> createPost(Post post);
 }
 
 class FakePostRepository implements PostRepository {
-  static const _latency = Duration(milliseconds: 400);
+  FakePostRepository({this.latency = const Duration(milliseconds: 400)});
+
+  final Duration latency;
 
   final Map<String, List<Post>> _byCommunity = {};
 
@@ -30,6 +43,23 @@ class FakePostRepository implements PostRepository {
             "since the chapel is booked for choir practice. See you all at 5!",
         createdAt: now.subtract(const Duration(hours: 2)),
         likeCount: 9,
+      ),
+      Post(
+        id: '$communityId-post-photo',
+        communityId: communityId,
+        scope: PostScope.specific,
+        author: const Person(
+          id: 'm-1',
+          name: 'David Okello',
+          role: PersonRole.mentor,
+        ),
+        roleLabel: 'Mentor',
+        body:
+            'Sunrise prayer walk this morning before lectures. Join us next '
+            'Saturday at 6:30, we meet at the main gate.',
+        createdAt: now.subtract(const Duration(hours: 6)),
+        photo: const PostPhoto.art(),
+        likeCount: 12,
       ),
       Post(
         id: '$communityId-post-2',
@@ -118,36 +148,56 @@ class FakePostRepository implements PostRepository {
     ];
   }
 
+  List<Post> _feed(String communityId, PostScope scope) =>
+      _byCommunity.putIfAbsent(
+        communityId,
+        () => scope == PostScope.general
+            ? _seedGeneral(communityId)
+            : _seedSpecific(communityId),
+      );
+
   @override
-  Future<List<Post>> getPosts(String communityId, PostScope scope) async {
-    await Future.delayed(_latency);
-    return _byCommunity.putIfAbsent(
-      communityId,
-      () => scope == PostScope.general
-          ? _seedGeneral(communityId)
-          : _seedSpecific(communityId),
+  Future<PostPage> getPosts(
+    String communityId,
+    PostScope scope, {
+    String? cursor,
+    int limit = 20,
+  }) async {
+    await Future.delayed(latency);
+    final all = _feed(communityId, scope);
+    final start = int.tryParse(cursor ?? '') ?? 0;
+    final end = (start + limit).clamp(0, all.length);
+    return PostPage(
+      // A copy: callers never share (or mutate) the stored list.
+      items: List.unmodifiable(all.sublist(start.clamp(0, all.length), end)),
+      nextCursor: end < all.length ? '$end' : null,
     );
   }
 
   @override
-  Future<Post> toggleLike(Post post) async {
-    await Future.delayed(_latency);
-    final toggled = post.copyWith(
-      likedByMe: !post.likedByMe,
-      likeCount: post.likedByMe ? post.likeCount - 1 : post.likeCount + 1,
-    );
-    final posts = _byCommunity[post.communityId];
-    if (posts != null) {
-      final index = posts.indexWhere((p) => p.id == post.id);
-      if (index != -1) posts[index] = toggled;
+  Future<Post> setLiked(String postId, {required bool liked}) async {
+    await Future.delayed(latency);
+    for (final posts in _byCommunity.values) {
+      final index = posts.indexWhere((p) => p.id == postId);
+      if (index == -1) continue;
+      final current = posts[index];
+      if (current.likedByMe == liked) return current;
+      final updated = current.copyWith(
+        likedByMe: liked,
+        likeCount: current.likeCount + (liked ? 1 : -1),
+      );
+      posts[index] = updated;
+      return updated;
     }
-    return toggled;
+    throw ArgumentError('Unknown post id: $postId');
   }
 
   @override
   Future<Post> createPost(Post post) async {
-    await Future.delayed(_latency);
-    final posts = _byCommunity.putIfAbsent(post.communityId, () => []);
+    await Future.delayed(latency);
+    final posts = _feed(post.communityId, post.scope);
+    final existing = posts.where((p) => p.id == post.id).firstOrNull;
+    if (existing != null) return existing;
     posts.insert(0, post);
     return post;
   }

@@ -1,62 +1,113 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/repository_providers.dart';
-import '../../../community/domain/community.dart';
-import '../../../community/presentation/providers/community_providers.dart';
+import '../../../messaging/presentation/providers/moderation_providers.dart';
 import '../../domain/post.dart';
 
-class FeedPostsController extends FamilyAsyncNotifier<List<Post>, String> {
-  Future<PostScope> _scopeFor(String communityId) async {
-    final community = await ref.read(communityByIdProvider(communityId).future);
-    return community.type == CommunityType.general
-        ? PostScope.general
-        : PostScope.specific;
+/// One feed (General or a specific community), paged, newest first.
+/// Likes and new posts are optimistic and roll back on failure.
+class FeedPostsController extends FamilyAsyncNotifier<List<Post>, FeedKey> {
+  String? _nextCursor;
+  bool _loadingMore = false;
+
+  bool get hasMore => _nextCursor != null;
+
+  Future<List<Post>> _firstPage() async {
+    final page = await ref
+        .read(postRepositoryProvider)
+        .getPosts(arg.communityId, arg.scope);
+    _nextCursor = page.nextCursor;
+    return page.items;
   }
+
+  List<Post> _visible(List<Post> posts, Set<String> blocked) =>
+      posts.where((p) => !blocked.contains(p.author.id)).toList();
 
   @override
-  Future<List<Post>> build(String communityId) async {
-    final scope = await _scopeFor(communityId);
-    return ref.watch(postRepositoryProvider).getPosts(communityId, scope);
+  Future<List<Post>> build(FeedKey arg) async {
+    ref.watch(postRepositoryProvider);
+    final blocked = await ref.watch(blockedUserIdsProvider.future);
+    return _visible(await _firstPage(), blocked);
   }
 
+  /// Pull-to-refresh: keeps the current list on screen while loading and
+  /// rethrows on failure (the list stays as it was).
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    final scope = await _scopeFor(arg);
-    state = AsyncValue.data(
-      await ref.read(postRepositoryProvider).getPosts(arg, scope),
-    );
+    final blocked = await ref.read(blockedUserIdsProvider.future);
+    state = AsyncValue.data(_visible(await _firstPage(), blocked));
   }
 
-  /// Toggles the like locally first (optimistic), then persists through the
-  /// repository.
-  Future<void> toggleLike(String postId) async {
+  Future<void> loadMore() async {
+    final current = state.valueOrNull;
+    if (current == null || _nextCursor == null || _loadingMore) return;
+    _loadingMore = true;
+    try {
+      final page = await ref
+          .read(postRepositoryProvider)
+          .getPosts(arg.communityId, arg.scope, cursor: _nextCursor);
+      _nextCursor = page.nextCursor;
+      final blocked = await ref.read(blockedUserIdsProvider.future);
+      final seen = {for (final p in current) p.id};
+      state = AsyncValue.data([
+        ...current,
+        ..._visible(page.items, blocked).where((p) => !seen.contains(p.id)),
+      ]);
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  void _replace(String postId, Post Function(Post) update) {
     final current = state.valueOrNull;
     if (current == null) return;
-    final index = current.indexWhere((post) => post.id == postId);
-    if (index == -1) return;
-
-    final toggled = current[index].copyWith(
-      likedByMe: !current[index].likedByMe,
-      likeCount: current[index].likedByMe
-          ? current[index].likeCount - 1
-          : current[index].likeCount + 1,
-    );
-    final optimistic = [...current];
-    optimistic[index] = toggled;
-    state = AsyncValue.data(optimistic);
-
-    await ref.read(postRepositoryProvider).toggleLike(toggled);
+    state = AsyncValue.data([
+      for (final p in current) p.id == postId ? update(p) : p,
+    ]);
   }
 
-  /// Inserts [post] at the top immediately (optimistic), then persists it.
+  /// Flips the like locally, persists the *intended* value, and restores
+  /// the previous post if the repository fails.
+  Future<void> toggleLike(String postId) async {
+    final before = state.valueOrNull?.where((p) => p.id == postId).firstOrNull;
+    if (before == null) return;
+    final liked = !before.likedByMe;
+    _replace(
+      postId,
+      (p) => p.copyWith(
+        likedByMe: liked,
+        likeCount: p.likeCount + (liked ? 1 : -1),
+      ),
+    );
+    try {
+      final saved = await ref
+          .read(postRepositoryProvider)
+          .setLiked(postId, liked: liked);
+      _replace(postId, (_) => saved);
+    } catch (_) {
+      _replace(postId, (_) => before);
+      rethrow;
+    }
+  }
+
+  /// Inserts [post] at the top once (deduped by id), then persists it.
+  /// Removes it again and rethrows if the repository fails.
   Future<void> createPost(Post post) async {
-    final current = state.valueOrNull ?? [];
-    state = AsyncValue.data([post, ...current]);
-    await ref.read(postRepositoryProvider).createPost(post);
+    final current = state.valueOrNull ?? const <Post>[];
+    state = AsyncValue.data([post, ...current.where((p) => p.id != post.id)]);
+    try {
+      await ref.read(postRepositoryProvider).createPost(post);
+    } catch (_) {
+      state = AsyncValue.data(
+        (state.valueOrNull ?? const <Post>[])
+            .where((p) => p.id != post.id)
+            .toList(),
+      );
+      rethrow;
+    }
   }
 }
 
 final feedPostsProvider =
-    AsyncNotifierProvider.family<FeedPostsController, List<Post>, String>(
+    AsyncNotifierProvider.family<FeedPostsController, List<Post>, FeedKey>(
       FeedPostsController.new,
     );

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -107,6 +108,7 @@ class _Header extends StatelessWidget {
                     ? context.pop()
                     : context.go('/communities'),
               ),
+              const SizedBox(width: 52),
               Expanded(
                 child: Text(
                   'My profile',
@@ -120,7 +122,13 @@ class _Header extends StatelessWidget {
               RoundIconButton(
                 icon: Icons.edit_outlined,
                 semanticLabel: 'Edit profile',
-                onPressed: () => context.push('/join', extra: profile),
+                onPressed: () => context.push('/settings/profile'),
+              ),
+              const SizedBox(width: 8),
+              RoundIconButton(
+                icon: Icons.settings_outlined,
+                semanticLabel: 'Settings',
+                onPressed: () => context.push('/settings'),
               ),
             ],
           ),
@@ -145,13 +153,22 @@ class _Header extends StatelessWidget {
                   size: 44,
                   borderColor: AppColors.ink,
                   borderWidth: 2,
-                  onPressed: () => context.push('/join', extra: profile),
+                  // TODO(prompt3): moves into /settings/profile.
+                  onPressed: () => context.push('/profile/edit'),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Text(profile.fullName, style: AppTextStyles.profileName),
+          GestureDetector(
+            // Debug builds only: long-press opens the scenario registry.
+            onLongPress: kDebugMode ? () => context.push('/debug') : null,
+            child: Text(
+              profile.fullName,
+              style: AppTextStyles.profileName,
+              textAlign: TextAlign.center,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             '@${profile.username}',

@@ -31,7 +31,14 @@ class AppChip extends StatelessWidget {
             Icon(icon, size: 13, color: AppColors.ink),
             const SizedBox(width: 4),
           ],
-          Text(label, style: AppTextStyles.chip),
+          Flexible(
+            child: Text(
+              label,
+              style: AppTextStyles.chip,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

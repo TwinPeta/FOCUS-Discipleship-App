@@ -16,17 +16,30 @@ extension ReportReasonLabel on ReportReason {
   };
 }
 
+/// What is being reported. One report model and one repository serve
+/// every target (prompt 2 adds posts and comments).
+enum ReportTargetType { user, conversation, post, comment, prayerRequest }
+
 class Report {
   const Report({
+    required this.targetType,
+    required this.targetId,
     required this.targetUserId,
-    required this.threadId,
     required this.reason,
     this.details,
     this.screenshotPath,
   });
 
+  final ReportTargetType targetType;
+
+  /// Id of the reported item (thread id, post id…); the user id for
+  /// [ReportTargetType.user].
+  final String targetId;
+
+  /// The person responsible for the reported content.
   final String targetUserId;
-  final String threadId;
+
+  /// Required: a report without a reason cannot be constructed.
   final ReportReason reason;
   final String? details;
   final String? screenshotPath;

@@ -10,6 +10,7 @@ import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_text_area.dart';
 import '../../../core/widgets/dashed_rrect_painter.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../domain/report.dart';
 import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
@@ -39,7 +40,12 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
   bool get _canSubmit => !_isSubmitting && _reason != null;
 
   Future<void> _pickScreenshot() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
+    );
     if (picked == null) return;
     setState(() => _screenshotPath = picked.path);
   }
@@ -48,13 +54,24 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
     if (!_canSubmit) return;
     setState(() => _isSubmitting = true);
     final report = Report(
+      targetType: ReportTargetType.conversation,
+      targetId: widget.threadId,
       targetUserId: thread.participant.id,
-      threadId: widget.threadId,
       reason: _reason!,
-      details: _detailsController.text.trim().isEmpty ? null : _detailsController.text.trim(),
+      details: _detailsController.text.trim().isEmpty
+          ? null
+          : _detailsController.text.trim(),
       screenshotPath: _screenshotPath,
     );
-    await ref.read(reportRepositoryProvider).submitReport(report);
+    try {
+      await ref.read(reportRepositoryProvider).submitReport(report);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        showErrorSnack(context, 'Your report was not sent. Please try again.');
+      }
+      return;
+    }
 
     if (!mounted) return;
     context.pushReplacement('/messages/${widget.threadId}/report/sent');
@@ -71,13 +88,23 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
       ),
       error: (error, stackTrace) => Scaffold(
         backgroundColor: AppColors.page,
-        body: Center(child: Text('Could not load this conversation.', style: AppTextStyles.body)),
+        body: Center(
+          child: Text(
+            'Could not load this conversation.',
+            style: AppTextStyles.body,
+          ),
+        ),
       ),
       data: (thread) {
         if (thread == null) {
           return Scaffold(
             backgroundColor: AppColors.page,
-            body: Center(child: Text('Could not load this conversation.', style: AppTextStyles.body)),
+            body: Center(
+              child: Text(
+                'Could not load this conversation.',
+                style: AppTextStyles.body,
+              ),
+            ),
           );
         }
 
@@ -103,7 +130,10 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
               children: [
                 Text(
                   'What happened?',
-                  style: AppTextStyles.cardTitle.copyWith(fontSize: 18, fontWeight: FontWeight.w900),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 for (final reason in ReportReason.values) ...[
@@ -135,7 +165,9 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
                         children: [
                           Text(
                             'Screenshot of the chat',
-                            style: AppTextStyles.cardTitle.copyWith(fontSize: 15),
+                            style: AppTextStyles.cardTitle.copyWith(
+                              fontSize: 15,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -146,8 +178,8 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          SizedBox(
-                            height: 40,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
                             child: ElevatedButton(
                               onPressed: _pickScreenshot,
                               style: ElevatedButton.styleFrom(
@@ -158,7 +190,11 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              child: Text(_screenshotPath != null ? 'Replace screenshot' : 'Upload'),
+                              child: Text(
+                                _screenshotPath != null
+                                    ? 'Replace screenshot'
+                                    : 'Upload',
+                              ),
                             ),
                           ),
                         ],
@@ -177,15 +213,17 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
                 isLoading: _isSubmitting,
                 onPressed: _canSubmit ? () => _submit(thread) : null,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Reports are reviewed by the FCU moderation team.',
-                style: AppTextStyles.fieldLabel.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.inkDeemphasized80,
+              if (MediaQuery.viewInsetsOf(context).bottom == 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Reports are reviewed by the FCU moderation team.',
+                  style: AppTextStyles.fieldLabel.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.inkDeemphasized80,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
+              ],
             ],
           ),
         );
@@ -195,7 +233,11 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
 }
 
 class _ReasonRow extends StatelessWidget {
-  const _ReasonRow({required this.label, required this.selected, required this.onTap});
+  const _ReasonRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -211,17 +253,21 @@ class _ReasonRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          height: 46,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          constraints: const BoxConstraints(minHeight: 46),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? AppColors.honey : AppColors.white,
             borderRadius: BorderRadius.circular(14),
-            border: selected ? Border.all(color: AppColors.ink, width: 2) : null,
+            border: selected
+                ? Border.all(color: AppColors.ink, width: 2)
+                : null,
           ),
           child: Row(
             children: [
               Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
                 size: 20,
                 color: AppColors.ink,
               ),

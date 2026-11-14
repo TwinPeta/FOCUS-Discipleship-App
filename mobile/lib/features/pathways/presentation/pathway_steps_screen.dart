@@ -1,22 +1,29 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
-import '../../activity/domain/activity_event.dart';
-import '../../activity/presentation/providers/activity_providers.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
+import '../../learning/presentation/learning_providers.dart';
 import '../domain/pathway.dart';
 import '../domain/pathway_step.dart';
 import 'providers/pathway_providers.dart';
+import 'widgets/pathway_progress_bar.dart';
 
 /// Screen 19: Pathway steps, reached from the Pathways tab.
 class PathwayStepsScreen extends ConsumerWidget {
-  const PathwayStepsScreen({super.key, required this.pathwayId});
+  const PathwayStepsScreen({
+    super.key,
+    required this.communityId,
+    required this.pathwayId,
+  });
 
+  final String communityId;
   final String pathwayId;
 
   @override
@@ -24,106 +31,74 @@ class PathwayStepsScreen extends ConsumerWidget {
     final pathwaysAsync = ref.watch(pathwaysProvider);
     final stepsAsync = ref.watch(pathwayStepsProvider(pathwayId));
 
-    if (pathwaysAsync.isLoading || stepsAsync.isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.page,
-        body: Center(child: CircularProgressIndicator()),
+    if ((pathwaysAsync.isLoading && !pathwaysAsync.hasValue) ||
+        (stepsAsync.isLoading && !stepsAsync.hasValue)) {
+      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+    }
+
+    final pathway = pathwaysAsync.valueOrNull
+        ?.where((p) => p.id == pathwayId)
+        .firstOrNull;
+    final steps = stepsAsync.valueOrNull;
+    if (pathway == null || steps == null) {
+      return ErrorScreen(
+        onRetry: () {
+          ref.invalidate(pathwaysProvider);
+          ref.invalidate(pathwayStepsProvider(pathwayId));
+        },
       );
     }
 
-    final pathways = pathwaysAsync.valueOrNull;
-    final steps = stepsAsync.valueOrNull;
-    Pathway? pathway;
-    if (pathways != null) {
-      for (final p in pathways) {
-        if (p.id == pathwayId) pathway = p;
-      }
-    }
-    if (pathway == null || steps == null) {
-      return Scaffold(
-        backgroundColor: AppColors.page,
-        body: Center(
-          child: Text('Could not load this pathway.', style: AppTextStyles.body),
+    if (pathway.locked) {
+      // Deep links can't bypass the unlock rule.
+      return AmberHeaderScaffold(
+        title: pathway.title,
+        subtitle: 'Locked',
+        body: const SingleChildScrollView(
+          child: EmptyState(
+            icon: Icons.lock_outline_rounded,
+            title: 'This pathway is locked',
+            body: 'Finish the pathways before it to unlock it.',
+          ),
         ),
       );
     }
 
-    final progress = pathway.stepCount == 0 ? 0.0 : pathway.currentStepIndex / pathway.stepCount;
+    // Completion happens in the viewer ("Mark as complete" / quiz pass).
+    void onContinue(PathwayStep step) => context.push(
+      learningRoute(
+        kindForStep(step.type),
+        step.id,
+        pathwayId: pathwayId,
+        communityId: communityId,
+      ),
+    );
 
     return AmberHeaderScaffold(
       title: pathway.title,
       subtitle: pathway.status == PathwayStatus.completed
           ? 'Completed'
           : 'Step ${pathway.currentStepIndex + 1} of ${pathway.stepCount}',
-      headerExtra: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Container(
-          height: 10,
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: AppColors.ink, width: 2),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress.clamp(0, 1),
-            child: Container(color: AppColors.ink),
-          ),
-        ),
-      ),
-      body: ListView(
+      headerExtra: PathwayProgressBar(progress: pathway.progress),
+      body: ListView.separated(
         padding: const EdgeInsets.all(16),
-        children: [
-          for (var i = 0; i < steps.length; i++) ...[
-            _StepRow(
-              step: steps[i],
-              onContinue: () async {
-                if (steps[i].type == PathwayStepType.video) {
-                  await ref.read(activityRepositoryProvider).record(
-                    ActivityEvent(
-                      type: 'video_watched',
-                      label: 'Watched "${steps[i].title}"',
-                      at: DateTime.now(),
-                    ),
-                  );
-                  ref.invalidate(activityEventsProvider);
-                  ref.invalidate(badgesProvider);
-                }
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('This step\'s viewer is coming soon')),
-                );
-              },
-              onDebugComplete: () async {
-                final newlyEarned = await ref
-                    .read(pathwayStepsProvider(pathwayId).notifier)
-                    .completeStep(steps[i].id);
-                if (!context.mounted) return;
-                for (final badge in newlyEarned) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('New badge earned: ${badge.name}!')),
-                  );
-                }
-              },
-            ),
-            if (i != steps.length - 1) const SizedBox(height: 10),
-          ],
-        ],
+        itemCount: steps.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        itemBuilder: (context, index) => _StepRow(
+          key: ValueKey(steps[index].id),
+          step: steps[index],
+          onContinue: () => onContinue(steps[index]),
+        ),
       ),
     );
   }
 }
 
 class _StepRow extends StatelessWidget {
-  const _StepRow({
-    required this.step,
-    required this.onContinue,
-    required this.onDebugComplete,
-  });
+  const _StepRow({super.key, required this.step, required this.onContinue});
 
   final PathwayStep step;
   final VoidCallback onContinue;
-  final VoidCallback onDebugComplete;
 
   IconData get _typeIcon => switch (step.type) {
     PathwayStepType.video => Icons.play_arrow_rounded,
@@ -136,12 +111,16 @@ class _StepRow extends StatelessWidget {
     final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: step.status == PathwayStepStatus.current ? AppColors.honey : AppColors.white,
+        color: step.status == PathwayStepStatus.current
+            ? AppColors.honey
+            : AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: step.status == PathwayStepStatus.locked
             ? null
             : Border.all(color: AppColors.ink, width: 2),
-        boxShadow: step.status == PathwayStepStatus.locked ? null : AppShadows.soft,
+        boxShadow: step.status == PathwayStepStatus.locked
+            ? null
+            : AppShadows.soft,
       ),
       child: Row(
         children: [
@@ -164,8 +143,8 @@ class _StepRow extends StatelessWidget {
               step.status == PathwayStepStatus.done
                   ? Icons.check_rounded
                   : step.status == PathwayStepStatus.locked
-                      ? Icons.lock_outline_rounded
-                      : _typeIcon,
+                  ? Icons.lock_outline_rounded
+                  : _typeIcon,
               color: AppColors.ink,
               size: 20,
             ),
@@ -188,26 +167,13 @@ class _StepRow extends StatelessWidget {
                     color: AppColors.inkDeemphasized80,
                   ),
                 ),
-                if (step.status == PathwayStepStatus.current && kDebugMode) ...[
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: onDebugComplete,
-                    child: Text(
-                      'Prototype: mark step complete',
-                      style: AppTextStyles.fieldLabel.copyWith(
-                        decoration: TextDecoration.underline,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
           if (step.status == PathwayStepStatus.current) ...[
             const SizedBox(width: 8),
-            SizedBox(
-              height: 40,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
               child: ElevatedButton(
                 onPressed: onContinue,
                 style: ElevatedButton.styleFrom(
@@ -215,9 +181,14 @@ class _StepRow extends StatelessWidget {
                   foregroundColor: AppColors.ink,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ],

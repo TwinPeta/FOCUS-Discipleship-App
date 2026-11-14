@@ -12,11 +12,37 @@ final badgesProvider = FutureProvider<List<AppBadge>>((ref) {
   return ref.watch(activityRepositoryProvider).getBadges();
 });
 
-/// Records [event], refreshes the activity/badges providers, and returns any
-/// badges newly earned so the caller can show a one-time snackbar.
-Future<List<AppBadge>> recordActivity(WidgetRef ref, ActivityEvent event) async {
-  final newlyEarned = await ref.read(activityRepositoryProvider).record(event);
-  ref.invalidate(activityEventsProvider);
-  ref.invalidate(badgesProvider);
-  return newlyEarned;
+/// The one place activity is recorded. Called by the controllers that own
+/// each action (prayer, pathways, resources, testimonies), never by widgets.
+class ActivityRecorder {
+  ActivityRecorder(this._ref);
+
+  final Ref _ref;
+
+  /// Records the event, refreshes My activity, and returns badges newly
+  /// earned (for a one-time snackbar). With [sourceId], repeats of the same
+  /// type and source are ignored.
+  Future<List<AppBadge>> record(
+    ActivityType type,
+    String label, {
+    String? sourceId,
+  }) async {
+    final earned = await _ref
+        .read(activityRepositoryProvider)
+        .record(
+          ActivityEvent(
+            type: type,
+            label: label,
+            at: DateTime.now(),
+            sourceId: sourceId,
+          ),
+        );
+    _ref.invalidate(activityEventsProvider);
+    _ref.invalidate(badgesProvider);
+    return earned;
+  }
 }
+
+final activityRecorderProvider = Provider<ActivityRecorder>(
+  ActivityRecorder.new,
+);

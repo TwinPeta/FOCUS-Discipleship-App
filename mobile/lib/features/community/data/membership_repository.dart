@@ -1,56 +1,132 @@
+import '../../notifications/data/notification_repository.dart';
+import '../../notifications/domain/app_notification.dart';
 import '../domain/membership.dart';
 
+/// The signed-in user's single specific-community membership. Every write
+/// goes through [Membership.transitionTo], so illegal moves throw here
+/// regardless of what the UI allows.
 abstract class MembershipRepository {
   Future<Membership> getMembership();
+
+  /// Idempotent for the same community: a second call while that request is
+  /// pending returns the existing request. Throws [MembershipLimitReached]
+  /// when a request for another community is pending or approved.
   Future<Membership> requestToJoin(String communityId);
 
-  /// Debug-only prototype hook (see [kDebugMode] gating at the call site)
-  /// standing in for the real super-mentor approval flow.
+  /// Debug-only prototype hook standing in for super-mentor approval.
   Future<Membership> debugApprove();
 
-  Future<Membership> reject();
+  /// The super-mentor declines, optionally with a [message].
+  Future<Membership> reject({String? message});
+
+  /// approved -> none. Throws for any other status.
+  Future<Membership> leave();
+
+  /// Back to `none` (acknowledge a rejection, or reset in debug).
   Future<Membership> clear();
+
+  /// The one-time result screen (approved/declined) has been shown.
+  Future<Membership> markResultSeen();
 }
 
 class FakeMembershipRepository implements MembershipRepository {
-  Membership _membership = Membership.empty;
+  FakeMembershipRepository({
+    this.latency = const Duration(milliseconds: 400),
+    this.notifications,
+  });
 
-  static const _latency = Duration(milliseconds: 400);
+  final Duration latency;
+
+  /// Approve/decline emit a notification record for the student.
+  final NotificationRepository? notifications;
+  Membership _membership = Membership.empty;
+  Future<Membership>? _inFlightRequest;
 
   @override
   Future<Membership> getMembership() async {
-    await Future.delayed(_latency);
+    await Future.delayed(latency);
     return _membership;
   }
 
   @override
-  Future<Membership> requestToJoin(String communityId) async {
-    await Future.delayed(_latency);
-    _membership = Membership(
+  Future<Membership> requestToJoin(String communityId) {
+    // Two rapid taps share one in-flight request.
+    return _inFlightRequest ??= _request(communityId)
+        .whenComplete(() => _inFlightRequest = null);
+  }
+
+  Future<Membership> _request(String communityId) async {
+    await Future.delayed(latency);
+    if (_membership.isActive) {
+      if (_membership.communityId == communityId &&
+          _membership.status == MembershipStatus.pending) {
+        return _membership;
+      }
+      throw MembershipLimitReached(_membership.communityId);
+    }
+    // A rejected request must be acknowledged (-> none) before a new one.
+    if (_membership.status == MembershipStatus.rejected) {
+      _membership = _membership.transitionTo(MembershipStatus.none);
+    }
+    _membership = _membership.transitionTo(
+      MembershipStatus.pending,
       communityId: communityId,
-      status: MembershipStatus.pending,
     );
     return _membership;
   }
 
   @override
   Future<Membership> debugApprove() async {
-    await Future.delayed(_latency);
-    _membership = _membership.copyWith(status: MembershipStatus.approved);
+    await Future.delayed(latency);
+    _membership = _membership.transitionTo(MembershipStatus.approved);
+    await notifications?.add(
+      type: NotificationType.requestApproved,
+      title: 'Your request was approved',
+      targetRoute: '/request/approved',
+    );
     return _membership;
   }
 
   @override
-  Future<Membership> reject() async {
-    await Future.delayed(_latency);
-    _membership = _membership.copyWith(status: MembershipStatus.rejected);
+  Future<Membership> reject({String? message}) async {
+    await Future.delayed(latency);
+    _membership = _membership.transitionTo(
+      MembershipStatus.rejected,
+      message: message,
+    );
+    await notifications?.add(
+      type: NotificationType.requestDeclined,
+      title: 'Your request was not accepted',
+      targetRoute: '/request/declined',
+    );
+    return _membership;
+  }
+
+  @override
+  Future<Membership> leave() async {
+    await Future.delayed(latency);
+    if (_membership.status != MembershipStatus.approved) {
+      throw IllegalMembershipTransition(
+        _membership.status,
+        MembershipStatus.none,
+      );
+    }
+    _membership = _membership.transitionTo(MembershipStatus.none);
+    return _membership;
+  }
+
+  @override
+  Future<Membership> markResultSeen() async {
+    await Future.delayed(latency);
+    _membership = _membership.markResultSeen();
     return _membership;
   }
 
   @override
   Future<Membership> clear() async {
-    await Future.delayed(_latency);
-    _membership = Membership.empty;
+    await Future.delayed(latency);
+    if (_membership.status == MembershipStatus.none) return _membership;
+    _membership = _membership.transitionTo(MembershipStatus.none);
     return _membership;
   }
 }
