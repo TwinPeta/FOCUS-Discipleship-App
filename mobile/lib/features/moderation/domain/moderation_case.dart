@@ -7,7 +7,8 @@ enum ModerationOutcome { hidden, warned, kept, escalated }
 enum ModeratedContent {
   post('Post'),
   comment('Comment'),
-  prayerRequest('Prayer request');
+  prayerRequest('Prayer request'),
+  testimony('Testimony');
 
   const ModeratedContent(this.label);
   final String label;
@@ -16,7 +17,13 @@ enum ModeratedContent {
     ModeratedContent.post => ReportTargetType.post,
     ModeratedContent.comment => ReportTargetType.comment,
     ModeratedContent.prayerRequest => ReportTargetType.prayerRequest,
+    ModeratedContent.testimony => ReportTargetType.testimony,
   };
+
+  /// The case kind for a report target, or null for targets that are not
+  /// community content (users, conversations).
+  static ModeratedContent? fromReportTarget(ReportTargetType type) =>
+      values.where((c) => c.reportTarget == type).firstOrNull;
 }
 
 /// One reported item in a community, grouping every report against it.
@@ -43,7 +50,10 @@ class ModerationCase {
   final String communityId;
   final ModeratedContent content;
   final String targetId;
-  final String authorId;
+
+  /// Null for anonymous content (a prayer request posted anonymously): the
+  /// app never learns that author, so the case cannot warn them.
+  final String? authorId;
   final String authorName;
   final String preview;
 
@@ -57,7 +67,15 @@ class ModerationCase {
 
   bool get isOpen => outcome == null;
 
-  ModerationCase copyWith({ModerationOutcome? outcome, int? level}) {
+  /// "Warn author" needs a known author.
+  bool get canWarn => authorId != null;
+
+  ModerationCase copyWith({
+    ModerationOutcome? outcome,
+    int? level,
+    int? reportCount,
+    ReportReason? reason,
+  }) {
     return ModerationCase(
       id: id,
       communityId: communityId,
@@ -66,8 +84,8 @@ class ModerationCase {
       authorId: authorId,
       authorName: authorName,
       preview: preview,
-      reason: reason,
-      reportCount: reportCount,
+      reason: reason ?? this.reason,
+      reportCount: reportCount ?? this.reportCount,
       firstReporterName: firstReporterName,
       reportedAt: reportedAt,
       level: level ?? this.level,
@@ -82,4 +100,12 @@ class ModerationCaseClosed implements Exception {
   final String id;
   @override
   String toString() => 'ModerationCaseClosed($id)';
+}
+
+/// "Warn author" on a case whose author is unknown (anonymous content).
+class ModerationAuthorUnknown implements Exception {
+  const ModerationAuthorUnknown(this.id);
+  final String id;
+  @override
+  String toString() => 'ModerationAuthorUnknown($id)';
 }

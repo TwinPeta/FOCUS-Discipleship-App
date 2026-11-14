@@ -37,6 +37,15 @@ abstract class ModerationQueueRepository {
   /// Cases waiting for the admin team (a backend owns this queue).
   Future<List<ModerationCase>> getAdminQueue();
 
+  /// Files a member's report of community content (from `ReportFlow`).
+  /// Opens a level 1 case for the content, or adds to its open case: the
+  /// count goes up once per reporter and the case's reason becomes the most
+  /// common one. A second report from the same person changes nothing, and
+  /// a repeated call while one is in flight returns the same result.
+  /// Throws [ArgumentError] for targets that are not community content, for
+  /// a report without a community, or for reporting your own content.
+  Future<ModerationCase> fileReport(Report report);
+
   /// True when moderation hid this post/comment/prayer for everyone. Feeds
   /// filter on it in the data layer.
   bool isHidden(String targetId);
@@ -56,6 +65,12 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
   final List<ModerationCase> _cases;
   final Set<String> _hidden = {};
   final Set<String> _inFlight = {};
+
+  /// Per case: who reported it and how often each reason was given.
+  final Map<String, Set<String>> _reporters = {};
+  final Map<String, Map<ReportReason, int>> _reasonCounts = {};
+  final Map<String, Future<ModerationCase>> _filing = {};
+  int _filedCount = 0;
 
   static List<ModerationCase> _seed() {
     final now = DateTime.now();
@@ -159,6 +174,10 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
       final current = _cases[i];
       _requireSuperMentor(actorRole, current.communityId);
       if (!current.isOpen) throw ModerationCaseClosed(caseId);
+      if (outcome == ModerationOutcome.warned && !current.canWarn) {
+        throw ModerationAuthorUnknown(caseId);
+      }
+      final authorId = current.authorId;
 
       if (outcome == ModerationOutcome.hidden ||
           outcome == ModerationOutcome.warned) {
@@ -166,12 +185,12 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
       }
       if (outcome == ModerationOutcome.warned) {
         final warning = await warnings.create(
-          userId: current.authorId,
+          userId: authorId!,
           reason: current.reason.label,
           preview: current.preview,
         );
         await notifications?.add(
-          recipientId: current.authorId,
+          recipientId: authorId,
           type: NotificationType.moderatorWarning,
           title: 'A moderator sent you a warning',
           body: 'Reason: ${current.reason.label}',
@@ -197,4 +216,71 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
 
   @override
   bool isHidden(String targetId) => _hidden.contains(targetId);
+
+  @override
+  Future<ModerationCase> fileReport(Report report) {
+    final key = '${report.targetId}|${report.reporterId}';
+    // The cleanup must not return the removed future: whenComplete would
+    // wait on it, i.e. on itself.
+    return _filing[key] ??= _file(report).whenComplete(() {
+      _filing.remove(key);
+    });
+  }
+
+  Future<ModerationCase> _file(Report report) async {
+    await Future.delayed(latency);
+    final content = ModeratedContent.fromReportTarget(report.targetType);
+    final communityId = report.communityId;
+    if (content == null || communityId == null || communityId.isEmpty) {
+      throw ArgumentError.value(
+        report.targetType,
+        'report',
+        'only community content with a community id is moderated here',
+      );
+    }
+    final reporter = report.reporterId ?? '';
+    if (reporter.isNotEmpty && reporter == report.targetUserId) {
+      throw ArgumentError.value(reporter, 'reporterId', 'own content');
+    }
+
+    final i = _cases.indexWhere(
+      (x) => x.targetId == report.targetId && x.isOpen,
+    );
+    if (i == -1) {
+      final created = ModerationCase(
+        id: 'case-filed-${++_filedCount}',
+        communityId: communityId,
+        content: content,
+        targetId: report.targetId,
+        authorId: report.targetUserId,
+        authorName: report.targetUserName ?? 'Anonymous',
+        preview: report.preview ?? '',
+        reason: report.reason,
+        reportCount: 1,
+        firstReporterName: report.reporterName ?? 'A member',
+        reportedAt: DateTime.now(),
+      );
+      _cases.add(created);
+      _reporters[created.id] = {reporter};
+      _reasonCounts[created.id] = {report.reason: 1};
+      return created;
+    }
+
+    final current = _cases[i];
+    final reporters = _reporters.putIfAbsent(current.id, () => {});
+    if (!reporters.add(reporter)) return current;
+    final counts = _reasonCounts.putIfAbsent(
+      current.id,
+      () => {current.reason: current.reportCount},
+    );
+    counts[report.reason] = (counts[report.reason] ?? 0) + 1;
+    var top = current.reason;
+    for (final MapEntry(:key, :value) in counts.entries) {
+      if (value > (counts[top] ?? 0)) top = key;
+    }
+    return _cases[i] = current.copyWith(
+      reportCount: current.reportCount + 1,
+      reason: top,
+    );
+  }
 }

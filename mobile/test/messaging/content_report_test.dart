@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/core/widgets/round_icon_button.dart';
+import 'package:focus_1/features/community/domain/user_role.dart';
 import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/feed/data/post_repository.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
@@ -74,7 +75,8 @@ void main() {
     await tester.tap(find.text('Breaking community rules'));
     await settle(tester);
     await tester.tap(send);
-    await settle(tester);
+    await settle(tester, steps: 20);
+    expect(find.textContaining('not sent'), findsNothing);
 
     expect(find.text('Report sent'), findsOneWidget);
     final reports = (container.read(
@@ -85,6 +87,19 @@ void main() {
     expect(reports.single.targetId, 'growth-circle-post-1');
     expect(reports.single.targetUserId, 'sm-1');
     expect(reports.single.reason, ReportReason.breakingRules);
+
+    // It reached the community's moderation queue (screen 32).
+    final cases = await tester.runAsync(
+      () => container
+          .read(moderationQueueRepositoryProvider)
+          .getOpenCases('growth-circle', actorRole: UserRole.superMentor),
+    );
+    final filed = cases!.singleWhere(
+      (c) => c.targetId == 'growth-circle-post-1',
+    );
+    expect(filed.reportCount, 1);
+    expect(filed.firstReporterName, testProfile.fullName);
+    expect(filed.preview, contains('Room 204'));
 
     await tester.tap(find.text('Hide this post'));
     await settle(tester);
@@ -156,7 +171,7 @@ void main() {
     await tester.tap(find.text('Something else'));
     await settle(tester);
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send report'));
-    await settle(tester);
+    await settle(tester, steps: 20);
 
     expect(find.text('Report sent'), findsOneWidget);
     expect(find.text('Hide this post'), findsNothing);

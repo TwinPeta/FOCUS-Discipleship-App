@@ -79,7 +79,8 @@ final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
 });
 
 final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {
-  return FakeTestimonyRepository();
+  final moderation = ref.read(moderationQueueRepositoryProvider);
+  return FakeTestimonyRepository(isHidden: moderation.isHidden);
 });
 
 final pathwayRepositoryProvider = Provider<PathwayRepository>((ref) {
@@ -102,7 +103,9 @@ final messageRepositoryProvider = Provider<MessageRepository>((ref) {
 });
 
 final reportRepositoryProvider = Provider<ReportRepository>((ref) {
-  return FakeReportRepository();
+  return FakeReportRepository(
+    moderation: ref.read(moderationQueueRepositoryProvider),
+  );
 });
 
 final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {

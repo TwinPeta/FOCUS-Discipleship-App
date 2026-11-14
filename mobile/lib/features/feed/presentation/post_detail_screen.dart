@@ -227,6 +227,8 @@ class _PostBody extends ConsumerWidget {
                         id: comment.id,
                         authorId: comment.author.id,
                         authorName: comment.author.name,
+                        communityId: post.communityId,
+                        preview: comment.text,
                         back: feedRouteFor(post),
                       ),
                     ),

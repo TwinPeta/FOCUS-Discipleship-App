@@ -91,6 +91,8 @@ class _PostOptionsSheet extends ConsumerWidget {
                   id: post.id,
                   authorId: post.author.id,
                   authorName: post.author.name,
+                  communityId: post.communityId,
+                  preview: post.body,
                   back: feedRouteFor(post),
                 ),
               );

@@ -25,6 +25,7 @@ import '../../feed/presentation/providers/feed_providers.dart';
 import '../../messaging/domain/report.dart';
 import '../../notifications/presentation/notification_providers.dart';
 import '../../prayer/presentation/providers/prayer_providers.dart';
+import '../../testimony/presentation/providers/testimony_providers.dart';
 import '../data/moderation_queue_repository.dart';
 import '../domain/moderation_case.dart';
 import 'moderation_providers.dart';
@@ -126,6 +127,7 @@ class _CaseCardState extends ConsumerState<_CaseCard> {
         // Hidden content disappears from every feed right away.
         ref.invalidate(feedPostsProvider);
         ref.invalidate(prayerRequestsProvider);
+        ref.invalidate(testimoniesProvider);
       }
       ref.invalidate(notificationsProvider);
       ScaffoldMessenger.of(context)
@@ -231,7 +233,14 @@ class _CaseCardState extends ConsumerState<_CaseCard> {
             children: [
               Expanded(child: primary('Hide', ModerationOutcome.hidden)),
               const SizedBox(width: _actionGap),
-              Expanded(child: primary('Warn author', ModerationOutcome.warned)),
+              Expanded(
+                child: _c.canWarn
+                    ? primary('Warn author', ModerationOutcome.warned)
+                    : const AppPrimaryButton(
+                        label: 'Author unknown',
+                        height: _actionHeight,
+                      ),
+              ),
             ],
           ),
           const SizedBox(height: _actionGap),

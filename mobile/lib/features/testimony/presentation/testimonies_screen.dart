@@ -102,6 +102,8 @@ class TestimoniesScreen extends ConsumerWidget {
                               id: testimony.id,
                               authorId: testimony.authorId,
                               authorName: testimony.authorName,
+                              communityId: communityId,
+                              preview: testimony.excerpt ?? testimony.title,
                               back: '/community/$communityId/testimonies',
                             ),
                           ),

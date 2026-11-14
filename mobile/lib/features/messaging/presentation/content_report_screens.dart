@@ -6,6 +6,7 @@ import '../../../core/providers/repository_providers.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../feed/presentation/providers/feed_providers.dart';
 import '../../feed/presentation/widgets/post_options_sheet.dart';
+import '../../profile/presentation/profile_providers.dart';
 import '../domain/report.dart';
 import 'report_flow.dart';
 
@@ -16,13 +17,27 @@ String contentReportLocation({
   required String id,
   String? authorId,
   String? authorName,
+  required String communityId,
+  required String preview,
   required String back,
 }) {
+  final excerpt = preview.length > _previewLength
+      ? '${preview.substring(0, _previewLength).trimRight()}…'
+      : preview;
   return Uri(
     path: '/report/${type.slug}/$id',
-    queryParameters: {'user': ?authorId, 'name': ?authorName, 'back': back},
+    queryParameters: {
+      'user': ?authorId,
+      'name': ?authorName,
+      'community': communityId,
+      'preview': excerpt,
+      'back': back,
+    },
   ).toString();
 }
+
+/// Longest content excerpt carried to the moderator.
+const _previewLength = 160;
 
 /// Screen 41: Report content (the [ReportFlow] for post, comment, prayer
 /// request or testimony). Every report lands in the same repository.
@@ -33,6 +48,8 @@ class ContentReportScreen extends ConsumerWidget {
     required this.id,
     this.authorId,
     this.authorName,
+    this.communityId,
+    this.preview,
     required this.back,
   });
 
@@ -40,6 +57,8 @@ class ContentReportScreen extends ConsumerWidget {
   final String id;
   final String? authorId;
   final String? authorName;
+  final String? communityId;
+  final String? preview;
   final String back;
 
   @override
@@ -52,6 +71,7 @@ class ContentReportScreen extends ConsumerWidget {
           : reportSubtitle('a ${type.noun} by ', name),
       question: 'What is wrong?',
       onSubmit: (reason, details) async {
+        final me = ref.read(currentProfileProvider);
         await ref
             .read(reportRepositoryProvider)
             .submitReport(
@@ -61,6 +81,11 @@ class ContentReportScreen extends ConsumerWidget {
                 targetUserId: authorId,
                 reason: reason,
                 details: details,
+                communityId: communityId,
+                targetUserName: authorName,
+                preview: preview,
+                reporterId: me?.id,
+                reporterName: me?.fullName,
               ),
             );
         if (!context.mounted) return;

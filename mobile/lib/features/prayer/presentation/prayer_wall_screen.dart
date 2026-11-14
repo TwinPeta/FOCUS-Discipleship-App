@@ -102,6 +102,8 @@ class PrayerWallScreen extends ConsumerWidget {
                         authorName: request.anonymous
                             ? null
                             : request.authorName,
+                        communityId: communityId,
+                        preview: request.body,
                         back: '/community/$communityId/prayer',
                       ),
                     ),

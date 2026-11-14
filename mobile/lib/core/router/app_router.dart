@@ -300,6 +300,8 @@ final List<RouteBase> appRoutes = [
       id: _id(state),
       authorId: state.uri.queryParameters['user'],
       authorName: state.uri.queryParameters['name'],
+      communityId: state.uri.queryParameters['community'],
+      preview: state.uri.queryParameters['preview'],
       back: _backOf(state),
     ),
     routes: [

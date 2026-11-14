@@ -46,6 +46,11 @@ class Report {
     required this.reason,
     this.details,
     this.screenshotPath,
+    this.communityId,
+    this.targetUserName,
+    this.preview,
+    this.reporterId,
+    this.reporterName,
   });
 
   final ReportTargetType targetType;
@@ -63,4 +68,19 @@ class Report {
   final ReportReason reason;
   final String? details;
   final String? screenshotPath;
+
+  /// The community the content lives in. Community content (post, comment,
+  /// prayer request, testimony) with a community goes to that community's
+  /// moderation queue.
+  final String? communityId;
+
+  /// Display name of [targetUserId]; null for anonymous content.
+  final String? targetUserName;
+
+  /// A short excerpt of the reported content, for the moderator.
+  final String? preview;
+
+  /// Who sent the report. One person counts once per case.
+  final String? reporterId;
+  final String? reporterName;
 }

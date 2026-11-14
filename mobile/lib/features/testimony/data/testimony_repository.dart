@@ -14,9 +14,16 @@ abstract class TestimonyRepository {
 }
 
 class FakeTestimonyRepository implements TestimonyRepository {
-  FakeTestimonyRepository({this.latency = const Duration(milliseconds: 400)});
+  FakeTestimonyRepository({
+    this.latency = const Duration(milliseconds: 400),
+    bool Function(String testimonyId)? isHidden,
+  }) : _isHidden = isHidden ?? _never;
 
   final Duration latency;
+
+  /// Testimonies a moderator hid for everyone.
+  final bool Function(String testimonyId) _isHidden;
+  static bool _never(String _) => false;
 
   final Map<String, List<Testimony>> _byCommunity = {};
 
@@ -60,7 +67,9 @@ class FakeTestimonyRepository implements TestimonyRepository {
     final all = _byCommunity.putIfAbsent(communityId, () => _seed(communityId));
     return List.unmodifiable(
       all.where(
-        (t) => t.status == TestimonyStatus.reviewed || t.isAuthoredBy(viewerId),
+        (t) =>
+            !_isHidden(t.id) &&
+            (t.status == TestimonyStatus.reviewed || t.isAuthoredBy(viewerId)),
       ),
     );
   }
