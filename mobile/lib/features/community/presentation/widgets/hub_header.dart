@@ -68,7 +68,7 @@ class HubHeader extends StatelessWidget {
 }
 
 /// 48px white bell; an ink dot (plus the count in its label) when there
-/// are unread notifications. The Notifications screen is prompt 3.
+/// are unread notifications. Opens Notifications (screen 44).
 class _NotificationBell extends ConsumerWidget {
   const _NotificationBell();
 

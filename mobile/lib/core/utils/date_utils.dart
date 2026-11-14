@@ -38,3 +38,19 @@ String formatDayLabel(DateTime date, {DateTime? clock}) {
   if (difference > 1 && difference < 7) return weekdays[date.weekday - 1];
   return '${date.day}/${date.month}/${date.year}';
 }
+
+/// Notification row time: "Today · 9:15", "Yesterday", "Mon" (within the
+/// last week), otherwise a short date.
+String formatNotificationTime(DateTime at, {DateTime? clock}) {
+  final now = clock ?? DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final days = today.difference(DateTime(at.year, at.month, at.day)).inDays;
+  if (days <= 0) {
+    final minutes = at.minute.toString().padLeft(2, '0');
+    return 'Today · ${at.hour}:$minutes';
+  }
+  if (days == 1) return 'Yesterday';
+  const short = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  if (days < 7) return short[at.weekday - 1];
+  return '${at.day}/${at.month}/${at.year}';
+}

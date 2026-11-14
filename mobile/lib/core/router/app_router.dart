@@ -39,6 +39,8 @@ import '../../features/messaging/presentation/messages_inbox_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
 import '../../features/messaging/presentation/report_user_screen.dart';
 import '../../features/moderation/presentation/reports_to_review_screen.dart';
+import '../../features/notifications/presentation/notification_settings_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
 import '../../features/prayer/presentation/new_prayer_request_screen.dart';
@@ -178,6 +180,16 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/communities/:id',
     builder: (context, state) => CommunityDetailScreen(communityId: _id(state)),
+  ),
+  GoRoute(
+    path: '/notifications',
+    builder: (context, state) => const NotificationsScreen(),
+    routes: [
+      GoRoute(
+        path: 'settings',
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+    ],
   ),
   GoRoute(
     path: '/community/:id/manage',

@@ -1,4 +1,6 @@
 import '../domain/app_notification.dart';
+import '../domain/notification_preferences.dart';
+import 'notification_channels.dart';
 
 abstract class NotificationRepository {
   /// The signed-in user's notifications, newest first.
@@ -8,8 +10,11 @@ abstract class NotificationRepository {
   /// newest first. A real backend delivers these to that user's device.
   Future<List<AppNotification>> getNotificationsFor(String recipientId);
 
-  /// [recipientId] null means the signed-in user.
-  Future<AppNotification> add({
+  /// Records a notification for [recipientId] (null = the signed-in user)
+  /// and delivers it on their enabled channels. Returns null, recording
+  /// nothing, when the recipient muted the type's category or turned the
+  /// in-app channel off; moderator warnings are always recorded.
+  Future<AppNotification?> add({
     required NotificationType type,
     required String title,
     required String targetRoute,
@@ -18,14 +23,26 @@ abstract class NotificationRepository {
   });
   Future<void> markRead(String id);
   Future<void> markAllRead();
+
+  /// [recipientId] null means the signed-in user.
+  Future<NotificationPreferences> getPreferences({String? recipientId});
+  Future<NotificationPreferences> savePreferences(
+    NotificationPreferences preferences, {
+    String? recipientId,
+  });
 }
 
 class FakeNotificationRepository implements NotificationRepository {
   FakeNotificationRepository({
     this.latency = const Duration(milliseconds: 300),
-  });
+    List<NotificationChannel>? channels,
+  }) : channels = channels ?? [FakeEmailChannel()];
 
   final Duration latency;
+
+  /// Out-of-app delivery (email today; push can be added here).
+  final List<NotificationChannel> channels;
+  final Map<String?, NotificationPreferences> _preferences = {};
   final List<AppNotification> _items = [];
   var _counter = 0;
 
@@ -46,8 +63,11 @@ class FakeNotificationRepository implements NotificationRepository {
     return List.unmodifiable(sorted);
   }
 
+  NotificationPreferences _prefsFor(String? recipientId) =>
+      _preferences[recipientId] ?? NotificationPreferences.defaults;
+
   @override
-  Future<AppNotification> add({
+  Future<AppNotification?> add({
     required NotificationType type,
     required String title,
     required String targetRoute,
@@ -56,6 +76,10 @@ class FakeNotificationRepository implements NotificationRepository {
   }) async {
     // Recording is synchronous so callers emitting "at the source" never
     // race the screen that reads it next.
+    final prefs = _prefsFor(recipientId);
+    if (!prefs.allows(type)) return null;
+    final unmutable = NotificationCategory.of(type) == null;
+    final inApp = unmutable || prefs.usesChannel(DeliveryChannel.inApp);
     final item = AppNotification(
       id: 'notif-${++_counter}',
       type: type,
@@ -65,8 +89,11 @@ class FakeNotificationRepository implements NotificationRepository {
       createdAt: DateTime.now(),
       recipientId: recipientId,
     );
-    _items.add(item);
-    return item;
+    if (inApp) _items.add(item);
+    for (final c in channels) {
+      if (prefs.usesChannel(c.channel)) await c.deliver(item);
+    }
+    return inApp ? item : null;
   }
 
   @override
@@ -85,5 +112,20 @@ class FakeNotificationRepository implements NotificationRepository {
     for (var i = 0; i < _items.length; i++) {
       if (!_items[i].isRead) _items[i] = _items[i].copyWith(readAt: now);
     }
+  }
+
+  @override
+  Future<NotificationPreferences> getPreferences({String? recipientId}) async {
+    await Future.delayed(latency);
+    return _prefsFor(recipientId);
+  }
+
+  @override
+  Future<NotificationPreferences> savePreferences(
+    NotificationPreferences preferences, {
+    String? recipientId,
+  }) async {
+    await Future.delayed(latency);
+    return _preferences[recipientId] = preferences;
   }
 }

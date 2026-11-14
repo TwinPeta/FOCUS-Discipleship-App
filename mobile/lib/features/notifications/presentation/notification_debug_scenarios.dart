@@ -13,11 +13,13 @@ DebugScenario _emit(
   name: name,
   description: 'Adds a "$title" notification (the bell shows a dot).',
   run: (ref, _) async {
-    await ref
+    final added = await ref
         .read(notificationRepositoryProvider)
         .add(type: type, title: title, targetRoute: route);
     ref.invalidate(notificationsProvider);
-    return 'Notification added';
+    return added == null
+        ? 'Not added: muted in Notification settings'
+        : 'Notification added';
   },
 );
 
@@ -25,8 +27,20 @@ final notificationDebugScenarios = <DebugScenario>[
   _emit(
     'Someone prayed for my request',
     NotificationType.prayedForYou,
-    'Someone prayed for your request',
-    '/communities',
+    '8 people prayed for your request',
+    '/prayer/growth-circle-prayer-1',
+  ),
+  _emit(
+    'Prayer response',
+    NotificationType.prayerResponse,
+    'Someone responded to your prayer request',
+    '/prayer/growth-circle-prayer-1',
+  ),
+  _emit(
+    'Reply to my post',
+    NotificationType.commentReply,
+    'Someone commented on your post',
+    '/post/growth-circle-post-1',
   ),
   _emit(
     'Announcement',
@@ -38,13 +52,13 @@ final notificationDebugScenarios = <DebugScenario>[
     'Meeting reminder',
     NotificationType.meetingReminder,
     'Your community meets tomorrow',
-    '/communities',
+    '/community/growth-circle/meetings',
   ),
   _emit(
     'Inactivity nudge',
     NotificationType.inactivity,
-    'We have missed you this week',
-    '/communities',
+    'We missed you this week. See what your community shared.',
+    '/general-feed',
   ),
   DebugScenario(
     group: 'Notifications',

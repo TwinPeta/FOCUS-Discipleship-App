@@ -1,3 +1,27 @@
+# Prompt 3 (screens 43-61) progress
+Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaboration.md`. Each agent ticks only its own lines.
+
+## Agent A
+- [x] 44 Notifications (`/notifications`): New (with Mark all as read) and Earlier sections; icon tile, time ("Today · 9:15", "Yesterday", "Mon"), unread dot; tap marks read and opens `targetRoute`; empty state; the hub bell dot reads the repository
+- [x] 45 Notification settings (`/notifications/settings`): In-app and Email channels; 6 categories (inactivity off by default); saved through `NotificationRepository`; muting stops records from being created
+- [ ] 61 Moderator warning, 60 Account suspended (guards)
+- [ ] 51 Meetings
+- [ ] 56, 57, 59 Offline, loading and error audit
+
+## Agent B
+- [ ] Content reports to moderation queue
+- [ ] 43, 54, 55, 58
+- [ ] 52, 53
+- [ ] 46-50
+
+## Prompt 3 assumptions
+- Notification taps are data-driven: each producer sets `targetRoute`. Approved/declined -> `/request/approved|declined`; prayer -> `/prayer/:id`; announcement and inactivity -> `/general-feed`; meeting -> `/community/:id/meetings`; comment reply -> `/post/:id`; moderator warning -> `/warning/:id` (placeholder until 61).
+- New types `commentReply` and `prayerResponse`. Categories: join request updates (approved, declined), replies, prayer responses (prayed for you, prayer response), announcements, meeting reminders, inactivity. **Moderator warnings belong to no category and cannot be muted**; they are recorded even with in-app off, for safety.
+- `add()` returns null and records nothing when the recipient muted the category or turned in-app off. Email still goes out when in-app is off but email is on. Preferences are stored per recipient (null = the signed-in user).
+- Delivery channels are `NotificationChannel` implementations (`FakeEmailChannel` records "sent" emails). Push = one more `DeliveryChannel` value plus a channel class; nothing else changes.
+- Sections: "New" = unread, "Earlier" = read. "Mark all as read" sits on the New header.
+- New shared widget `SwitchRow` (`core/widgets/switch_row.dart`): an amber switch where the whole row is the target. Agent B can reuse it for Settings (46).
+
 # Prompt 2 (screens 21-42) progress
 Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear every "resolved in 2" row).
 - [x] Shared widgets: BottomSheetScaffold, CelebrationScreen, OtpField, PasswordField, ConfirmDialog (+ OnboardingScaffold); ReportFlow lands with batch 4

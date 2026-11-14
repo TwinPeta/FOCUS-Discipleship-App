@@ -1,9 +1,11 @@
-/// What produced a notification. The Notifications *screen* is prompt 3;
-/// this prompt only records them.
+/// What produced a notification. Shown on Notifications (screen 44); each
+/// type belongs to a [NotificationCategory] the member can mute (45).
 enum NotificationType {
   requestApproved,
   requestDeclined,
+  commentReply,
   prayedForYou,
+  prayerResponse,
   announcement,
   meetingReminder,
   inactivity,
