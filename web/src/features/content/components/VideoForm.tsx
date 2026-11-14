@@ -1,12 +1,34 @@
 /**
  * src/features/content/components/VideoForm.tsx
  *
- * WHAT: Video details, file upload, thumbnail, pathway, submit for review
- * REQUIREMENTS: FR-01,FR-08
+ * WHAT: Video upload fields (VideoUploader + ThumbnailUploader)
+ * REQUIREMENTS: FR-01
  * SPEC: docs/features/06-content-validation.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-export function VideoForm() {
-  return null;
+"use client";
+
+import { ThumbnailUploader } from "./ThumbnailUploader";
+import { VideoUploader } from "./VideoUploader";
+
+interface VideoFormProps {
+  videoUrl: string;
+  onVideoUrlChange: (url: string) => void;
+  thumbnailUrl: string;
+  onThumbnailUrlChange: (url: string) => void;
+}
+
+export function VideoForm({
+  videoUrl,
+  onVideoUrlChange,
+  thumbnailUrl,
+  onThumbnailUrlChange,
+}: VideoFormProps) {
+  return (
+    <div className="space-y-4">
+      <VideoUploader value={videoUrl} onUploaded={onVideoUrlChange} />
+      <ThumbnailUploader value={thumbnailUrl} onChange={onThumbnailUrlChange} />
+    </div>
+  );
 }
