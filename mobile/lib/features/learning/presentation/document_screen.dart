@@ -65,7 +65,7 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Page $_page of [${doc.pageCount}]',
+                        'Page $_page of ${doc.pageCount}',
                         style: AppTextStyles.cardTitle,
                       ),
                     ],

@@ -22,6 +22,7 @@ import '../../features/feed/domain/post.dart';
 import '../../features/feed/presentation/community_feed_screen.dart';
 import '../../features/feed/presentation/composer_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
+import '../../features/feed/presentation/post_detail_screen.dart';
 import '../../features/landing/presentation/landing_screen.dart';
 import '../../features/learning/presentation/badge_earned_screen.dart';
 import '../../features/learning/presentation/devotional_screen.dart';
@@ -221,6 +222,10 @@ final List<RouteBase> appRoutes = [
         ],
       ),
     ],
+  ),
+  GoRoute(
+    path: '/post/:id',
+    builder: (context, state) => PostDetailScreen(postId: _id(state)),
   ),
   GoRoute(
     path: '/general-feed',
