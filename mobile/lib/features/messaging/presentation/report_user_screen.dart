@@ -6,16 +6,16 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/amber_header_scaffold.dart';
-import '../../../core/widgets/app_primary_button.dart';
-import '../../../core/widgets/app_text_area.dart';
 import '../../../core/widgets/dashed_rrect_painter.dart';
-import '../../../core/widgets/error_snack.dart';
+import '../../../core/widgets/states/empty_state.dart';
+import '../../../core/widgets/states/error_view.dart';
+import '../../../core/widgets/states/skeleton.dart';
 import '../domain/report.dart';
-import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
+import 'report_flow.dart';
 
-/// Screen 11: Report a user, reached from a conversation's report button.
+/// Screen 11: Report a user (the [ReportFlow] with a chat screenshot),
+/// reached from a conversation's report button.
 class ReportUserScreen extends ConsumerStatefulWidget {
   const ReportUserScreen({super.key, required this.threadId});
 
@@ -26,18 +26,7 @@ class ReportUserScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
-  final _detailsController = TextEditingController();
-  ReportReason? _reason;
   String? _screenshotPath;
-  bool _isSubmitting = false;
-
-  @override
-  void dispose() {
-    _detailsController.dispose();
-    super.dispose();
-  }
-
-  bool get _canSubmit => !_isSubmitting && _reason != null;
 
   Future<void> _pickScreenshot() async {
     final picked = await ImagePicker().pickImage(
@@ -50,238 +39,111 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
     setState(() => _screenshotPath = picked.path);
   }
 
-  Future<void> _submit(Thread thread) async {
-    if (!_canSubmit) return;
-    setState(() => _isSubmitting = true);
-    final report = Report(
-      targetType: ReportTargetType.conversation,
-      targetId: widget.threadId,
-      targetUserId: thread.participant.id,
-      reason: _reason!,
-      details: _detailsController.text.trim().isEmpty
-          ? null
-          : _detailsController.text.trim(),
-      screenshotPath: _screenshotPath,
-    );
-    try {
-      await ref.read(reportRepositoryProvider).submitReport(report);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        showErrorSnack(context, 'Your report was not sent. Please try again.');
-      }
-      return;
-    }
-
-    if (!mounted) return;
-    context.pushReplacement('/messages/${widget.threadId}/report/sent');
-  }
-
   @override
   Widget build(BuildContext context) {
     final threadAsync = ref.watch(threadByIdProvider(widget.threadId));
+    final thread = threadAsync.valueOrNull;
 
-    return threadAsync.when(
-      loading: () => const Scaffold(
+    if (threadAsync.isLoading && !threadAsync.hasValue) {
+      return const Scaffold(
         backgroundColor: AppColors.page,
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stackTrace) => Scaffold(
+        body: SafeArea(child: Skeleton(cardCount: 1)),
+      );
+    }
+    if (thread == null) {
+      return Scaffold(
         backgroundColor: AppColors.page,
-        body: Center(
-          child: Text(
-            'Could not load this conversation.',
-            style: AppTextStyles.body,
-          ),
+        body: SafeArea(
+          child: threadAsync.hasError
+              ? ErrorView(
+                  onRetry: () =>
+                      ref.invalidate(threadByIdProvider(widget.threadId)),
+                )
+              : const EmptyState(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: 'Conversation not available',
+                  body: 'This conversation no longer exists.',
+                ),
         ),
-      ),
-      data: (thread) {
-        if (thread == null) {
-          return Scaffold(
-            backgroundColor: AppColors.page,
-            body: Center(
-              child: Text(
-                'Could not load this conversation.',
-                style: AppTextStyles.body,
-              ),
-            ),
-          );
-        }
+      );
+    }
 
-        return AmberHeaderScaffold(
-          title: 'Report a user',
-          subtitleWidget: Text.rich(
-            TextSpan(
-              style: AppTextStyles.amberHeaderSubtitle,
-              children: [
-                const TextSpan(text: 'You are reporting '),
-                TextSpan(
-                  text: thread.participant.name,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                const TextSpan(text: '.'),
-              ],
-            ),
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What happened?',
-                  style: AppTextStyles.cardTitle.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                for (final reason in ReportReason.values) ...[
-                  _ReasonRow(
-                    label: reason.label,
-                    selected: _reason == reason,
-                    onTap: () => setState(() => _reason = reason),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                const SizedBox(height: 10),
-                AppTextArea(
-                  label: 'Add details (optional)',
-                  controller: _detailsController,
-                  placeholder: 'Anything else that would help us review this',
-                  minHeight: 72,
-                ),
-                const SizedBox(height: 16),
-                Semantics(
-                  button: true,
-                  label: 'Upload a screenshot of the chat',
-                  child: CustomPaint(
-                    painter: const DashedRRectPainter(radius: 16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Screenshot of the chat',
-                            style: AppTextStyles.cardTitle.copyWith(
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Helps our team review what was said.',
-                            style: AppTextStyles.body.copyWith(
-                              fontSize: 12.5,
-                              color: AppColors.inkDeemphasized80,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 44),
-                            child: ElevatedButton(
-                              onPressed: _pickScreenshot,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.amber,
-                                foregroundColor: AppColors.ink,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: Text(
-                                _screenshotPath != null
-                                    ? 'Replace screenshot'
-                                    : 'Upload',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          bottomBar: Column(
-            children: [
-              AppPrimaryButton(
-                label: 'Send report',
-                height: 54,
-                isLoading: _isSubmitting,
-                onPressed: _canSubmit ? () => _submit(thread) : null,
+    return ReportFlow(
+      title: 'Report a user',
+      subtitle: reportSubtitle('', thread.participant.name),
+      question: 'What happened?',
+      onSubmit: (reason, details) async {
+        await ref
+            .read(reportRepositoryProvider)
+            .submitReport(
+              Report(
+                targetType: ReportTargetType.conversation,
+                targetId: widget.threadId,
+                targetUserId: thread.participant.id,
+                reason: reason,
+                details: details,
+                screenshotPath: _screenshotPath,
               ),
-              if (MediaQuery.viewInsetsOf(context).bottom == 0) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Reports are reviewed by the FCU moderation team.',
-                  style: AppTextStyles.fieldLabel.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.inkDeemphasized80,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-          ),
-        );
+            );
+        if (context.mounted) {
+          context.pushReplacement('/messages/${widget.threadId}/report/sent');
+        }
       },
+      extra: _ScreenshotCard(
+        hasScreenshot: _screenshotPath != null,
+        onPick: _pickScreenshot,
+      ),
     );
   }
 }
 
-class _ReasonRow extends StatelessWidget {
-  const _ReasonRow({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+class _ScreenshotCard extends StatelessWidget {
+  const _ScreenshotCard({required this.hasScreenshot, required this.onPick});
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final bool hasScreenshot;
+  final VoidCallback onPick;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 46),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.honey : AppColors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: selected
-                ? Border.all(color: AppColors.ink, width: 2)
-                : null,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                size: 20,
-                color: AppColors.ink,
+    return CustomPaint(
+      painter: const DashedRRectPainter(radius: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Screenshot of the chat',
+              style: AppTextStyles.cardTitle.copyWith(fontSize: 15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Helps our team review what was said.',
+              style: AppTextStyles.body.copyWith(
+                fontSize: 12.5,
+                color: AppColors.inkDeemphasized80,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: ElevatedButton(
+                onPressed: onPick,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.amber,
+                  foregroundColor: AppColors.ink,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                child: Text(
+                  hasScreenshot ? 'Replace screenshot' : 'Upload screenshot',
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

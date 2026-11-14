@@ -9,7 +9,6 @@ Every control added ahead of its real screen navigates to a **registered placeho
 | 2b My profile | Camera button (keeps the working edit form for now) | `/profile/edit` | 3 (folds into `/settings/profile`) |
 | 3 / 3b Hub | Notification bell (unread dot hidden) | `/notifications` | 3 |
 | 5 Feed (shell header) | **Manage** (super-mentors only) | `/community/:id/manage` | 2 |
-| 5 / 8 Feed | Post "..." button | `/post/:id/options` (stands in for the options sheet) | 2 |
 | 6 Info & members | **View meetings** | `/community/:id/meetings` | 3 |
 | 9 Messages | "Full screen" link in the new-message sheet (sheet kept working) | `/messages/new` | 3 |
 | 10 Conversation | Header avatar | `/members/:id` | 3 |

@@ -30,6 +30,8 @@ import '../../features/learning/presentation/quiz_result_screen.dart';
 import '../../features/learning/presentation/quiz_screen.dart';
 import '../../features/learning/presentation/video_screen.dart';
 import '../../features/learning/presentation/widgets/viewer_parts.dart';
+import '../../features/messaging/domain/report.dart';
+import '../../features/messaging/presentation/content_report_screens.dart';
 import '../../features/messaging/presentation/conversation_screen.dart';
 import '../../features/messaging/presentation/messages_inbox_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
@@ -87,6 +89,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 String _id(GoRouterState state, [String name = 'id']) =>
     state.pathParameters[name]!;
+
+/// `?back=` of a report route: only in-app paths, else the hub.
+String _backOf(GoRouterState state) {
+  final back = state.uri.queryParameters['back'];
+  return back != null && back.startsWith('/') && !back.startsWith('//')
+      ? back
+      : '/communities';
+}
 
 /// The full route table (exposed for router tests). Placeholder routes come
 /// first so `/messages/new` wins over `/messages/:threadId`.
@@ -252,6 +262,29 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/post/:id',
     builder: (context, state) => PostDetailScreen(postId: _id(state)),
+  ),
+  // Content reports (41/42): post, comment, prayer request, testimony.
+  GoRoute(
+    path: '/report/:type/:id',
+    redirect: (context, state) =>
+        ReportTargetType.fromSlug(_id(state, 'type')) == null ? '/' : null,
+    builder: (context, state) => ContentReportScreen(
+      type: ReportTargetType.fromSlug(_id(state, 'type'))!,
+      id: _id(state),
+      authorId: state.uri.queryParameters['user'],
+      authorName: state.uri.queryParameters['name'],
+      back: _backOf(state),
+    ),
+    routes: [
+      GoRoute(
+        path: 'sent',
+        builder: (context, state) => ContentReportSentScreen(
+          type: ReportTargetType.fromSlug(_id(state, 'type'))!,
+          id: _id(state),
+          back: _backOf(state),
+        ),
+      ),
+    ],
   ),
   GoRoute(
     path: '/activity',

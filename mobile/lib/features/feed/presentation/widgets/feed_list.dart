@@ -10,6 +10,7 @@ import '../../../../core/widgets/states/error_view.dart';
 import '../../../../core/widgets/states/skeleton.dart';
 import '../../domain/post.dart';
 import '../providers/feed_providers.dart';
+import 'post_options_sheet.dart';
 import 'post_photo_view.dart';
 
 /// The post list shared by the General and specific-community feeds:
@@ -97,8 +98,7 @@ class FeedList extends ConsumerWidget {
               media: post.media,
               photo: postPhotoView(context, post.photo),
               onOpen: () => context.push('/post/${post.id}'),
-              // TODO(prompt2): replace with the post options sheet.
-              onMore: () => context.push('/post/${post.id}/options'),
+              onMore: () => showPostOptionsSheet(context, post),
               liked: post.likedByMe,
               likeCount: post.likeCount,
               onLikeTap: () async {

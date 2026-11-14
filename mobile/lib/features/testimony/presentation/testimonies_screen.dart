@@ -14,6 +14,9 @@ import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/tab_section_header.dart';
+import '../../../core/widgets/report_icon_button.dart';
+import '../../messaging/domain/report.dart';
+import '../../messaging/presentation/content_report_screens.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
 import 'providers/testimony_providers.dart';
@@ -91,6 +94,17 @@ class TestimoniesScreen extends ConsumerWidget {
                     key: ValueKey(testimony.id),
                     testimony: testimony,
                     onRead: () => context.push('/testimony/${testimony.id}'),
+                    onReport: testimony.isAuthoredBy(viewerId)
+                        ? null
+                        : () => context.push(
+                            contentReportLocation(
+                              type: ReportTargetType.testimony,
+                              id: testimony.id,
+                              authorId: testimony.authorId,
+                              authorName: testimony.authorName,
+                              back: '/community/$communityId/testimonies',
+                            ),
+                          ),
                   ),
           );
         },
@@ -219,10 +233,14 @@ class _StoryTestimonyCard extends StatelessWidget {
     super.key,
     required this.testimony,
     required this.onRead,
+    required this.onReport,
   });
 
   final Testimony testimony;
   final VoidCallback onRead;
+
+  /// Null on the user's own stories.
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -262,6 +280,11 @@ class _StoryTestimonyCard extends StatelessWidget {
                 ),
               ),
               _StatusBadge(status: testimony.status),
+              if (onReport != null)
+                ReportIconButton(
+                  label: 'Report testimony',
+                  onPressed: onReport!,
+                ),
             ],
           ),
           const SizedBox(height: 10),

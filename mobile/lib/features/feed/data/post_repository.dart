@@ -26,6 +26,23 @@ abstract class PostRepository {
 
   /// Idempotent on the comment id. Raises the post's comment count.
   Future<Comment> addComment(Comment comment);
+
+  /// Hides a post for the current user only ("Hide this post"). Hidden
+  /// posts are left out of [getPosts] and [getPost]. Idempotent.
+  Future<void> hidePost(String postId);
+
+  /// Undoes [hidePost]. Idempotent.
+  Future<void> unhidePost(String postId);
+
+  /// Deletes a post. Only its author may: throws [PostPermissionDenied]
+  /// for anyone else.
+  Future<void> deletePost(String postId, {required String byUserId});
+}
+
+class PostPermissionDenied implements Exception {
+  const PostPermissionDenied();
+  @override
+  String toString() => 'Only the author can delete this post.';
 }
 
 class FakePostRepository implements PostRepository {
@@ -35,6 +52,7 @@ class FakePostRepository implements PostRepository {
 
   final Map<String, List<Post>> _byCommunity = {};
   final Map<String, List<Comment>> _comments = {};
+  final Set<String> _hiddenForMe = {};
 
   /// Seeded posts ending in `-post-1` or `-post-photo` start with two
   /// comments each; every other post starts with none.
@@ -212,7 +230,10 @@ class FakePostRepository implements PostRepository {
     int limit = 20,
   }) async {
     await Future.delayed(latency);
-    final all = _feed(communityId, scope);
+    final all = _feed(
+      communityId,
+      scope,
+    ).where((p) => !_hiddenForMe.contains(p.id)).toList();
     final start = int.tryParse(cursor ?? '') ?? 0;
     final end = (start + limit).clamp(0, all.length);
     return PostPage(
@@ -255,6 +276,7 @@ class FakePostRepository implements PostRepository {
   @override
   Future<Post?> getPost(String postId) async {
     await Future.delayed(latency);
+    if (_hiddenForMe.contains(postId)) return null;
     for (final posts in _byCommunity.values) {
       final post = posts.where((p) => p.id == postId).firstOrNull;
       if (post != null) return _withCount(post);
@@ -276,5 +298,30 @@ class FakePostRepository implements PostRepository {
     if (existing != null) return existing;
     comments.add(comment);
     return comment;
+  }
+
+  @override
+  Future<void> hidePost(String postId) async {
+    await Future.delayed(latency);
+    _hiddenForMe.add(postId);
+  }
+
+  @override
+  Future<void> unhidePost(String postId) async {
+    await Future.delayed(latency);
+    _hiddenForMe.remove(postId);
+  }
+
+  @override
+  Future<void> deletePost(String postId, {required String byUserId}) async {
+    await Future.delayed(latency);
+    for (final posts in _byCommunity.values) {
+      final post = posts.where((p) => p.id == postId).firstOrNull;
+      if (post == null) continue;
+      if (post.author.id != byUserId) throw const PostPermissionDenied();
+      posts.remove(post);
+      _comments.remove(postId);
+      return;
+    }
   }
 }

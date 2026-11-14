@@ -16,15 +16,33 @@ extension ReportReasonLabel on ReportReason {
   };
 }
 
-/// What is being reported. One report model and one repository serve
-/// every target (prompt 2 adds posts and comments).
-enum ReportTargetType { user, conversation, post, comment, prayerRequest }
+/// What is being reported. One report model, one repository and one
+/// `ReportFlow` serve every target.
+enum ReportTargetType {
+  user('user', 'user'),
+  conversation('conversation', 'conversation'),
+  post('post', 'post'),
+  comment('comment', 'comment'),
+  prayerRequest('prayer', 'prayer request'),
+  testimony('testimony', 'testimony');
+
+  const ReportTargetType(this.slug, this.noun);
+
+  /// Used in report routes (`/report/:type/:id`).
+  final String slug;
+
+  /// Lower-case display noun ("prayer request").
+  final String noun;
+
+  static ReportTargetType? fromSlug(String slug) =>
+      values.where((t) => t.slug == slug).firstOrNull;
+}
 
 class Report {
   const Report({
     required this.targetType,
     required this.targetId,
-    required this.targetUserId,
+    this.targetUserId,
     required this.reason,
     this.details,
     this.screenshotPath,
@@ -36,8 +54,10 @@ class Report {
   /// [ReportTargetType.user].
   final String targetId;
 
-  /// The person responsible for the reported content.
-  final String targetUserId;
+  /// The person responsible for the reported content. Null for anonymous
+  /// content (an anonymous prayer request): the client never knows that
+  /// author, so moderation resolves it from [targetId].
+  final String? targetUserId;
 
   /// Required: a report without a reason cannot be constructed.
   final ReportReason reason;

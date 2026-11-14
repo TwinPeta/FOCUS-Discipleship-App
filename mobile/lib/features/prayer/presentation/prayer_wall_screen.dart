@@ -15,7 +15,11 @@ import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/tab_section_header.dart';
+import '../../../core/widgets/report_icon_button.dart';
 import '../../learning/presentation/learning_providers.dart';
+import '../../messaging/domain/report.dart';
+import '../../messaging/presentation/content_report_screens.dart';
+import '../../profile/presentation/profile_providers.dart';
 import '../../learning/presentation/widgets/viewer_parts.dart';
 import '../domain/prayer_request.dart';
 import 'providers/prayer_providers.dart';
@@ -29,6 +33,7 @@ class PrayerWallScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = prayerRequestsProvider(communityId);
+    final me = ref.watch(currentProfileProvider)?.id;
     final requestsAsync = ref.watch(provider);
 
     if (requestsAsync.isLoading && !requestsAsync.hasValue) {
@@ -86,6 +91,20 @@ class PrayerWallScreen extends ConsumerWidget {
               request: request,
               onPrayedTap: () => onPrayed(request),
               onRespondTap: () => context.push('/prayer/${request.id}'),
+              // Not on the user's own (named) requests.
+              onReportTap: request.authorId != null && request.authorId == me
+                  ? null
+                  : () => context.push(
+                      contentReportLocation(
+                        type: ReportTargetType.prayerRequest,
+                        id: request.id,
+                        authorId: request.authorId,
+                        authorName: request.anonymous
+                            ? null
+                            : request.authorName,
+                        back: '/community/$communityId/prayer',
+                      ),
+                    ),
             ),
           );
         },
@@ -100,11 +119,13 @@ class _PrayerCard extends StatelessWidget {
     required this.request,
     required this.onPrayedTap,
     required this.onRespondTap,
+    required this.onReportTap,
   });
 
   final PrayerRequest request;
   final VoidCallback onPrayedTap;
   final VoidCallback onRespondTap;
+  final VoidCallback? onReportTap;
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +167,11 @@ class _PrayerCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onReportTap != null)
+                ReportIconButton(
+                  label: 'Report prayer request',
+                  onPressed: onReportTap!,
+                ),
             ],
           ),
           const SizedBox(height: 10),

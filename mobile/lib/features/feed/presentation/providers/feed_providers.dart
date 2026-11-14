@@ -69,6 +69,13 @@ class FeedPostsController extends FamilyAsyncNotifier<List<Post>, FeedKey> {
   /// post screen) without reloading the feed.
   void replacePost(Post post) => _replace(post.id, (_) => post);
 
+  /// Drops a post from the list (hidden or deleted).
+  void removePost(String postId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncValue.data(current.where((p) => p.id != postId).toList());
+  }
+
   /// Flips the like locally, persists the *intended* value, and restores
   /// the previous post if the repository fails.
   Future<void> toggleLike(String postId) async {
@@ -115,3 +122,55 @@ final feedPostsProvider =
     AsyncNotifierProvider.family<FeedPostsController, List<Post>, FeedKey>(
       FeedPostsController.new,
     );
+
+/// The route of the feed a post belongs to.
+String feedRouteFor(Post post) => post.scope == PostScope.general
+    ? '/general-feed'
+    : '/community/${post.communityId}/feed';
+
+/// Hide / unhide / delete, kept in step with the post's feed (when it is
+/// loaded). Hide is optimistic.
+class PostActions {
+  PostActions(this._ref);
+  final Ref _ref;
+
+  FeedPostsController? _feedOf(Post post) {
+    final key = (communityId: post.communityId, scope: post.scope);
+    return _ref.exists(feedPostsProvider(key))
+        ? _ref.read(feedPostsProvider(key).notifier)
+        : null;
+  }
+
+  Future<void> _reload(Post post) async {
+    try {
+      await _feedOf(post)?.refresh();
+    } catch (_) {
+      // The next pull-to-refresh catches up.
+    }
+  }
+
+  Future<void> hide(Post post) async {
+    _feedOf(post)?.removePost(post.id);
+    try {
+      await _ref.read(postRepositoryProvider).hidePost(post.id);
+    } catch (_) {
+      await _reload(post);
+      rethrow;
+    }
+  }
+
+  Future<void> unhide(Post post) async {
+    await _ref.read(postRepositoryProvider).unhidePost(post.id);
+    await _reload(post);
+  }
+
+  /// The repository refuses anyone but the author.
+  Future<void> delete(Post post, {required String byUserId}) async {
+    await _ref
+        .read(postRepositoryProvider)
+        .deletePost(post.id, byUserId: byUserId);
+    _feedOf(post)?.removePost(post.id);
+  }
+}
+
+final postActionsProvider = Provider<PostActions>(PostActions.new);

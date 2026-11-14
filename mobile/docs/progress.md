@@ -4,10 +4,7 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - [x] Batch 1: AuthRepository/session, SignUpController, 21 password, 22 verify (OTP), 23 consent, 24 guardian, 25 sign in, 26 forgot password, `/charter`; signed-out + onboarding guards; under-18 `canMessage` in MessageRepository; Join form stops creating the account
 - [x] Batch 2: 27 approved, 28 declined (shown once, `seen`), 29 leave sheet; NotificationRepository + hub bell dot; debug "Approve/Decline my request", "Guardian confirms"; pending-hub debug link removed
 - [x] Batch 3: 33 video (PlaybackController fake), 34 devotional (+reflection), 35 quiz, 36 result, 37 document, 38 badge earned (queue); completion -> activity + pathway step + badges; debug "mark step complete"/"attended meeting" removed
-- [ ] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
-  - [x] 39 post & comments (`/post/:id`)
-  - [ ] 40 post options sheet
-  - [ ] 41/42 ReportFlow + post skin; 11/12 refactor; comment/prayer/testimony reuse
+- [x] Batch 4: 39 post & comments, 40 post options sheet, 41/42 ReportFlow (post skin); user report 11/12 refactored onto ReportFlow; comments/prayer/testimony reports reuse it
 - [ ] Batch 5: 30 manage, 31 join requests, 32 reports to review (Hide/Warn/Keep/Escalate); super-mentor guard + repository role checks
 - [ ] Finish: analyze 0, tests green, wiring rows for prompt 2 cleared, assumptions + stubs recorded
 
@@ -37,6 +34,10 @@ Brief: `docs/fcu_prompt_2_screens_21_42.md`. Ledger: `docs/wiring.md` (clear eve
 - Likes and comments on the post screen are optimistic and copied into the loaded feed (`FeedPostsController.replacePost`). Feed "Comment" now opens `/post/:id` and shows the count. A blocked author's post shows "Post not available"; blocked commenters are filtered in the provider.
 - Offline: like and the comment field are disabled (not hidden) and the hint reads "You are offline".
 - `MessageInputBar` extracted to `core/widgets` (conversation + comments); `PostActionButton` made public; `postPhotoView` shared by feed and post screen.
+- 40: `showPostOptionsSheet` (`BottomSheetScaffold` + new `BottomSheetAction` row). Authors see **Delete post** and do not see **Report post** (reporting yourself is meaningless). Hide is per-user (`PostRepository.hidePost/unhidePost`, filtered out of `getPosts`/`getPost`), optimistic, Undo in the snackbar. Delete is checked in the repository (`PostPermissionDenied` for non-authors) and removes the post's comments. From the post screen, Hide/Delete close the screen. Copy link copies `https://fcu.app/post/{id}` (placeholder).
+- 41/42: `ReportFlow` + `ReportReasonRow` + `ReportSentView` (on `CelebrationScreen`) in `messaging/presentation/report_flow.dart` (it depends on the `Report` domain, so it lives with it, not in `core/widgets`). Screens 11/12 are now thin wrappers (screenshot card + Block). Content reports use one route, `/report/:type/:id?user=&name=&back=` (`contentReportLocation`), `type` = post | comment | prayer | testimony; `back` only accepts in-app paths. **Hide this post** on 42 shows only for posts.
+- `Report.targetUserId` is now nullable: anonymous prayer requests never expose the author to the client, so moderation resolves it from `targetId`. Added `ReportTargetType.testimony`.
+- Report entry points: a 44px flag (`ReportIconButton`) on comments, prayer cards and story testimony cards, hidden on the user's own content (own anonymous prayers cannot be recognised, so they still show it). Video testimony cards have none until testimony detail (prompt 3).
 - "Say hello to my mentor" opens or creates the super-mentor thread; when the under-18 limit applies the button is disabled and reads "Waiting for your guardian's confirmation".
 
 ---
