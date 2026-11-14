@@ -1,18 +1,45 @@
 /**
  * src/app/(backoffice)/institutions/new/page.tsx
  *
- * WHAT: Add institution (university or high school)
+ * WHAT: Create institution page
  * REQUIREMENTS: FR-03
  * SPEC: docs/features/03-institutions-communities.md
- * STATUS: placeholder, not implemented
+ * STATUS: implemented
  */
 
-const PURPOSE = "Add institution (university or high school)";
+"use client";
 
-export default function Page() {
+import { useRouter } from "next/navigation";
+import { InstitutionForm } from "@/features/institutions/components/InstitutionForm";
+import { createInstitution } from "@/features/institutions/queries";
+import type { InstitutionInput } from "@/features/institutions/schemas";
+import { ROUTES } from "@/lib/constants/routes";
+
+export default function NewInstitutionPage() {
+  const router = useRouter();
+
+  async function handleCreate(values: InstitutionInput) {
+    await createInstitution(values);
+    router.push(ROUTES.institutions);
+    router.refresh();
+  }
+
   return (
-    <main>
-      <p>TODO: {PURPOSE}</p>
-    </main>
+    <div className="mx-auto max-w-2xl space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">New institution</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add a university or high school. A general community will be created
+          automatically.
+        </p>
+      </div>
+
+      <div className="rounded-card border border-border bg-white p-6">
+        <InstitutionForm
+          onSubmit={handleCreate}
+          onCancel={() => router.push(ROUTES.institutions)}
+        />
+      </div>
+    </div>
   );
 }
