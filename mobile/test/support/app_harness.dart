@@ -22,6 +22,7 @@ Future<ProviderContainer> pumpFcuApp(
   double textScale = 1.0,
   bool signedIn = true,
   bool resultSeen = true,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
@@ -54,6 +55,7 @@ Future<ProviderContainer> pumpFcuApp(
       authRepositoryProvider.overrideWith((ref) => auth),
       profileRepositoryProvider.overrideWith((ref) => profiles),
       membershipRepositoryProvider.overrideWith((ref) => memberships),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);

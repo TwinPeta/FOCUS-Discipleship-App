@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_secondary_button.dart';
 import '../../../core/widgets/celebration_screen.dart';
@@ -15,24 +16,8 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import 'moderation_providers.dart';
 
-const _months = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
 /// "21 November 2026".
-String formatSuspensionDate(DateTime d) =>
-    '${d.day} ${_months[d.month - 1]} ${d.year}';
+String formatSuspensionDate(DateTime d) => formatLongDate(d);
 
 /// Screen 60: Account suspended (`/suspended`, full screen). The suspended
 /// guard (first in the chain) keeps the account here until it ends.

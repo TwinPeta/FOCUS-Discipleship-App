@@ -9,6 +9,7 @@ import '../../features/feed/data/post_repository.dart';
 import '../../features/learning/data/learning_repository.dart';
 import '../../features/landing/data/stories_repository.dart';
 import '../../features/activity/data/activity_repository.dart';
+import '../../features/meetings/data/meeting_repository.dart';
 import '../../features/messaging/data/messaging_repository.dart';
 import '../../features/messaging/data/moderation_repository.dart';
 import '../../features/messaging/data/report_repository.dart';
@@ -123,4 +124,9 @@ final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
 
 final learningRepositoryProvider = Provider<LearningRepository>((ref) {
   return FakeLearningRepository();
+});
+
+final meetingRepositoryProvider = Provider<MeetingRepository>((ref) {
+  final communities = ref.read(communityRepositoryProvider);
+  return FakeMeetingRepository(communityById: communities.getCommunityById);
 });

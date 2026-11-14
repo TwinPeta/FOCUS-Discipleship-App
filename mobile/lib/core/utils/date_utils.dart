@@ -54,3 +54,22 @@ String formatNotificationTime(DateTime at, {DateTime? clock}) {
   if (days < 7) return short[at.weekday - 1];
   return '${at.day}/${at.month}/${at.year}';
 }
+
+const _monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/// "21 November 2026".
+String formatLongDate(DateTime d) =>
+    '${d.day} ${_monthNames[d.month - 1]} ${d.year}';

@@ -7,7 +7,6 @@ Every control added ahead of its real screen navigates to a **registered placeho
 | 2b My profile | **Edit profile** round button | `/settings/profile` | 3 |
 | 2b My profile | **Settings** round button | `/settings` | 3 |
 | 2b My profile | Camera button (keeps the working edit form for now) | `/profile/edit` | 3 (folds into `/settings/profile`) |
-| 6 Info & members | **View meetings** | `/community/:id/meetings` | 3 |
 | 9 Messages | "Full screen" link in the new-message sheet (sheet kept working) | `/messages/new` | 3 |
 | 10 Conversation | Header avatar | `/members/:id` | 3 |
 | 14 Prayer wall | **Respond** | `/prayer/:id` | 3 |

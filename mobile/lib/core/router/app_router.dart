@@ -36,6 +36,7 @@ import '../../features/learning/presentation/video_screen.dart';
 import '../../features/learning/presentation/widgets/viewer_parts.dart';
 import '../../features/messaging/domain/report.dart';
 import '../../features/messaging/presentation/content_report_screens.dart';
+import '../../features/meetings/presentation/meetings_screen.dart';
 import '../../features/messaging/presentation/conversation_screen.dart';
 import '../../features/messaging/presentation/messages_inbox_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
@@ -220,6 +221,10 @@ final List<RouteBase> appRoutes = [
         builder: (context, state) => const NotificationSettingsScreen(),
       ),
     ],
+  ),
+  GoRoute(
+    path: '/community/:id/meetings',
+    builder: (context, state) => MeetingsScreen(communityId: _id(state)),
   ),
   GoRoute(
     path: '/community/:id/manage',

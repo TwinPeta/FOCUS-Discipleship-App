@@ -7,7 +7,7 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [x] 61 Moderator warning (`/warning/:id`, full screen): reason, hidden-content preview, "I understand" (acknowledges, then continues), "Read the charter"; unacknowledged-warning guard
 - [x] 60 Account suspended (`/suspended`, full screen): reason and end date, "Read the charter", "Sign out"; suspended guard first in the chain, releases on its own when `until` passes
 - [x] Final guard chain: suspended -> unacknowledged warning -> signed out -> onboarding incomplete -> membership (tests in `test/moderation/enforcement_test.dart`)
-- [ ] 51 Meetings
+- [x] 51 Meetings (`/community/:id/meetings`): Next meeting (day, time, room) with "I am going" (RSVP toggle) and "Add to calendar" (stub); "At the meeting?" with "I am here" only inside the check-in window, once per meeting, recorded as an `ActivityEvent` (badges go to screen 38); Past meetings with Attended / Missed; back goes to Info
 - [ ] 56, 57, 59 Offline, loading and error audit
 
 ## Agent B
@@ -17,6 +17,11 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [ ] 46-50
 
 ## Prompt 3 assumptions
+- Meetings are generated weekly from the community's `meetingDay` / `meetingTime` / `room` (e.g. "Every Tuesday", "5:00 PM"). A meeting stays "next" until its check-in window closes, then the next week's takes over. The fake seeds the 3 earlier weeks as attended, missed, attended. Only RSVPs and check-ins are stored (`MeetingRepository`, ids `communityId@yyyy-mm-dd`).
+- Check-in window: 30 minutes before the start to 2 hours after (`CheckInWindow`, configurable; the screen reads the repository's window). The clock is injected (`meetingClockProvider`) and the screen re-checks it every minute. The repository rejects check-ins outside the window and repeat check-ins (including a double tap in flight).
+- "Add to calendar" is a stub snackbar (no calendar package without approval). RSVP and check-in are disabled offline.
+- When a check-in earns a badge, Badge earned (38) is the only confirmation; otherwise a snackbar says "You are checked in".
+- Shared `formatLongDate` ("21 November 2026") moved to `core/utils/date_utils.dart`. The test harness `pumpFcuApp` gained an optional `overrides` list.
 - A suspended account may still open `/charter` and `/help` (the screen says to read the charter or write to support); everything else redirects to `/suspended`. Once the suspension ends, `/suspended` sends the account to the hub. The router schedules a timer for `until`, so the release needs no app restart; the guard clock is injectable (`guardClockProvider`).
 - While a warning is unacknowledged, only `/warning/:id` and `/charter` are reachable. The oldest pending warning is shown first. An acknowledged warning can still be opened from its notification ("Continue" instead of "I understand").
 - Warnings and suspensions apply only to signed-in accounts. They do not hold routes on `/loading` (that interfered with router refresh), so the app can show for about 300ms before the guard redirects. A real backend would return both with the session.
