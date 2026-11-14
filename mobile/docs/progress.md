@@ -4,7 +4,9 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 ## Agent A
 - [x] 44 Notifications (`/notifications`): New (with Mark all as read) and Earlier sections; icon tile, time ("Today · 9:15", "Yesterday", "Mon"), unread dot; tap marks read and opens `targetRoute`; empty state; the hub bell dot reads the repository
 - [x] 45 Notification settings (`/notifications/settings`): In-app and Email channels; 6 categories (inactivity off by default); saved through `NotificationRepository`; muting stops records from being created
-- [ ] 61 Moderator warning, 60 Account suspended (guards)
+- [x] 61 Moderator warning (`/warning/:id`, full screen): reason, hidden-content preview, "I understand" (acknowledges, then continues), "Read the charter"; unacknowledged-warning guard
+- [x] 60 Account suspended (`/suspended`, full screen): reason and end date, "Read the charter", "Sign out"; suspended guard first in the chain, releases on its own when `until` passes
+- [x] Final guard chain: suspended -> unacknowledged warning -> signed out -> onboarding incomplete -> membership (tests in `test/moderation/enforcement_test.dart`)
 - [ ] 51 Meetings
 - [ ] 56, 57, 59 Offline, loading and error audit
 
@@ -15,6 +17,10 @@ Brief: `docs/fcu_prompt_3_screens_43_61.md`. Owners and claims: `docs/collaborat
 - [ ] 46-50
 
 ## Prompt 3 assumptions
+- A suspended account may still open `/charter` and `/help` (the screen says to read the charter or write to support); everything else redirects to `/suspended`. Once the suspension ends, `/suspended` sends the account to the hub. The router schedules a timer for `until`, so the release needs no app restart; the guard clock is injectable (`guardClockProvider`).
+- While a warning is unacknowledged, only `/warning/:id` and `/charter` are reachable. The oldest pending warning is shown first. An acknowledged warning can still be opened from its notification ("Continue" instead of "I understand").
+- Warnings and suspensions apply only to signed-in accounts. They do not hold routes on `/loading` (that interfered with router refresh), so the app can show for about 300ms before the guard redirects. A real backend would return both with the session.
+- Suspensions are set by admins only: `SuspensionRepository` is read-only, with a debug hook (`debugSuspend`). Debug scenarios: "Receive a moderator warning" and "Suspend my account (7 days)".
 - Notification taps are data-driven: each producer sets `targetRoute`. Approved/declined -> `/request/approved|declined`; prayer -> `/prayer/:id`; announcement and inactivity -> `/general-feed`; meeting -> `/community/:id/meetings`; comment reply -> `/post/:id`; moderator warning -> `/warning/:id` (placeholder until 61).
 - New types `commentReply` and `prayerResponse`. Categories: join request updates (approved, declined), replies, prayer responses (prayed for you, prayer response), announcements, meeting reminders, inactivity. **Moderator warnings belong to no category and cannot be muted**; they are recorded even with in-app off, for safety.
 - `add()` returns null and records nothing when the recipient muted the category or turned in-app off. Email still goes out when in-app is off but email is on. Preferences are stored per recipient (null = the signed-in user).

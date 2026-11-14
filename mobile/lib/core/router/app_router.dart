@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,6 +40,9 @@ import '../../features/messaging/presentation/conversation_screen.dart';
 import '../../features/messaging/presentation/messages_inbox_screen.dart';
 import '../../features/messaging/presentation/report_sent_screen.dart';
 import '../../features/messaging/presentation/report_user_screen.dart';
+import '../../features/moderation/presentation/account_suspended_screen.dart';
+import '../../features/moderation/presentation/moderation_providers.dart';
+import '../../features/moderation/presentation/moderator_warning_screen.dart';
 import '../../features/moderation/presentation/reports_to_review_screen.dart';
 import '../../features/notifications/presentation/notification_settings_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
@@ -70,6 +75,20 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(membershipProvider, (_, _) => refresh.value++);
   ref.listen(signUpControllerProvider, (_, _) => refresh.value++);
   ref.listen(currentRoleProvider, (_, _) => refresh.value++);
+  ref.listen(myWarningsProvider, (_, _) => refresh.value++);
+  ref.listen(pendingWarningProvider, (_, _) => refresh.value++);
+  // A suspension releases on its own: re-run the guards when it ends.
+  Timer? release;
+  ref.listen(suspensionProvider, (_, next) {
+    refresh.value++;
+    release?.cancel();
+    final until = next.valueOrNull?.until;
+    final now = ref.read(guardClockProvider)();
+    if (until != null && until.isAfter(now)) {
+      release = Timer(until.difference(now), () => refresh.value++);
+    }
+  });
+  ref.onDispose(() => release?.cancel());
   ref.onDispose(refresh.dispose);
 
   final router = GoRouter(
@@ -83,6 +102,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         session: ref.read(authControllerProvider),
         signUp: ref.read(signUpControllerProvider),
         role: ref.read(currentRoleProvider),
+        pendingWarning: ref.read(pendingWarningProvider),
+        suspension: ref.read(suspensionProvider),
+        now: ref.read(guardClockProvider)(),
       ),
     ),
     errorBuilder: (context, state) => const ErrorScreen(),
@@ -180,6 +202,14 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/communities/:id',
     builder: (context, state) => CommunityDetailScreen(communityId: _id(state)),
+  ),
+  GoRoute(
+    path: '/warning/:id',
+    builder: (context, state) => ModeratorWarningScreen(warningId: _id(state)),
+  ),
+  GoRoute(
+    path: '/suspended',
+    builder: (context, state) => const AccountSuspendedScreen(),
   ),
   GoRoute(
     path: '/notifications',

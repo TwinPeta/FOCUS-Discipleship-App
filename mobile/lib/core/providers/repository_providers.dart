@@ -13,6 +13,7 @@ import '../../features/messaging/data/messaging_repository.dart';
 import '../../features/messaging/data/moderation_repository.dart';
 import '../../features/messaging/data/report_repository.dart';
 import '../../features/moderation/data/moderation_queue_repository.dart';
+import '../../features/moderation/data/suspension_repository.dart';
 import '../../features/moderation/data/warning_repository.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../../features/pathways/data/pathway_repository.dart';
@@ -51,6 +52,10 @@ final joinRequestRepositoryProvider = Provider<JoinRequestRepository>((ref) {
 
 final warningRepositoryProvider = Provider<WarningRepository>((ref) {
   return FakeWarningRepository();
+});
+
+final suspensionRepositoryProvider = Provider<SuspensionRepository>((ref) {
+  return FakeSuspensionRepository();
 });
 
 final moderationQueueRepositoryProvider = Provider<ModerationQueueRepository>(

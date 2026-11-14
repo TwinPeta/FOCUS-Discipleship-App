@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/activity/presentation/activity_debug_scenarios.dart';
 import '../../features/auth/presentation/auth_debug_scenarios.dart';
 import '../../features/community/presentation/community_debug_scenarios.dart';
+import '../../features/moderation/presentation/moderation_debug_scenarios.dart';
 import '../../features/notifications/presentation/notification_debug_scenarios.dart';
 import '../../features/pathways/presentation/pathway_debug_scenarios.dart';
 import '../connectivity/connectivity_service.dart';
@@ -39,6 +40,7 @@ final debugScenariosProvider = Provider<List<DebugScenario>>(
     ...pathwayDebugScenarios,
     ...activityDebugScenarios,
     ...notificationDebugScenarios,
+    ...moderationDebugScenarios,
     ..._connectivityScenarios,
   ],
 );

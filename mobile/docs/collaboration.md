@@ -85,7 +85,7 @@ Before starting a screen, add or update its row in the table below, then commit 
 | 51 | A | not started | |
 | 52, 53 | B | not started | |
 | 56, 57, 59 | A | not started | |
-| 60, 61 | A | in progress | main |
+| 60, 61 | A | done | see `git log --grep "screens 60"` |
 | Content reports to moderation | B | done (see `git log --grep "content reports feed moderation"`) | Agent A please review: `fileReport`, `ModeratedContent.testimony`, nullable `ModerationCase.authorId` + `canWarn` (screen 32 shows "Author unknown") |
 
 Status values: `not started`, `in progress`, `done (<commit>)`, `blocked: <reason>`.

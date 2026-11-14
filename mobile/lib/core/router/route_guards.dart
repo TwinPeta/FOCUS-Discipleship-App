@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/community/domain/membership.dart';
 import '../../features/community/domain/user_role.dart';
+import '../../features/moderation/domain/suspension.dart';
+import '../../features/moderation/domain/warning.dart';
 import '../../features/profile/domain/user_profile.dart';
 
 /// What every guard can see when deciding a redirect.
@@ -14,6 +16,9 @@ class GuardContext {
     this.session = const AsyncData<AuthSession?>(null),
     this.signUp = SignUpDraft.empty,
     this.role,
+    this.pendingWarning = const AsyncData<Warning?>(null),
+    this.suspension = const AsyncData<Suspension?>(null),
+    this.now,
   });
 
   /// The full requested location (path + query).
@@ -25,6 +30,19 @@ class GuardContext {
 
   /// The user's role in their approved community, if any.
   final UserRole? role;
+
+  /// The oldest unacknowledged moderator warning (screen 61).
+  final AsyncValue<Warning?> pendingWarning;
+
+  /// The account's suspension (screen 60), possibly already ended.
+  final AsyncValue<Suspension?> suspension;
+
+  /// Injected clock; defaults to now.
+  final DateTime? now;
+
+  bool get suspended =>
+      signedIn &&
+      (suspension.valueOrNull?.isActiveAt(now ?? DateTime.now()) ?? false);
 
   String get path => location.path;
   bool get signedIn => session.valueOrNull != null;
@@ -63,22 +81,40 @@ const _signedOutOnly = <String>{
   '/forgot-password',
 };
 
-/// Placeholder for "account suspended" (prompt 3). Never redirects today.
+/// A suspended account sees only `/suspended` (plus the charter and help)
+/// until the suspension ends; then `/suspended` itself sends it home.
 class SuspendedGuard extends RouteGuard {
   const SuspendedGuard();
   @override
   String get name => 'suspended';
+
+  static const allowed = {'/suspended', '/charter', '/help'};
+
   @override
-  String? redirect(GuardContext context) => null;
+  String? redirect(GuardContext context) {
+    if (context.suspended) {
+      return allowed.contains(context.path) ? null : '/suspended';
+    }
+    return context.path == '/suspended' ? '/communities' : null;
+  }
 }
 
-/// Placeholder for "unacknowledged moderation warning" (prompt 3).
+/// An unacknowledged moderator warning is shown before anything else
+/// except a suspension; the charter stays readable.
 class UnacknowledgedWarningGuard extends RouteGuard {
   const UnacknowledgedWarningGuard();
   @override
   String get name => 'unacknowledgedWarning';
+
   @override
-  String? redirect(GuardContext context) => null;
+  String? redirect(GuardContext context) {
+    if (!context.signedIn) return null;
+    final warning = context.pendingWarning.valueOrNull;
+    if (warning == null) return null;
+    final target = '/warning/${warning.id}';
+    if (context.path == target || context.path == '/charter') return null;
+    return target;
+  }
 }
 
 /// No session -> the landing page (public pages and Back to landing stay
