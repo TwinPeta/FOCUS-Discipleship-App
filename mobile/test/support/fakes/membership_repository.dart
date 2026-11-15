@@ -77,6 +77,19 @@ class FakeMembershipRepository implements MembershipRepository {
   }
 
   @override
+  Future<Membership> cancelRequest() async {
+    await Future.delayed(latency);
+    if (_membership.status != MembershipStatus.pending) {
+      throw IllegalMembershipTransition(
+        _membership.status,
+        MembershipStatus.none,
+      );
+    }
+    _membership = _membership.transitionTo(MembershipStatus.none);
+    return _membership;
+  }
+
+  @override
   Future<Membership> leave() async {
     await Future.delayed(latency);
     if (_membership.status != MembershipStatus.approved) {

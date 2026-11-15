@@ -116,6 +116,35 @@ void main() {
     expect(refreshes, 1);
   });
 
+  test('a decision notification also refreshes the membership', () async {
+    var refreshes = 0;
+    container.listen(membershipProvider, (_, next) {
+      if (next.isRefreshing) refreshes++;
+    });
+    await container.read(membershipProvider.future);
+    socket.controller.add(
+      _event('notification.created', {
+        'id': 'n1',
+        'type': 'request_declined',
+        'title': 'Your request was not accepted',
+        'target_route': '/request/declined',
+      }),
+    );
+    await pumpEventQueue();
+    expect(refreshes, 1);
+
+    socket.controller.add(
+      _event('notification.created', {
+        'id': 'n2',
+        'type': 'comment_reply',
+        'title': 'Someone replied',
+        'target_route': '/post/p1',
+      }),
+    );
+    await pumpEventQueue();
+    expect(refreshes, 1, reason: 'other notifications leave it alone');
+  });
+
   test('presence.updated stores the live online count', () async {
     socket.controller.add(
       _event('presence.updated', {'community_id': 'c1', 'online_count': 7}),

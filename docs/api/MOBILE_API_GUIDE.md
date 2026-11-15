@@ -138,7 +138,7 @@ Errors are RFC 7807 `application/problem+json` with a stable **`code`**. Branch 
 | `join_request.decided` | show the approved/declined screen without polling |
 | `notification.created` | bell dot |
 
-Everything is also available by polling REST, so the socket is an optimisation. **The app uses it** (`mobile/lib/core/realtime/`): it connects while signed in (`wss://<host>/v1/realtime?token=<access_token>`, built from `API_BASE_URL`), reconnects with 1, 2, 5, 10, 30 s backoff, refreshes the token once on a `4401` close, and disconnects on sign-out. `notification.created` refreshes the bell (the 60 s poll stays as a fallback) and shows a phone notification; `message.created`/`message.read` refresh the inbox and the open conversation; `join_request.decided` refreshes the membership; `presence.updated` is stored per community but not shown yet (the header still shows a placeholder count).
+Everything is also available by polling REST, so the socket is an optimisation. **The app uses it** (`mobile/lib/core/realtime/`): it connects while signed in (`wss://<host>/v1/realtime?token=<access_token>`, built from `API_BASE_URL`), reconnects with 1, 2, 5, 10, 30 s backoff, refreshes the token once on a `4401` close, and disconnects on sign-out. `notification.created` refreshes the bell (the 60 s poll stays as a fallback) and shows a phone notification; `message.created`/`message.read` refresh the inbox and the open conversation; `join_request.decided` (and a `request_approved`/`request_declined` `notification.created`) refreshes the membership, which is also re-read on the 60 s poll interval while a request is pending; `DELETE /join-requests/{requestId}` backs "Cancel request" on the community detail screen; `presence.updated` is stored per community but not shown yet (the header still shows a placeholder count).
 
 ---
 
@@ -177,7 +177,7 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | Media | create slot, complete, direct upload | `media_uploader` |
 | Devices | register / remove push token | — (push not built) |
 
-**Not called by the app today (4):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `DELETE /join-requests/{requestId}` (cancel a pending request), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`). `POST /devices` + `DELETE /devices/{deviceId}` are wired (`core/push/device_registration.dart`) but only fire once a push token source exists (Firebase); today the app has none.
+**Not called by the app today (3):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`). `POST /devices` + `DELETE /devices/{deviceId}` are wired (`core/push/device_registration.dart`) but only fire once a push token source exists (Firebase); today the app has none.
 
 ---
 
@@ -193,3 +193,13 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | 6 | ETag/`If-None-Match` is supported by the server but not used by the app. Realtime is now used (section 6) | app | add ETags when tuning for slow connections |
 | 6b | The message `Idempotency-Key` is built from the current time (`remote_messaging_repository.dart`), so a retried send gets a new key and can create a duplicate | app | generate the key once per message (like posts and prayer requests do) |
 | 7 | Roadmap v2 needs new endpoints that don't exist yet: questions and answers, search, resources in the General community, notification delivery (J1–J5). Push: the server stores device tokens but has no sender and there is no Firebase project, so phone notifications are local (from the socket, while the app runs) | backend | see `mobile/docs/roadmap_v2.md`; for push add a Firebase project, a sender, and a `FirebasePushTokenSource` in the app |
+
+### Join requests: backend gaps found 2026-11-15 (app side fixed in `8d63c87`)
+| # | Finding | Suggested fix |
+|---|---|---|
+| B1 | `POST /communities/:id/join-requests` does not notify the community's super-mentor at all (no notification type, no socket event). The app polls the pending list while Manage or Join requests is open, as a stopgap | add a `join_request_created` notification (+ socket event) to the super-mentor |
+| B2 | Back-office decisions (`api/src/admin/people.js` `decide`, including bulk approve) send the socket event but never call `notify()`: the student gets no notification or email | call the same notify as `POST /join-requests/:id/decision` |
+| B3 | `join_request.decided` goes only to a connected socket and is never replayed | fine as an optimisation; the app now also polls membership while pending |
+| B4 | A student who muted "join request updates" or turned in-app off gets no record of the decision (the socket event still arrives) | consider always recording decisions, or document it |
+| B5 | `GET /me/communities` gives a pending membership only as `membership_status`, without the request id; the app must call `GET /me/join-requests` to cancel | include `join_request_id` |
+

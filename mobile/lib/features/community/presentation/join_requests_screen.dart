@@ -114,6 +114,9 @@ class _JoinRequestCardState extends ConsumerState<_JoinRequestCard> {
       if (!mounted) return;
       ref.invalidate(pendingJoinRequestsProvider(widget.communityId));
       ref.invalidate(notificationsProvider);
+      // An approval adds a member: refresh the count and the members list.
+      ref.invalidate(communityByIdProvider(widget.communityId));
+      ref.invalidate(communityMembersProvider(widget.communityId));
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(done)));

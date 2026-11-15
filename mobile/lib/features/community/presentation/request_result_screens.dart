@@ -23,25 +23,53 @@ import 'providers/membership_provider.dart';
 /// Marks the one-time result as seen when shown, and resolves the
 /// community the result is about.
 mixin _ResultScreen<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+  /// The status this screen is about.
+  MembershipStatus get expected;
+
+  bool _leaving = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final membership = ref.read(membershipProvider).valueOrNull;
+      // Opened from a notification or a phone push, the decision may not be
+      // in the membership yet (socket missed it): re-read it first.
+      Membership? membership;
+      try {
+        membership = await ref.refresh(membershipProvider.future);
+      } catch (_) {
+        membership = ref.read(membershipProvider).valueOrNull;
+      }
+      if (!mounted) return;
       if (membership != null && membership.hasUnseenResult) {
         ref.read(membershipProvider.notifier).markResultSeen().ignore();
       }
     });
   }
 
+  /// An old notification (already acknowledged, or about a request the
+  /// student has moved on from) goes to the hub instead of an error.
+  Widget _toHub() {
+    if (!_leaving) {
+      _leaving = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/communities');
+      });
+    }
+    return const Scaffold(body: Skeleton());
+  }
+
   Widget withCommunity(Widget Function(Membership, Community) build) {
-    final membership = ref.watch(membershipProvider).valueOrNull;
-    final id = membership?.communityId;
+    final async = ref.watch(membershipProvider);
+    final membership = async.valueOrNull;
     if (membership == null) {
       return const Scaffold(body: Skeleton());
     }
-    if (id == null) return const ErrorScreen();
+    final id = membership.communityId;
+    if (membership.status != expected || id == null) {
+      return async.isLoading ? const Scaffold(body: Skeleton()) : _toHub();
+    }
     return ref
         .watch(communityByIdProvider(id))
         .when(
@@ -65,6 +93,9 @@ class RequestApprovedScreen extends ConsumerStatefulWidget {
 
 class _RequestApprovedScreenState extends ConsumerState<RequestApprovedScreen>
     with _ResultScreen {
+  @override
+  MembershipStatus get expected => MembershipStatus.approved;
+
   bool _opening = false;
 
   Future<void> _sayHello(Community community) async {
@@ -155,6 +186,9 @@ class RequestDeclinedScreen extends ConsumerStatefulWidget {
 
 class _RequestDeclinedScreenState extends ConsumerState<RequestDeclinedScreen>
     with _ResultScreen {
+  @override
+  MembershipStatus get expected => MembershipStatus.rejected;
+
   bool _busy = false;
 
   Future<void> _chooseAnother() async {
