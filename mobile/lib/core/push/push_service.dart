@@ -29,8 +29,8 @@ class PushMessage {
 typedef ShowPush = Future<void> Function(PushMessage message);
 
 /// Turns each `notification.created` realtime event into a phone
-/// notification. Local only: there is no Firebase project or server sender
-/// yet, so this runs while the app (and its socket) is alive. Skips types
+/// notification while the app (and its socket) is alive. When Firebase push is
+/// set up, the server also pushes to the phone for a closed or backgrounded app. Skips types
 /// the member muted (the same check as the unread count) and skips when the
 /// member is already looking at the notifications screen.
 class PushService {
@@ -39,12 +39,17 @@ class PushService {
     required this.isAllowed,
     required this.isViewingNotifications,
     this.requestPermission,
+    this.remoteWillDeliver,
   });
 
   final ShowPush show;
   final bool Function(NotificationType type) isAllowed;
   final bool Function() isViewingNotifications;
   final Future<bool?> Function()? requestPermission;
+
+  /// True when the phone will get this notification from Firebase by itself
+  /// (registered, app in the background): the local copy is then skipped.
+  final bool Function()? remoteWillDeliver;
 
   bool _asked = false;
   bool _denied = false;
@@ -55,6 +60,7 @@ class PushService {
     final type = RemoteNotificationRepository.typeOf(data['type'] as String?);
     if (type == null || !isAllowed(type)) return null;
     if (isViewingNotifications()) return null;
+    if (remoteWillDeliver?.call() ?? false) return null;
     final id = (data['id'] as String?) ?? '';
     final notification = AppNotification(
       id: id,

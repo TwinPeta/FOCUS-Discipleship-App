@@ -54,6 +54,8 @@ jobs:
           dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
           flutter test $dirs test/widget_test.dart
 
+      # Phone push is on when the repository variables FCM_PROJECT_ID, FCM_SENDER_ID and the per-platform FCM_API_KEY_*/FCM_APP_ID_*
+      # are set (public Firebase identifiers); without them the app has local notifications only.
       # The app always talks to the real API (production by default). Set the repository variable API_BASE_URL
       # (e.g. a staging server) to build against a different one.
       # Fixed signing key (repository secrets) so each new APK installs over
@@ -84,6 +86,13 @@ jobs:
           --build-number=${{ github.run_number }}
           --dart-define=APP_BUILD_NUMBER=${{ github.run_number }}
           --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://apis.focusuganda.org/v1' }}
+          --dart-define=FCM_PROJECT_ID=${{ vars.FCM_PROJECT_ID }}
+          --dart-define=FCM_SENDER_ID=${{ vars.FCM_SENDER_ID }}
+          --dart-define=FCM_API_KEY_ANDROID=${{ vars.FCM_API_KEY_ANDROID }}
+          --dart-define=FCM_APP_ID_ANDROID=${{ vars.FCM_APP_ID_ANDROID }}
+          --dart-define=FCM_API_KEY_IOS=${{ vars.FCM_API_KEY_IOS }}
+          --dart-define=FCM_APP_ID_IOS=${{ vars.FCM_APP_ID_IOS }}
+          --dart-define=FCM_IOS_BUNDLE_ID=${{ vars.FCM_IOS_BUNDLE_ID }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

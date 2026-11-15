@@ -75,6 +75,12 @@ class DeviceRegistration {
     }
   }
 
+  /// The token changed (Firebase rotated it): drop the old registration and make a new one.
+  Future<void> refresh() async {
+    await unregister();
+    await register();
+  }
+
   /// Call before the tokens are cleared, so the DELETE is still signed.
   Future<void> unregister() async {
     await _registering;

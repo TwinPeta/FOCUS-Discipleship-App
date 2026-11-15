@@ -18,6 +18,7 @@ import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/remote_auth_repository.dart';
 import '../../features/profile/data/remote_profile_repository.dart';
 import '../config/api_config.dart';
+import '../push/firebase_push.dart';
 import '../permissions/app_permissions.dart';
 import '../network/api_client.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
@@ -251,10 +252,10 @@ final realtimeClientProvider = Provider<RealtimeClient>((ref) {
   return client;
 });
 
-/// Where the push token comes from: [NoPushTokenSource] until Firebase is
-/// added (see [PushTokenSource]).
+/// Where the push token comes from: Firebase when this build was given its
+/// project identifiers (see `FirebaseConfig`), nothing otherwise.
 final pushTokenSourceProvider = Provider<PushTokenSource>(
-  (ref) => const NoPushTokenSource(),
+  (ref) => const FirebasePushTokenSource(),
 );
 
 /// Registers the device with `POST /devices` while signed in; null when the

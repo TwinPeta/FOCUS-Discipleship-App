@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'core/push/push_service.dart';
 import 'core/realtime/realtime_bindings.dart';
+import 'core/push/firebase_push.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
@@ -15,6 +16,8 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // Phone notifications (local only); a no-op on web. Tests never run main.
   await LocalPushPlatform.instance.init();
+  // Remote push (only when this build has its Firebase identifiers; otherwise a no-op).
+  await FirebasePush.init();
   runApp(const ProviderScope(child: FcuApp()));
 }
 

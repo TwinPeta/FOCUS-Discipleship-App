@@ -26,6 +26,15 @@ permissions:
 
 env:
   API_BASE_URL: ${{ vars.API_BASE_URL || 'https://apis.focusuganda.org/v1' }}
+  # Public Firebase identifiers for phone push (repository variables); empty = local notifications only.
+  FCM_DEFINES: >-
+    --dart-define=FCM_PROJECT_ID=${{ vars.FCM_PROJECT_ID }}
+    --dart-define=FCM_SENDER_ID=${{ vars.FCM_SENDER_ID }}
+    --dart-define=FCM_API_KEY_ANDROID=${{ vars.FCM_API_KEY_ANDROID }}
+    --dart-define=FCM_APP_ID_ANDROID=${{ vars.FCM_APP_ID_ANDROID }}
+    --dart-define=FCM_API_KEY_IOS=${{ vars.FCM_API_KEY_IOS }}
+    --dart-define=FCM_APP_ID_IOS=${{ vars.FCM_APP_ID_IOS }}
+    --dart-define=FCM_IOS_BUNDLE_ID=${{ vars.FCM_IOS_BUNDLE_ID }}
   FLUTTER_VERSION: 3.50.0
 
 jobs:
@@ -71,7 +80,7 @@ jobs:
           dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
           flutter test $dirs test/widget_test.dart
       - name: Build release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
       - name: Name the file
         run: cp build/app/outputs/flutter-apk/app-release.apk "fcu-${{ needs.version.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
@@ -96,7 +105,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Build iOS (unsigned)
-        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
       - name: Package the .ipa
         run: |
           rm -rf Payload && mkdir Payload

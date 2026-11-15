@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +8,7 @@ import '../../features/community/presentation/providers/membership_provider.dart
 import '../../features/messaging/presentation/providers/messaging_providers.dart';
 import '../../features/notifications/presentation/notification_providers.dart';
 import '../providers/repository_providers.dart';
+import '../push/firebase_push.dart';
 import '../push/push_service.dart';
 import '../router/app_router.dart';
 import 'realtime_client.dart';
@@ -24,6 +26,13 @@ final pushServiceProvider = Provider<PushService>((ref) {
   final platform = LocalPushPlatform.instance;
   platform.onTap((route) => ref.read(routerProvider).go(route));
   return PushService(
+    // A phone notification from Firebase will arrive by itself while the app is
+    // in the background; showing the live-socket copy as well would double it.
+    remoteWillDeliver: () {
+      if (ref.read(deviceRegistrationProvider)?.deviceId == null) return false;
+      final state = WidgetsBinding.instance.lifecycleState;
+      return state != null && state != AppLifecycleState.resumed;
+    },
     show: platform.show,
     requestPermission: platform.requestPermission,
     isAllowed: (type) {
@@ -71,10 +80,35 @@ void applyRealtimeEvent(Ref<Object?> ref, RealtimeEvent event) {
   }
 }
 
+/// Firebase push: re-registers the device when its token changes, and opens
+/// the right screen when a push is tapped (app in the background or closed).
+/// Does nothing without Firebase.
+final firebasePushBindingsProvider = Provider<void>((ref) {
+  if (!FirebasePush.isReady) return;
+  void open(RemoteMessage message) =>
+      ref.read(routerProvider).go(routeForPush(message.data));
+  final subs = <StreamSubscription<Object?>>[
+    // ignore: deprecated_member_use
+    FirebaseMessaging.instance.onTokenRefresh.listen(
+      (_) => unawaited(ref.read(deviceRegistrationProvider)?.refresh()),
+    ),
+    FirebaseMessaging.onMessageOpenedApp.listen(open),
+  ];
+  FirebaseMessaging.instance.getInitialMessage().then((message) {
+    if (message != null) open(message);
+  }).ignore();
+  ref.onDispose(() {
+    for (final s in subs) {
+      s.cancel();
+    }
+  });
+});
+
 /// Listens to the realtime socket and keeps the device registered. Watched
 /// once from `FcuApp` so it lives as long as the app.
 final realtimeBindingsProvider = Provider<void>((ref) {
   ref.watch(deviceRegistrationProvider);
+  ref.watch(firebasePushBindingsProvider);
   final sub = ref
       .watch(realtimeClientProvider)
       .events
