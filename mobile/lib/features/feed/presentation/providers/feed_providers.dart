@@ -115,7 +115,9 @@ class FeedPostsController extends FamilyAsyncNotifier<List<Post>, FeedKey> {
     final current = state.valueOrNull ?? const <Post>[];
     state = AsyncValue.data([post, ...current.where((p) => p.id != post.id)]);
     try {
-      await ref.read(postRepositoryProvider).createPost(post);
+      final saved = await ref.read(postRepositoryProvider).createPost(post);
+      // The server may assign its own id: swap the stored copy in.
+      _replace(post.id, (_) => saved);
     } catch (_) {
       state = AsyncValue.data(
         (state.valueOrNull ?? const <Post>[])

@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/repository_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../notifications/presentation/notification_providers.dart';
+import 'community_providers.dart';
 import '../../domain/membership.dart';
 import '../../domain/user_role.dart';
 
@@ -55,12 +57,23 @@ final membershipProvider =
 final debugRoleOverrideProvider = StateProvider<UserRole?>((ref) => null);
 
 /// The user's role in their approved specific community, or null when they
-/// have none. Every fake account is a student until a backend says
-/// otherwise.
+/// have none. Anyone not named as a leader of the community is a student.
 final currentRoleProvider = Provider<UserRole?>((ref) {
   final membership = ref.watch(membershipProvider).valueOrNull;
   if (membership == null || membership.status != MembershipStatus.approved) {
     return null;
   }
-  return ref.watch(debugRoleOverrideProvider) ?? UserRole.student;
+  final override = ref.watch(debugRoleOverrideProvider);
+  if (override != null) return override;
+  // Leaders are named on the community itself.
+  final communityId = membership.communityId;
+  final me = ref.watch(authSessionProvider)?.accountId;
+  if (communityId != null && me != null) {
+    final community = ref.watch(communityByIdProvider(communityId)).valueOrNull;
+    if (community?.superMentor?.id == me) return UserRole.superMentor;
+    if (community != null && community.mentors.any((m) => m.id == me)) {
+      return UserRole.mentor;
+    }
+  }
+  return UserRole.student;
 });

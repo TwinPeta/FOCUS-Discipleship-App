@@ -88,7 +88,11 @@ class PostCommentsController
     state = AsyncValue.data([...?state.valueOrNull, comment]);
     post.adjustCommentCount(1);
     try {
-      await ref.read(postRepositoryProvider).addComment(comment);
+      final saved = await ref.read(postRepositoryProvider).addComment(comment);
+      state = AsyncValue.data([
+        for (final c in state.valueOrNull ?? const <Comment>[])
+          c.id == comment.id ? saved : c,
+      ]);
     } catch (_) {
       state = AsyncValue.data([
         for (final c in state.valueOrNull ?? const <Comment>[])

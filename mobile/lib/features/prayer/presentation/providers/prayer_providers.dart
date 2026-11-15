@@ -35,12 +35,14 @@ class PrayerRequestsController
       ...current.where((r) => r.id != request.id),
     ]);
     try {
-      await ref
+      final saved = await ref
           .read(prayerRepositoryProvider)
           .createRequest(
             request,
             ownerId: ref.read(currentProfileProvider)?.id,
           );
+      // The server may assign its own id: swap the stored copy in.
+      _replace(request.id, (_) => saved);
     } catch (_) {
       state = AsyncValue.data(
         (state.valueOrNull ?? const <PrayerRequest>[])
