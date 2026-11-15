@@ -1,5 +1,7 @@
 # FCU Student Community App – Mobile API
 
+> **App developers:** start with [`MOBILE_API_GUIDE.md`](./MOBILE_API_GUIDE.md) (how to connect) and [`mobile-api-reference.md`](./mobile-api-reference.md) (every endpoint). Staff API: [`admin-api-reference.md`](./admin-api-reference.md).
+
 Source of truth: [`openapi.yaml`](./openapi.yaml) (mobile) and [`openapi-admin.yaml`](./openapi-admin.yaml) (staff), both OpenAPI 3.1. The running API serves them with Swagger UI at `/docs`; `api/test/docs.test.js` and the contract checks in the API tests keep them in step with the code (see `api/README.md`).
 Derived from the *FCU Student Community App – Mobile Design* (22 screens) and the *FOCUS Uganda BRD v0.4*.
 

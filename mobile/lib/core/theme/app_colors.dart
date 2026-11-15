@@ -4,6 +4,12 @@ class AppColors {
   AppColors._();
 
   static const amber = Color(0xFFF4B400);
+
+  /// Brand gradient (roadmap v2): the light end is the normal surface
+  /// (headers, primary buttons, chips); the dark end is for emphasis only
+  /// (active tab, selected state, key call to action, badges).
+  static const amberLight = Color(0xFFF5CE3E);
+  static const amberDark = Color(0xFFE5A90A);
   static const honey = Color(0xFFFDE68A);
   static const cream = Color(0xFFFFF3C4);
   static const page = Color(0xFFFFFBEA);
