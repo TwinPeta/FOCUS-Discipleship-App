@@ -92,7 +92,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.page,
-      bottomNavigationBar: const AppBottomNav(current: AppTab.community),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.communities),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

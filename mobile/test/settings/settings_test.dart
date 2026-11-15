@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:focus_1/core/config/app_info.dart';
 import 'package:focus_1/core/providers/repository_providers.dart';
+import 'package:focus_1/core/theme/theme_mode_provider.dart';
 import 'package:focus_1/features/auth/presentation/sign_in_screen.dart';
 import 'package:focus_1/features/profile/presentation/edit_profile_screen.dart';
 import 'package:focus_1/features/profile/presentation/profile_providers.dart';
@@ -29,8 +30,10 @@ void main() {
       find.text('@${testProfile.username} · ${testProfile.institutionName}'),
       findsOneWidget,
     );
+    expect(find.text('Edit profile'), findsNothing, reason: 'card opens it');
     for (final t in [
-      'Photo, name, phone',
+      'Appearance',
+      'Light',
       'In-app and email',
       'English',
       'Download or delete my data',
@@ -52,6 +55,32 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Sign out'));
     await settle(tester, steps: 12);
     expect(find.byType(SignInScreen), findsOneWidget);
+  });
+
+  testWidgets('46: profile card opens Edit profile', (tester) async {
+    final container = await pumpFcuApp(tester);
+    await goTo(tester, container, '/settings');
+    await tester.tap(find.text(testProfile.fullName));
+    await settle(tester, steps: 12);
+    expect(find.byType(EditProfileScreen), findsOneWidget);
+  });
+
+  testWidgets('46: Appearance: choosing Dark sets the theme mode', (
+    tester,
+  ) async {
+    final container = await pumpFcuApp(tester);
+    await goTo(tester, container, '/settings');
+    expect(container.read(themeModeProvider), ThemeMode.light);
+
+    await tester.tap(find.text('Appearance'));
+    await settle(tester);
+    expect(find.text('System'), findsOneWidget);
+    await tester.tap(find.text('Dark'));
+    await settle(tester);
+
+    expect(container.read(themeModeProvider), ThemeMode.dark);
+    expect(find.text('System'), findsNothing, reason: 'sheet closed');
+    expect(find.text('Dark'), findsOneWidget, reason: 'row subtitle');
   });
 
   testWidgets('47: save disabled until changed and valid; saves the name', (

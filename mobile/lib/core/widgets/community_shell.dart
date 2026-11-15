@@ -36,7 +36,7 @@ class CommunityShell extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.page,
-      bottomNavigationBar: const AppBottomNav(current: AppTab.community),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.communities),
       body: communityAsync.when(
         loading: () => const Skeleton(),
         error: (error, stackTrace) => ErrorScreen(
