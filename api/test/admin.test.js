@@ -411,6 +411,49 @@ test('email diagnostics: status never shows the key, a test send reports success
   } finally { config.env = env; config.resendApiKey = key; mailer.useClient(null); }
 });
 
+// ───────── phone push diagnostics ─────────
+test('push diagnostics: status hides the key; the test needs configuration and a registered phone; system admin only', async () => {
+  const push = require('../src/services/push'); const config = require('../src/config');
+  const { privateKey } = require('crypto').generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const sys = (await login('admin@fcu.test')).token;
+  const adminUser = store.first('users', (u) => u.email === 'admin@fcu.test');
+
+  let status = await call('GET', '/push/status', { token: sys });
+  assert.equal(status.status, 200);
+  assert.equal(status.body.configured, false);
+  assert.equal((await call('POST', '/push/test', { token: sys })).status, 409, 'not configured');
+
+  config.fcm.serviceAccountJson = JSON.stringify({ client_email: 'fcm@demo.iam.gserviceaccount.com', project_id: 'fcu-demo', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) });
+  push.reset();
+  try {
+    status = await call('GET', '/push/status', { token: sys });
+    assert.deepEqual([status.body.configured, status.body.projectId], [true, 'fcu-demo']);
+    assert.ok(!JSON.stringify(status.body).includes('PRIVATE KEY'), 'no key in the response');
+    const none = await call('POST', '/push/test', { token: sys });
+    assert.equal(none.status, 409);
+    assert.match(none.body.detail, /Sign in to the student app/);
+    store.insert('devices', { userId: adminUser.id, platform: 'android', pushToken: 'tok-1' });
+    const ok = await call('POST', '/push/test', { token: sys });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.sent, 1);
+    assert.equal((await call('GET', '/push/status', { token: sys })).body.devices.android, 1);
+    assert.equal((await call('POST', '/push/test', { token: (await login('content@fcu.test')).token })).status, 403);
+  } finally { config.fcm.serviceAccountJson = ''; push.reset(); }
+  const down = store.first('devices', (d) => d.pushToken === 'tok-1'); if (down) store.remove('devices', (d) => d.id === down.id);
+  // a failure at the provider is reported with its own message (502); simulate with a dead network answer
+  config.fcm.serviceAccountJson = JSON.stringify({ client_email: 'fcm@demo.iam.gserviceaccount.com', project_id: 'fcu-demo', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) });
+  push.reset();
+  const env = config.env; config.env = 'development';
+  store.insert('devices', { userId: adminUser.id, platform: 'android', pushToken: 'tok-2' });
+  push.useFetch(async (url) => (String(url).includes('oauth2') ? { ok: true, json: async () => ({ access_token: 'at', expires_in: 3600 }) } : { ok: false, status: 403, json: async () => ({ error: { message: 'Permission denied on the Firebase project' } }) }));
+  try {
+    const failed = await call('POST', '/push/test', { token: sys });
+    assert.equal(failed.status, 502);
+    assert.match(failed.body.detail, /Permission denied/);
+    assert.equal((await call('GET', '/push/status', { token: sys })).body.recent[0].ok, false);
+  } finally { config.env = env; config.fcm.serviceAccountJson = ''; push.useFetch(null); push.reset(); store.remove('devices', (d) => d.pushToken === 'tok-2'); }
+});
+
 test('zz every documented staff operation is exercised by a test', async () => {
   assert.deepEqual(contract.unexercised(spec), []);
 });

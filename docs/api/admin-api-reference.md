@@ -4,7 +4,7 @@
 
 **Servers:** `https://apis.focusuganda.org/v1/admin` (Production), `http://localhost:4000/v1/admin` (Local development)
 
-**93 operations** in 22 groups.
+**95 operations** in 23 groups.
 
 ## Index
 
@@ -254,6 +254,15 @@ Why email is (not) working: settings, recent sends, and a test message
 |---|---|---|---|
 | `GET` | [`/email/status`](#get-email-status) | Email settings (never the key) and what happened to the last sends | cookieAuth or bearerAuth |
 | `POST` | [`/email/test`](#post-email-test) | Send a real test email and report Resend's own answer | cookieAuth or bearerAuth |
+
+### Push
+
+Phone push notifications: whether they are set up, and a test to your own phone
+
+| Method | Path | Summary | Auth |
+|---|---|---|---|
+| `GET` | [`/push/status`](#get-push-status) | Is phone push set up, how many phones are registered, and what happened to recent pushes | cookieAuth or bearerAuth |
+| `POST` | [`/push/test`](#post-push-test) | Send a real test push to the signed-in administrator's phones | cookieAuth or bearerAuth |
 
 ## Endpoints
 
@@ -2633,6 +2642,46 @@ Roles: SYSTEM_ADMIN. Sends to `to`, or to the signed-in administrator when omitt
 | `422` | RFC 7807 problem | [Problem](#schema-problem) |
 | `502` | RFC 7807 problem | [Problem](#schema-problem) |
 
+## Push
+
+<a id="get-push-status"></a>
+### `GET /push/status`
+
+**Is phone push set up, how many phones are registered, and what happened to recent pushes**
+
+Roles: SYSTEM_ADMIN. Never shows the key.
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `getPushStatus`
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [PushStatus](#schema-pushstatus) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+
+<a id="post-push-test"></a>
+### `POST /push/test`
+
+**Send a real test push to the signed-in administrator's phones**
+
+Roles: SYSTEM_ADMIN. 409 when push is not configured on the server or the administrator has no registered phone; 502 with the provider's message when delivery fails.
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `postPushTest`
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [PushTestResult](#schema-pushtestresult) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+| `409` | RFC 7807 problem | [Problem](#schema-problem) |
+| `502` | RFC 7807 problem | [Problem](#schema-problem) |
+
 ## Schemas
 
 <a id="schema-institution"></a>
@@ -3060,6 +3109,26 @@ Roles: SYSTEM_ADMIN. Sends to `to`, or to the signed-in administrator when omitt
 | `ok` | boolean | yes |  |
 | `to` | string | yes |  |
 | `id` | string \| null | yes | nullable |
+
+<a id="schema-pushstatus"></a>
+### PushStatus
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `configured` | boolean | yes |  |
+| `enabled` | boolean | yes |  |
+| `projectId` | string \| null | yes | nullable |
+| `devices` | object | yes |  |
+| `recent` | array of object | yes |  |
+
+<a id="schema-pushtestresult"></a>
+### PushTestResult
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `ok` | boolean | yes |  |
+| `sent` | integer | yes |  |
+| `failed` | integer | yes |  |
 
 <a id="schema-sessionlist"></a>
 ### SessionList

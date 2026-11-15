@@ -86,6 +86,8 @@ tags:
     description: "File uploads for covers, thumbnails, videos, documents and story videos"
   - name: Email
     description: "Why email is (not) working: settings, recent sends, and a test message"
+  - name: Push
+    description: "Phone push notifications: whether they are set up, and a test to your own phone"
 paths:
   /auth/login:
     post:
@@ -1669,6 +1671,36 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
         '502': { $ref: '#/components/responses/Problem' }
+  /push/status:
+    get:
+      tags: [Push]
+      operationId: getPushStatus
+      summary: "Is phone push set up, how many phones are registered, and what happened to recent pushes"
+      description: "Roles: SYSTEM_ADMIN. Never shows the key."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PushStatus' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /push/test:
+    post:
+      tags: [Push]
+      operationId: postPushTest
+      summary: "Send a real test push to the signed-in administrator's phones"
+      description: "Roles: SYSTEM_ADMIN. 409 when push is not configured on the server or the administrator has no registered phone; 502 with the provider's message when delivery fails."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PushTestResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
   /account/sessions:
     get:
       tags: [Account]
@@ -2089,6 +2121,35 @@ components:
         to: { type: string }
         id: { type: [string, 'null'] }
       required: [ok, to, id]
+    PushStatus:
+      type: object
+      properties:
+        configured: { type: boolean }
+        enabled: { type: boolean }
+        projectId: { type: [string, 'null'] }
+        devices:
+          type: object
+          properties: { total: { type: integer }, android: { type: integer }, ios: { type: integer } }
+          required: [total, android, ios]
+        recent:
+          type: array
+          items:
+            type: object
+            properties:
+              at: { type: string, format: date-time }
+              user: { type: string }
+              platform: { type: [string, 'null'] }
+              ok: { type: boolean }
+              error: { type: string }
+            required: [at, ok]
+      required: [configured, enabled, projectId, devices, recent]
+    PushTestResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        sent: { type: integer }
+        failed: { type: integer }
+      required: [ok, sent, failed]
     SessionList:
       type: object
       properties:

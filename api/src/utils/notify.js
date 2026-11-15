@@ -75,6 +75,8 @@ function notify(userId, type, { title, body = null, targetRoute, rule: ruleKey, 
     realtime.emit(userId, 'notification.created', {
       id: n.id, type: n.type, title: n.title, body: n.body || null, target_route: n.targetRoute, read_at: null, created_at: n.createdAt,
     });
+    // The phone, when the app is closed: same title/body, and the data the app needs to open the right screen on tap.
+    require('../services/push').notifyUser(userId, { title, body, data: { type, target_route: targetRoute || '/notifications', notification_id: n.id } });
     return n;
   } catch (_e) {
     return null;

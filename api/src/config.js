@@ -47,6 +47,14 @@ module.exports = {
   mailGapMs: Number(process.env.MAIL_GAP_MS || 600),
   // NOTIFICATION_EMAILS=false stops notifications (replies, approvals, announcements...) from being emailed; in-app ones continue.
   notificationEmails: process.env.NOTIFICATION_EMAILS !== 'false',
+  // Phone push (Firebase Cloud Messaging, which delivers to Android and, with an APNs key added in Firebase, to iPhones).
+  // Give the service-account key as JSON in FCM_SERVICE_ACCOUNT_JSON, or as a file path in FCM_SERVICE_ACCOUNT_FILE.
+  // Unset -> no push is sent (in-app and email continue). PUSH_ENABLED=false switches it off even when configured.
+  fcm: {
+    serviceAccountJson: process.env.FCM_SERVICE_ACCOUNT_JSON || '',
+    serviceAccountFile: process.env.FCM_SERVICE_ACCOUNT_FILE || '',
+    enabled: process.env.PUSH_ENABLED !== 'false',
+  },
   // API documentation (Swagger UI at /docs, specs at /openapi.yaml and /openapi-admin.yaml).
   // DOCS_ENABLED=false removes them. DOCS_USERNAME + DOCS_PASSWORD put them behind HTTP Basic auth.
   // "Try it out" is on in development and off in production unless DOCS_TRY_IT_OUT=true.
