@@ -49,6 +49,12 @@ async function init() {
 
 async function load() {
   const p = prisma();
+  // The generated client lives in node_modules and is only rebuilt by `npm install` / `prisma generate`. After pulling a
+  // schema change it can lack a table the code now uses; say so instead of crashing on `undefined.findMany`.
+  const stale = M.order().filter((c) => !p[dg(c)]);
+  if (stale.length) {
+    throw new Error(`The Prisma client is out of date (no model for: ${stale.join(', ')}). Run \`npm run prisma:generate\` (or \`npm install\`), then \`npm run db:deploy\` to apply new migrations.`);
+  }
   snap = {};
   let rows = 0;
   for (const c of M.order()) {

@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "predev": "prisma generate",
     "dev": "node --watch src/server.js",
     "test": "node --test test/*.test.js",
     "prisma:schema": "node prisma/gen-schema.js",

@@ -192,3 +192,16 @@ test('staff uploads with R2: signed direct PUT, confirmed against the bucket, pe
     server.close();
   }
 });
+
+test('a stale generated Prisma client is reported with the fix, not an undefined-property crash', async () => {
+  const config = require('../src/config');
+  const real = config.databaseUrl;
+  config.databaseUrl = 'postgresql://test'; // makes the database "enabled" for this check only
+  prisma.useClient({ institution: { findMany: async () => [] } }); // a client generated before most tables existed
+  try {
+    await assert.rejects(() => prisma.load(), /Prisma client is out of date.*prisma:generate.*db:deploy/s);
+  } finally {
+    prisma.useClient(null);
+    config.databaseUrl = real;
+  }
+});
