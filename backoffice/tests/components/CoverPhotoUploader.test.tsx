@@ -7,8 +7,10 @@
  * STATUS: implemented
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/upload", () => ({ uploadFile: vi.fn(async () => "https://api.test/uploads/cover-1") }));
+
 import { CoverPhotoUploader } from "@/features/communities/components/CoverPhotoUploader";
 
 describe("CoverPhotoUploader", () => {
@@ -29,7 +31,7 @@ describe("CoverPhotoUploader", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("accepts a PNG image and renders the 1600 x 600 cropper", () => {
+  it("accepts a PNG image, uploads it and renders the 1600 x 600 cropper", async () => {
     const onChange = vi.fn();
     render(<CoverPhotoUploader onChange={onChange} />);
 
@@ -38,6 +40,7 @@ describe("CoverPhotoUploader", () => {
     fireEvent.change(input, { target: { files: [goodFile] } });
 
     expect(screen.getByTestId("cover-cropper")).toBeInTheDocument();
-    expect(onChange).toHaveBeenCalledWith("blob:mock-cover");
+    // the form gets the address of the uploaded file, never a temporary browser link
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("https://api.test/uploads/cover-1", undefined));
   });
 });

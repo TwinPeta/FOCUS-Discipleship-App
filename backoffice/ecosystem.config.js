@@ -29,7 +29,6 @@ module.exports = {
         AUTH_ACCESS_COOKIE: "fcu_access",
         AUTH_REFRESH_COOKIE: "fcu_refresh",
         // Public values are baked in at BUILD time: export the same value when running `pnpm build`
-        NEXT_PUBLIC_API_MOCKING: "disabled",
         NEXT_PUBLIC_APP_NAME: "FCU Backoffice",
       },
     },

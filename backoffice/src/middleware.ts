@@ -8,7 +8,7 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_ROUTES, MY_COMMUNITY_PREFIX, ROUTES } from "@/lib/constants/routes";
+import { AUTH_ROUTES, ROUTES } from "@/lib/constants/routes";
 
 const ACCESS_COOKIE_NAME = process.env.AUTH_ACCESS_COOKIE || "fcu_access";
 
@@ -46,15 +46,6 @@ export function middleware(req: NextRequest) {
         ? `?returnTo=${encodeURIComponent(`${pathname}${search}`)}`
         : "";
     return redirectTo(req, `${ROUTES.login}${query}`);
-  }
-
-  // Coarse role check when token carries a mock role prefix
-  if (
-    accessToken === "mock:SUPER_MENTOR" &&
-    !pathname.startsWith(MY_COMMUNITY_PREFIX) &&
-    pathname !== ROUTES.account
-  ) {
-    return redirectTo(req, ROUTES.myCommunity);
   }
 
   return NextResponse.next();

@@ -13,7 +13,6 @@ export default defineConfig({
     command: "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: true,
-    env: { NEXT_PUBLIC_API_MOCKING: "enabled" },
   },
   projects: [
     { name: "desktop-chrome", use: { ...devices["Desktop Chrome"] } },

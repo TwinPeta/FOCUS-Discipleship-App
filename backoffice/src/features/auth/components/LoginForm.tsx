@@ -18,7 +18,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirects";
 import { ROUTES } from "@/lib/constants/routes";
-import { publicEnv } from "@/lib/env";
 import type { Role } from "@/types/enums";
 
 interface LoginFormProps {
@@ -181,56 +180,6 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
-
-      {publicEnv.NEXT_PUBLIC_API_MOCKING === "enabled" &&
-        process.env.NODE_ENV !== "production" && (
-          <div className="space-y-2 border-t border-border pt-4">
-            <p className="text-xs font-medium text-muted-foreground">
-              Dev mode quick sign-in (mock session)
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  onSubmit({
-                    email: "admin@focusuganda.org",
-                    password: "DevPassword123",
-                    rememberMe: true,
-                  })
-                }
-                className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs font-medium text-foreground hover:bg-primary-soft"
-              >
-                System Admin
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  onSubmit({
-                    email: "content@focusuganda.org",
-                    password: "DevPassword123",
-                    rememberMe: true,
-                  })
-                }
-                className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs font-medium text-foreground hover:bg-primary-soft"
-              >
-                Content Admin
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  onSubmit({
-                    email: "mentor@focusuganda.org",
-                    password: "DevPassword123",
-                    rememberMe: true,
-                  })
-                }
-                className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs font-medium text-foreground hover:bg-primary-soft"
-              >
-                Super-mentor
-              </button>
-            </div>
-          </div>
-        )}
     </form>
   );
 }

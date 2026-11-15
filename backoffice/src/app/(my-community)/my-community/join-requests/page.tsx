@@ -15,13 +15,15 @@ import {
   approveOwnJoinRequest,
   declineOwnJoinRequest,
   fetchMyCommunityOverview,
-  MOCK_MY_COMMUNITY,
   type OwnJoinRequest,
 } from "@/features/my-community/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function MyCommunityJoinRequestsPage() {
-  const [communityName, setCommunityName] = useState(MOCK_MY_COMMUNITY.communityName);
-  const [requests, setRequests] = useState<OwnJoinRequest[]>(MOCK_MY_COMMUNITY.pendingRequests);
+  const [communityName, setCommunityName] = useState("");
+  const [requests, setRequests] = useState<OwnJoinRequest[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -29,7 +31,10 @@ export default function MyCommunityJoinRequestsPage() {
       if (!active) return;
       setCommunityName(res.communityName);
       setRequests(res.pendingRequests);
-    });
+    })
+      .catch((e: unknown) => {
+        if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       active = false;
     };
@@ -47,9 +52,10 @@ export default function MyCommunityJoinRequestsPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Join requests — {communityName}
+          Join requests — {communityName || "your community"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           Approve or decline students requesting to join your community.
@@ -58,7 +64,7 @@ export default function MyCommunityJoinRequestsPage() {
 
       {requests.length === 0 ? (
         <div className="rounded-xl border border-border bg-white p-8 text-center text-sm text-muted">
-          No pending join requests for {communityName}.
+          No pending join requests for {communityName || "your community"}.
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-white">

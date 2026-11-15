@@ -121,7 +121,7 @@ export function StaffAccountForm() {
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="e.g. Grace Namukasa"
+            placeholder="Full name"
             className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground"
             required
           />

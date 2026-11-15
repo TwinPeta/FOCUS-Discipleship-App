@@ -15,18 +15,24 @@ import { BadgeForm } from "@/features/badges/components/BadgeForm";
 import { BadgeTable } from "@/features/badges/components/BadgeTable";
 import {
   fetchBadges,
-  MOCK_BADGES,
   type Badge,
 } from "@/features/badges/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function BadgesPage() {
-  const [badges, setBadges] = useState<Badge[]>(MOCK_BADGES);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [editingBadge, setEditingBadge] = useState<Badge | null | undefined>(undefined);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchBadges().then((res) => {
-      if (active) setBadges(res);
+    fetchBadges()
+      .then((res) => {
+        if (active) setBadges(res);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
     return () => {
       active = false;
@@ -47,6 +53,7 @@ export default function BadgesPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">

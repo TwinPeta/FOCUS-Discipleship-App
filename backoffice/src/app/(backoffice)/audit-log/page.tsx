@@ -16,10 +16,10 @@ import { AuditTable } from "@/features/audit/components/AuditTable";
 import { ExportAuditButton } from "@/features/audit/components/ExportAuditButton";
 import {
   fetchAuditEntries,
-  MOCK_AUDIT_ENTRIES,
   type AuditEntry,
   type AuditFilterState,
 } from "@/features/audit/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function AuditLogPage() {
   const [filters, setFilters] = useState<AuditFilterState>({
@@ -28,12 +28,21 @@ export default function AuditLogPage() {
     role: "all",
     period: "30d",
   });
-  const [entries, setEntries] = useState<AuditEntry[]>(MOCK_AUDIT_ENTRIES);
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchAuditEntries(filters).then((data) => {
-      if (active) setEntries(data);
+    fetchAuditEntries(filters)
+      .then((data) => {
+        if (active) {
+          setEntries(data);
+          setLoadError(null);
+        }
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
     return () => {
       active = false;
@@ -42,6 +51,7 @@ export default function AuditLogPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Audit log</h1>
