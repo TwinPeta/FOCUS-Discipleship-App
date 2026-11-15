@@ -1,11 +1,11 @@
 const { ApiError } = require('../utils/errors');
 
-// Minimal fixed-window limiter keyed by IP (+ optional extra key). Replace with Redis-backed in production.
-function rateLimit({ windowMs, max, key = () => '' }) {
+// Minimal fixed-window limiter keyed by IP (+ optional extra key), or by the key alone with byAddress:false. Replace with Redis-backed in production.
+function rateLimit({ windowMs, max, key = () => '', byAddress = true }) {
   const hits = new Map();
   return (req, _res, next) => {
     if (process.env.NODE_ENV === 'test') return next();
-    const k = `${req.ip}|${key(req)}`;
+    const k = byAddress ? `${req.ip}|${key(req)}` : `|${key(req)}`; // byAddress:false counts everyone together (e.g. one victim's inbox)
     const t = Date.now();
     if (hits.size > 5000) for (const [key2, r] of hits) if (r.reset < t) hits.delete(key2); // do not grow without bound
     const rec = hits.get(k);

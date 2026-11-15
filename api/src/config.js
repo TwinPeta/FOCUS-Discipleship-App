@@ -41,6 +41,12 @@ module.exports = {
   // Resend. Unset -> emails are logged (dev) / captured (tests).
   resendApiKey: process.env.RESEND_API_KEY || '',
   mailFrom: process.env.MAIL_FROM || 'FCU Student Community <no-reply@localhost>',
+  // Optional: where replies go (the sender address is usually a no-reply one). Used by guardian consent emails.
+  mailReplyTo: process.env.MAIL_REPLY_TO || '',
+  // Resend allows about 2 requests a second; emails are sent one at a time at this pace, and retried when Resend says "slow down".
+  mailGapMs: Number(process.env.MAIL_GAP_MS || 600),
+  // NOTIFICATION_EMAILS=false stops notifications (replies, approvals, announcements...) from being emailed; in-app ones continue.
+  notificationEmails: process.env.NOTIFICATION_EMAILS !== 'false',
   // API documentation (Swagger UI at /docs, specs at /openapi.yaml and /openapi-admin.yaml).
   // DOCS_ENABLED=false removes them. DOCS_USERNAME + DOCS_PASSWORD put them behind HTTP Basic auth.
   // "Try it out" is on in development and off in production unless DOCS_TRY_IT_OUT=true.

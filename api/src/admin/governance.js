@@ -146,7 +146,17 @@ router.post('/privacy/guardian-consents/:id/remind', C.allow(SYS), (req, res, ne
   try {
     const g = C.must('guardianConsents', req.params.id, 'Guardian consent');
     if (g.status === 'RECEIVED') throw conflict('already_received', 'Consent already received');
-    g.lastReminderAt = store.now(); g.updatedAt = store.now(); res.json({ ok: true });
+    g.lastReminderAt = store.now(); g.updatedAt = store.now();
+    // The guardian's address was given by the minor in the app (PUT /me/guardian). With only a phone number nothing can be emailed.
+    const minor = store.get('users', g.userId);
+    const guardian = (minor && minor.guardian) || {};
+    const emailed = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guardian.email || '');
+    if (emailed) {
+      require('../services/mailer').notify(guardian.email, 'guardianConsent', {
+        guardianName: guardian.name, minorName: minor.fullName, from: req.user.fullName, replyable: !!require('../config').mailReplyTo,
+      });
+    }
+    res.json({ ok: true, emailed });
   } catch (e) { next(e); }
 });
 const dataReqDto = (d) => {
@@ -304,6 +314,7 @@ router.post('/my-community/announcements', C.allow(SM), (req, res, next) => {
     const c = myCommunity(req);
     const b = check(req.body, { title: { type: 'string', max: 120 }, message: { required: true, type: 'string', min: 2, max: 2000 } });
     const a = store.insert('announcements', { title: b.title || 'Message from your super-mentor', message: b.message, audienceType: 'community', communityId: c.id, status: 'published', authorName: req.user.fullName });
+    require('../utils/announcements').deliver(a);
     res.status(201).json({ id: a.id });
   } catch (e) { next(e); }
 });

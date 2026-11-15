@@ -19,7 +19,8 @@ async function main() {
   } else {
     console.warn('DATABASE_URL not set: using the in-memory store (data is lost on restart).');
   }
-  if (config.env === 'production' && !config.resendApiKey) console.warn('RESEND_API_KEY not set: emails will not be delivered.');
+  for (const problem of require('./services/mailer').configProblems()) console.warn(`[config] ${problem}`);
+  if (config.env === 'production' && /localhost/.test(config.baseUrl)) console.warn(`[config] BASE_URL is ${config.baseUrl}: uploaded file links and error links would point at it. Set it to the public API address.`);
   if (config.env === 'production' && !config.r2Enabled) console.warn('R2_* not set: media is stored on local disk.');
 
   const admin = ensureAdmin();
@@ -29,6 +30,7 @@ async function main() {
   realtime.attach(server);
   server.listen(config.port, () => console.log(`FCU API listening on ${config.baseUrl}/v1`));
 
+  setInterval(() => require('./utils/announcements').publishDue(), 60e3).unref(); // scheduled announcements go out on time
   setInterval(() => require('./admin/sessions').sweep(), 3600e3).unref(); // forget expired back-office sessions
   setInterval(() => pg.flush(), 5000).unref(); // safety net for changes made outside a request (e.g. websocket handlers)
 

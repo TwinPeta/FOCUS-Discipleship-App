@@ -1241,7 +1241,7 @@ paths:
     post:
       tags: [Privacy]
       operationId: postPrivacyGuardianconsentsIdRemind
-      summary: "Remind guardian"
+      summary: "Remind guardian (emails them when the app has their email address)"
       description: "Roles: SYSTEM_ADMIN"
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
@@ -1250,7 +1250,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Ok' }
+              schema: { $ref: '#/components/schemas/ReminderResult' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -2222,6 +2222,12 @@ components:
         detail: { type: string }
         errors: { type: array, items: { type: object, properties: { field: { type: string }, message: { type: string } } } }
     Ok: { type: object, properties: { ok: { type: boolean } } }
+    ReminderResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        emailed: { type: boolean, description: "false when only a phone number is on file, so nothing could be emailed" }
+      required: [ok, emailed]
     Object: { type: object, additionalProperties: true }
     List: { type: object, properties: { items: { type: array, items: { type: object, additionalProperties: true } }, total: { type: integer }, counts: { type: object, additionalProperties: { type: integer } } } }
     Role: { type: string, enum: [STUDENT, MENTOR, SUPER_MENTOR, ALUMNI, CONTENT_ADMIN, SYSTEM_ADMIN] }

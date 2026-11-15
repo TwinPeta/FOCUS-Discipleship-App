@@ -112,7 +112,8 @@ router.post('/login', rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body 
   } catch (e) { next(e); }
 });
 
-router.post('/otp/request', rateLimit({ windowMs: 600000, max: 5, key: (r) => r.body && r.body.destination }), (req, res, next) => {
+// Per sender and, separately, per destination: nobody can flood one person's inbox by rotating addresses
+router.post('/otp/request', rateLimit({ windowMs: 600000, max: 5, key: (r) => r.body && r.body.destination }), rateLimit({ windowMs: 3600000, max: 8, byAddress: false, key: (r) => r.body && r.body.destination }), (req, res, next) => {
   try {
     const b = check(req.body, {
       channel: { required: true, type: 'string', enum: ['sms', 'email'] },

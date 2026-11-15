@@ -210,7 +210,7 @@ function annDto(a) {
   const c = a.communityId && store.get('communities', a.communityId);
   return { id: a.id, title: a.title, message: a.message, audienceType: a.audienceType, communityId: a.communityId || null, communityName: a.audienceType === 'all' ? 'All Communities' : (c ? c.name : null), imageUrl: a.imageUrl || null, scheduledFor: a.scheduledFor || null, status: a.status, authorName: a.authorName, createdAt: a.createdAt };
 }
-function publishDue() { store.col('announcements').forEach((a) => { if (a.status === 'scheduled' && Date.parse(a.scheduledFor) <= Date.now()) a.status = 'published'; }); }
+const { deliver, publishDue } = require('../utils/announcements');
 router.get('/announcements', C.allow(SYS, CA, SM), (req, res) => {
   publishDue();
   res.json(C.list(store.col('announcements').filter((a) => req.scope === null || a.audienceType === 'all' || C.inScope(req.scope, a.communityId)).sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1)).map(annDto)));
@@ -222,6 +222,7 @@ router.post('/announcements', C.allow(SYS, CA), (req, res, next) => {
     const scheduled = b.publishTiming === 'scheduled';
     if (scheduled && !(Date.parse(b.scheduledFor) > Date.now())) throw validation([{ field: 'scheduledFor', message: 'must be a future date-time' }]);
     const a = store.insert('announcements', { title: b.title.trim(), message: b.message.trim(), audienceType: b.audienceType, communityId: b.audienceType === 'community' ? b.communityId : null, imageUrl: b.imageUrl || null, scheduledFor: scheduled ? b.scheduledFor : null, status: scheduled ? 'scheduled' : 'published', authorName: req.user.fullName });
+    if (!scheduled) deliver(a);
     res.status(201).json(annDto(a));
   } catch (e) { next(e); }
 });
