@@ -79,6 +79,10 @@ import 'route_guards.dart';
 /// The app router. Built inside Riverpod so the guard chain
 /// ([runGuards]) can read profile and membership state, and re-runs
 /// whenever either changes.
+/// Where the app opens; the landing page normally. The web demo build
+/// opens straight on its community feed.
+final initialLocationProvider = Provider<String>((ref) => '/');
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(authControllerProvider, (_, _) => refresh.value++);
@@ -103,7 +107,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: ref.read(initialLocationProvider),
     refreshListenable: refresh,
     redirect: (context, state) => runGuards(
       GuardContext(

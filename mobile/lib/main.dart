@@ -9,6 +9,7 @@ import 'core/push/firebase_push.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'demo/demo_mode.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,9 @@ Future<void> main() async {
   await LocalPushPlatform.instance.init();
   // Remote push (only when this build has its Firebase identifiers; otherwise a no-op).
   await FirebasePush.init();
-  runApp(const ProviderScope(child: FcuApp()));
+  // Web demo build (DEMO_MODE): sample data, already in a community.
+  final overrides = kDemoMode ? await demoOverrides() : const <Override>[];
+  runApp(ProviderScope(overrides: overrides, child: const FcuApp()));
 }
 
 /// Bricolage Grotesque ships in `assets/fonts/` (declared in pubspec.yaml),
@@ -54,7 +57,14 @@ class FcuApp extends ConsumerWidget {
                     ? SystemUiOverlayStyle.light
                     : SystemUiOverlayStyle.dark)
                 .copyWith(statusBarColor: const Color(0x00000000)),
-        child: child!,
+        child: kDemoMode
+            ? Banner(
+                message: 'DEMO',
+                location: BannerLocation.topEnd,
+                color: const Color(0xFF17140C),
+                child: child!,
+              )
+            : child!,
       ),
     );
   }
