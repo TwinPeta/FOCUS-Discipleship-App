@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'bold_style.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class _StepData {
   const _StepData({
@@ -91,7 +92,7 @@ class _StepRow extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.amber,
+            gradient: AppGradients.brand,
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.ink, width: 2),
           ),

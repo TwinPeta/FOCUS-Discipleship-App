@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/dashed_circle_painter.dart';
 import '../../../../core/widgets/sized_file_image.dart';
 import '../../../../core/media/photo_picker.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 /// The Join form's 76px circular photo picker: dashed border, person icon,
 /// amber "+" badge. Tapping opens a gallery/camera sheet, then [pickPhoto],
@@ -102,7 +103,7 @@ class JoinPhotoPicker extends ConsumerWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: AppColors.amber,
+                        gradient: AppGradients.brand,
                         shape: BoxShape.circle,
                         border: Border.all(color: AppColors.white, width: 2),
                       ),

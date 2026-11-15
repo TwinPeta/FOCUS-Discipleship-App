@@ -10,6 +10,7 @@ import '../domain/resource.dart';
 import 'providers/resource_providers.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 7: Resources tab inside [CommunityShell], also the body of the
 /// General community's "Learn" screen ([GeneralResourcesScreen]).
@@ -191,7 +192,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                               ),
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: AppColors.amber,
+                                gradient: AppGradients.brand,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(

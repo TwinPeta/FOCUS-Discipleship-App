@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_gradients.dart';
 
 /// Compact pill action ("I prayed", "Respond"). Draws 36px tall but keeps a
 /// 44px hit area.
@@ -45,7 +46,8 @@ class PillButton extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: filled ? AppColors.amber : AppColors.white,
+                  color: filled ? null : AppColors.white,
+                  gradient: AppGradients.when(filled),
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                   border: filled
                       ? null

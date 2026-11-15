@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import 'initials_avatar.dart';
+import '../theme/app_gradients.dart';
 
 /// [InitialsAvatar] with an optional online presence dot (amber, 2px white
 /// border) at the bottom-right corner.
@@ -44,7 +45,7 @@ class AvatarWithPresence extends StatelessWidget {
                 width: dotSize,
                 height: dotSize,
                 decoration: BoxDecoration(
-                  color: AppColors.amber,
+                  gradient: AppGradients.brand,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.white, width: 2),
                 ),

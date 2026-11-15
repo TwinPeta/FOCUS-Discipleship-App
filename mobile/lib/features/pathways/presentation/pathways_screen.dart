@@ -12,6 +12,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../domain/pathway.dart';
 import 'widgets/pathway_progress_bar.dart';
 import 'providers/pathway_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 18: Pathways tab inside [CommunityShell].
 class PathwaysScreen extends ConsumerWidget {
@@ -88,7 +89,7 @@ class _CurrentPathwayCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(

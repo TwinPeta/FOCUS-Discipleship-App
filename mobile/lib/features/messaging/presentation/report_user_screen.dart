@@ -13,6 +13,7 @@ import '../domain/report.dart';
 import 'providers/messaging_providers.dart';
 import 'report_flow.dart';
 import '../../../core/media/photo_picker.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 11: Report a user (the [ReportFlow] with a chat screenshot),
 /// reached from a conversation's report button.
@@ -126,7 +127,11 @@ class _ScreenshotCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onPick,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  backgroundBuilder: AppGradients.buttonBackground(
+                    BorderRadius.circular(10),
+                  ),
                   foregroundColor: AppColors.ink,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

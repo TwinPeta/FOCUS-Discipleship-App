@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_gradients.dart';
 
 /// Two-option track (e.g. University / High school) with a sliding amber
 /// selected pill on a cream background.
@@ -37,7 +38,8 @@ class SegmentedToggle<T> extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.amber : Colors.transparent,
+                  color: selected ? null : Colors.transparent,
+                  gradient: AppGradients.when(selected),
                   borderRadius: BorderRadius.circular((height - 8) / 2),
                 ),
                 alignment: Alignment.center,

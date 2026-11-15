@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_gradients.dart';
 
 /// Full-screen result: centred 112px amber circle with an icon, a 34/w900
 /// title, a body, optional extra content and stacked actions. Used by the
@@ -45,6 +46,9 @@ class CelebrationScreen extends StatelessWidget {
                         height: 112,
                         decoration: BoxDecoration(
                           color: iconBackground,
+                          gradient: iconBackground == AppColors.amber
+                              ? AppGradients.brand
+                              : null,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(icon, size: 56, color: AppColors.ink),

@@ -20,6 +20,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../../community/domain/person.dart';
 import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 enum _RoleFilter { all, mentors, members }
 
@@ -219,7 +220,7 @@ class _ThreadRow extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: AppColors.amber,
+                    gradient: AppGradients.brand,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,

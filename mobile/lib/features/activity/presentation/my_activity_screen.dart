@@ -14,6 +14,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../domain/activity_event.dart';
 import '../domain/badge.dart';
 import 'providers/activity_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 20: My activity & badges.
 class MyActivityScreen extends ConsumerWidget {
@@ -133,7 +134,7 @@ class _BadgeItem extends StatelessWidget {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: AppColors.amber,
+                      gradient: AppGradients.brand,
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.ink, width: 2.5),
                     ),

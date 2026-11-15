@@ -13,6 +13,7 @@ import '../../../core/widgets/onboarding_scaffold.dart';
 import '../../../core/widgets/password_field.dart';
 import '../data/auth_repository.dart';
 import 'providers/auth_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 25: Sign in (`/login`). One generic error that never says
 /// whether the email or the password was wrong.
@@ -179,7 +180,7 @@ class _LogoBlock extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.amber,
+              gradient: AppGradients.brand,
               borderRadius: BorderRadius.circular(AppRadii.cardSmall),
             ),
             alignment: Alignment.center,

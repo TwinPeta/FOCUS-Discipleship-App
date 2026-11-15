@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_gradients.dart';
 
 /// The "General | specific community" segmented switch shown in every
 /// community header.
@@ -72,7 +73,8 @@ class _Segment extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: selected ? AppColors.amber : Colors.transparent,
+            color: selected ? null : Colors.transparent,
+            gradient: AppGradients.when(selected),
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,

@@ -14,6 +14,7 @@ import '../domain/pathway.dart';
 import '../domain/pathway_step.dart';
 import 'providers/pathway_providers.dart';
 import 'widgets/pathway_progress_bar.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 19: Pathway steps, reached from the Pathways tab.
 class PathwayStepsScreen extends ConsumerWidget {
@@ -179,7 +180,11 @@ class _StepRow extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onContinue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  backgroundBuilder: AppGradients.buttonBackground(
+                    BorderRadius.circular(10),
+                  ),
                   foregroundColor: AppColors.ink,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 14),

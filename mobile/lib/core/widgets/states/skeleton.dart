@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
+import '../../theme/app_gradients.dart';
 
 /// Loading placeholder shared by every screen: an optional amber header
 /// block, then two post-shaped white cards. Pulses its opacity (no
@@ -78,7 +79,7 @@ class _HeaderBlock extends StatelessWidget {
     return Container(
       height: 120,
       decoration: const BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(AppRadii.headerBottom),
         ),

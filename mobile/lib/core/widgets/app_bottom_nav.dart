@@ -58,13 +58,15 @@ class AppBottomNav extends ConsumerWidget {
       IconData icon,
       IconData selectedIcon,
       String label,
-      String tooltip,
-    ) => Expanded(
+      String tooltip, {
+      bool showLabel = true,
+    }) => Expanded(
       child: _NavTab(
         icon: icon,
         selectedIcon: selectedIcon,
         label: label,
         tooltip: tooltip,
+        showLabel: showLabel,
         selected: t == current,
         onTap: () => select(t),
       ),
@@ -94,6 +96,8 @@ class AppBottomNav extends ConsumerWidget {
                 Icons.groups_rounded,
                 'Communities',
                 'Your community',
+                // Icon only (product decision); screen readers still hear it.
+                showLabel: false,
               ),
               const _CreateButton(),
               tab(
@@ -126,6 +130,7 @@ class _NavTab extends StatelessWidget {
     required this.tooltip,
     required this.selected,
     required this.onTap,
+    this.showLabel = true,
   });
 
   final IconData icon;
@@ -134,6 +139,9 @@ class _NavTab extends StatelessWidget {
   final String tooltip;
   final bool selected;
   final VoidCallback onTap;
+
+  /// When false the tab never shows its text, only the icon.
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +169,7 @@ class _NavTab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(selected ? selectedIcon : icon, color: AppColors.ink),
-                  if (selected)
+                  if (selected && showLabel)
                     Text(
                       label,
                       maxLines: 1,

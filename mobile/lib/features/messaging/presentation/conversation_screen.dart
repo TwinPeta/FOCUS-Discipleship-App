@@ -20,6 +20,7 @@ import '../data/messaging_repository.dart';
 import '../domain/message.dart';
 import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 String _timeLabel(DateTime date) {
   final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
@@ -204,7 +205,7 @@ class _ConversationTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.amber,
+      decoration: const BoxDecoration(gradient: AppGradients.brand),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
       child: Row(
         children: [
@@ -303,7 +304,8 @@ class _MessageBubble extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: mine ? AppColors.amber : AppColors.white,
+              color: mine ? null : AppColors.white,
+              gradient: AppGradients.when(mine),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),

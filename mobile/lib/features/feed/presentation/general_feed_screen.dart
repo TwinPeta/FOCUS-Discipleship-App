@@ -17,6 +17,7 @@ import '../domain/post.dart';
 import 'widgets/compose_fab.dart';
 import 'widgets/composer_row.dart';
 import 'widgets/feed_list.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 8: the General feed, shared by everyone on campus.
 class GeneralFeedScreen extends ConsumerWidget {
@@ -114,7 +115,7 @@ class _FindCommunityPromo extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(

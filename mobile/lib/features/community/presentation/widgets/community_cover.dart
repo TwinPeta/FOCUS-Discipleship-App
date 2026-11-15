@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/round_icon_button.dart';
 import '../../domain/community.dart';
 import 'community_cover_painter.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 /// The detail screen's 200px cover: vector art background, a back button,
 /// and a bottom-overlapping identity card.
@@ -65,7 +66,7 @@ class CommunityCover extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.amber,
+                    gradient: AppGradients.brand,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,

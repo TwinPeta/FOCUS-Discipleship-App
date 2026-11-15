@@ -13,6 +13,7 @@ import '../../community/presentation/providers/membership_provider.dart';
 import '../domain/user_profile.dart';
 import 'profile_providers.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 2b of the brief: "My profile".
 class MyProfileScreen extends ConsumerWidget {
@@ -94,7 +95,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -311,7 +312,7 @@ class _SpecificCommunitySlot extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.amber,
+              gradient: AppGradients.brand,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -394,7 +395,7 @@ class _ActivityRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.amber,
+          gradient: AppGradients.brand,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

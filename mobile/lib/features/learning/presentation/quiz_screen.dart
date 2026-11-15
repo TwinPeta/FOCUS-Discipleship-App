@@ -16,6 +16,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../../pathways/presentation/widgets/pathway_progress_bar.dart';
 import '../domain/learning_models.dart';
 import 'learning_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 35: Quiz (`/quiz/:id`). With `review: true` it replays the last
 /// attempt read-only ("Review my answers").
@@ -171,7 +172,7 @@ class _QuizViewState extends ConsumerState<_QuizView> {
             children: [
               Container(
                 decoration: const BoxDecoration(
-                  color: AppColors.amber,
+                  gradient: AppGradients.brand,
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(AppRadii.headerBottom),
                   ),

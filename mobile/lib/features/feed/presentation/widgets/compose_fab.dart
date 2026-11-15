@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/connectivity/connectivity_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 /// The amber "New post" button floating over both feeds. Disabled (faded,
 /// still visible) while offline.
@@ -30,7 +31,7 @@ class ComposeFab extends ConsumerWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: AppColors.amber,
+                gradient: AppGradients.brand,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.ink, width: 2.5),
                 boxShadow: AppShadows.hard(offset: const Offset(3, 3)),

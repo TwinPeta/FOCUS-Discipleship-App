@@ -20,6 +20,7 @@ import '../../messaging/presentation/content_report_screens.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
 import 'providers/testimony_providers.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Screen 16: Testimonies tab inside [CommunityShell].
 class TestimoniesScreen extends ConsumerWidget {
@@ -152,7 +153,9 @@ class _VideoTestimonyCard extends StatelessWidget {
                   Container(
                     height: 130,
                     width: double.infinity,
-                    color: AppColors.amber,
+                    decoration: const BoxDecoration(
+                      gradient: AppGradients.brand,
+                    ),
                   ),
                   const Positioned.fill(child: Center(child: _PlayButton())),
                   if (testimony.duration != null)

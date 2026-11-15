@@ -22,6 +22,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/media/photo_picker.dart';
 import '../../../core/media/upload_policy.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Only photos can be attached for now (see UploadPolicy); the video and
 /// document kinds stay so they can return later.
@@ -278,9 +279,11 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                       child: ElevatedButton(
                         onPressed: _canPost ? _submit : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.amber,
-                          disabledBackgroundColor: AppColors.amber.withValues(
-                            alpha: 0.4,
+                          backgroundColor: Colors.transparent,
+                          disabledBackgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          backgroundBuilder: AppGradients.buttonBackground(
+                            BorderRadius.circular(AppRadii.button),
                           ),
                           foregroundColor: AppColors.ink,
                           elevation: 0,

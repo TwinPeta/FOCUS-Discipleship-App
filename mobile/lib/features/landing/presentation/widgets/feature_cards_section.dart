@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'bold_style.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class _FeatureCardData {
   const _FeatureCardData({
@@ -76,7 +77,7 @@ class _FeatureCard extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.amber,
+              gradient: AppGradients.brand,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.ink, width: 2),
             ),

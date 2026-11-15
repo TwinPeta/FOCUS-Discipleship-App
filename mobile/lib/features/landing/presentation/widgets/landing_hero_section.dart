@@ -11,6 +11,7 @@ import 'bold_style.dart';
 import 'illustration_collage.dart';
 import '../../../../core/config/landing_videos.dart';
 import '../../../../core/utils/open_link.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class LandingHeroSection extends StatelessWidget {
   const LandingHeroSection({super.key, required this.onWatchStories});
@@ -21,7 +22,7 @@ class LandingHeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         border: Border(bottom: BorderSide(color: AppColors.ink, width: 2.5)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
