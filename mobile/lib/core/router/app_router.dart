@@ -59,6 +59,7 @@ import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
+import '../../features/search/presentation/search_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -425,6 +426,7 @@ final List<RouteBase> appRoutes = [
     path: '/badge/:id/earned',
     builder: (context, state) => BadgeEarnedScreen(badgeId: _id(state)),
   ),
+  GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
 ];
 
 class _Tab {
