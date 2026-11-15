@@ -12,13 +12,15 @@ import { getHomeRouteForRole, ROUTES } from "@/lib/constants/routes";
 import { isStaffRole } from "@/lib/permissions/roles";
 import { MemberStatus, type Role } from "@/types/enums";
 import type { Session } from "@/types/user";
-import { getServerSession } from "./session";
+import { getSessionState } from "./session";
 
 export async function requireStaff(): Promise<Session> {
-  const session = await getServerSession();
-  if (!session) {
-    redirect(ROUTES.login);
-  }
+  const state = await getSessionState();
+  if (state.status === "suspended") redirect(`${ROUTES.login}?error=suspended`);
+  if (state.status === "expired") redirect(`${ROUTES.login}?error=expired`);
+  if (state.status === "unavailable") redirect(`${ROUTES.login}?error=unavailable`);
+  if (state.status !== "ok") redirect(ROUTES.login);
+  const { session } = state;
 
   if (session.user.status === MemberStatus.Suspended) {
     redirect(`${ROUTES.login}?error=suspended`);

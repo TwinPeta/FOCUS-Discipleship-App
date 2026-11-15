@@ -7,7 +7,10 @@
  * STATUS: implemented
  */
 
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/features/auth/components/LoginForm";
+import { getServerSession } from "@/lib/auth/session";
+import { getHomeRouteForRole } from "@/lib/constants/routes";
 
 interface LoginPageProps {
   searchParams: Promise<{ returnTo?: string; error?: string }>;
@@ -15,6 +18,10 @@ interface LoginPageProps {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
+
+  // Someone who is already signed in has no reason to see the form (a stale cookie does not count: the API decides)
+  const session = await getServerSession();
+  if (session) redirect(getHomeRouteForRole(session.user.role));
 
   return (
     <div className="space-y-6">

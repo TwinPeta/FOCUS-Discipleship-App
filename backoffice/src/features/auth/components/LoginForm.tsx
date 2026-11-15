@@ -31,7 +31,11 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
   const [serverError, setServerError] = useState<string | null>(
     initialError === "suspended"
       ? "Your staff account has been suspended. Contact a system administrator."
-      : null,
+      : initialError === "expired"
+        ? "Your session has ended. Please sign in again."
+        : initialError === "unavailable"
+          ? "The server is not responding right now. Please try again shortly."
+          : null,
   );
 
   const {
