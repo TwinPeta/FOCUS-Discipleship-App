@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
 import '../router/navigation.dart';
@@ -52,7 +53,7 @@ class AmberHeaderScaffold extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: const BoxDecoration(
-              color: AppColors.amber,
+              gradient: AppGradients.brand,
               borderRadius: BorderRadius.vertical(
                 bottom: Radius.circular(AppRadii.headerBottom),
               ),

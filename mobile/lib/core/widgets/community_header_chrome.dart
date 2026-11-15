@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../features/community/presentation/widgets/community_cover_painter.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 import '../theme/app_text_styles.dart';
 import 'round_icon_button.dart';
 import 'scope_switch.dart';
@@ -54,7 +55,12 @@ class CommunityHeaderChrome extends StatelessWidget {
             ),
           ),
         ),
-        Container(color: AppColors.amber.withValues(alpha: 0.55)),
+        // Brand gradient over the cover art, translucent so the art shows.
+        Container(
+          decoration: BoxDecoration(
+            gradient: AppGradients.brand.withOpacity(0.6),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
           child: Column(
