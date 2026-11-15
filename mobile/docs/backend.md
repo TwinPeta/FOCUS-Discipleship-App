@@ -23,7 +23,7 @@ Running the API locally? It starts empty: create the first admin and add institu
 | Prayer wall (requests, "I prayed", replies) | Real. The server keeps anonymous authors anonymous, including replies by the owner |
 | Testimonies (share a story, review status) | Real. The "Encouraged" tap is remembered for this session only (no API yet) |
 | Resources, quizzes (scored on the server), pathways, My activity and badges, landing stories | Real. Quiz answers are not revealed after each question (the server never sends them) |
-| Messaging (inbox, conversations, under-18 limit), blocking, reports, data export | Real. New messages appear when a screen loads (no live socket yet) |
+| Messaging (inbox, conversations, under-18 limit), blocking, reports, data export | Real. Live: new messages and read receipts arrive over the realtime socket (`core/realtime/`) and refresh the inbox and the open conversation |
 | Notifications and their settings | Real. The server creates them (request decided, someone prayed, a reply, a response) |
 | Meetings: next meeting and history, RSVP, check-in | Real. Meetings are derived from the community's weekly schedule; check-in is open from 30 min before to 2 h after, judged by the **server's** clock |
 | Mentor moderation ("Reports to review"): keep, hide, warn author, escalate | Real. Reports on the same item form one case. Escalated cases go to the back office queue |
@@ -44,5 +44,8 @@ Running the API locally? It starts empty: create the first admin and add institu
 - Profile photo is not uploaded at sign-up or edit (the post and report photos are; profile photos need the same call wired into the join form).
 - Private reflections on devotionals are kept for the session only.
 - Email delivery of notifications is not sent yet (in-app only).
+- Push is local only: `core/push/push_service.dart` shows a phone notification (Android channel `fcu_general`) for each live `notification.created` while the app runs. Real push (app closed) needs a Firebase project, a server sender, and a `FirebasePushTokenSource`; `POST/DELETE /devices` registration is already wired.
+- The live `presence.updated` online count is stored (`liveOnlineCountsProvider`) but the community header still shows the placeholder count.
 - The school picker still uses the built-in list (`institution_data.dart`); names must exist in the API's institutions (the dev seed includes them, production needs them added in the back office).
 - Android release builds need `https://` (or a network security config for plain `http://`).
+- Notifications permission: the service and prompt exist (`AppPermission.notifications`) but nothing asks yet; B2.2 push should call `ensurePermission` before registering. The iOS `Podfile` (not in the repo yet) needs the permission_handler macros in `post_install` once generated.

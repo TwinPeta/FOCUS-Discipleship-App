@@ -158,6 +158,11 @@ class ApiClient {
     }
   }
 
+  /// Swaps the refresh token for a new pair, as a 401 would (the realtime
+  /// socket calls it on a 4401 close). False when there is no session, the
+  /// server refused it (tokens cleared) or the server can't be reached.
+  Future<bool> refreshSession() => _refresh();
+
   /// One refresh at a time; concurrent 401s share it.
   Future<bool> _refresh() {
     return _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);

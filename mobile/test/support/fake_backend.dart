@@ -106,6 +106,7 @@ List<Override> fakeBackend() => [
               dataSaver: dataSaver,
             ),
   ),
+  permissionServiceProvider.overrideWith((ref) => FakePermissionService()),
   connectivityServiceProvider.overrideWith((ref) {
     final service = FakeConnectivityService();
     ref.onDispose(service.dispose);

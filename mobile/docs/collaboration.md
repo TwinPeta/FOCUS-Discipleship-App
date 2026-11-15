@@ -86,8 +86,8 @@ Ownership is split by **feature folder**, so the two agents rarely edit the same
 | B1.1 unified composer | B | not started | |
 | B1.2 Q&A (ask, answers, write, questions to answer) | B | blocked: J1 (no question endpoints in `openapi.yaml`) | |
 | B1.3 search | B | done: client-side over existing `/communities` + members endpoints until J2 lands. **Agent A:** add a search icon to the Home/Communities header opening `/search` (see wiring.md) | see `git log --grep "B1.3"` |
-| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | B1.5 done (`git log --grep "B1.5"`); B1.4 blocked: J3 (server `POST /media` has no document purpose); B1.6 needs package approval (`permission_handler`) | |
-| B1.7 notifications workflow | B | done: 60 s unread polling, tap routing via server `target_route`, read/read-all sync, muted counts; API guide gap 6b fixed. Push (`/devices`) and realtime socket not built | see `git log --grep "B1.7"` |
+| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | B1.5 done (`git log --grep "B1.5"`); B1.4 blocked: J3 (server `POST /media` has no document purpose); B1.6 done (`git log --grep "B1.6"`) | |
+| B1.7 notifications workflow + B2.1 live updates + B2.2 push | B | done: 60 s unread polling (fallback), tap routing via server `target_route`, read/read-all sync, muted counts; API guide gap 6b fixed. B2.1: `/v1/realtime` socket (reconnect with backoff, 4401 refresh) refreshes notifications, inbox, threads, membership, presence. B2.2: local system notifications from live events; `POST/DELETE /devices` ready, needs Firebase + a server sender for closed-app push | see `git log --grep "B1.7"` and `--grep "B2.1"` |
 | J1-J5 backend endpoints | Joseph | not started | |
 
 ## 3. Claiming work (prevents double work)

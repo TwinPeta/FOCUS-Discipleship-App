@@ -45,6 +45,9 @@ dependencies:
   video_player: ^2.14.1
   youtube_player_iframe: ^6.0.2
   url_launcher: ^6.3.3
+  permission_handler: ^13.0.2
+  web_socket_channel: ^3.0.3
+  flutter_local_notifications: ^23.0.2
 
 dev_dependencies:
   flutter_test:

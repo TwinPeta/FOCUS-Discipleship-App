@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -8,8 +9,9 @@ import '../../../../core/widgets/sized_file_image.dart';
 import '../../../../core/media/photo_picker.dart';
 
 /// The Join form's 76px circular photo picker: dashed border, person icon,
-/// amber "+" badge. Tapping opens a gallery/camera sheet via image_picker.
-class JoinPhotoPicker extends StatelessWidget {
+/// amber "+" badge. Tapping opens a gallery/camera sheet, then [pickPhoto],
+/// which asks for the camera or photos permission first.
+class JoinPhotoPicker extends ConsumerWidget {
   const JoinPhotoPicker({
     super.key,
     required this.photoPath,
@@ -19,7 +21,7 @@ class JoinPhotoPicker extends StatelessWidget {
   final String? photoPath;
   final ValueChanged<String> onPhotoPicked;
 
-  Future<void> _showSourceSheet(BuildContext context) async {
+  Future<void> _showSourceSheet(BuildContext context, WidgetRef ref) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
@@ -42,14 +44,14 @@ class JoinPhotoPicker extends StatelessWidget {
     );
     if (source == null) return;
     if (!context.mounted) return;
-    final picked = await pickPhoto(context, source: source);
+    final picked = await pickPhoto(context, ref, source: source);
     if (picked != null) {
       onPhotoPicked(picked.path);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasPhoto = photoPath != null && photoPath!.isNotEmpty;
     return Column(
       children: [
@@ -57,7 +59,7 @@ class JoinPhotoPicker extends StatelessWidget {
           button: true,
           label: hasPhoto ? 'Change profile photo' : 'Add profile photo',
           child: GestureDetector(
-            onTap: () => _showSourceSheet(context),
+            onTap: () => _showSourceSheet(context, ref),
             child: SizedBox(
               width: 76,
               height: 76,
