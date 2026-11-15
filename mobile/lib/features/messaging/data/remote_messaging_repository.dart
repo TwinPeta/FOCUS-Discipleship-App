@@ -116,15 +116,20 @@ class RemoteMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<Message> sendMessage(String threadId, String text) async {
+  Future<Message> sendMessage(
+    String threadId,
+    String text, {
+    String? clientId,
+  }) async {
+    // One key per outgoing message: a retry reuses it (like posts and
+    // prayer requests, which key on the client-side id).
+    final key =
+        '$threadId-${clientId ?? DateTime.now().microsecondsSinceEpoch}';
     try {
       final json = objectOf(
         await _api.post(
           '/conversations/$threadId/messages',
-          headers: {
-            'Idempotency-Key':
-                '$threadId-${DateTime.now().microsecondsSinceEpoch}',
-          },
+          headers: {'Idempotency-Key': key},
           body: {'text': text},
         ),
       );

@@ -31,7 +31,9 @@ abstract class MessageRepository {
   Future<List<Message>> getMessages(String threadId);
 
   /// Throws [MessagingRestricted] when the under-18 limit applies.
-  Future<Message> sendMessage(String threadId, String text);
+  /// [clientId] stays the same when a failed send is retried, so the server
+  /// can drop the duplicate (Idempotency-Key).
+  Future<Message> sendMessage(String threadId, String text, {String? clientId});
 }
 
 /// One store behind both interfaces, so a sent message can update its
