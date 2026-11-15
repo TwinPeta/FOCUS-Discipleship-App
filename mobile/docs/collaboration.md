@@ -72,6 +72,24 @@ Ownership is split by **feature folder**, so the two agents rarely edit the same
 
 ---
 
+## Roadmap v2 (design refresh, from 2026-11-15)
+
+**Read `docs/roadmap_v2.md` first.** Phase 0 (A0.x) must land before any restyling. Claim task IDs here exactly like screens.
+
+| Task | Owner | Status | Commit |
+|---|---|---|---|
+| A0.1 font, A0.2 gradient tokens, A0.3 dark mode | A | not started | |
+| A1.1 bottom nav 4 tabs + Create menu | A | not started | |
+| A1.2 Home scroll, A1.3 Learn in General | A | not started | |
+| A1.4 count-only likes/comments, A1.5 video carousel | A | not started | |
+| A1.6 settings dedupe + appearance, A1.7 restyle | A | not started | |
+| B1.1 unified composer | B | not started | |
+| B1.2 Q&A (ask, answers, write, questions to answer) | B | not started | needs J1 |
+| B1.3 search | B | not started | needs J2 |
+| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | not started | B1.4 needs J3 |
+| B1.7 notifications workflow | B | not started | needs J4 |
+| J1-J5 backend endpoints | Joseph | not started | |
+
 ## 3. Claiming work (prevents double work)
 
 Before starting a screen, add or update its row in the table below, then commit and push **only that change** (`docs: claim screen NN`). Pull first. If the row is already claimed by the other agent, pick something else.
