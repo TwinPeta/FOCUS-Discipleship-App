@@ -138,7 +138,7 @@ Errors are RFC 7807 `application/problem+json` with a stable **`code`**. Branch 
 | `join_request.decided` | show the approved/declined screen without polling |
 | `notification.created` | bell dot |
 
-Everything is also available by polling REST, so the socket is an optimisation. **The app uses it** (`mobile/lib/core/realtime/`): it connects while signed in (`wss://<host>/v1/realtime?token=<access_token>`, built from `API_BASE_URL`), reconnects with 1, 2, 5, 10, 30 s backoff, refreshes the token once on a `4401` close, and disconnects on sign-out. `notification.created` refreshes the bell (the 60 s poll stays as a fallback) and shows a phone notification; `message.created`/`message.read` refresh the inbox and the open conversation; `join_request.decided` refreshes the membership; `presence.updated` is stored per community but not shown yet (the header still shows a placeholder count).
+Everything is also available by polling REST, so the socket is an optimisation. **The app uses it** (`mobile/lib/core/realtime/`): it connects while signed in (`wss://<host>/v1/realtime?token=<access_token>`, built from `API_BASE_URL`), reconnects with 1, 2, 5, 10, 30 s backoff, refreshes the token once on a `4401` close, and disconnects on sign-out. `notification.created` refreshes the bell (the 60 s poll stays as a fallback) and shows a phone notification; `message.created`/`message.read` refresh the inbox and the open conversation; `join_request.decided` (and a `request_approved`/`request_declined` `notification.created`) refreshes the membership, which is also re-read on the 60 s poll interval while a request is pending; `DELETE /join-requests/{requestId}` backs "Cancel request" on the community detail screen; `presence.updated` is stored per community but not shown yet (the header still shows a placeholder count).
 
 ---
 
@@ -177,7 +177,7 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | Media | create slot, complete, direct upload | `media_uploader` |
 | Devices | register / remove push token | — (push not built) |
 
-**Not called by the app today (4):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `DELETE /join-requests/{requestId}` (cancel a pending request), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`). `POST /devices` + `DELETE /devices/{deviceId}` are wired (`core/push/device_registration.dart`) but only fire once a push token source exists (Firebase); today the app has none.
+**Not called by the app today (3):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`). `POST /devices` + `DELETE /devices/{deviceId}` are wired (`core/push/device_registration.dart`) but only fire once a push token source exists (Firebase); today the app has none.
 
 ---
 

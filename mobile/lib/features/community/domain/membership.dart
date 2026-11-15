@@ -1,7 +1,7 @@
 enum MembershipStatus { none, pending, approved, rejected }
 
 /// Thrown when a membership change breaks the lifecycle
-/// none -> pending -> approved | rejected -> none.
+/// none -> pending -> approved | rejected | none (cancelled) -> none.
 class IllegalMembershipTransition implements Exception {
   const IllegalMembershipTransition(this.from, this.to);
 
@@ -61,6 +61,7 @@ class Membership {
     MembershipStatus.pending: {
       MembershipStatus.approved,
       MembershipStatus.rejected,
+      MembershipStatus.none, // the student cancels the request
     },
     MembershipStatus.approved: {MembershipStatus.none},
     MembershipStatus.rejected: {MembershipStatus.none},

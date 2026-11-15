@@ -57,7 +57,12 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
   /// Shows the approved/declined result once, the first time the hub sees
   /// an unseen result (the screen itself marks it seen).
   void _maybeShowResult(Membership membership) {
-    if (_resultShown || !membership.hasUnseenResult) return;
+    if (!membership.hasUnseenResult) {
+      // Ready for the next result (a later request in the same session).
+      _resultShown = false;
+      return;
+    }
+    if (_resultShown) return;
     _resultShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

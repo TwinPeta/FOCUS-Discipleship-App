@@ -17,6 +17,10 @@ abstract class MembershipRepository {
   /// The super-mentor declines, optionally with a [message].
   Future<Membership> reject({String? message});
 
+  /// pending -> none: withdraw the pending request. Throws
+  /// [IllegalMembershipTransition] when nothing is pending.
+  Future<Membership> cancelRequest();
+
   /// approved -> none. Throws for any other status.
   Future<Membership> leave();
 

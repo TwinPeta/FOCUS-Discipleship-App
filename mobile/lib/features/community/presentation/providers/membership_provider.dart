@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/repository_providers.dart';
@@ -13,16 +15,54 @@ import '../../domain/user_role.dart';
 class MembershipController extends AsyncNotifier<Membership> {
   @override
   Future<Membership> build() async {
-    return ref.watch(membershipRepositoryProvider).getMembership();
+    final membership = await ref
+        .watch(membershipRepositoryProvider)
+        .getMembership();
+    // The `join_request.decided` socket event refreshes this at once; while
+    // a request is pending it is also re-checked on the notifications poll
+    // interval, so a decision missed by the socket (app in the background,
+    // socket reconnecting) still shows up.
+    if (membership.status == MembershipStatus.pending) {
+      final timer = Timer(
+        ref.watch(notificationPollIntervalProvider),
+        ref.invalidateSelf,
+      );
+      ref.onDispose(timer.cancel);
+    }
+    return membership;
   }
 
   Future<void> _write(Future<Membership> Function() call) async {
     state = AsyncValue.data(await call());
   }
 
-  Future<void> requestToJoin(String communityId) => _write(
-    () => ref.read(membershipRepositoryProvider).requestToJoin(communityId),
-  );
+  /// Community details and the specific list carry the caller's
+  /// `membership_status` / `can_request` and member counts.
+  void _refreshCommunities(String? communityId) {
+    if (communityId != null) ref.invalidate(communityByIdProvider(communityId));
+    ref.invalidate(specificCommunitiesProvider);
+  }
+
+  Future<void> requestToJoin(String communityId) async {
+    try {
+      await _write(
+        () => ref.read(membershipRepositoryProvider).requestToJoin(communityId),
+      );
+    } on MembershipLimitReached {
+      // The server knows a request or membership this state does not:
+      // show the real one, then let the screen explain.
+      ref.invalidateSelf();
+      rethrow;
+    }
+    _refreshCommunities(communityId);
+  }
+
+  /// Withdraws the pending request (`DELETE /join-requests/{id}`).
+  Future<void> cancelRequest() async {
+    final communityId = state.valueOrNull?.communityId;
+    await _write(() => ref.read(membershipRepositoryProvider).cancelRequest());
+    _refreshCommunities(communityId);
+  }
 
   /// Debug-only prototype hook standing in for real super-mentor approval.
   Future<void> debugApprove() async {
@@ -37,8 +77,11 @@ class MembershipController extends AsyncNotifier<Membership> {
     ref.invalidate(notificationsProvider);
   }
 
-  Future<void> leave() =>
-      _write(() => ref.read(membershipRepositoryProvider).leave());
+  Future<void> leave() async {
+    final communityId = state.valueOrNull?.communityId;
+    await _write(() => ref.read(membershipRepositoryProvider).leave());
+    _refreshCommunities(communityId);
+  }
 
   Future<void> markResultSeen() =>
       _write(() => ref.read(membershipRepositoryProvider).markResultSeen());

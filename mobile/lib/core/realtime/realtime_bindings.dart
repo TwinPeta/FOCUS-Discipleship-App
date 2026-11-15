@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/community/presentation/providers/community_providers.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/messaging/presentation/providers/messaging_providers.dart';
 import '../../features/notifications/presentation/notification_providers.dart';
@@ -48,6 +49,11 @@ void applyRealtimeEvent(Ref<Object?> ref, RealtimeEvent event) {
   switch (event.name) {
     case 'notification.created':
       ref.invalidate(notificationsProvider); // the 60 s poll stays as fallback
+      // The decision's notification also means the membership changed.
+      final type = event.data['type'];
+      if (type == 'request_approved' || type == 'request_declined') {
+        ref.invalidate(membershipProvider);
+      }
       unawaited(ref.read(pushServiceProvider).handle(event.data));
     case 'message.created' || 'message.read':
       ref.invalidate(threadsProvider);
@@ -61,6 +67,9 @@ void applyRealtimeEvent(Ref<Object?> ref, RealtimeEvent event) {
     case 'join_request.decided':
       ref.invalidate(membershipProvider);
       ref.invalidate(notificationsProvider);
+      final id = event.data['community_id'];
+      if (id is String) ref.invalidate(communityByIdProvider(id));
+      ref.invalidate(specificCommunitiesProvider);
     case 'presence.updated':
       final id = event.data['community_id'];
       final count = event.data['online_count'];

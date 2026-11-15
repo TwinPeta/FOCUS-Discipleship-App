@@ -95,7 +95,11 @@ class RemoteMembershipRepository implements MembershipRepository {
       await _api.post('/communities/$communityId/join-requests');
     } on ApiException catch (e) {
       if (e.code == 'community_limit_reached') {
-        throw MembershipLimitReached(current.communityId);
+        // The server knows a request or membership this session did not
+        // (made on another device, or approved meanwhile): reload it so the
+        // caller can show the real state.
+        final fresh = await _load();
+        throw MembershipLimitReached(fresh.communityId);
       }
       rethrow;
     }
@@ -111,6 +115,33 @@ class RemoteMembershipRepository implements MembershipRepository {
   /// Declining happens on the super-mentor's side; nothing to do here.
   @override
   Future<Membership> reject({String? message}) => _load();
+
+  /// `DELETE /join-requests/{id}` for the pending request. If the
+  /// super-mentor decided it meanwhile (`409 not_pending`), the decision is
+  /// returned instead.
+  @override
+  Future<Membership> cancelRequest() async {
+    final current = await _load();
+    if (current.status != MembershipStatus.pending) {
+      throw IllegalMembershipTransition(current.status, MembershipStatus.none);
+    }
+    final pending = itemsOf(await _api.get('/me/join-requests')).where(
+      (j) =>
+          j['status'] == 'pending' &&
+          (objectOf(j['community'])?['id'] as String?) == current.communityId,
+    );
+    if (pending.isNotEmpty) {
+      try {
+        await _api.delete('/join-requests/${pending.first['id']}');
+      } on ApiException catch (e) {
+        if (e.code != 'not_pending') rethrow;
+        return _load();
+      }
+    }
+    _sawPending = false;
+    _unseenResult = false;
+    return _load();
+  }
 
   @override
   Future<Membership> leave() async {

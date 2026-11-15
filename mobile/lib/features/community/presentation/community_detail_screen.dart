@@ -55,6 +55,18 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
     context.go('/communities');
   }
 
+  Future<void> _cancelRequest() async {
+    if (_isRequesting) return;
+    setState(() => _isRequesting = true);
+    try {
+      await ref.read(membershipProvider.notifier).cancelRequest();
+    } catch (_) {
+      if (mounted) showErrorSnack(context);
+    } finally {
+      if (mounted) setState(() => _isRequesting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final communityAsync = ref.watch(communityByIdProvider(widget.communityId));
@@ -74,6 +86,9 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
           final alreadyHasMembership =
               membership.status == MembershipStatus.pending ||
               membership.status == MembershipStatus.approved;
+          final pendingHere =
+              membership.status == MembershipStatus.pending &&
+              membership.communityId == widget.communityId;
 
           return SafeArea(
             top: false,
@@ -163,6 +178,9 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
                   isLoading: _isRequesting,
                   disabled: alreadyHasMembership,
                   onPressed: alreadyHasMembership ? null : _requestToJoin,
+                  onCancel: pendingHere && !_isRequesting
+                      ? _cancelRequest
+                      : null,
                 ),
               ],
             ),
@@ -208,11 +226,15 @@ class _RequestBar extends StatelessWidget {
     required this.isLoading,
     required this.disabled,
     required this.onPressed,
+    this.onCancel,
   });
 
   final bool isLoading;
   final bool disabled;
   final VoidCallback? onPressed;
+
+  /// Shown while the caller's pending request is for this community.
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +263,8 @@ class _RequestBar extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
+          if (onCancel != null)
+            TextButton(onPressed: onCancel, child: const Text('Cancel request')),
         ],
       ),
     );

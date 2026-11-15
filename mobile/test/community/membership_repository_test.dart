@@ -37,6 +37,7 @@ void main() {
         (MembershipStatus.none, MembershipStatus.pending),
         (MembershipStatus.pending, MembershipStatus.approved),
         (MembershipStatus.pending, MembershipStatus.rejected),
+        (MembershipStatus.pending, MembershipStatus.none),
         (MembershipStatus.approved, MembershipStatus.none),
         (MembershipStatus.rejected, MembershipStatus.none),
       };
