@@ -6,10 +6,14 @@ plugins {
 
 android {
     namespace = "com.example.focus_1"
-    compileSdk = flutter.compileSdkVersion
+    // 37: flutter_local_notifications and permission_handler require it
+    // (compile-time only; minSdk/targetSdk are unchanged).
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications needs Java 8+ library desugaring.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         // Needed by flutter_local_notifications.
@@ -66,6 +70,10 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 dependencies {
