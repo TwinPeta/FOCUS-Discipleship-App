@@ -21,10 +21,13 @@ Roadmap: `docs/roadmap_v2.md`. Design: `mobile/FCU Student  Review.html` (open i
 - Flutter: `F:\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat`, `PUB_CACHE=F:/.pub-cache`; formatter is `dart format`.
 - Record decisions in your final report; Agent A copies them into `docs/progress.md`.
 
-## Status
-| Sub-agent | Status | Commit(s) | Notes |
-|---|---|---|---|
-| theme | running | | |
-| nav | running | | |
-| feed | running | | |
-| merge + full test + push | waiting | | |
+## Status (2026-11-15)
+| Sub-agent | Status | Notes |
+|---|---|---|
+| theme | merged (d7692c0) | Bricolage Grotesque, brand gradient, dark theme; screens using fixed AppColors still light in dark mode (A1.7) |
+| nav | merged (e7159da) | Home / Communities / Create / Messages / Profile; Create menu; Settings Appearance |
+| feed | merged (1e71570, b005b9a) | count-only reactions; Learn in General |
+| extra | merged | in-app YouTube player for landing videos; updates from GitHub Releases (needs FCU_KEYSTORE_* secrets from a repo admin) |
+| merge + full test + push | done | analyze 0, 338 tests passing, goldens regenerated |
+
+**Repo admin to do (one time):** add secrets `FCU_KEYSTORE_BASE64`, `FCU_KEYSTORE_PASSWORD`, `FCU_KEY_ALIAS`, `FCU_KEY_PASSWORD` (a keystore made with `keytool -genkeypair -v -keystore fcu.keystore -alias fcu -keyalg RSA -keysize 2048 -validity 10000`). Until then each APK is signed with a throwaway key: uninstall before installing a newer one.
