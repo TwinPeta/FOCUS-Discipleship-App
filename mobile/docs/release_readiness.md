@@ -7,6 +7,9 @@ Checked by Agent A on 2026-11-14. No P0 found, so nothing was changed for this r
 - **Debug on purpose:** the app runs on fake repositories, and testers need the debug scenario screen (long-press "Version" on Settings, or the name on My profile) to approve join requests, go offline, receive a warning, suspend the account, and so on.
 - CI runs analyze and all tests except the goldens. Golden images are rendered on Windows and fonts differ on Linux, so run `flutter test test/golden` locally.
 
+## Tester downloads
+Push a tag `mobile-vX.Y.Z[-beta.N]` (or run "Mobile release" in Actions) and `.github/workflows/mobile-release.yml` publishes a GitHub pre-release with a release APK and an unsigned iOS `.ipa`, using `mobile/docs/release-notes/<version>.md` as the text. The iOS file must be sideloaded until a TestFlight pipeline exists.
+
 ## Debug-only code paths (all guarded)
 | Path | Guard |
 |---|---|
