@@ -7,6 +7,7 @@ import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
+import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
 import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/role_badge.dart';
@@ -46,88 +47,98 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
   Widget build(BuildContext context) {
     final threadsAsync = ref.watch(threadsProvider);
 
-    return AmberHeaderScaffold(
-      title: 'Messages',
-      headerAction: RoundIconButton(
-        icon: Icons.edit_outlined,
-        semanticLabel: 'New message',
-        onPressed: () => context.push('/messages/new'),
-      ),
-      headerExtra: SearchField(
-        controller: _searchController,
-        hintText: 'Search a member or message',
-        onChanged: (value) => setState(() => _query = value),
-      ),
-      body: threadsAsync.when(
-        loading: () => const Skeleton(showHeader: false),
-        error: (error, stackTrace) =>
-            ErrorView(onRetry: () => ref.invalidate(threadsProvider)),
-        data: (threads) {
-          var filtered = threads;
-          if (_roleFilter == _RoleFilter.mentors) {
-            filtered = filtered
-                .where((t) => t.participant.role != PersonRole.member)
-                .toList();
-          } else if (_roleFilter == _RoleFilter.members) {
-            filtered = filtered
-                .where((t) => t.participant.role == PersonRole.member)
-                .toList();
-          }
-          if (_query.trim().isNotEmpty) {
-            final q = _query.trim().toLowerCase();
-            filtered = filtered
-                .where(
-                  (t) =>
-                      t.participant.name.toLowerCase().contains(q) ||
-                      t.lastMessage.toLowerCase().contains(q),
-                )
-                .toList();
-          }
+    return Scaffold(
+      bottomNavigationBar: const AppBottomNav(current: AppTab.messages),
+      body: AmberHeaderScaffold(
+        title: 'Messages',
+        headerAction: RoundIconButton(
+          icon: Icons.edit_outlined,
+          semanticLabel: 'New message',
+          onPressed: () => context.push('/messages/new'),
+        ),
+        headerExtra: SearchField(
+          controller: _searchController,
+          hintText: 'Search a member or message',
+          onChanged: (value) => setState(() => _query = value),
+        ),
+        body: threadsAsync.when(
+          loading: () => const Skeleton(showHeader: false),
+          error: (error, stackTrace) =>
+              ErrorView(onRetry: () => ref.invalidate(threadsProvider)),
+          data: (threads) {
+            var filtered = threads;
+            if (_roleFilter == _RoleFilter.mentors) {
+              filtered = filtered
+                  .where((t) => t.participant.role != PersonRole.member)
+                  .toList();
+            } else if (_roleFilter == _RoleFilter.members) {
+              filtered = filtered
+                  .where((t) => t.participant.role == PersonRole.member)
+                  .toList();
+            }
+            if (_query.trim().isNotEmpty) {
+              final q = _query.trim().toLowerCase();
+              filtered = filtered
+                  .where(
+                    (t) =>
+                        t.participant.name.toLowerCase().contains(q) ||
+                        t.lastMessage.toLowerCase().contains(q),
+                  )
+                  .toList();
+            }
 
-          if (threads.isEmpty) {
-            return EmptyState(
-              icon: Icons.chat_bubble_outline_rounded,
-              title: 'No messages yet',
-              body: 'Say hello to a mentor or a member of your community.',
-              actionLabel: 'Find a member',
-              onAction: () => context.push('/messages/new'),
-            );
-          }
-
-          final header = <Widget>[
-            const OfflineBanner(),
-            const SizedBox(height: 4),
-            FilterChips<_RoleFilter>(
-              options: const [
-                FilterChipOption(label: 'All', value: _RoleFilter.all),
-                FilterChipOption(label: 'Mentors', value: _RoleFilter.mentors),
-                FilterChipOption(label: 'Members', value: _RoleFilter.members),
-              ],
-              value: _roleFilter,
-              onChanged: (value) => setState(() => _roleFilter = value),
-            ),
-            const SizedBox(height: 16),
-          ];
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            itemCount: header.length + (filtered.isEmpty ? 1 : filtered.length),
-            itemBuilder: (context, index) {
-              if (index < header.length) return header[index];
-              if (filtered.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.search_off_rounded,
-                  title: 'No matches',
-                  body: 'No messages match your search.',
-                );
-              }
-              final thread = filtered[index - header.length];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _ThreadRow(key: ValueKey(thread.id), thread: thread),
+            if (threads.isEmpty) {
+              return EmptyState(
+                icon: Icons.chat_bubble_outline_rounded,
+                title: 'No messages yet',
+                body: 'Say hello to a mentor or a member of your community.',
+                actionLabel: 'Find a member',
+                onAction: () => context.push('/messages/new'),
               );
-            },
-          );
-        },
+            }
+
+            final header = <Widget>[
+              const OfflineBanner(),
+              const SizedBox(height: 4),
+              FilterChips<_RoleFilter>(
+                options: const [
+                  FilterChipOption(label: 'All', value: _RoleFilter.all),
+                  FilterChipOption(
+                    label: 'Mentors',
+                    value: _RoleFilter.mentors,
+                  ),
+                  FilterChipOption(
+                    label: 'Members',
+                    value: _RoleFilter.members,
+                  ),
+                ],
+                value: _roleFilter,
+                onChanged: (value) => setState(() => _roleFilter = value),
+              ),
+              const SizedBox(height: 16),
+            ];
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              itemCount:
+                  header.length + (filtered.isEmpty ? 1 : filtered.length),
+              itemBuilder: (context, index) {
+                if (index < header.length) return header[index];
+                if (filtered.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No matches',
+                    body: 'No messages match your search.',
+                  );
+                }
+                final thread = filtered[index - header.length];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ThreadRow(key: ValueKey(thread.id), thread: thread),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
