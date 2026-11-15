@@ -60,6 +60,7 @@ import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
+import '../../features/resources/presentation/general_resources_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -319,6 +320,11 @@ final List<RouteBase> appRoutes = [
         path: 'compose',
         builder: (context, state) =>
             const ComposerScreen(scope: PostScope.general),
+      ),
+      // "Learn": General community resources (no membership needed).
+      GoRoute(
+        path: 'resources',
+        builder: (context, state) => const GeneralResourcesScreen(),
       ),
     ],
   ),

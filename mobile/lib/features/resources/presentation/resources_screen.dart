@@ -11,11 +11,21 @@ import 'providers/resource_providers.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
 
-/// Screen 7: Resources tab inside [CommunityShell].
+/// Screen 7: Resources tab inside [CommunityShell], also the body of the
+/// General community's "Learn" screen ([GeneralResourcesScreen]).
 class ResourcesScreen extends ConsumerStatefulWidget {
-  const ResourcesScreen({super.key, required this.communityId});
+  const ResourcesScreen({
+    super.key,
+    required this.communityId,
+    this.inCommunityShell = true,
+  });
 
   final String communityId;
+
+  /// When true, viewers opened from here fall back to this community's
+  /// Resources tab on Back (deep link). The General community has no tab, so
+  /// its Learn screen passes false.
+  final bool inCommunityShell;
 
   @override
   ConsumerState<ResourcesScreen> createState() => _ResourcesScreenState();
@@ -46,7 +56,12 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
 
   void _openResource(Resource resource) {
     // Completion (and its activity) is recorded by the viewer itself.
-    context.push(resourceRoute(resource, communityId: widget.communityId));
+    context.push(
+      resourceRoute(
+        resource,
+        communityId: widget.inCommunityShell ? widget.communityId : null,
+      ),
+    );
   }
 
   @override

@@ -182,18 +182,12 @@ class _PostBody extends ConsumerWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 18,
                 children: [
-                  PostActionButton(
-                    icon: post.likedByMe
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    label: _count(post.likeCount, 'like'),
-                    highlighted: post.likedByMe,
+                  PostActionButton.like(
+                    liked: post.likedByMe,
+                    count: post.likeCount,
                     onTap: online ? onLike : null,
                   ),
-                  PostActionButton(
-                    icon: Icons.mode_comment_outlined,
-                    label: _count(post.commentCount, 'comment'),
-                  ),
+                  PostActionButton.comment(count: post.commentCount),
                 ],
               ),
             ],
@@ -238,8 +232,6 @@ class _PostBody extends ConsumerWidget {
     );
   }
 }
-
-String _count(int n, String noun) => '$n $noun${n == 1 ? '' : 's'}';
 
 void _openMember(BuildContext context, String id) =>
     context.push('/members/$id');
