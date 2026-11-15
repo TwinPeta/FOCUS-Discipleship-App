@@ -84,10 +84,10 @@ Ownership is split by **feature folder**, so the two agents rarely edit the same
 | A1.4 count-only likes/comments (in progress, sprint A1), A1.5 video carousel (deferred) | A | in progress | |
 | A1.6 settings dedupe + appearance (in progress, sprint A1), A1.7 restyle (after theme) | A | in progress | |
 | B1.1 unified composer | B | not started | |
-| B1.2 Q&A (ask, answers, write, questions to answer) | B | not started | needs J1 |
-| B1.3 search | B | not started | needs J2 |
-| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | not started | B1.4 needs J3 |
-| B1.7 notifications workflow | B | not started | needs J4 |
+| B1.2 Q&A (ask, answers, write, questions to answer) | B | blocked: J1 (no question endpoints in `openapi.yaml`) | |
+| B1.3 search | B | in progress (2026-11-15): client-side over existing `/communities` + members endpoints until J2 lands | |
+| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | B1.5 in progress; B1.4 blocked: J3 (server `POST /media` has no document purpose); B1.6 needs package approval (`permission_handler`) | |
+| B1.7 notifications workflow | B | in progress: unread polling (bell dot), tap routing, read sync on existing `/me/notifications*`; plus API guide gap 6b (message idempotency key) | |
 | J1-J5 backend endpoints | Joseph | not started | |
 
 ## 3. Claiming work (prevents double work)
