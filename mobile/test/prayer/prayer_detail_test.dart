@@ -1,17 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:focus_1/features/notifications/data/notification_repository.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
-import 'package:focus_1/features/prayer/data/prayer_repository.dart';
 import 'package:focus_1/features/prayer/domain/prayer_request.dart';
 import 'package:focus_1/features/prayer/presentation/prayer_request_screen.dart';
-import 'package:focus_1/features/testimony/data/testimony_repository.dart';
 import 'package:focus_1/features/testimony/domain/testimony.dart';
 import 'package:focus_1/features/testimony/presentation/testimony_screen.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 void main() {
   group('prayer responses and anonymity', () {

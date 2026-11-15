@@ -19,7 +19,6 @@ import '../../features/auth/data/remote_auth_repository.dart';
 import '../../features/profile/data/remote_profile_repository.dart';
 import '../config/api_config.dart';
 import '../network/api_client.dart';
-import '../utils/password_policy.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
 import '../../features/community/data/people_directory.dart';
@@ -48,210 +47,135 @@ import '../../features/pathways/data/pathway_repository.dart';
 import '../../features/prayer/data/prayer_repository.dart';
 import '../../features/prayer/data/remote_prayer_repository.dart';
 import '../../features/testimony/data/remote_testimony_repository.dart';
+import '../../features/profile/data/institution_repository.dart';
 import '../../features/profile/data/profile_repository.dart';
 import '../../features/resources/data/resource_repository.dart';
 import '../../features/settings/data/privacy_repository.dart';
 import '../../features/testimony/data/testimony_repository.dart';
 
-/// One client (and one set of tokens) for the whole app. Only used when the
-/// app is built with `--dart-define=API_BASE_URL=...` (see [ApiConfig]).
+/// One client (and one set of tokens) for the whole app. Every repository
+/// below talks to the real API through it (see [ApiConfig]).
 final apiClientProvider = Provider<ApiClient>((ref) {
   final client = ApiClient(baseUrl: ApiConfig.baseUrl);
   ref.onDispose(client.close);
   return client;
 });
 
-/// What the sign-up draft stores in place of the password: a digest for the
-/// fake backend, the password itself (in memory only, until the register
-/// call) for the real one.
-final passwordSealProvider = Provider<String Function(String)>((ref) {
-  if (ApiConfig.useRemote) return (password) => password;
-  return fakePasswordDigest;
-});
+/// What the sign-up draft stores in place of the password: the password
+/// itself, in memory only, until the register call.
+final passwordSealProvider = Provider<String Function(String)>(
+  (ref) =>
+      (password) => password,
+);
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteAuthRepository(ref.watch(apiClientProvider));
-  }
-  return FakeAuthRepository();
-});
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => RemoteAuthRepository(ref.watch(apiClientProvider)),
+);
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    final auth = ref.watch(authRepositoryProvider);
-    if (auth is RemoteAuthRepository) {
-      return RemoteProfileRepository(ref.watch(apiClientProvider), auth);
-    }
+  final auth = ref.watch(authRepositoryProvider);
+  if (auth is! RemoteAuthRepository) {
+    throw StateError('The profile needs the API-backed sign-in');
   }
-  return FakeProfileRepository();
+  return RemoteProfileRepository(ref.watch(apiClientProvider), auth);
 });
 
 /// People met through the API, so a tapped name can open a profile.
+final institutionRepositoryProvider = Provider<InstitutionRepository>(
+  (ref) => RemoteInstitutionRepository(ref.watch(apiClientProvider)),
+);
+
 final peopleDirectoryProvider = Provider<PeopleDirectory>(
   (ref) => PeopleDirectory(),
 );
 
-final communityRepositoryProvider = Provider<CommunityRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteCommunityRepository(ref.watch(apiClientProvider));
-  }
-  return FakeCommunityRepository();
-});
+final communityRepositoryProvider = Provider<CommunityRepository>(
+  (ref) => RemoteCommunityRepository(ref.watch(apiClientProvider)),
+);
 
-final memberRepositoryProvider = Provider<MemberRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteMemberRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(peopleDirectoryProvider),
-      isBlocked: ref.read(moderationRepositoryProvider).isBlocked,
-    );
-  }
-  return FakeMemberRepository(
-    roster: ref.read(communityRepositoryProvider).getMembers,
+final memberRepositoryProvider = Provider<MemberRepository>(
+  (ref) => RemoteMemberRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(peopleDirectoryProvider),
     isBlocked: ref.read(moderationRepositoryProvider).isBlocked,
-  );
-});
+  ),
+);
 
-final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteNotificationRepository(ref.watch(apiClientProvider));
-  }
-  return FakeNotificationRepository();
-});
+final notificationRepositoryProvider = Provider<NotificationRepository>(
+  (ref) => RemoteNotificationRepository(ref.watch(apiClientProvider)),
+);
 
-final membershipRepositoryProvider = Provider<MembershipRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteMembershipRepository(ref.watch(apiClientProvider));
-  }
-  return FakeMembershipRepository(
-    notifications: ref.read(notificationRepositoryProvider),
-  );
-});
+final membershipRepositoryProvider = Provider<MembershipRepository>(
+  (ref) => RemoteMembershipRepository(ref.watch(apiClientProvider)),
+);
 
-final joinRequestRepositoryProvider = Provider<JoinRequestRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteJoinRequestRepository(ref.watch(apiClientProvider));
-  }
-  return FakeJoinRequestRepository(
-    notifications: ref.read(notificationRepositoryProvider),
-  );
-});
+final joinRequestRepositoryProvider = Provider<JoinRequestRepository>(
+  (ref) => RemoteJoinRequestRepository(ref.watch(apiClientProvider)),
+);
 
-final warningRepositoryProvider = Provider<WarningRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteWarningRepository(
-      ref.watch(apiClientProvider),
-      myId: () => ref.read(authControllerProvider).valueOrNull?.accountId,
-    );
-  }
-  return FakeWarningRepository();
-});
+final warningRepositoryProvider = Provider<WarningRepository>(
+  (ref) => RemoteWarningRepository(
+    ref.watch(apiClientProvider),
+    myId: () => ref.read(authControllerProvider).valueOrNull?.accountId,
+  ),
+);
 
-final suspensionRepositoryProvider = Provider<SuspensionRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteSuspensionRepository(ref.watch(apiClientProvider));
-  }
-  return FakeSuspensionRepository();
-});
+final suspensionRepositoryProvider = Provider<SuspensionRepository>(
+  (ref) => RemoteSuspensionRepository(ref.watch(apiClientProvider)),
+);
 
 final moderationQueueRepositoryProvider = Provider<ModerationQueueRepository>(
-  (ref) => ApiConfig.useRemote
-      ? RemoteModerationQueueRepository(ref.watch(apiClientProvider))
-      : FakeModerationQueueRepository(
-          notifications: ref.read(notificationRepositoryProvider),
-          warnings: ref.read(warningRepositoryProvider),
-        ),
+  (ref) => RemoteModerationQueueRepository(ref.watch(apiClientProvider)),
 );
 
 final mediaUploaderProvider = Provider<MediaUploader>(
   (ref) => MediaUploader(ref.watch(apiClientProvider)),
 );
 
-final postRepositoryProvider = Provider<PostRepository>((ref) {
-  final moderation = ref.read(moderationQueueRepositoryProvider);
-  final blocks = ref.read(moderationRepositoryProvider);
-  if (ApiConfig.useRemote) {
-    return RemotePostRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(mediaUploaderProvider),
-      ref.watch(peopleDirectoryProvider),
-      isHidden: moderation.isHidden,
-    );
-  }
-  return FakePostRepository(
-    isHidden: moderation.isHidden,
-    isBlocked: blocks.isBlocked,
-  );
-});
+final postRepositoryProvider = Provider<PostRepository>(
+  (ref) => RemotePostRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(mediaUploaderProvider),
+    ref.watch(peopleDirectoryProvider),
+    isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+  ),
+);
 
-final storiesRepositoryProvider = Provider<StoriesRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteStoriesRepository(ref.watch(apiClientProvider));
-  }
-  return FakeStoriesRepository();
-});
+final storiesRepositoryProvider = Provider<StoriesRepository>(
+  (ref) => RemoteStoriesRepository(ref.watch(apiClientProvider)),
+);
 
-final resourceRepositoryProvider = Provider<ResourceRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteResourceRepository(ref.watch(apiClientProvider));
-  }
-  return FakeResourceRepository();
-});
+final resourceRepositoryProvider = Provider<ResourceRepository>(
+  (ref) => RemoteResourceRepository(ref.watch(apiClientProvider)),
+);
 
-final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
-  final moderation = ref.read(moderationQueueRepositoryProvider);
-  final blocks = ref.read(moderationRepositoryProvider);
-  if (ApiConfig.useRemote) {
-    return RemotePrayerRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(peopleDirectoryProvider),
-      isHidden: moderation.isHidden,
-    );
-  }
-  return FakePrayerRepository(
-    isHidden: moderation.isHidden,
-    isBlocked: blocks.isBlocked,
-    notifications: ref.read(notificationRepositoryProvider),
-  );
-});
+final prayerRepositoryProvider = Provider<PrayerRepository>(
+  (ref) => RemotePrayerRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(peopleDirectoryProvider),
+    isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+  ),
+);
 
-final testimonyRepositoryProvider = Provider<TestimonyRepository>((ref) {
-  final moderation = ref.read(moderationQueueRepositoryProvider);
-  final blocks = ref.read(moderationRepositoryProvider);
-  if (ApiConfig.useRemote) {
-    return RemoteTestimonyRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(peopleDirectoryProvider),
-      isHidden: moderation.isHidden,
-    );
-  }
-  return FakeTestimonyRepository(
-    isHidden: moderation.isHidden,
-    isBlocked: blocks.isBlocked,
-  );
-});
+final testimonyRepositoryProvider = Provider<TestimonyRepository>(
+  (ref) => RemoteTestimonyRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(peopleDirectoryProvider),
+    isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+  ),
+);
 
-final pathwayRepositoryProvider = Provider<PathwayRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemotePathwayRepository(ref.watch(apiClientProvider));
-  }
-  return FakePathwayRepository();
-});
+final pathwayRepositoryProvider = Provider<PathwayRepository>(
+  (ref) => RemotePathwayRepository(ref.watch(apiClientProvider)),
+);
 
-final messagingRepositoryProvider = Provider<MessagingRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteMessagingRepository(
-      ref.watch(apiClientProvider),
-      myId: () => ref.read(authControllerProvider).valueOrNull?.accountId,
-      isRestricted: () => ref.read(messagingRestrictedProvider),
-    );
-  }
-  // Read lazily so the store survives profile/guardian changes.
-  return FakeMessagingRepository(
+final messagingRepositoryProvider = Provider<MessagingRepository>(
+  (ref) => RemoteMessagingRepository(
+    ref.watch(apiClientProvider),
+    myId: () => ref.read(authControllerProvider).valueOrNull?.accountId,
     isRestricted: () => ref.read(messagingRestrictedProvider),
-    isBlocked: ref.read(moderationRepositoryProvider).isBlocked,
-  );
-});
+  ),
+);
 
 final threadRepositoryProvider = Provider<ThreadRepository>((ref) {
   return ref.watch(messagingRepositoryProvider);
@@ -261,58 +185,34 @@ final messageRepositoryProvider = Provider<MessageRepository>((ref) {
   return ref.watch(messagingRepositoryProvider);
 });
 
-final reportRepositoryProvider = Provider<ReportRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteReportRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(mediaUploaderProvider),
-    );
-  }
-  return FakeReportRepository(
-    moderation: ref.read(moderationQueueRepositoryProvider),
-  );
-});
+final reportRepositoryProvider = Provider<ReportRepository>(
+  (ref) => RemoteReportRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(mediaUploaderProvider),
+  ),
+);
 
-final moderationRepositoryProvider = Provider<ModerationRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteModerationRepository(
-      ref.watch(apiClientProvider),
-      ref.watch(peopleDirectoryProvider),
-      currentUserId: () =>
-          ref.read(authControllerProvider).valueOrNull?.accountId,
-    );
-  }
-  return FakeModerationRepository(
+final moderationRepositoryProvider = Provider<ModerationRepository>(
+  (ref) => RemoteModerationRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(peopleDirectoryProvider),
     currentUserId: () =>
         ref.read(authControllerProvider).valueOrNull?.accountId,
-  );
-});
+  ),
+);
 
-final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteActivityRepository(ref.watch(apiClientProvider));
-  }
-  return FakeActivityRepository();
-});
+final activityRepositoryProvider = Provider<ActivityRepository>(
+  (ref) => RemoteActivityRepository(ref.watch(apiClientProvider)),
+);
 
-final learningRepositoryProvider = Provider<LearningRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteLearningRepository(ref.watch(apiClientProvider));
-  }
-  return FakeLearningRepository();
-});
+final learningRepositoryProvider = Provider<LearningRepository>(
+  (ref) => RemoteLearningRepository(ref.watch(apiClientProvider)),
+);
 
-final meetingRepositoryProvider = Provider<MeetingRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemoteMeetingRepository(ref.watch(apiClientProvider));
-  }
-  final communities = ref.read(communityRepositoryProvider);
-  return FakeMeetingRepository(communityById: communities.getCommunityById);
-});
+final meetingRepositoryProvider = Provider<MeetingRepository>(
+  (ref) => RemoteMeetingRepository(ref.watch(apiClientProvider)),
+);
 
-final privacyRepositoryProvider = Provider<PrivacyRepository>((ref) {
-  if (ApiConfig.useRemote) {
-    return RemotePrivacyRepository(ref.watch(apiClientProvider));
-  }
-  return FakePrivacyRepository();
-});
+final privacyRepositoryProvider = Provider<PrivacyRepository>(
+  (ref) => RemotePrivacyRepository(ref.watch(apiClientProvider)),
+);

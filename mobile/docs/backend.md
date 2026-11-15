@@ -1,17 +1,17 @@
 # Connecting the app to the backend
 
-The app runs on **fake data by default** (tests, offline demo). Give it the API address at build time and it switches to the real backend:
+The app has no fake or demo data: every screen reads and writes the real API (`https://apis.focusuganda.org/v1` unless you say otherwise). To point a build somewhere else, give it the API address at build time:
 
 ```bash
 # Android emulator talking to the API on your Mac
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/v1
 # iOS simulator
 flutter run --dart-define=API_BASE_URL=http://localhost:4000/v1
-# Phone testing / release against the server
-flutter build apk --dart-define=API_BASE_URL=https://apis.focusuganda.org/v1
+# Staging server
+flutter build apk --dart-define=API_BASE_URL=https://staging-api.focusuganda.org/v1
 ```
 
-Start the API with `SEED_DEMO_DATA=true` (see `api/README.md`) for demo accounts, e.g. `student@fcu.test` (or username `gracen`) with `Password123!`.
+Running the API locally? It starts empty: create the first admin and add institutions and communities in the back office (see `api/README.md`). The Flutter tests use in-memory doubles from `test/support/fakes/`; none of that ships in the app.
 
 ## What is connected
 
@@ -31,10 +31,11 @@ Start the API with `SEED_DEMO_DATA=true` (see `api/README.md`) for demo accounts
 
 ## How it is wired
 
-- `core/config/api_config.dart`: `API_BASE_URL` switch.
+- `core/config/api_config.dart`: the API address (`API_BASE_URL`, production by default).
 - `core/network/api_client.dart`: bearer auth, one refresh on 401, errors as `ApiException`. Tokens are **in memory only**, so closing the app signs the user out (the app has no secure storage yet, by decision).
-- `core/providers/repository_providers.dart`: picks the fake or remote repository. Tests keep using the fakes.
-- When the backend is on, the sign-up draft holds the password itself in memory until register (the fake backend holds a digest instead). It is never stored or logged.
+- `core/providers/repository_providers.dart`: every repository is the API-backed one. Tests swap them for the doubles in `test/support/fakes/` through `fakeBackend()` (`test/support/fake_backend.dart`).
+- The sign-up draft holds the password itself in memory until register. It is never stored or logged.
+- Video plays through `video_player` from the resource's `stream_url`. The online/offline banner pings the API's `/health`. The school picker reads `/lookups/institutions`.
 
 ## Known gaps
 

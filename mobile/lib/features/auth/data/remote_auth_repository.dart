@@ -57,13 +57,11 @@ class RemoteAuthRepository implements AuthRepository {
   @override
   Future<AuthSession> signIn(String email, String password) async {
     try {
-      final json =
-          await _api.post(
-                '/auth/login',
-                auth: false,
-                body: {'identifier': email.trim(), 'password': password},
-              )
-              as Map<String, dynamic>;
+      final json = await _api.post(
+        '/auth/login',
+        auth: false,
+        body: {'identifier': email.trim(), 'password': password},
+      ) as Map<String, dynamic>;
       _storeTokens(json);
       _identifier = email.trim();
       return _sessionFrom(json['user'] as Map<String, dynamic>, _key(email));
@@ -141,11 +139,7 @@ class RemoteAuthRepository implements AuthRepository {
       await _api.post(
         '/auth/otp/verify',
         auth: false,
-        body: {
-          'destination': key,
-          'code': code,
-          'purpose': 'verify_contact',
-        },
+        body: {'destination': key, 'code': code, 'purpose': 'verify_contact'},
       );
       _verified.add(key);
       _failures.remove(key);
@@ -192,31 +186,29 @@ class RemoteAuthRepository implements AuthRepository {
 
   /// Creates the account with the details collected during sign-up, signs
   /// in, and returns the profile the server stored.
-  Future<UserProfile> register(UserProfile profile, String institutionId) async {
+  Future<UserProfile> register(
+    UserProfile profile,
+    String institutionId,
+  ) async {
     final pending = _pending;
     if (pending == null) throw const SignUpIncomplete('password');
-    final json =
-        await _api.post(
-              '/auth/register',
-              auth: false,
-              body: {
-                'full_name': profile.fullName.trim(),
-                'username': profile.username.trim().toLowerCase(),
-                'birthdate': dateOnly(profile.birthdate),
-                'country': countryCodeOf(profile.country),
-                'email': pending.email,
-                if (profile.phone.trim().isNotEmpty)
-                  'phone': profile.phone.trim(),
-                'institution_type': institutionTypeToApi(
-                  profile.institutionType,
-                ),
-                'institution_id': institutionId,
-                'password': pending.password,
-                'accepted_terms': pending.consent.participationAccepted,
-                'accepted_code_of_conduct': pending.consent.charterAccepted,
-              },
-            )
-            as Map<String, dynamic>;
+    final json = await _api.post(
+      '/auth/register',
+      auth: false,
+      body: {
+        'full_name': profile.fullName.trim(),
+        'username': profile.username.trim().toLowerCase(),
+        'birthdate': dateOnly(profile.birthdate),
+        'country': countryCodeOf(profile.country),
+        'email': pending.email,
+        if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
+        'institution_type': institutionTypeToApi(profile.institutionType),
+        'institution_id': institutionId,
+        'password': pending.password,
+        'accepted_terms': pending.consent.participationAccepted,
+        'accepted_code_of_conduct': pending.consent.charterAccepted,
+      },
+    ) as Map<String, dynamic>;
     _storeTokens(json);
     _identifier = pending.email;
     _pending = null;

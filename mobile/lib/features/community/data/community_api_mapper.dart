@@ -84,7 +84,9 @@ Community communityFromApi(Map<String, dynamic> j) {
     id: j['id'] as String,
     name: (j['name'] as String?) ?? '',
     initials: (j['initials'] as String?) ?? '',
-    type: j['type'] == 'general' ? CommunityType.general : CommunityType.specific,
+    type: j['type'] == 'general'
+        ? CommunityType.general
+        : CommunityType.specific,
     institutionId: (institution?['id'] as String?) ?? '',
     description: (j['description'] as String?) ?? '',
     meetingDay: day == null
@@ -121,8 +123,8 @@ JoinRequest joinRequestFromApi(Map<String, dynamic> j) {
     studentName: (user['full_name'] as String?) ?? '',
     username: (user['username'] as String?) ?? '',
     institution: (institution?['name'] as String?) ?? '',
-    requestedAt: DateTime.tryParse((j['created_at'] as String?) ?? '') ??
-        DateTime.now(),
+    requestedAt:
+        DateTime.tryParse((j['created_at'] as String?) ?? '') ?? DateTime.now(),
     status: status,
     message: j['note'] as String?,
   );

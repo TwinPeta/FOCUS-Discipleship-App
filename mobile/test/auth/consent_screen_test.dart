@@ -8,12 +8,13 @@ import 'package:focus_1/features/auth/presentation/consent_screen.dart';
 import 'package:focus_1/features/auth/presentation/providers/auth_providers.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fake_backend.dart';
 
 void main() {
   testWidgets('Join my campus needs both required boxes, all start unticked', (
     tester,
   ) async {
-    final container = ProviderContainer();
+    final container = fakeContainer();
     addTearDown(container.dispose);
     container.read(signUpControllerProvider.notifier).setDetails(testProfile);
     await tester.pumpWidget(

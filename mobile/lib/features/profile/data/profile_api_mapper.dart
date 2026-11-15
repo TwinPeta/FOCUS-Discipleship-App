@@ -15,8 +15,9 @@ String countryNameOf(String code) {
 String institutionTypeToApi(InstitutionType t) =>
     t == InstitutionType.university ? 'university' : 'high_school';
 
-InstitutionType institutionTypeFromApi(String? t) =>
-    t == 'high_school' ? InstitutionType.highSchool : InstitutionType.university;
+InstitutionType institutionTypeFromApi(String? t) => t == 'high_school'
+    ? InstitutionType.highSchool
+    : InstitutionType.university;
 
 String dateOnly(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-'

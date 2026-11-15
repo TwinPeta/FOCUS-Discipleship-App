@@ -6,7 +6,6 @@ import 'package:focus_1/core/router/route_guards.dart';
 import 'package:focus_1/features/auth/domain/auth_models.dart';
 import 'package:focus_1/features/auth/presentation/sign_in_screen.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
-import 'package:focus_1/features/moderation/data/suspension_repository.dart';
 import 'package:focus_1/features/moderation/domain/suspension.dart';
 import 'package:focus_1/features/moderation/domain/warning.dart';
 import 'package:focus_1/features/moderation/presentation/account_suspended_screen.dart';
@@ -16,6 +15,7 @@ import 'package:focus_1/features/profile/domain/user_profile.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 final _now = DateTime(2026, 11, 14, 12);
 final _warning = Warning(

@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:focus_1/core/router/route_guards.dart';
 import 'package:focus_1/core/widgets/list_row_card.dart';
-import 'package:focus_1/features/activity/data/activity_repository.dart';
 import 'package:focus_1/features/auth/domain/auth_models.dart';
 import 'package:focus_1/features/community/domain/community.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
@@ -18,6 +17,7 @@ import 'package:focus_1/features/messaging/presentation/widgets/message_person_b
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 void main() {
   final now = DateTime(2026, 11, 14, 12);

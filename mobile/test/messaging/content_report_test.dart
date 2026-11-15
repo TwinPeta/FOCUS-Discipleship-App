@@ -7,11 +7,11 @@ import 'package:focus_1/features/community/domain/user_role.dart';
 import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/feed/data/post_repository.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
-import 'package:focus_1/features/messaging/data/report_repository.dart';
 import 'package:focus_1/features/messaging/domain/report.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 const _feed = '/community/growth-circle/feed';
 

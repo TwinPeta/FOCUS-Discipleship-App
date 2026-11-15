@@ -1,12 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/features/community/domain/user_role.dart';
-import 'package:focus_1/features/messaging/data/report_repository.dart';
 import 'package:focus_1/features/messaging/domain/report.dart';
-import 'package:focus_1/features/moderation/data/moderation_queue_repository.dart';
-import 'package:focus_1/features/moderation/data/warning_repository.dart';
 import 'package:focus_1/features/moderation/domain/moderation_case.dart';
-import 'package:focus_1/features/testimony/data/testimony_repository.dart';
+
+import '../support/fakes.dart';
 
 const _sm = UserRole.superMentor;
 const _community = 'growth-circle';

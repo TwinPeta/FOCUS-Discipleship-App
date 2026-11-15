@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_1/features/profile/data/profile_repository.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 void main() {
   FakeProfileRepository repo() =>

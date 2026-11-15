@@ -2,19 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/core/providers/repository_providers.dart';
-import 'package:focus_1/features/activity/data/activity_repository.dart';
 import 'package:focus_1/features/activity/domain/activity_event.dart';
 import 'package:focus_1/features/activity/domain/badge.dart';
 import 'package:focus_1/features/learning/data/learning_repository.dart';
 import 'package:focus_1/features/learning/domain/learning_models.dart';
-import 'package:focus_1/features/learning/domain/playback_controller.dart';
 import 'package:focus_1/features/learning/presentation/learning_providers.dart';
-import 'package:focus_1/features/pathways/data/pathway_repository.dart';
 import 'package:focus_1/features/pathways/domain/pathway_step.dart';
 import 'package:focus_1/features/pathways/presentation/providers/pathway_providers.dart';
 
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
+
 ProviderContainer _container() {
-  final c = ProviderContainer(
+  final c = fakeContainer(
     overrides: [
       learningRepositoryProvider.overrideWithValue(
         FakeLearningRepository(latency: Duration.zero),

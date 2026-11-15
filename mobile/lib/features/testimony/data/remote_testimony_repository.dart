@@ -86,7 +86,10 @@ class RemoteTestimonyRepository implements TestimonyRepository {
   }
 
   @override
-  Future<Testimony?> getTestimony(String id, {required String? viewerId}) async {
+  Future<Testimony?> getTestimony(
+    String id, {
+    required String? viewerId,
+  }) async {
     if (_isHidden(id)) return null;
     try {
       final json = objectOf(await _api.get('/testimonies/$id'));

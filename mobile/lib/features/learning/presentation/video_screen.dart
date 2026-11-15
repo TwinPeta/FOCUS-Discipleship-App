@@ -18,7 +18,7 @@ import 'widgets/viewer_parts.dart';
 /// Data saver preference (lower quality, no autoplay), shared by videos.
 final dataSaverProvider = StateProvider<bool>((ref) => false);
 
-/// Screen 33: Video (`/resources/video/:id`). Playback is a fake behind
+/// Screen 33: Video (`/resources/video/:id`). Plays the stream through
 /// [PlaybackController]; the resume position is remembered.
 class VideoScreen extends ConsumerWidget {
   const VideoScreen({super.key, required this.id, required this.origin});
@@ -53,6 +53,7 @@ class _VideoView extends ConsumerStatefulWidget {
 
 class _VideoViewState extends ConsumerState<_VideoView> {
   PlaybackController? _player;
+  bool _unavailable = false;
   late final LearningRepository _repo = ref.read(learningRepositoryProvider);
 
   @override
@@ -65,11 +66,22 @@ class _VideoViewState extends ConsumerState<_VideoView> {
     final start = await _repo.getResumePosition(widget.video.item.id);
     if (!mounted) return;
     final dataSaver = ref.read(dataSaverProvider);
-    final player = FakePlaybackController(
-      duration: widget.video.duration,
-      start: start,
-      dataSaver: dataSaver,
-    )..addListener(_onTick);
+    final PlaybackController player;
+    try {
+      player = await ref.read(playbackFactoryProvider)(
+        widget.video,
+        start: start,
+        dataSaver: dataSaver,
+      );
+    } catch (_) {
+      if (mounted) setState(() => _unavailable = true);
+      return;
+    }
+    if (!mounted) {
+      player.dispose();
+      return;
+    }
+    player.addListener(_onTick);
     setState(() => _player = player);
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     if (!dataSaver && !reduceMotion) player.play();
@@ -108,6 +120,7 @@ class _VideoViewState extends ConsumerState<_VideoView> {
       itemId: item.id,
       hero: _Player(
         player: _player,
+        unavailable: _unavailable,
         onBack: () => leaveViewer(context, widget.origin),
       ),
       chips: viewerChips('Video', topic: item.topicLabel),
@@ -159,9 +172,14 @@ String _clock(Duration d) =>
 
 /// 230px player: back button, central play/pause, progress bar and time.
 class _Player extends StatelessWidget {
-  const _Player({required this.player, required this.onBack});
+  const _Player({
+    required this.player,
+    required this.onBack,
+    this.unavailable = false,
+  });
 
   final PlaybackController? player;
+  final bool unavailable;
   final VoidCallback onBack;
 
   @override
@@ -176,6 +194,18 @@ class _Player extends StatelessWidget {
       color: AppColors.honey,
       child: Stack(
         children: [
+          if (p != null) Positioned.fill(child: p.surface),
+          if (unavailable)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  'This video can\'t be played right now. Try again later.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.cardTitle,
+                ),
+              ),
+            ),
           Positioned(
             top: 12,
             left: 12,

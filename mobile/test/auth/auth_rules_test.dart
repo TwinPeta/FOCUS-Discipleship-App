@@ -11,10 +11,11 @@ import 'package:focus_1/features/auth/presentation/providers/auth_providers.dart
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/messaging/data/messaging_repository.dart';
-import 'package:focus_1/features/profile/data/profile_repository.dart';
 import 'package:focus_1/features/profile/domain/user_profile.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 Consent _consent({bool charter = true, bool participation = true}) => Consent(
   charterAccepted: charter,
@@ -33,7 +34,7 @@ void main() {
     });
 
     test('the sign-up draft keeps a digest, never the password', () {
-      final c = ProviderContainer();
+      final c = fakeContainer();
       addTearDown(c.dispose);
       c.read(signUpControllerProvider.notifier).setPassword('letters1234');
       final digest = c.read(signUpControllerProvider).passwordDigest!;
@@ -213,7 +214,7 @@ void main() {
       'sign-up of a minor -> restricted until the guardian confirms',
       () async {
         final auth = FakeAuthRepository(latency: Duration.zero);
-        final c = ProviderContainer(
+        final c = fakeContainer(
           overrides: [
             authRepositoryProvider.overrideWith((ref) => auth),
             profileRepositoryProvider.overrideWith(

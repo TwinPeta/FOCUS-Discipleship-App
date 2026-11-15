@@ -1,15 +1,15 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/core/providers/repository_providers.dart';
-import 'package:focus_1/features/messaging/data/messaging_repository.dart';
-import 'package:focus_1/features/messaging/data/moderation_repository.dart';
 import 'package:focus_1/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:focus_1/features/messaging/presentation/providers/moderation_providers.dart';
 
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
+
 void main() {
   test('sending a message appends it and updates the thread preview', () async {
-    final container = ProviderContainer(
+    final container = fakeContainer(
       overrides: [
         messagingRepositoryProvider.overrideWith(
           (ref) => FakeMessagingRepository(),
@@ -38,7 +38,7 @@ void main() {
   });
 
   test('marking a thread read clears its unread count', () async {
-    final container = ProviderContainer(
+    final container = fakeContainer(
       overrides: [
         messagingRepositoryProvider.overrideWith(
           (ref) => FakeMessagingRepository(),
@@ -58,7 +58,7 @@ void main() {
   });
 
   test('blocking a user hides their thread from the inbox', () async {
-    final container = ProviderContainer(
+    final container = fakeContainer(
       overrides: [
         messagingRepositoryProvider.overrideWith(
           (ref) => FakeMessagingRepository(),

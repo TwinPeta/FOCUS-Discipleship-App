@@ -120,15 +120,21 @@ void main() {
       );
       await expectLater(
         api.get('/me'),
-        throwsA(isA<ApiException>().having((e) => e.isNetwork, 'network', true)),
+        throwsA(
+          isA<ApiException>().having((e) => e.isNetwork, 'network', true),
+        ),
       );
     });
   });
 
   group('RemoteAuthRepository', () {
-    RemoteAuthRepository repo(MockClientHandler handler) => RemoteAuthRepository(
-      ApiClient(baseUrl: 'https://api.test/v1', client: MockClient(handler)),
-    );
+    RemoteAuthRepository repo(MockClientHandler handler) =>
+        RemoteAuthRepository(
+          ApiClient(
+            baseUrl: 'https://api.test/v1',
+            client: MockClient(handler),
+          ),
+        );
 
     test('signIn stores tokens and returns the account', () async {
       final auth = repo((request) async {
@@ -149,46 +155,49 @@ void main() {
       );
     });
 
-    test('email code: wrong then verified; sign-up needs the email verified', () async {
-      var verifyCalls = 0;
-      final auth = repo((request) async {
-        if (request.url.path.endsWith('/otp/verify')) {
-          verifyCalls++;
-          return verifyCalls == 1
-              ? _json(400, {'code': 'otp_invalid'})
-              : _json(204, null);
-        }
-        return _json(202, null);
-      });
-      final consent = Consent(
-        charterAccepted: true,
-        participationAccepted: true,
-        mentorContactAllowed: false,
-        acceptedAt: DateTime(2026),
-      );
-      await expectLater(
-        auth.createAccount(
+    test(
+      'email code: wrong then verified; sign-up needs the email verified',
+      () async {
+        var verifyCalls = 0;
+        final auth = repo((request) async {
+          if (request.url.path.endsWith('/otp/verify')) {
+            verifyCalls++;
+            return verifyCalls == 1
+                ? _json(400, {'code': 'otp_invalid'})
+                : _json(204, null);
+          }
+          return _json(202, null);
+        });
+        final consent = Consent(
+          charterAccepted: true,
+          participationAccepted: true,
+          mentorContactAllowed: false,
+          acceptedAt: DateTime(2026),
+        );
+        await expectLater(
+          auth.createAccount(
+            email: 'grace@fcu.test',
+            passwordDigest: 'Password1234',
+            consent: consent,
+          ),
+          throwsA(isA<SignUpIncomplete>()),
+        );
+
+        await auth.sendVerificationCode('grace@fcu.test');
+        final wrong = await auth.verifyCode('grace@fcu.test', '111111');
+        expect(wrong.status, OtpStatus.wrong);
+        expect(wrong.attemptsLeft, OtpVerifier.maxAttempts - 1);
+        final ok = await auth.verifyCode('grace@fcu.test', '123456');
+        expect(ok.status, OtpStatus.verified);
+        expect(await auth.isEmailVerified('Grace@fcu.test'), isTrue);
+
+        final created = await auth.createAccount(
           email: 'grace@fcu.test',
           passwordDigest: 'Password1234',
           consent: consent,
-        ),
-        throwsA(isA<SignUpIncomplete>()),
-      );
-
-      await auth.sendVerificationCode('grace@fcu.test');
-      final wrong = await auth.verifyCode('grace@fcu.test', '111111');
-      expect(wrong.status, OtpStatus.wrong);
-      expect(wrong.attemptsLeft, OtpVerifier.maxAttempts - 1);
-      final ok = await auth.verifyCode('grace@fcu.test', '123456');
-      expect(ok.status, OtpStatus.verified);
-      expect(await auth.isEmailVerified('Grace@fcu.test'), isTrue);
-
-      final created = await auth.createAccount(
-        email: 'grace@fcu.test',
-        passwordDigest: 'Password1234',
-        consent: consent,
-      );
-      expect(created.email, 'grace@fcu.test');
-    });
+        );
+        expect(created.email, 'grace@fcu.test');
+      },
+    );
   });
 }

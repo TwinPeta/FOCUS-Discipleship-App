@@ -9,6 +9,8 @@ import 'package:focus_1/features/feed/presentation/widgets/compose_fab.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 final _probe = FutureProvider.family<int, String>((ref, key) {
   final calls = ref.read(_calls);
@@ -24,7 +26,7 @@ void main() {
   group('loadWithOfflineCache', () {
     test('online loads and saves; offline serves the saved copy', () async {
       final net = FakeConnectivityService();
-      final c = ProviderContainer(
+      final c = fakeContainer(
         overrides: [connectivityServiceProvider.overrideWithValue(net)],
       );
       addTearDown(c.dispose);
@@ -40,7 +42,7 @@ void main() {
 
     test('offline with nothing saved still tries to load', () async {
       final net = FakeConnectivityService(online: false);
-      final c = ProviderContainer(
+      final c = fakeContainer(
         overrides: [connectivityServiceProvider.overrideWithValue(net)],
       );
       addTearDown(c.dispose);

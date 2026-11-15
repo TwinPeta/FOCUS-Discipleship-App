@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/activity/data/activity_repository.dart';
 import 'package:focus_1/features/activity/domain/activity_event.dart';
+
+import '../support/fakes.dart';
 
 void main() {
   test(

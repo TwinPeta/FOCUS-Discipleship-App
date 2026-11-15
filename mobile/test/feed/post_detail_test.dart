@@ -14,6 +14,8 @@ import 'package:focus_1/features/profile/presentation/profile_providers.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 class _FailingComments extends FakePostRepository {
   _FailingComments() : super(latency: Duration.zero);
@@ -29,7 +31,7 @@ ProviderContainer _container(
   PostRepository repo, {
   ModerationRepository? moderation,
 }) {
-  final c = ProviderContainer(
+  final c = fakeContainer(
     overrides: [
       postRepositoryProvider.overrideWith((ref) => repo),
       moderationRepositoryProvider.overrideWith(

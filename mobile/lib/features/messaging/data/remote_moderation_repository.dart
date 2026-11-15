@@ -7,11 +7,7 @@ import 'moderation_repository.dart';
 /// blocked ids is cached so [isBlocked] can stay synchronous; it is filled by
 /// [getBlockedUserIds] (the app asks for it before showing any list).
 class RemoteModerationRepository implements ModerationRepository {
-  RemoteModerationRepository(
-    this._api,
-    this._directory, {
-    String? Function()? currentUserId,
-  }) : _currentUserId = currentUserId;
+  RemoteModerationRepository(this._api, this._directory, {this._currentUserId});
 
   final ApiClient _api;
   final PeopleDirectory _directory;
@@ -39,8 +35,7 @@ class RemoteModerationRepository implements ModerationRepository {
     _blocked
       ..clear()
       ..addAll([
-        for (final j in items)
-          memberFromApi(j, remember: _directory).person.id,
+        for (final j in items) memberFromApi(j, remember: _directory).person.id,
       ]);
     return Set.unmodifiable(_blocked);
   }

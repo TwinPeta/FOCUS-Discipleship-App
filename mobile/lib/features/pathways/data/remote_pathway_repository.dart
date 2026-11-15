@@ -51,7 +51,8 @@ class RemotePathwayRepository implements PathwayRepository {
         ? raw.whereType<Map<String, dynamic>>().toList()
         : <Map<String, dynamic>>[];
     // Not started yet: the first step is the one to do next.
-    final notStarted = (detail['steps_completed'] as int?) == 0 &&
+    final notStarted =
+        (detail['steps_completed'] as int?) == 0 &&
         detail['status'] != 'locked';
     final pathwayId = detail['id'] as String;
     return [

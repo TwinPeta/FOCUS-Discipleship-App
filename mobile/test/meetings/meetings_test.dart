@@ -12,6 +12,7 @@ import 'package:focus_1/features/meetings/presentation/meetings_screen.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 const _community = Community(
   id: 'c',

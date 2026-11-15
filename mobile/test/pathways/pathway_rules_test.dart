@@ -4,6 +4,8 @@ import 'package:focus_1/features/pathways/data/pathway_repository.dart';
 import 'package:focus_1/features/pathways/domain/pathway.dart';
 import 'package:focus_1/features/pathways/domain/pathway_step.dart';
 
+import '../support/fakes.dart';
+
 void main() {
   test('pathways 3 and 4 stay locked until pathway 1 is completed', () async {
     final repo = FakePathwayRepository(latency: Duration.zero);
