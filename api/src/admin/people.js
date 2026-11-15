@@ -203,6 +203,7 @@ router.post('/members/:id/remind', C.allow(SYS, SM), (req, res, next) => {
     const u = loadMember(req);
     store.insert('events', { userId: u.id, type: 'reminder_sent', label: 'Check-in reminder sent', internal: true });
     if (u.email) mailer.notify(u.email, 'reminder', { name: u.fullName, from: req.user.fullName });
+    require('../utils/notify').notify(u.id, 'inactivity', { title: `${req.user.fullName} is checking in`, body: 'We would love to see you back in the community.', targetRoute: '/notifications', email: false });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

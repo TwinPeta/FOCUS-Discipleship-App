@@ -18,8 +18,10 @@ function deliver(a) {
   if (a.delivered || a.status !== 'published') return 0;
   a.delivered = true;
   const people = recipients(a);
+  const community = a.audienceType === 'community' ? (store.get('communities', a.communityId) || {}).name : 'All communities';
+  const vars = { community_name: community, item_title: a.title, message_preview: String(a.message || '').slice(0, 140) };
   for (const u of people) {
-    notify(u.id, 'announcement', { title: a.title, body: String(a.message || '').slice(0, 140), targetRoute: '/notifications' });
+    notify(u.id, 'announcement', { title: a.title, body: vars.message_preview, targetRoute: '/notifications', vars });
   }
   return people.length;
 }

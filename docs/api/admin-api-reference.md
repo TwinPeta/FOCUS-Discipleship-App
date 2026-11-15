@@ -4,7 +4,7 @@
 
 **Servers:** `https://apis.focusuganda.org/v1/admin` (Production), `http://localhost:4000/v1/admin` (Local development)
 
-**91 operations** in 21 groups.
+**93 operations** in 22 groups.
 
 ## Index
 
@@ -185,7 +185,7 @@ Data export and deletion requests, guardian consents
 | Method | Path | Summary | Auth |
 |---|---|---|---|
 | `GET` | [`/privacy/guardian-consents`](#get-privacy-guardian-consents) | Guardian consent records for minors | cookieAuth or bearerAuth |
-| `POST` | [`/privacy/guardian-consents/{id}/remind`](#post-privacy-guardian-consents-id-remind) | Remind guardian | cookieAuth or bearerAuth |
+| `POST` | [`/privacy/guardian-consents/{id}/remind`](#post-privacy-guardian-consents-id-remind) | Remind guardian (emails them when the app has their email address) | cookieAuth or bearerAuth |
 | `GET` | [`/privacy/data-requests`](#get-privacy-data-requests) | Export / deletion requests with deadlines | cookieAuth or bearerAuth |
 | `POST` | [`/privacy/data-requests/{id}/process`](#post-privacy-data-requests-id-process) | Complete a request. DELETION anonymises the account irreversibly | cookieAuth or bearerAuth |
 
@@ -245,6 +245,15 @@ File uploads for covers, thumbnails, videos, documents and story videos
 | `POST` | [`/media`](#post-media) | Start an upload (returns where to send the file and its permanent address) | cookieAuth or bearerAuth |
 | `PUT` | [`/media/{id}/upload`](#put-media-id-upload) | Send the file bytes (local-storage mode only; with R2 upload to the signed URL instead) | cookieAuth or bearerAuth |
 | `POST` | [`/media/{id}/complete`](#post-media-id-complete) | Confirm the upload arrived; returns the permanent file address | cookieAuth or bearerAuth |
+
+### Email
+
+Why email is (not) working: settings, recent sends, and a test message
+
+| Method | Path | Summary | Auth |
+|---|---|---|---|
+| `GET` | [`/email/status`](#get-email-status) | Email settings (never the key) and what happened to the last sends | cookieAuth or bearerAuth |
+| `POST` | [`/email/test`](#post-email-test) | Send a real test email and report Resend's own answer | cookieAuth or bearerAuth |
 
 ## Endpoints
 
@@ -1641,7 +1650,7 @@ Roles: SYSTEM_ADMIN, CONTENT_ADMIN
 
 **List notification rules and templates**
 
-Roles: SYSTEM_ADMIN, CONTENT_ADMIN
+Roles: SYSTEM_ADMIN, CONTENT_ADMIN. Each rule governs one trigger (join request approved/declined, new announcement, prayer received, report received, testimony published, inactivity reminder): whether it fires, through which channels, and the wording that people receive.
 
 - **Auth:** cookieAuth or bearerAuth
 - **Operation id:** `getNotificationsRules`
@@ -1659,7 +1668,7 @@ Roles: SYSTEM_ADMIN, CONTENT_ADMIN
 
 **Edit template / channels / enabled (≥1 channel required)**
 
-Roles: SYSTEM_ADMIN, CONTENT_ADMIN
+Roles: SYSTEM_ADMIN, CONTENT_ADMIN. The template is what recipients get: use {{member_name}}, {{community_name}}, {{item_title}} and {{message_preview}} (unknown placeholders become empty). A disabled rule, or a channel switched off, sends nothing through it. The "report received" rule is emailed to the community's super-mentor.
 
 - **Auth:** cookieAuth or bearerAuth
 - **Operation id:** `patchNotificationsRulesId`
@@ -1991,7 +2000,7 @@ Roles: SYSTEM_ADMIN
 <a id="post-privacy-guardian-consents-id-remind"></a>
 ### `POST /privacy/guardian-consents/{id}/remind`
 
-**Remind guardian**
+**Remind guardian (emails them when the app has their email address)**
 
 Roles: SYSTEM_ADMIN
 
@@ -2008,7 +2017,7 @@ Roles: SYSTEM_ADMIN
 
 | Status | Meaning | Body |
 |---|---|---|
-| `200` | OK | [Ok](#schema-ok) |
+| `200` | OK | [ReminderResult](#schema-reminderresult) |
 | `401` | RFC 7807 problem | [Problem](#schema-problem) |
 | `403` | RFC 7807 problem | [Problem](#schema-problem) |
 | `422` | RFC 7807 problem | [Problem](#schema-problem) |
@@ -2578,6 +2587,52 @@ Roles: staff (the uploader)
 | `404` | RFC 7807 problem | [Problem](#schema-problem) |
 | `409` | RFC 7807 problem | [Problem](#schema-problem) |
 
+## Email
+
+<a id="get-email-status"></a>
+### `GET /email/status`
+
+**Email settings (never the key) and what happened to the last sends**
+
+Roles: SYSTEM_ADMIN. `problems` lists settings that would break email (unverified sender, links to localhost); `recent` shows the last 20 sends with Resend's error when one failed.
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `getEmailStatus`
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [EmailStatus](#schema-emailstatus) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+
+<a id="post-email-test"></a>
+### `POST /email/test`
+
+**Send a real test email and report Resend's own answer**
+
+Roles: SYSTEM_ADMIN. Sends to `to`, or to the signed-in administrator when omitted. On failure the problem's `detail` is the provider's message (wrong key, unverified sender...).
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `postEmailTest`
+
+**Request body** (`application/json`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `to` | string · email |  |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [EmailTestResult](#schema-emailtestresult) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+| `422` | RFC 7807 problem | [Problem](#schema-problem) |
+| `502` | RFC 7807 problem | [Problem](#schema-problem) |
+
 ## Schemas
 
 <a id="schema-institution"></a>
@@ -2984,6 +3039,28 @@ Roles: staff (the uploader)
 | `status` | string | yes |  |
 | `url` | string | yes |  |
 
+<a id="schema-emailstatus"></a>
+### EmailStatus
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `configured` | boolean | yes |  |
+| `from` | string | yes |  |
+| `replyTo` | string \| null | yes | nullable |
+| `backofficeUrl` | string | yes |  |
+| `notificationEmails` | boolean | yes |  |
+| `problems` | array of string | yes |  |
+| `recent` | array of object | yes |  |
+
+<a id="schema-emailtestresult"></a>
+### EmailTestResult
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `ok` | boolean | yes |  |
+| `to` | string | yes |  |
+| `id` | string \| null | yes | nullable |
+
 <a id="schema-sessionlist"></a>
 ### SessionList
 
@@ -3186,6 +3263,14 @@ Type: object \| object \| object \| object
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `ok` | boolean |  |  |
+
+<a id="schema-reminderresult"></a>
+### ReminderResult
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `ok` | boolean | yes |  |
+| `emailed` | boolean | yes | false when only a phone number is on file, so nothing could be emailed |
 
 <a id="schema-object"></a>
 ### Object

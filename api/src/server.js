@@ -30,6 +30,7 @@ async function main() {
   realtime.attach(server);
   server.listen(config.port, () => console.log(`FCU API listening on ${config.baseUrl}/v1`));
 
+  setInterval(() => require('./utils/inactivity').run(), 6 * 3600e3).unref(); // "we miss you" reminders
   setInterval(() => require('./utils/announcements').publishDue(), 60e3).unref(); // scheduled announcements go out on time
   setInterval(() => require('./admin/sessions').sweep(), 3600e3).unref(); // forget expired back-office sessions
   setInterval(() => pg.flush(), 5000).unref(); // safety net for changes made outside a request (e.g. websocket handlers)

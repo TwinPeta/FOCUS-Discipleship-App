@@ -56,28 +56,123 @@ test('a notification is emailed to people who chose email, and respects their ch
   assert.equal(sent().length, 0);
 });
 
-test('staff can switch a trigger (or its email) off, prayer emails are off by default, and a kill switch exists', () => {
+test('staff rules: switching a trigger or channel off is honoured, prayer emails are off by default, and a kill switch exists', () => {
+  const { ruleOf } = require('../src/utils/rules');
   const s = user('student@fcu.test');
   const approve = () => notify(s.id, 'request_approved', { title: 'Approved', targetRoute: '/x' });
 
-  approve();
-  assert.equal(sent('student@fcu.test').length, 1, 'no rule yet: the default is to email');
+  assert.ok(approve(), 'in-app is created');
+  assert.equal(sent('student@fcu.test').length, 1, 'default: email is on');
 
   mailer.outbox.length = 0;
-  const rule = store.insert('notificationRules', { triggerKey: 'join_request_approved', enabled: true, channels: { inApp: true, email: false } });
-  approve();
-  assert.equal(sent().length, 0, 'the rule turns email off');
-  rule.channels.email = true; rule.enabled = false;
-  approve();
-  assert.equal(sent().length, 0, 'a disabled rule sends no email');
+  const rule = ruleOf('join_request_approved');
+  rule.channels.email = false;
+  assert.ok(approve(), 'email off: still in-app');
+  assert.equal(sent().length, 0);
+
+  rule.channels.email = true; rule.channels.inApp = false;
+  assert.equal(approve(), null, 'in-app off: no notification');
+  assert.equal(sent().length, 1, 'but the email still goes');
+
+  mailer.outbox.length = 0;
+  rule.enabled = false;
+  assert.equal(approve(), null);
+  assert.equal(sent().length, 0, 'a disabled rule sends nothing at all');
 
   notify(s.id, 'prayed_for_you', { title: 'Someone prayed for you', targetRoute: '/p' });
   assert.equal(sent().length, 0, 'prayer notifications are not emailed unless staff turn that on');
 
-  rule.enabled = true;
+  rule.enabled = true; rule.channels.inApp = true;
   config.notificationEmails = false;
   approve();
   assert.equal(sent().length, 0, 'NOTIFICATION_EMAILS=false stops all notification emails');
+});
+
+test('the wording staff write in a rule is what people receive (placeholders, old tags, and blanks)', () => {
+  const { ruleOf } = require('../src/utils/rules');
+  const s = user('student@fcu.test');
+  const rule = ruleOf('join_request_approved');
+  rule.template = { title: 'Hello {{member_name}}, welcome to {{community_name}}', message: 'See you at {{community}}. {{unknown}}' }; // {{community}} is an old tag
+  const n = notify(s.id, 'request_approved', { title: 'default', targetRoute: '/x', vars: { community_name: 'Growth Circle' } });
+  assert.equal(n.title, 'Hello Grace Namuli, welcome to Growth Circle');
+  assert.equal(n.body, 'See you at Growth Circle.');
+  const mail = sent('student@fcu.test', 'notification')[0];
+  assert.equal(mail.subject, 'Hello Grace Namuli, welcome to Growth Circle');
+  assert.match(mail.text, /See you at Growth Circle\./);
+  assert.ok(!/\{\{/.test(mail.text), 'no raw braces ever reach a person');
+});
+
+test('a student hears the outcome of their testimony review', async () => {
+  const token = await login('super@fcu.test');
+  const growth = store.first('communities', (c) => c.name === 'Growth Circle');
+  const author = user('student@fcu.test');
+  const make = () => store.insert('testimonies', { communityId: growth.id, authorId: author.id, title: 'God is faithful', body: 'My story', status: 'pending_review' });
+  const review = (t, body) => admin(token, 'POST', `/moderation/testimonies/${t.id}/review`, body);
+
+  let t = make();
+  assert.equal((await review(t, { action: 'APPROVE' })).status, 200);
+  let mail = sent('student@fcu.test', 'notification');
+  assert.equal(mail.length, 1);
+  assert.equal(mail[0].subject, 'Your story is live');
+  assert.match(mail[0].text, /Growth Circle/);
+  assert.ok(store.first('notifications', (n) => n.userId === author.id && n.title === 'Your story is live'));
+
+  mailer.outbox.length = 0;
+  t = make();
+  assert.equal((await review(t, { action: 'REQUEST_CHANGES', notes: 'Please remove the phone number' })).status, 200);
+  mail = sent('student@fcu.test', 'notification');
+  assert.equal(mail[0].subject, 'Your story needs a change');
+  assert.match(mail[0].text, /remove the phone number/);
+});
+
+test('a new report is emailed to the community\'s super-mentor unless staff switch that rule off', async () => {
+  const { ruleOf } = require('../src/utils/rules');
+  const growth = store.first('communities', (c) => c.name === 'Growth Circle');
+  const stu = user('student@fcu.test');
+  const post = store.insert('posts', { communityId: growth.id, authorId: user('david@fcu.test').id, text: 'hello', pinned: false, mediaIds: [] });
+  const file = async () => {
+    const login = await fetch(base + '/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: stu.email, password: DEMO_PASSWORD }) });
+    const { access_token: tok } = await login.json();
+    return fetch(base + '/v1/reports', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}`, 'Idempotency-Key': Math.random().toString(36).slice(2) }, body: JSON.stringify({ target_type: 'post', target_id: post.id, reason: 'spam_or_fake_profile' }) });
+  };
+  assert.equal((await file()).status, 201);
+  const mail = sent('super@fcu.test', 'notification');
+  assert.equal(mail.length, 1);
+  assert.equal(mail[0].subject, 'New report to review');
+  assert.match(mail[0].text, /spam or fake profile/);
+  assert.match(mail[0].text, /Growth Circle/);
+  assert.equal(sent('student@fcu.test').length, 0, 'the reporter is not emailed');
+
+  mailer.outbox.length = 0;
+  ruleOf('report_received').channels.email = false;
+  assert.equal((await file()).status, 201);
+  assert.equal(sent().length, 0);
+});
+
+test('inactive members get one "we miss you" per period, only if they opted in', () => {
+  const inactivity = require('../src/utils/inactivity');
+  const s = user('student@fcu.test');
+  const old = new Date(Date.now() - 20 * 864e5).toISOString();
+  const away = () => { store.col('users').forEach((u) => { u.lastActiveAt = u.platformRole === 'system_admin' ? new Date().toISOString() : old; }); store.col('events').length = 0; };
+
+  away();
+  assert.equal(inactivity.run(), 0, 'inactivity reminders are muted by default: nobody is told');
+  assert.equal(sent().length, 0);
+
+  store.col('users').forEach((u) => { delete u.lastInactivityNoticeAt; });
+  store.insert('notificationPrefs', { userId: s.id, channels: ['inApp', 'email'], muted: [] });
+  assert.equal(inactivity.run(), 1, 'the one person who opted in');
+  assert.equal(sent('student@fcu.test', 'notification')[0].subject, 'We miss you');
+  assert.ok(store.first('notifications', (n) => n.userId === s.id && n.type === 'inactivity'));
+  assert.equal(inactivity.run(), 0, 'not again within the same period');
+
+  // someone active recently is left alone; the staff-set threshold is respected
+  store.col('users').forEach((u) => { delete u.lastInactivityNoticeAt; });
+  s.lastActiveAt = new Date().toISOString();
+  assert.equal(inactivity.run(), 0);
+  s.lastActiveAt = new Date(Date.now() - 5 * 864e5).toISOString();
+  store.insert('settings', { key: 'inactivityDays', value: 3 });
+  assert.equal(inactivity.run(), 1);
 });
 
 test('a moderator warning is emailed even if the person turned email off', () => {

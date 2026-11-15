@@ -88,6 +88,13 @@ router.post('/moderation/testimonies/:id/review', C.allow(SYS, SM), (req, res, n
     t.reviewNotes = b.notes || null; t.reviewedBy = req.user.id;
     if (b.action === 'APPROVE') { t.approvedBy = req.user.id; t.publishedAt = store.now(); }
     C.audit(req, 'moderation_action', `Testimony ${b.action} · ${userName(t.authorId)}`, comm(t.communityId)?.name);
+    // The student hears the outcome: published (staff-editable wording), or what to change and why.
+    const { notify } = require('../utils/notify');
+    if (b.action === 'APPROVE') {
+      notify(t.authorId, 'announcement', { title: 'Your story is live', targetRoute: '/notifications', rule: 'testimony_published', vars: { community_name: comm(t.communityId)?.name, item_title: t.title } });
+    } else {
+      notify(t.authorId, 'announcement', { title: b.action === 'REJECT' ? 'About your story' : 'Your story needs a change', body: b.notes, targetRoute: '/notifications' });
+    }
     res.json(testDto(t));
   } catch (e) { next(e); }
 });

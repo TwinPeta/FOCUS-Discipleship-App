@@ -256,19 +256,7 @@ router.put('/stories/reorder', C.allow(SYS, CA), (req, res, next) => {
 });
 
 // ───────── notification rules & settings ─────────
-const RULE_SEED = [
-  ['join_request_approved', 'Join request approved', 'Student', 'Welcome to {{community}}', 'Your request was approved. See you at the next meeting!'],
-  ['join_request_declined', 'Join request declined', 'Student', 'About your join request', 'Your request to join {{community}} could not be approved.'],
-  ['inactivity_reminder', 'Inactivity reminder', 'Student', 'We miss you', 'It has been a while. Come back and continue your pathway.'],
-  ['new_announcement', 'New announcement', 'Student', '{{title}}', '{{message}}'],
-  ['prayer_received', 'Prayer received', 'Student', 'Someone prayed for you', 'A member of your community prayed for your request.'],
-  ['report_received', 'Report received', 'Staff', 'New report to review', 'A report was filed in {{community}}.'],
-  ['testimony_published', 'Testimony published', 'Student', 'Your story is live', 'Your testimony was approved and published.'],
-];
-function ensureRules() {
-  if (store.col('notificationRules').length) return;
-  RULE_SEED.forEach(([triggerKey, triggerLabel, recipient, title, message]) => store.insert('notificationRules', { triggerKey, triggerLabel, recipient, channels: { inApp: true, email: triggerKey !== 'prayer_received', sms: false }, enabled: true, template: { title, message }, updatedAt: store.now() }));
-}
+const { ensureRules } = require('../utils/rules');
 const ruleDto = (r) => ({ id: r.id, triggerKey: r.triggerKey, triggerLabel: r.triggerLabel, recipient: r.recipient, channels: r.channels, enabled: r.enabled, template: r.template, updatedAt: r.updatedAt });
 router.get('/notifications/rules', C.allow(SYS, CA), (_req, res) => { ensureRules(); res.json(C.list(store.col('notificationRules').map(ruleDto))); });
 router.patch('/notifications/rules/:id', C.allow(SYS, CA), (req, res, next) => {

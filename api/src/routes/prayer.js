@@ -51,7 +51,7 @@ router.put('/prayer-requests/:prayerRequestId/prayed', loadRequest, (req, res) =
     logEvent(req.user.id, 'prayed', 'Prayed for a request');
     // Never names the person who prayed, and the owner of an anonymous request is only ever addressed privately.
     if (req.prayer.authorId !== req.user.id) {
-      notify(req.prayer.authorId, 'prayed_for_you', { title: 'Someone prayed for you', targetRoute: `/prayer/${req.prayer.id}` });
+      notify(req.prayer.authorId, 'prayed_for_you', { title: 'Someone prayed for you', targetRoute: `/prayer/${req.prayer.id}`, vars: { community_name: (store.get('communities', req.prayer.communityId) || {}).name } });
     }
     if (store.where('prayed', (p) => p.userId === req.user.id).length >= 1) awardBadge(req.user.id, 'prayer_partner');
   }

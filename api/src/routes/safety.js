@@ -28,6 +28,16 @@ router.post('/reports', idempotency, (req, res, next) => {
       reporterId: req.user.id, targetType: b.target_type, targetId: b.target_id, reason: b.reason,
       details: b.details || '', evidenceMediaId: b.evidence_media_id || null, status: 'open',
     });
+    // Tell the people who review reports for that community (staff have no in-app inbox, so by email)
+    try {
+      const target = store.get(TARGETS[b.target_type], b.target_id) || {};
+      const cid = target.communityId || (store.get('posts', target.postId) || {}).communityId
+        || ((store.where('memberships', (m) => m.userId === b.target_id && m.status === 'member' && (store.get('communities', m.communityId) || {}).type === 'specific')[0] || {}).communityId);
+      const leaders = cid ? store.where('memberships', (m) => m.communityId === cid && m.role === 'super_mentor' && m.status === 'member').map((m) => m.userId) : [];
+      require('../utils/notify').emailStaff(leaders.filter((id) => id !== req.user.id), 'report_received', {
+        community_name: (store.get('communities', cid) || {}).name || 'the community', item_title: b.reason.replace(/_/g, ' '),
+      });
+    } catch (_e) { /* a report must never fail because of a notification */ }
     res.status(201).json({ id: r.id, status: 'open' });
   } catch (e) { next(e); }
 });

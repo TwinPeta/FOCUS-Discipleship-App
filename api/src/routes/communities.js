@@ -133,6 +133,7 @@ router.post('/join-requests/:requestId/decision', (req, res, next) => {
       title: b.decision === 'approve' ? 'Your request was approved' : 'Your request was not accepted',
       body: b.decision === 'approve' ? null : (j.note || null),
       targetRoute: b.decision === 'approve' ? '/request/approved' : '/request/declined',
+      vars: { community_name: (store.get('communities', j.communityId) || {}).name },
     });
     realtime.emit(j.userId, 'join_request.decided', { request_id: j.id, community_id: j.communityId, status: j.status });
     res.json(joinRequestDto(j, req.user.id));

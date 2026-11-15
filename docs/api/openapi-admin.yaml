@@ -995,7 +995,7 @@ paths:
       tags: [Notifications]
       operationId: getNotificationsRules
       summary: "List notification rules and templates"
-      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN. Each rule governs one trigger (join request approved/declined, new announcement, prayer received, report received, testimony published, inactivity reminder): whether it fires, through which channels, and the wording that people receive."
       responses:
         '200':
           description: OK
@@ -1009,7 +1009,7 @@ paths:
       tags: [Notifications]
       operationId: patchNotificationsRulesId
       summary: "Edit template / channels / enabled (\u22651 channel required)"
-      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN. The template is what recipients get: use {{member_name}}, {{community_name}}, {{item_title}} and {{message_preview}} (unknown placeholders become empty). A disabled rule, or a channel switched off, sends nothing through it. The \"report received\" rule is emailed to the community's super-mentor."
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
