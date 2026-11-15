@@ -13,7 +13,7 @@ const names = [
   'pathways', 'pathwayProgress',
   'resources', 'resourceProgress', 'quizzes', 'quizAttempts',
   'badges', 'userBadges', 'events',
-  'conversations', 'messages',
+  'conversations', 'messages', 'notifications', 'notificationPrefs', 'meetingAttendance',
   'reports', 'blocks',
   'media', 'devices', 'refreshTokens', 'otps', 'landingStories',
   // Back-office (staff) collections

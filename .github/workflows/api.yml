@@ -1,0 +1,52 @@
+# Runs the API tests, which include the OpenAPI checks: the specs must be valid, document every route,
+# and every response the tests see must match its documented schema.
+name: API tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'docs/api/**'
+      - '.github/workflows/api.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'docs/api/**'
+      - '.github/workflows/api.yml'
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma schema is in step with prisma/spec.js
+        run: |
+          npm run prisma:schema
+          git diff --exit-code prisma/schema.prisma
+
+      - name: Prisma schema is valid
+        run: npx prisma validate
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/fcu
+
+      - name: Test (including the OpenAPI contract)
+        run: npm test

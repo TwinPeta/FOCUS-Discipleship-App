@@ -7,10 +7,12 @@ const http = require('http');
 const { createApp } = require('../src/app');
 const { seed, DEMO_PASSWORD } = require('../src/db/seed');
 const store = require('../src/db/store');
+const contract = require('./helpers/contract');
 
 let server;
 let base;
 let ctx;
+let spec; // the mobile OpenAPI document: every response in this file is checked against it
 
 const call = async (method, path, { token, body, headers } = {}) => {
   const res = await fetch(base + path, {
@@ -19,19 +21,27 @@ const call = async (method, path, { token, body, headers } = {}) => {
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : null };
+  const out = { status: res.status, body: text ? JSON.parse(text) : null };
+  if (spec) contract.check(spec, method, path, out.status, out.body);
+  return out;
 };
 const login = async (email) =>
   (await call('POST', '/v1/auth/login', { body: { identifier: email, password: DEMO_PASSWORD } })).body.access_token;
 
 test.before(async () => {
+  spec = await contract.load('openapi.yaml', '/v1');
   store.reset();
   ctx = seed();
   server = http.createServer(createApp());
   await new Promise((r) => server.listen(0, r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
-test.after(() => server.close());
+test.after(() => {
+  server.close();
+  console.log(`# contract (mobile): ${spec.checked} responses checked; ${contract.unexercised(spec).length} documented operations not called by any test`);
+  // Fails the run if any response drifted from docs/api/openapi.yaml.
+  assert.deepEqual([...spec.violations], [], `responses that do not match docs/api/openapi.yaml (${spec.checked} checked)`);
+});
 
 test('auth: login, wrong password, protected route', async () => {
   assert.equal((await call('GET', '/v1/me')).status, 401);
@@ -55,9 +65,22 @@ test('register: validation, minor guardian rule, auto General membership', async
   const noConduct = await call('POST', '/v1/auth/register', { body: { ...base_, accepted_code_of_conduct: false } });
   assert.equal(noConduct.status, 422);
 
-  const minor = await call('POST', '/v1/auth/register', { body: { ...base_, birthdate: '2012-01-01' } });
-  assert.equal(minor.status, 422);
-  assert.ok(minor.body.errors.some((e) => e.field === 'guardian'));
+  const badGuardian = await call('POST', '/v1/auth/register', { body: { ...base_, birthdate: '2012-01-01', guardian: { name: 'P' } } });
+  assert.equal(badGuardian.status, 422);
+  assert.ok(badGuardian.body.errors.some((e) => e.field === 'guardian'));
+
+  // A minor may register first and add the guardian afterwards; the account is restricted meanwhile.
+  const minor = await call('POST', '/v1/auth/register', { body: { ...base_, username: 'minorkid', email: 'minor@fcu.test', birthdate: '2012-01-01' } });
+  assert.equal(minor.status, 201);
+  assert.equal(minor.body.user.minor_status, 'pending_guardian_consent');
+  const tk = minor.body.access_token;
+  assert.equal((await call('GET', '/v1/me/guardian', { token: tk })).body.guardian, null);
+  assert.equal((await call('PUT', '/v1/me/guardian', { token: tk, body: { name: 'Parent' } })).status, 422);
+  assert.equal((await call('PUT', '/v1/me/guardian', { token: tk, body: { name: 'Parent', email: 'minor@fcu.test' } })).status, 422);
+  const put = await call('PUT', '/v1/me/guardian', { token: tk, body: { name: 'Parent', relationship: 'Mother', email: 'mum@fcu.test' } });
+  assert.equal(put.status, 200);
+  assert.equal(put.body.guardian.status, 'pending');
+  assert.equal((await call('GET', '/v1/me/guardian', { token: tk })).body.guardian.name, 'Parent');
 
   const ok = await call('POST', '/v1/auth/register', { body: base_ });
   assert.equal(ok.status, 201);
@@ -241,4 +264,283 @@ test('error shape and 404', async () => {
   const r = await fetch(`${base}/nope`);
   assert.equal(r.status, 404);
   assert.match(r.headers.get('content-type'), /problem\+json/);
+});
+
+test('leave a specific community; note is returned on a declined request', async () => {
+  const inst = store.first('institutions', (i) => i.name === 'Makerere University');
+  const reg = await call('POST', '/v1/auth/register', {
+    body: { full_name: 'Leaver One', username: 'leaverone', birthdate: '2001-01-01', country: 'UG', email: 'leaver@fcu.test',
+      institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true },
+  });
+  const tk = reg.body.access_token;
+  const spec = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
+  const general = store.first('communities', (c) => c.type === 'general' && c.institutionId === inst.id);
+  assert.equal((await call('DELETE', `/v1/communities/${general.id}/membership`, { token: tk })).status, 409);
+  const jr = await call('POST', `/v1/communities/${spec.id}/join-requests`, { token: tk });
+  assert.equal(jr.status, 201);
+  // pending is not a membership yet
+  assert.equal((await call('DELETE', `/v1/communities/${spec.id}/membership`, { token: tk })).status, 404);
+  const rec = store.get('joinRequests', jr.body.id);
+  const m = store.first('memberships', (x) => x.communityId === spec.id && x.userId === rec.userId);
+  m.status = 'member';
+  assert.equal((await call('DELETE', `/v1/communities/${spec.id}/membership`, { token: tk })).status, 204);
+  const mine = await call('GET', '/v1/me/communities', { token: tk });
+  assert.equal(mine.body.specific, null);
+  assert.ok('note' in jr.body);
+});
+
+test('prayer: single request, and the owner replying on an anonymous request stays anonymous', async () => {
+  const spec = store.first('communities', (c) => c.type === 'specific');
+  const mem = store.first('memberships', (m) => m.communityId === spec.id && m.role === 'member' && m.status === 'member');
+  const jwt = require('jsonwebtoken');
+  const config = require('../src/config');
+  const tk = jwt.sign({ sub: mem.userId }, config.jwtSecret, { expiresIn: 600 });
+  const made = await call('POST', `/v1/communities/${spec.id}/prayer-requests`, { token: tk, body: { text: 'Pray for exams', anonymous: true } });
+  assert.equal(made.status, 201);
+  const one = await call('GET', `/v1/prayer-requests/${made.body.id}`, { token: tk });
+  assert.equal(one.status, 200);
+  assert.equal(one.body.author, null);
+  const reply = await call('POST', `/v1/prayer-requests/${made.body.id}/responses`, { token: tk, body: { text: 'Thank you all' } });
+  assert.equal(reply.body.author, null);
+  assert.equal(reply.body.anonymous, true);
+});
+
+test('members last-active is for the super-mentor only', async () => {
+  const spec = store.first('communities', (c) => c.type === 'specific');
+  const sm = store.first('memberships', (m) => m.communityId === spec.id && m.role === 'super_mentor' && m.status === 'member');
+  const mem = store.first('memberships', (m) => m.communityId === spec.id && m.role === 'member' && m.status === 'member');
+  const jwt = require('jsonwebtoken');
+  const config = require('../src/config');
+  const tok = (id) => jwt.sign({ sub: id }, config.jwtSecret, { expiresIn: 600 });
+  assert.equal((await call('GET', `/v1/communities/${spec.id}/members/last-active`, { token: tok(mem.userId) })).status, 403);
+  const ok = await call('GET', `/v1/communities/${spec.id}/members/last-active`, { token: tok(sm.userId) });
+  assert.equal(ok.status, 200);
+  assert.ok(Array.isArray(ok.body.items));
+});
+
+test('GET /me/blocks lists who I blocked', async () => {
+  const a = store.first('users', (u) => u.email === 'student@fcu.test');
+  const b = store.first('users', (u) => u.email === 'david@fcu.test');
+  const jwt = require('jsonwebtoken');
+  const config = require('../src/config');
+  const tk = jwt.sign({ sub: a.id }, config.jwtSecret, { expiresIn: 600 });
+  assert.equal((await call('PUT', `/v1/users/${b.id}/block`, { token: tk })).status, 204);
+  const list = await call('GET', '/v1/me/blocks', { token: tk });
+  assert.equal(list.status, 200);
+  assert.ok(list.body.items.some((u) => u.id === b.id));
+  await call('DELETE', `/v1/users/${b.id}/block`, { token: tk });
+  assert.ok(!(await call('GET', '/v1/me/blocks', { token: tk })).body.items.some((u) => u.id === b.id));
+});
+
+test('notifications: created by actions, listed, read, and muted by preferences', async () => {
+  const spec = store.first('communities', (c) => c.type === 'specific');
+  const post = store.first('posts', (p) => p.communityId === spec.id);
+  const author = store.get('users', post.authorId);
+  const other = store.first('memberships', (m) => m.communityId === spec.id && m.status === 'member' && m.userId !== post.authorId);
+  const jwt = require('jsonwebtoken');
+  const config = require('../src/config');
+  const tok = (id) => jwt.sign({ sub: id }, config.jwtSecret, { expiresIn: 600 });
+  const before = (await call('GET', '/v1/me/notifications', { token: tok(author.id) })).body.items.length;
+  const c = await call('POST', `/v1/posts/${post.id}/comments`, { token: tok(other.userId), body: { text: 'Nice one' } });
+  assert.equal(c.status, 201);
+  const list = await call('GET', '/v1/me/notifications', { token: tok(author.id) });
+  assert.equal(list.body.items.length, before + 1);
+  const n = list.body.items[0];
+  assert.equal(n.type, 'comment_reply');
+  assert.equal(n.target_route, `/post/${post.id}`);
+  assert.equal((await call('POST', `/v1/me/notifications/${n.id}/read`, { token: tok(author.id) })).status, 204);
+  assert.ok((await call('GET', '/v1/me/notifications', { token: tok(author.id) })).body.items.find((x) => x.id === n.id).read_at);
+  assert.equal((await call('POST', `/v1/me/notifications/${n.id}/read`, { token: tok(other.userId) })).status, 404);
+
+  assert.deepEqual((await call('GET', '/v1/me/notification-preferences', { token: tok(author.id) })).body.muted, ['inactivityReminders']);
+  const put = await call('PUT', '/v1/me/notification-preferences', { token: tok(author.id), body: { channels: ['inApp'], muted: ['replies'] } });
+  assert.equal(put.status, 200);
+  await call('POST', `/v1/posts/${post.id}/comments`, { token: tok(other.userId), body: { text: 'Again' } });
+  assert.equal((await call('GET', '/v1/me/notifications', { token: tok(author.id) })).body.items.length, before + 1);
+  assert.equal((await call('PUT', '/v1/me/notification-preferences', { token: tok(author.id), body: { channels: ['sms'], muted: [] } })).status, 422);
+  assert.equal((await call('POST', '/v1/me/notifications/read-all', { token: tok(author.id) })).status, 204);
+});
+
+const tokenFor = (id) => require('jsonwebtoken').sign({ sub: id }, require('../src/config').jwtSecret, { expiresIn: 600 });
+
+test('meetings: derived schedule, RSVP, and check-in only inside the window', async () => {
+  const spec = store.first('communities', (c) => c.type === 'specific' && c.name === 'Growth Circle');
+  const mem = store.first('memberships', (m) => m.communityId === spec.id && m.role === 'member' && m.status === 'member');
+  const tk = tokenFor(mem.userId);
+  // Meet today (Kampala time) in 10 minutes, so check-in is open right now.
+  const local = new Date(Date.now() + 3 * 3600000 + 10 * 60000);
+  spec.meeting = { ...spec.meeting, weekday: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][local.getUTCDay()],
+    start_time: `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}`, timezone: 'Africa/Kampala' };
+
+  const sched = await call('GET', `/v1/communities/${spec.id}/meetings`, { token: tk });
+  assert.equal(sched.status, 200);
+  assert.equal(sched.body.past.length, 3);
+  const next = sched.body.next;
+  assert.ok(Date.parse(next.starts_at) > Date.now());
+  assert.equal(next.room, spec.meeting.location);
+  assert.equal(next.attended, false);
+
+  const going = await call('PUT', `/v1/meetings/${encodeURIComponent(next.id)}/going`, { token: tk, body: { going: true } });
+  assert.equal(going.body.going, true);
+
+  const closed = await call('POST', `/v1/meetings/${encodeURIComponent(sched.body.past[0].id)}/check-in`, { token: tk });
+  assert.equal(closed.status, 409);
+  assert.equal(closed.body.code, 'check_in_closed');
+
+  const ok = await call('POST', `/v1/meetings/${encodeURIComponent(next.id)}/check-in`, { token: tk });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.attended, true);
+  assert.equal((await call('POST', `/v1/meetings/${encodeURIComponent(next.id)}/check-in`, { token: tk })).body.code, 'already_checked_in');
+
+  assert.equal((await call('GET', `/v1/communities/${spec.id}/meetings`, { token: tk })).body.next.attended, true);
+  const outsider = store.first('users', (u) => u.email === 'david@fcu.test');
+  const notMember = store.first('memberships', (m) => m.communityId === spec.id && m.userId === outsider.id);
+  if (!notMember) assert.equal((await call('PUT', `/v1/meetings/${encodeURIComponent(next.id)}/going`, { token: tokenFor(outsider.id), body: { going: true } })).status, 404);
+});
+
+test('mentor moderation: reports form a case; warning hides, warns and notifies', async () => {
+  const spec = store.first('communities', (c) => c.type === 'specific' && c.name === 'Growth Circle');
+  const sm = store.first('memberships', (m) => m.communityId === spec.id && m.role === 'super_mentor' && m.status === 'member');
+  const members = store.where('memberships', (m) => m.communityId === spec.id && m.role === 'member' && m.status === 'member');
+  const author = members[0].userId;
+  const reporterA = members[1] ? members[1].userId : sm.userId;
+  const post = store.insert('posts', { communityId: spec.id, authorId: author, text: 'Rude post for the test', pinned: false, mediaIds: [] });
+
+  const report = (uid, reason) => call('POST', '/v1/reports', { token: tokenFor(uid), body: { target_type: 'post', target_id: post.id, reason } });
+  assert.equal((await report(reporterA, 'harassment_bullying')).status, 201);
+  assert.equal((await report(sm.userId, 'harassment_bullying')).status, 201);
+
+  assert.equal((await call('GET', `/v1/communities/${spec.id}/moderation/cases`, { token: tokenFor(author) })).status, 403);
+  const list = await call('GET', `/v1/communities/${spec.id}/moderation/cases`, { token: tokenFor(sm.userId) });
+  const c = list.body.items.find((x) => x.target_id === post.id);
+  assert.ok(c);
+  assert.equal(c.content, 'post');
+  assert.equal(c.report_count, 2);
+  assert.equal(c.reason, 'harassment_bullying');
+  assert.equal(c.author.id, author);
+
+  const act = await call('POST', `/v1/communities/${spec.id}/moderation/cases/${encodeURIComponent(c.id)}/action`, { token: tokenFor(sm.userId), body: { action: 'warn' } });
+  assert.equal(act.status, 200);
+  assert.equal(act.body.outcome, 'warned');
+  assert.equal(store.get('posts', post.id).hidden, true);
+  assert.equal((await call('POST', `/v1/communities/${spec.id}/moderation/cases/${encodeURIComponent(c.id)}/action`, { token: tokenFor(sm.userId), body: { action: 'keep' } })).status, 409);
+
+  const warnings = await call('GET', '/v1/me/warnings', { token: tokenFor(author) });
+  const w = warnings.body.items.find((x) => x.preview.startsWith('Rude post'));
+  assert.ok(w);
+  assert.equal(w.acknowledged, false);
+  assert.equal((await call('POST', `/v1/me/warnings/${w.id}/acknowledge`, { token: tokenFor(author) })).body.acknowledged, true);
+  const notes = await call('GET', '/v1/me/notifications', { token: tokenFor(author) });
+  assert.ok(notes.body.items.some((n) => n.type === 'moderator_warning' && n.target_route === `/warning/${w.id}`));
+});
+
+test('suspension: read-only while active, lifted when it ends', async () => {
+  const u = store.first('users', (x) => x.email === 'david@fcu.test');
+  u.suspended = true;
+  const s = store.insert('sanctions', { userId: u.id, communityId: null, type: 'SUSPENSION', reason: 'Breaking the rules', issuedBy: 'Admin', issuedAt: store.now(), active: true,
+    until: new Date(Date.now() + 3 * 86400000).toISOString() });
+  const tk = tokenFor(u.id);
+  const sus = await call('GET', '/v1/me/suspension', { token: tk });
+  assert.equal(sus.body.suspension.reason, 'Breaking the rules');
+  assert.equal(sus.body.suspension.until, s.until);
+  assert.equal((await call('GET', '/v1/me', { token: tk })).status, 200);
+  const blocked = await call('POST', '/v1/me/notifications/read-all', { token: tk });
+  assert.equal(blocked.status, 403);
+  assert.equal(blocked.body.code, 'account_suspended');
+
+  s.until = new Date(Date.now() - 1000).toISOString();
+  assert.equal((await call('GET', '/v1/me/suspension', { token: tk })).body.suspension, null);
+  assert.equal(u.suspended, false);
+  assert.equal((await call('POST', '/v1/me/notifications/read-all', { token: tk })).status, 204);
+});
+
+// Calls the remaining operations once so their responses are checked against the documented schemas too.
+test('contract sweep: remaining operations return what the spec says', async () => {
+  const ok = (r, ...codes) => assert.ok(codes.includes(r.status), `expected ${codes} got ${r.status} ${JSON.stringify(r.body)}`);
+  const token = await login('student@fcu.test');
+  const t = { token };
+  const gid = ctx.growth.id;
+
+  ok(await call('GET', '/v1/health'), 200);
+  ok(await call('GET', '/v1/public/landing'), 200);
+  ok(await call('GET', '/v1/lookups/countries'), 200);
+  ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
+  ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
+  ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
+  ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
+
+  const session = await call('POST', '/v1/auth/login', { body: { identifier: 'david@fcu.test', password: DEMO_PASSWORD } });
+  const refreshed = await call('POST', '/v1/auth/refresh', { body: { refresh_token: session.body.refresh_token } });
+  ok(refreshed, 200);
+  ok(await call('POST', '/v1/auth/logout', { token: refreshed.body.access_token, body: { refresh_token: refreshed.body.refresh_token } }), 204);
+
+  ok(await call('PATCH', '/v1/me', { ...t, body: { full_name: 'Grace Namuli' } }), 200);
+  ok(await call('GET', '/v1/me/activity', t), 200);
+  ok(await call('GET', '/v1/me/join-requests', t), 200);
+  ok(await call('POST', '/v1/me/export', t), 202);
+
+  ok(await call('GET', `/v1/communities/${gid}`, t), 200);
+  ok(await call('GET', `/v1/communities/${gid}/members`, t), 200);
+
+  // posts: create, read, edit, like, unlike, comments, delete
+  const post = await call('POST', `/v1/communities/${gid}/posts`, { ...t, body: { text: 'Sweep post' } });
+  ok(post, 201);
+  const pid = post.body.id;
+  ok(await call('GET', `/v1/posts/${pid}`, t), 200);
+  ok(await call('PATCH', `/v1/posts/${pid}`, { ...t, body: { text: 'Sweep post (edited)' } }), 200);
+  ok(await call('PUT', `/v1/posts/${pid}/like`, t), 200);
+  ok(await call('DELETE', `/v1/posts/${pid}/like`, t), 200);
+  ok(await call('GET', `/v1/posts/${pid}/comments`, t), 200);
+  ok(await call('DELETE', `/v1/posts/${pid}`, t), 204);
+
+  // prayer
+  const prayer = await call('POST', `/v1/communities/${gid}/prayer-requests`, { ...t, body: { text: 'Sweep prayer' } });
+  ok(prayer, 201);
+  ok(await call('GET', `/v1/communities/${gid}/prayer-requests`, t), 200);
+  ok(await call('GET', `/v1/prayer-requests/${prayer.body.id}/responses`, t), 200);
+  ok(await call('PUT', `/v1/prayer-requests/${prayer.body.id}/prayed`, t), 200);
+  ok(await call('DELETE', `/v1/prayer-requests/${prayer.body.id}/prayed`, t), 200);
+
+  // testimony (the author sees their own pending story)
+  const story = await call('POST', `/v1/communities/${gid}/testimonies`, { ...t, body: { title: 'Sweep story', body: 'God was good.', consent: true } });
+  ok(story, 201);
+  ok(await call('GET', `/v1/testimonies/${story.body.id}`, t), 200);
+
+  // resources
+  const res = store.first('resources', (r) => r.communityId === gid && r.status === 'published');
+  if (res) {
+    ok(await call('GET', `/v1/resources/${res.id}`, t), 200);
+    ok(await call('PUT', `/v1/resources/${res.id}/progress`, { ...t, body: { position_seconds: 12 } }), 204);
+  }
+
+  // join request: a fresh student asks, then cancels
+  const inst = store.get('institutions', ctx.student.institutionId);
+  const fresh = await call('POST', '/v1/auth/register', { body: { full_name: 'Sweep Student', username: 'sweepstudent', birthdate: '2002-02-02', country: 'UG', email: 'sweep@fcu.test',
+    institution_type: inst.type, institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true } });
+  ok(fresh, 201);
+  const other = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
+  const jr = await call('POST', `/v1/communities/${other.id}/join-requests`, { token: fresh.body.access_token });
+  ok(jr, 201);
+  ok(await call('DELETE', `/v1/join-requests/${jr.body.id}`, { token: fresh.body.access_token }), 204);
+
+  // media: slot, bytes, confirm
+  const slot = await call('POST', '/v1/media', { ...t, body: { purpose: 'post_photo', content_type: 'image/jpeg', size_bytes: 4 } });
+  ok(slot, 201);
+  const put = await fetch(`${base}/v1/media/${slot.body.media_id}/upload`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/jpeg' }, body: Buffer.from([1, 2, 3, 4]) });
+  assert.equal(put.status, 204);
+  contract.check(spec, 'PUT', `/v1/media/${slot.body.media_id}/upload`, put.status, null);
+  ok(await call('POST', `/v1/media/${slot.body.media_id}/complete`, t), 200);
+
+  // devices
+  const dev = await call('POST', '/v1/devices', { ...t, body: { platform: 'android', push_token: 'sweep-token-1' } });
+  ok(dev, 201);
+  ok(await call('DELETE', `/v1/devices/${dev.body.id}`, t), 204);
+
+  // account deletion last, on the throwaway student
+  ok(await call('DELETE', '/v1/me', { token: fresh.body.access_token }), 202);
+});
+
+// Keeps the docs honest: an operation documented but never called by a test has an unchecked schema.
+test('zz every documented operation is exercised by a test (WebSocket aside)', async () => {
+  assert.deepEqual(contract.unexercised(spec), ['GET /realtime']);
 });

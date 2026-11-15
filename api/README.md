@@ -88,3 +88,32 @@ NEXT_PUBLIC_API_MOCKING=disabled
 - Roles are enforced server-side; super-mentors are scoped to their own communities (out of scope = 404).
 - Staff actions that matter (role changes, publishing, moderation, privacy requests, settings) are written to the audit log.
 - Same in-memory store as the mobile API; data resets on restart.
+
+## API documentation
+
+| URL | What |
+|---|---|
+| `/docs` | Swagger UI (assets are bundled, nothing loads from a CDN; strict CSP) with a selector for both APIs |
+| `/openapi.yaml` | Mobile API, OpenAPI 3.1, base path `/v1` |
+| `/openapi-admin.yaml` | Staff (back office) API, base path `/v1/admin` |
+
+The specs live in [`../docs/api`](../docs/api) and are the source of truth for both clients. The server points the first
+`servers` entry at itself, so "Try it out" always hits the environment you are reading.
+
+**Production settings** (`.env`):
+
+| Variable | Effect |
+|---|---|
+| `DOCS_ENABLED=false` | Remove `/docs` and both spec files |
+| `DOCS_USERNAME` + `DOCS_PASSWORD` | Put all three behind HTTP Basic auth (compared in constant time). The API itself is unaffected. The server warns at start-up if production runs without them |
+| `DOCS_TRY_IT_OUT=true` | Allow "Try it out" in production (off by default there: it sends real requests) |
+
+**The docs cannot drift from the code.** `npm test` fails when:
+- a spec is not valid OpenAPI,
+- a route exists that is not documented, or a documented operation does not exist,
+- an operation has no `operationId`, summary, declared tag or success response, or a tag has no description,
+- any response a test receives has an undocumented success status or does not match its documented schema,
+- a documented operation is never called by a test.
+
+When you add an endpoint: add it to the spec, call it from a test (`test/api.test.js` or `test/admin.test.js`), and `npm test`.
+`CONTRACT_SAMPLES=/tmp/samples.json npm test` also saves every JSON response, which is handy for writing schemas from real data.

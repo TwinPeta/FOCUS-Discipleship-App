@@ -35,6 +35,13 @@ module.exports = {
   // Resend. Unset -> emails are logged (dev) / captured (tests).
   resendApiKey: process.env.RESEND_API_KEY || '',
   mailFrom: process.env.MAIL_FROM || 'FCU Student Community <no-reply@localhost>',
+  // API documentation (Swagger UI at /docs, specs at /openapi.yaml and /openapi-admin.yaml).
+  // DOCS_ENABLED=false removes them. DOCS_USERNAME + DOCS_PASSWORD put them behind HTTP Basic auth.
+  // "Try it out" is on in development and off in production unless DOCS_TRY_IT_OUT=true.
+  docsEnabled: process.env.DOCS_ENABLED !== 'false',
+  docsUser: process.env.DOCS_USERNAME || '',
+  docsPass: process.env.DOCS_PASSWORD || '',
+  docsTryItOut: process.env.DOCS_TRY_IT_OUT ? process.env.DOCS_TRY_IT_OUT === 'true' : env !== 'production',
   backofficeUrl: (process.env.BACKOFFICE_URL || 'http://localhost:3000').replace(/\/$/, ''),
 };
 module.exports.r2Enabled = !!(module.exports.r2.accountId && module.exports.r2.accessKeyId && module.exports.r2.secretAccessKey && module.exports.r2.bucket);

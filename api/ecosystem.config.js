@@ -1,7 +1,8 @@
 // PM2 process file for the API (Express).  https://apis.focusuganda.org -> 127.0.0.1:4000
 //
 // Secrets do NOT go in this file. Put them in api/.env on the server (it is git-ignored and read by the app):
-//   JWT_SECRET, DATABASE_URL, R2_*, RESEND_API_KEY, MAIL_FROM, ADMIN_EMAIL, ADMIN_PASSWORD (first boot only)
+//   JWT_SECRET, DATABASE_URL, R2_*, RESEND_API_KEY, MAIL_FROM, ADMIN_EMAIL, ADMIN_PASSWORD (first boot only),
+//   DOCS_USERNAME + DOCS_PASSWORD (protects https://apis.focusuganda.org/docs; set DOCS_ENABLED=false to remove it)
 //
 //   cd <repo>/api
 //   npm ci --omit=dev               # also runs `prisma generate`

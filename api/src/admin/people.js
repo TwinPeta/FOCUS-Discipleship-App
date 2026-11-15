@@ -186,11 +186,11 @@ router.patch('/members/:id/community', C.allow(SYS), (req, res, next) => {
 router.post('/members/:id/suspend', C.allow(SYS), (req, res, next) => {
   try {
     const u = loadMember(req);
-    const b = check(req.body, { reason: { required: true, type: 'string', min: 5, max: 500 } });
+    const b = check(req.body, { reason: { required: true, type: 'string', min: 5, max: 500 }, days: { type: 'number' } });
     if (u.id === req.user.id) throw forbidden('cannot_suspend_self', 'You cannot suspend yourself');
     u.suspended = true;
     const ms = C.specificMemberships(u.id)[0];
-    store.insert('sanctions', { userId: u.id, communityId: ms ? ms.communityId : null, type: 'SUSPENSION', reason: b.reason, issuedBy: req.user.fullName, issuedAt: store.now(), active: true });
+    store.insert('sanctions', { userId: u.id, communityId: ms ? ms.communityId : null, type: 'SUSPENSION', reason: b.reason, issuedBy: req.user.fullName, issuedAt: store.now(), active: true, until: new Date(Date.now() + Math.min(Math.max(Math.round(b.days) || 7, 1), 365) * 86400000).toISOString() });
     store.remove('refreshTokens', (r) => r.userId === u.id);
     C.audit(req, 'moderation_action', `Suspended ${u.fullName}`);
     res.json(C.memberDto(u));
