@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
-const store = require('./store');
-const { ensureBadges } = require('../utils/activity');
+const store = require('../../src/db/store');
+const { ensureBadges } = require('../../src/utils/activity');
 
-// Demo data for local development only. All accounts share this TEST password.
+// Test fixture: a small, realistic world (institutions, communities, people, posts...) for the integration tests.
+// It is NOT part of the app: nothing in src/ loads it, and no environment ever receives it.
+// All accounts share this TEST password.
 const DEMO_PASSWORD = 'Password123!';
 
 function seed() {

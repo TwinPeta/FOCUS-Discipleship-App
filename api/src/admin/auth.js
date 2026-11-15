@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
 const config = require('../config');
+const sessions = require('./sessions');
+const bcrypt = require('bcryptjs');
 const store = require('../db/store');
 const { check } = require('../utils/validate');
 const { unauthorized, forbidden, validation, notFound } = require('../utils/errors');
@@ -22,18 +23,6 @@ function sessionUser(u) {
 }
 C.sessionUser = sessionUser;
 
-function setCookies(res, u, remember) {
-  const secure = config.env === 'production';
-  const base = { httpOnly: true, sameSite: 'lax', secure, path: '/' };
-  const access = C.sign(u, remember ? '7d' : '12h') // the back office has no refresh call, so a staff token must outlast a working session;
-  const rt = crypto.randomBytes(32).toString('hex');
-  store.insert('refreshTokens', { userId: u.id, tokenHash: crypto.createHash('sha256').update(rt).digest('hex'), admin: true, expiresAt: Date.now() + 30 * 864e5 });
-  res.cookie(C.COOKIES.refresh, rt, { ...base, maxAge: 30 * 864e5 });
-  // Access cookie goes LAST: the back office's Next.js proxy forwards only one Set-Cookie header (the last), and the access token is what it needs.
-  res.cookie(C.COOKIES.access, access, { ...base, maxAge: remember ? 7 * 864e5 : undefined });
-  return access;
-}
-
 router.post('/login', rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body && r.body.email }), (req, res, next) => {
   try {
     const b = check(req.body, { email: { required: true, type: 'string' }, password: { required: true, type: 'string' } });
@@ -43,20 +32,16 @@ router.post('/login', rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body 
     if (u.suspended) throw forbidden('ACCOUNT_SUSPENDED', 'Account suspended');
     if (!C.STAFF.includes(C.roleOf(u))) throw forbidden('not_staff', 'This account has no back-office access');
     u.lastLoginAt = store.now();
-    const token = setCookies(res, u, b.rememberMe === true);
-    const ua = String(req.headers['user-agent'] || '');
-    store.insert('staffSessions', {
-      userId: u.id, token: token.slice(-16), deviceName: /Mobile/.test(ua) ? 'Mobile browser' : 'Desktop browser',
-      browser: (ua.match(/(Edg|Chrome|Firefox|Safari)/) || [])[1] || 'Unknown', os: (ua.match(/(Windows|Mac OS X|Linux|Android|iPhone)/) || [])[1] || 'Unknown',
-      ipAddress: req.ip, lastActiveAt: store.now(),
-    });
+    const { token, session } = sessions.create(u, req, b.rememberMe === true);
+    sessions.setCookie(res, token, session);
     res.json({ user: sessionUser(u) });
   } catch (e) { next(e); }
 });
 
-router.post('/logout', (_req, res) => {
-  res.clearCookie(C.COOKIES.access, { path: '/' });
-  res.clearCookie(C.COOKIES.refresh, { path: '/' });
+router.post('/logout', (req, res) => {
+  const found = sessions.find(req);
+  if (found) sessions.revoke(found.session.id); // ended on the server, not just forgotten by the browser
+  sessions.clearCookies(res);
   res.json({ ok: true });
 });
 
@@ -83,6 +68,7 @@ router.post('/reset-password', (req, res, next) => {
     u.passwordHash = bcrypt.hashSync(b.password, 10);
     t.used = true;
     store.remove('refreshTokens', (r) => r.userId === u.id);
+    sessions.revokeAll(u.id); // a reset signs the account out everywhere
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

@@ -7,10 +7,14 @@ info:
     Staff (back-office) API, mounted under `/v1/admin`. The mobile API is documented in `openapi.yaml`.
 
     **Using it with the back office:** set `API_BASE_URL=http://<host>/v1/admin`; the Next.js proxy then forwards
-    `/api/proxy/<path>` to `<API_BASE_URL>/<path>` with the access cookie as a Bearer token.
+    `/api/proxy/<path>` to `<API_BASE_URL>/<path>`, passing the `fcu_access` cookie through and relaying the API's `Set-Cookie`.
 
-    **Auth:** `POST /auth/login` sets httpOnly cookies `fcu_access` (15 min, 7 days with rememberMe) and `fcu_refresh`.
-    Tokens are scoped to the back office; mobile-app tokens are rejected.
+    **Sessions are owned by the API.** `POST /auth/login` creates a server-side session and sets one httpOnly cookie,
+    `fcu_access`, holding an opaque random handle (not a token with claims). On every request the API looks the session up,
+    so it can end it at once: logout, "sign out" of another device, password change (other devices), password reset and
+    suspension (all devices). The idle timeout slides with activity (8 h; 7 days with `rememberMe`; `STAFF_SESSION_*` settings)
+    and a session never lives longer than 30 days. A remembered cookie is re-issued as it slides. Clients may send the same
+    value as `Authorization: Bearer <value>` instead of the cookie. Mobile-app tokens are rejected.
 
     **Roles:** `SYSTEM_ADMIN` (everything), `CONTENT_ADMIN` (content, pathways, badges, announcements, stories, notifications),
     `SUPER_MENTOR` (own community only: join requests, members, first-level moderation). Out-of-scope resources return 404, wrong role returns 403.
@@ -78,12 +82,14 @@ tags:
     description: "What a super-mentor sees and does for their own community"
   - name: Account
     description: "The signed-in staff member: profile, password, sessions"
+  - name: Media
+    description: "File uploads for covers, thumbnails, videos, documents and story videos"
 paths:
   /auth/login:
     post:
       tags: [Auth]
       operationId: postAuthLogin
-      summary: "Staff login (sets httpOnly fcu_access / fcu_refresh cookies)"
+      summary: "Staff login (creates a server-side session, sets the httpOnly fcu_access cookie)"
       description: "Roles: public"
       security: []
       requestBody:
@@ -104,7 +110,7 @@ paths:
     post:
       tags: [Auth]
       operationId: postAuthLogout
-      summary: "Clear session cookies"
+      summary: "Sign out (ends the session on the server and clears the cookie)"
       description: "Roles: public"
       security: []
       responses:
@@ -1374,6 +1380,31 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
   /reports/schedules/{id}:
+    patch:
+      tags: [Reports]
+      operationId: patchReportsSchedulesId
+      summary: "Pause or resume a schedule"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { active: { type: boolean } }
+              required: [active]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportSchedule' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Reports]
       operationId: deleteReportsSchedulesId
@@ -1526,7 +1557,7 @@ paths:
     post:
       tags: [Account]
       operationId: postAccountPassword
-      summary: "Change password (revokes refresh tokens)"
+      summary: "Change password (signs out every other device)"
       description: "Roles: staff"
       responses:
         '200':
@@ -1537,11 +1568,73 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+  /media:
+    post:
+      tags: [Media]
+      operationId: postMedia
+      summary: "Start an upload (returns where to send the file and its permanent address)"
+      description: |
+        Roles: staff. Allowed per `purpose`: `cover_photo` (jpeg/png, 5 MB), `content_thumbnail` (jpeg/png/webp, 5 MB),
+        `content_video` (mp4/webm/quicktime, 500 MB), `content_document` (pdf/doc/docx, 25 MB), `story_video` (mp4/webm/quicktime, 200 MB).
+
+        With Cloudflare R2 (`direct: true`) the browser `PUT`s the file to `upload_url` with `upload_headers`; otherwise it sends
+        the bytes to `PUT /media/{id}/upload`. Then call `POST /media/{id}/complete` and store the returned `url` on the record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MediaSlotBody' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaSlot' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /media/{id}/upload:
+    put:
+      tags: [Media]
+      operationId: putMediaIdUpload
+      summary: "Send the file bytes (local-storage mode only; with R2 upload to the signed URL instead)"
+      description: "Roles: staff (the uploader). Body is the raw file; `Content-Type` must match the slot."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          '*/*':
+            schema: { type: string, format: binary }
+      responses:
+        '204': { description: Stored }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+  /media/{id}/complete:
+    post:
+      tags: [Media]
+      operationId: postMediaIdComplete
+      summary: "Confirm the upload arrived; returns the permanent file address"
+      description: "Roles: staff (the uploader)"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaReady' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /account/sessions:
     get:
       tags: [Account]
       operationId: getAccountSessions
-      summary: "Own active sessions"
+      summary: "Own active sessions (server-side; `current` marks this device)"
       description: "Roles: staff"
       responses:
         '200':
@@ -1555,7 +1648,7 @@ paths:
     delete:
       tags: [Account]
       operationId: deleteAccountSessionsId
-      summary: "Revoke a session"
+      summary: "Revoke a session (that device is signed out on its next request)"
       description: "Roles: staff"
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
@@ -1904,6 +1997,30 @@ components:
         completionsByType: { type: array, items: {} }
         activeCommunities: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, campus: { type: string }, memberCount: { type: integer }, activePercent: { type: integer } }, required: [id, name, campus, memberCount, activePercent] } }
         scheduledReports: { type: array, items: {} }
+    MediaSlotBody:
+      type: object
+      properties:
+        purpose: { type: string, enum: [cover_photo, content_thumbnail, content_video, content_document, story_video] }
+        content_type: { type: string }
+        size_bytes: { type: integer, minimum: 1 }
+      required: [purpose, content_type, size_bytes]
+    MediaSlot:
+      type: object
+      properties:
+        media_id: { type: string }
+        url: { type: string, description: "Permanent address of the file once uploaded" }
+        direct: { type: boolean, description: "true: PUT to upload_url; false: PUT the bytes to /media/{id}/upload" }
+        upload_url: { type: [string, 'null'] }
+        upload_headers: { type: object, additionalProperties: { type: string } }
+        expires_at: { type: string, format: date-time }
+      required: [media_id, url, direct, upload_url, upload_headers, expires_at]
+    MediaReady:
+      type: object
+      properties:
+        media_id: { type: string }
+        status: { type: string }
+        url: { type: string }
+      required: [media_id, status, url]
     SessionList:
       type: object
       properties:

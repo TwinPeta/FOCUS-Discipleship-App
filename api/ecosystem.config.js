@@ -31,8 +31,6 @@ module.exports = {
         CORS_ORIGINS: "https://backoffice.focusuganda.org,https://discipleship.focusuganda.org",
         // Used in password-reset and invite emails
         BACKOFFICE_URL: "https://backoffice.focusuganda.org",
-        // Demo data is for development only
-        SEED_DEMO_DATA: "false",
       },
     },
   ],

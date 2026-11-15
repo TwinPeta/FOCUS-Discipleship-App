@@ -1,5 +1,5 @@
 // Shared helpers for the back-office (staff) API mounted at /v1/admin.
-const jwt = require('jsonwebtoken');
+const sessions = require('./sessions');
 const config = require('../config');
 const store = require('../db/store');
 const { unauthorized, forbidden, notFound, validation } = require('../utils/errors');
@@ -8,10 +8,6 @@ const ROLES = { STUDENT: 'STUDENT', MENTOR: 'MENTOR', SUPER_MENTOR: 'SUPER_MENTO
 const STAFF = [ROLES.SYSTEM_ADMIN, ROLES.CONTENT_ADMIN, ROLES.SUPER_MENTOR];
 const { SYSTEM_ADMIN: SYS, CONTENT_ADMIN: CA, SUPER_MENTOR: SM } = ROLES;
 
-const COOKIES = {
-  access: process.env.AUTH_ACCESS_COOKIE || 'fcu_access',
-  refresh: process.env.AUTH_REFRESH_COOKIE || 'fcu_refresh',
-};
 
 // ───────── roles & scope ─────────
 const specificMemberships = (userId, status = 'member') =>
@@ -124,21 +120,18 @@ function audit(req, action, target, place = 'Back office') {
 }
 
 // ───────── auth middleware ─────────
-const sign = (u, ttl) => jwt.sign({ sub: u.id, aud: 'admin' }, config.jwtSecret, { expiresIn: ttl || config.accessTtl });
-
-function adminAuth(req, _res, next) {
-  const [scheme, token] = (req.headers.authorization || '').split(' ');
-  if (scheme !== 'Bearer' || !token) return next(unauthorized());
-  try {
-    const p = jwt.verify(token, config.jwtSecret);
-    if (p.aud !== 'admin') return next(unauthorized('Invalid token audience'));
-    const u = store.get('users', p.sub);
-    if (!u || u.deletedAt) return next(unauthorized());
-    if (u.suspended) return next(forbidden('ACCOUNT_SUSPENDED', 'Account suspended'));
-    if (!STAFF.includes(roleOf(u))) return next(forbidden('not_staff', 'Staff access only'));
-    req.user = u; req.role = roleOf(u); req.scope = scopeOf(u);
-    next();
-  } catch { next(unauthorized('Invalid or expired token')); }
+// The session is looked up on the server on every request (see ./sessions.js); the cookie is just a random handle.
+function adminAuth(req, res, next) {
+  const found = sessions.find(req);
+  if (!found) return next(unauthorized('Missing, invalid or expired session'));
+  const { session, token, viaCookie } = found;
+  const u = store.get('users', session.userId);
+  if (!u || u.deletedAt) { sessions.revoke(session.id); return next(unauthorized()); }
+  if (u.suspended) { sessions.revokeAll(u.id); return next(forbidden('ACCOUNT_SUSPENDED', 'Account suspended')); }
+  if (!STAFF.includes(roleOf(u))) return next(forbidden('not_staff', 'Staff access only'));
+  req.user = u; req.role = roleOf(u); req.scope = scopeOf(u); req.session = session;
+  if (sessions.touch(session) && viaCookie) sessions.setCookie(res, token, session); // keeps a remembered session sliding forward
+  next();
 }
 const allow = (...roles) => (req, _res, next) => (roles.includes(req.role) ? next() : next(forbidden('forbidden', `Requires one of: ${roles.join(', ')}`)));
 
@@ -151,7 +144,7 @@ const setSetting = (key, value) => { const s = store.first('settings', (x) => x.
 const needObj = (b) => { if (!b || typeof b !== 'object') throw validation([{ field: 'body', message: 'JSON body required' }]); return b; };
 
 module.exports = {
-  ROLES, STAFF, SYS, CA, SM, COOKIES, roleOf, scopeOf, inScope, statusOf, lastActive, specificMemberships,
+  ROLES, STAFF, SYS, CA, SM, roleOf, scopeOf, inScope, statusOf, lastActive, specificMemberships,
   memberDto, communityDto, institutionDto, communityDays: DAYS, dayCode, isMinor, COUNTRY_NAMES,
-  audit, sign, adminAuth, allow, must, list, text, getSetting, setSetting, needObj,
+  audit, adminAuth, allow, must, list, text, getSetting, setSetting, needObj,
 };

@@ -158,8 +158,10 @@ module.exports = {
   },
   reportSchedules: { cols: { reportType: 's', cadence: 's', recipientEmail: 's', active: 'b' } },
   staffSessions: {
-    cols: { userId: 's', token: 's?', deviceName: 's?', browser: 's?', os: 's?', ipAddress: 's?', lastActiveAt: 'd?' },
-    fk: { userId: ['users'] }, index: ['userId'],
+    // tokenHash = SHA-256 of the opaque cookie value (the raw value is never stored); expiresAt = absolute end of life;
+    // `token` is the legacy column from the JWT era and is no longer written.
+    cols: { userId: 's', token: 's?', tokenHash: 's?', remember: 'b?', expiresAt: 'e?', deviceName: 's?', browser: 's?', os: 's?', ipAddress: 's?', lastActiveAt: 'd?' },
+    fk: { userId: ['users'] }, index: ['userId', 'tokenHash'],
   },
   settings: { cols: { key: 's', value: 'j?' }, unique: ['key'] },
 };

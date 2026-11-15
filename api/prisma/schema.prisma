@@ -796,6 +796,9 @@ model StaffSession {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   userId    String
   token     String?
+  tokenHash String?
+  remember  Boolean?
+  expiresAt DateTime? @db.Timestamptz(3)
   deviceName String?
   browser   String?
   os        String?
@@ -805,6 +808,7 @@ model StaffSession {
   user User @relation("staffSessions_userId", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([tokenHash])
   @@map("staffSessions")
 }
 
