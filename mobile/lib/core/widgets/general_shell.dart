@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
 import 'states/offline_banner.dart';
+import 'update_banner.dart';
 import 'app_bottom_nav.dart';
 
 /// The amber header used by the General feed: same chrome as
@@ -56,6 +57,7 @@ class GeneralShell extends ConsumerWidget {
               },
             ),
             const OfflineBanner(),
+            const UpdateBanner(),
             Expanded(child: body),
           ],
         ),

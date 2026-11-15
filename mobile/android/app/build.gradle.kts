@@ -29,11 +29,29 @@ android {
         versionName = flutter.versionName
     }
 
+    // One fixed key for every CI build, so a newer APK installs over an
+    // older one (in-app updates from GitHub Releases). CI writes the key from
+    // the repository secrets; locally (no env) Android's debug key is used.
+    val fcuKeystore = System.getenv("FCU_KEYSTORE_PATH")?.let { file(it) }
+    val hasFcuKey = fcuKeystore != null && fcuKeystore.exists()
+    signingConfigs {
+        if (hasFcuKey) {
+            create("fcu") {
+                storeFile = fcuKeystore
+                storePassword = System.getenv("FCU_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("FCU_KEY_ALIAS")
+                keyPassword = System.getenv("FCU_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (hasFcuKey) signingConfig = signingConfigs.getByName("fcu")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // TODO: a real release key before any store upload.
+            signingConfig = signingConfigs.getByName(if (hasFcuKey) "fcu" else "debug")
         }
     }
 }

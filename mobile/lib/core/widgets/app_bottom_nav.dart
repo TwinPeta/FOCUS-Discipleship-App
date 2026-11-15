@@ -17,6 +17,9 @@ enum AppTab { home, communities, messages, profile }
 const _navHeight = 64.0;
 const _createSize = 52.0;
 
+/// Largest text scale for tab labels inside the fixed-height bar.
+const _maxLabelScale = 1.3;
+
 /// The approved specific community's id, or null when the user has none.
 String? approvedCommunityId(Membership m) =>
     m.status == MembershipStatus.approved ? m.communityId : null;
@@ -163,6 +166,10 @@ class _NavTab extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      // The bar has a fixed height; cap the label's growth
+                      // (screen readers still read it; icons carry meaning).
+                      textScaler: MediaQuery.textScalerOf(context)
+                          .clamp(maxScaleFactor: _maxLabelScale),
                       style: AppTextStyles.chip.copyWith(
                         fontSize: 11,
                         color: AppColors.ink,

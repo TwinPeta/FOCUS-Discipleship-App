@@ -20,6 +20,7 @@ import 'widgets/hub_specific_slot.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/widgets/update_banner.dart';
 
 /// Screen 3 of the brief: Communities hub, including the 3b "pending"
 /// variant of the specific-community slot.
@@ -99,6 +100,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               HubHeader(profile: profile),
+              const UpdateBanner(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
