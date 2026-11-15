@@ -8,7 +8,7 @@
  */
 
 import { ROUTES } from "@/lib/constants/routes";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 
 export interface DashboardKpi {
   id: string;
@@ -150,7 +150,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   } catch {
     // Fall back to mock data in dev mode
   }
-  return MOCK_DASHBOARD_DATA;
+  return readFallback(() => MOCK_DASHBOARD_DATA, "the dashboard");
 }
 
 export async function sendMemberReminder(memberId: string): Promise<void> {

@@ -9,7 +9,7 @@
 
 import type { PathwayFormValues, PathwayStepInput } from "./schemas";
 import { unwrapList } from "@/lib/api/unwrap";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 
 export type PathwayLevel = "Beginner" | "Intermediate" | "Advanced";
 export type UnlockRuleType = "none" | "previous_pathway" | "profile_complete" | "mentor_assigned";
@@ -98,7 +98,7 @@ export async function fetchPathways(): Promise<Pathway[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_PATHWAYS;
+  return readFallback(() => MOCK_PATHWAYS, "pathways");
 }
 
 export async function fetchPathway(id: string): Promise<Pathway | null> {
@@ -110,7 +110,7 @@ export async function fetchPathway(id: string): Promise<Pathway | null> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_PATHWAYS.find((p) => p.id === id) ?? null;
+  return readFallback(() => MOCK_PATHWAYS.find((p) => p.id === id) ?? null, "the pathway");
 }
 
 export async function fetchAvailableContent(): Promise<AvailableContentItem[]> {
@@ -123,7 +123,7 @@ export async function fetchAvailableContent(): Promise<AvailableContentItem[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_AVAILABLE_CONTENT.filter((c) => c.published);
+  return readFallback(() => MOCK_AVAILABLE_CONTENT.filter((c) => c.published), "content");
 }
 
 export async function savePathway(

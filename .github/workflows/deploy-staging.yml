@@ -1,0 +1,139 @@
+# Deploys the API and the back office to the staging server over SSH.
+#
+# Runs on every push to the `staging` branch (merge or push main into it to release) and on demand from the
+# Actions tab. The server must already be set up (deploy/setup-vps-nginx-pm2.sh): a git checkout of this repo,
+# PM2 running `focus-api` and `focus-backoffice`, and secrets in api/.env on the server.
+#
+# One-time GitHub setup (Settings -> Environments -> New environment "staging"):
+#   Secrets:    STAGING_HOST       server address
+#               STAGING_USER       login user, e.g. deploy
+#               STAGING_PASSWORD   that user's SSH password   -- OR --
+#               STAGING_SSH_KEY    private key (preferred: ssh-keygen -t ed25519 -f staging_deploy, public half
+#                                  into ~/.ssh/authorized_keys). If both are set the key is used.
+#   Variables:  STAGING_APP_DIR    repo path on the server, e.g. /srv/app           (default /srv/app)
+#               STAGING_API_URL    public API address for the health check, e.g. https://staging-api.focusuganda.org
+#               STAGING_SSH_PORT   optional, default 22
+name: Deploy to staging
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'api/**'
+      - 'backoffice/**'
+      - 'docs/api/**'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+
+# Never two deploys at once; a newer push waits instead of killing a deploy halfway through.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - name: API tests (includes the OpenAPI contract checks)
+        working-directory: api
+        run: |
+          npm ci
+          npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_API_URL }}
+    env:
+      APP_DIR: ${{ vars.STAGING_APP_DIR || '/srv/app' }}
+      SSH_PORT: ${{ vars.STAGING_SSH_PORT || '22' }}
+    steps:
+      - name: Check configuration
+        env:
+          HOST: ${{ secrets.STAGING_HOST }}
+          USER_: ${{ secrets.STAGING_USER }}
+          KEY: ${{ secrets.STAGING_SSH_KEY }}
+          PASSWORD: ${{ secrets.STAGING_PASSWORD }}
+        run: |
+          for v in HOST USER_; do
+            [ -n "${!v}" ] || { echo "::error::Missing secret STAGING_${v%_} (see the header of this workflow)"; exit 1; }
+          done
+          [ -n "$KEY$PASSWORD" ] || { echo "::error::Set the secret STAGING_PASSWORD or STAGING_SSH_KEY"; exit 1; }
+
+      - name: Set up SSH
+        env:
+          HOST: ${{ secrets.STAGING_HOST }}
+          KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          if [ -n "$KEY" ]; then
+            printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+          else
+            sudo apt-get install -y -qq sshpass
+          fi
+          ssh-keyscan -p "$SSH_PORT" -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy ${{ github.sha }}
+        env:
+          HOST: ${{ secrets.STAGING_HOST }}
+          USER_: ${{ secrets.STAGING_USER }}
+          SHA: ${{ github.sha }}
+          SSHPASS: ${{ secrets.STAGING_PASSWORD }}
+        run: |
+          if [ -f ~/.ssh/deploy_key ]; then
+            SSH=(ssh -i ~/.ssh/deploy_key -o BatchMode=yes)
+          else
+            SSH=(sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no)
+          fi
+          "${SSH[@]}" -p "$SSH_PORT" "$USER_@$HOST" \
+            "APP_DIR='$APP_DIR' SHA='$SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_DIR"
+
+          echo "== Code"
+          git fetch --all --prune
+          PREVIOUS=$(git rev-parse HEAD)
+          git reset --hard "$SHA"
+          echo "$PREVIOUS" > .last-deployed-sha
+
+          echo "== API"
+          cd "$APP_DIR/api"
+          npm ci --omit=dev
+          # Applies new database migrations (reads DATABASE_URL from api/.env on the server)
+          set -a; [ -f .env ] && . ./.env; set +a
+          if [ -n "${DATABASE_URL:-}" ]; then npm run db:deploy; fi
+
+          echo "== Back office"
+          cd "$APP_DIR/backoffice"
+          corepack enable >/dev/null 2>&1 || true
+          pnpm install --frozen-lockfile
+          pnpm build
+
+          echo "== Restart"
+          pm2 reload focus-api focus-backoffice --update-env || pm2 startOrReload "$APP_DIR/api/ecosystem.config.js" --update-env
+          pm2 save
+          pm2 status
+          REMOTE
+
+      - name: Health check
+        if: ${{ vars.STAGING_API_URL != '' }}
+        env:
+          API_URL: ${{ vars.STAGING_API_URL }}
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS "$API_URL/v1/health"; then echo; exit 0; fi
+            echo "waiting for the API ($i/12)"; sleep 5
+          done
+          echo "::error::The API did not become healthy. Roll back: ssh in, cd $APP_DIR, git reset --hard \$(cat .last-deployed-sha), then rebuild and pm2 reload."
+          exit 1

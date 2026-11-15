@@ -25,7 +25,7 @@ C.sessionUser = sessionUser;
 function setCookies(res, u, remember) {
   const secure = config.env === 'production';
   const base = { httpOnly: true, sameSite: 'lax', secure, path: '/' };
-  const access = C.sign(u, remember ? '7d' : config.accessTtl);
+  const access = C.sign(u, remember ? '7d' : '12h') // the back office has no refresh call, so a staff token must outlast a working session;
   const rt = crypto.randomBytes(32).toString('hex');
   store.insert('refreshTokens', { userId: u.id, tokenHash: crypto.createHash('sha256').update(rt).digest('hex'), admin: true, expiresAt: Date.now() + 30 * 864e5 });
   res.cookie(C.COOKIES.refresh, rt, { ...base, maxAge: 30 * 864e5 });

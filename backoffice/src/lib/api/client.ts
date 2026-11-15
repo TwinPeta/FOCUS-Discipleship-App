@@ -52,9 +52,13 @@ export async function apiClient<T>(
 
     try {
       const data = await response.json();
-      if (typeof data.message === "string") errorMessage = data.message;
+      // The API speaks RFC 7807 (detail/title); older mocks used message
+      if (typeof data.detail === "string") errorMessage = data.detail;
+      else if (typeof data.message === "string") errorMessage = data.message;
+      else if (typeof data.title === "string") errorMessage = data.title;
       if (typeof data.code === "string") errorCode = data.code;
       if (data.details) errorDetails = data.details;
+      else if (Array.isArray(data.errors)) errorDetails = { errors: data.errors };
     } catch {
       // Non-JSON error payload
     }

@@ -1,5 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/stories/queries.ts
  *
@@ -74,7 +74,7 @@ export async function fetchLandingStories(): Promise<LandingStory[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_STORIES;
+  return readFallback(() => MOCK_STORIES, "stories");
 }
 
 export async function saveLandingStories(stories: LandingStory[]): Promise<LandingStory[]> {

@@ -60,15 +60,21 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as {
           code?: string;
-          message?: string;
         };
-        if (res.status === 403 && body.code === "ACCOUNT_SUSPENDED") {
+        const code = body.code?.toLowerCase();
+        if (res.status === 403 && code === "account_suspended") {
           setServerError(
             "Your staff account has been suspended. Contact a system administrator.",
           );
-          return;
+        } else if (res.status === 403 && code === "not_staff") {
+          setServerError("This account does not have back-office access.");
+        } else if (res.status === 429) {
+          setServerError("Too many attempts. Please wait a few minutes and try again.");
+        } else if (res.status >= 500) {
+          setServerError("The server is not responding right now. Please try again shortly.");
+        } else {
+          setServerError("Invalid work email or password.");
         }
-        setServerError("Invalid work email or password.");
         return;
       }
 

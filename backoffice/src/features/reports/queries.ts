@@ -8,7 +8,7 @@
  */
 
 import type { ReportFiltersState, ScheduleReportInput } from "./schemas";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 
 export interface MembersTimePoint {
   period: string;
@@ -132,7 +132,7 @@ export async function fetchReportsData(
   } catch {
     // Fall back to mock data in dev mode
   }
-  return MOCK_REPORTS_DATA;
+  return readFallback(() => MOCK_REPORTS_DATA, "reports");
 }
 
 export async function exportReportFile(

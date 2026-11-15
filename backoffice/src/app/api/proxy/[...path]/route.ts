@@ -24,6 +24,9 @@ const HOP_BY_HOP_HEADERS = new Set([
   "upgrade",
   "host",
   "cookie",
+  // fetch() already decompressed the body, so these would describe bytes we no longer have
+  "content-encoding",
+  "content-length",
 ]);
 
 function resolveMockTokenForEmail(email: string): string {
@@ -179,10 +182,15 @@ async function forwardRequest(
   const responseBody = await upstream.arrayBuffer();
   const resHeaders = new Headers();
   upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
+    const k = key.toLowerCase();
+    if (!HOP_BY_HOP_HEADERS.has(k) && k !== "set-cookie") {
       resHeaders.set(key, value);
     }
   });
+  // Keep every cookie (forEach/set would keep only the last one)
+  for (const cookie of upstream.headers.getSetCookie()) {
+    resHeaders.append("set-cookie", cookie);
+  }
 
   const res = new NextResponse(responseBody, {
     status: upstream.status,
