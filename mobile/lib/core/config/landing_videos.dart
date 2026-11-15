@@ -1,3 +1,5 @@
+import '../utils/open_link.dart';
+
 /// One curated video for the landing page (screen 1).
 class CuratedVideo {
   const CuratedVideo(this.url, this.title, this.channel);
@@ -42,9 +44,10 @@ class LandingVideos {
     ),
   ];
 
-  /// The story's own link when the backend sends one, else a curated one.
+  /// The story's own link when it is a real YouTube video, else a curated
+  /// one (the backend's demo stories carry placeholder links).
   static String forStory(int index, String? fromBackend) {
     final url = fromBackend?.trim() ?? '';
-    return url.isNotEmpty ? url : stories[index % stories.length].url;
+    return youtubeIdOf(url) != null ? url : stories[index % stories.length].url;
   }
 }
