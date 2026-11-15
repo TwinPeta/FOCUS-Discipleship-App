@@ -1,5 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/announcements/queries.ts
  *
@@ -89,7 +89,7 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_ANNOUNCEMENTS;
+  return readFallback(() => MOCK_ANNOUNCEMENTS, "announcements");
 }
 
 export async function createAnnouncement(input: AnnouncementInput): Promise<Announcement> {

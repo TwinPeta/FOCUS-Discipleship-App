@@ -1,5 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/badges/queries.ts
  *
@@ -148,7 +148,7 @@ export async function fetchBadges(): Promise<Badge[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_BADGES;
+  return readFallback(() => MOCK_BADGES, "badges");
 }
 
 export async function saveBadge(input: BadgeInput, id?: string): Promise<Badge> {

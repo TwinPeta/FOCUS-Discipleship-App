@@ -1,4 +1,4 @@
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/my-community/queries.ts
  *
@@ -211,7 +211,7 @@ export async function fetchMyCommunityOverview(): Promise<MyCommunityOverview> {
   } catch {
     // Fall back to mock data in dev mode
   }
-  return MOCK_MY_COMMUNITY;
+  return readFallback(() => MOCK_MY_COMMUNITY, "your community");
 }
 
 export async function approveOwnJoinRequest(requestId: string): Promise<void> {

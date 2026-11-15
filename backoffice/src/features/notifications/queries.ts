@@ -1,5 +1,5 @@
 import { unwrapList } from "@/lib/api/unwrap";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { readFallback, requireBackend } from "@/lib/api/mockFallback";
 /**
  * src/features/notifications/queries.ts
  *
@@ -141,7 +141,7 @@ export async function fetchNotificationRules(): Promise<NotificationRule[]> {
   } catch {
     // Dev mock fallback
   }
-  return MOCK_NOTIFICATION_RULES;
+  return readFallback(() => MOCK_NOTIFICATION_RULES, "notification rules");
 }
 
 export async function updateNotificationRule(

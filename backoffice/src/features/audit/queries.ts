@@ -7,6 +7,7 @@
  * STATUS: implemented
  */
 
+import { readFallback } from "@/lib/api/mockFallback";
 import { Role } from "@/types/enums";
 
 export type AuditActionType =
@@ -118,6 +119,10 @@ export async function fetchAuditEntries(
     // Fall back to filtered mock data in dev mode
   }
 
+  return readFallback(() => filterMockAudit(filters), "the audit log");
+}
+
+function filterMockAudit(filters: AuditFilterState): AuditEntry[] {
   const now = Date.now();
   const periodDays =
     filters.period === "7d"
