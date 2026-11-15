@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fakes.dart';
+
 import 'package:focus_1/core/network/api_client.dart';
 import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/features/messaging/data/remote_messaging_repository.dart';
-import 'package:focus_1/features/notifications/data/notification_repository.dart';
 import 'package:focus_1/features/notifications/data/remote_notification_repository.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
 import 'package:focus_1/features/notifications/domain/notification_preferences.dart';

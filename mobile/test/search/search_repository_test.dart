@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/community/data/community_repository.dart';
-import 'package:focus_1/features/community/data/member_repository.dart';
+import '../support/fakes.dart';
+
 import 'package:focus_1/features/search/data/search_repository.dart';
 import 'package:focus_1/features/search/domain/search_results.dart';
 

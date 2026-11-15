@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fakes.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
-import 'package:focus_1/features/community/data/community_repository.dart';
-import 'package:focus_1/features/community/data/member_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/presentation/providers/membership_provider.dart';
 import 'package:focus_1/features/profile/presentation/profile_providers.dart';
@@ -13,6 +15,7 @@ import 'package:focus_1/features/search/data/search_repository.dart';
 import 'package:focus_1/features/search/presentation/search_providers.dart';
 import 'package:focus_1/features/search/presentation/search_screen.dart';
 
+import '../support/fake_backend.dart';
 import '../support/pump_utils.dart';
 
 class _Approved extends MembershipController {
@@ -49,6 +52,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...fakeBackend(),
+          communityRepositoryProvider.overrideWithValue(communities),
           currentProfileProvider.overrideWith((ref) => testProfile),
           membershipProvider.overrideWith(_Approved.new),
           searchRepositoryProvider.overrideWith((ref) => repo),
@@ -62,11 +67,15 @@ void main() {
     await settle(tester);
 
     await tester.enterText(find.byType(TextField), 'growth');
+    // Debounce (300 ms) plus the shared fake's 400 ms latency per call.
+    await tester.pump(const Duration(seconds: 2));
     await settle(tester, steps: 20);
     expect(find.text('Communities'), findsOneWidget);
     expect(find.text('Growth Circle'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'okello');
+    // Debounce (300 ms) plus the shared fake's 400 ms latency per call.
+    await tester.pump(const Duration(seconds: 2));
     await settle(tester, steps: 20);
     expect(find.text('People'), findsOneWidget);
     expect(find.text('David Okello'), findsOneWidget);
