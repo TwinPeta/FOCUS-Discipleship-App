@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 
 /// Three bars showing progress through a multi-step flow (the Join form).
 class StepProgress extends StatelessWidget {
@@ -24,7 +25,8 @@ class StepProgress extends StatelessWidget {
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: isActive ? AppColors.amber : AppColors.cream,
+                color: isActive ? null : AppColors.cream,
+                gradient: AppGradients.when(isActive),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

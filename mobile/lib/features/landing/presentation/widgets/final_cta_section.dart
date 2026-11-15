@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/bold_button.dart';
 import 'bold_style.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class FinalCtaSection extends StatelessWidget {
   const FinalCtaSection({super.key});
@@ -15,7 +16,10 @@ class FinalCtaSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 36, 24, 40),
       child: Container(
         padding: const EdgeInsets.all(28),
-        decoration: boldCardDecoration(color: AppColors.amber, radius: 28),
+        decoration: boldCardDecoration(
+          color: AppColors.amber,
+          radius: 28,
+        ).copyWith(gradient: AppGradients.brand),
         child: Column(
           children: [
             Text(

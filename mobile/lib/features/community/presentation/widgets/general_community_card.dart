@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class GeneralCommunityCard extends StatelessWidget {
   const GeneralCommunityCard({super.key});
@@ -19,7 +20,7 @@ class GeneralCommunityCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 132),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.amber,
+            gradient: AppGradients.brand,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(

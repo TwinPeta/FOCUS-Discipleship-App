@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import 'package:flutter/services.dart';
 
 import '../media/upload_policy.dart';
+import '../theme/app_gradients.dart';
 
 /// Rounded text field plus a 50px amber send button. Used by the
 /// conversation (screen 10) and post comments (screen 39). When [enabled]
@@ -79,9 +80,10 @@ class MessageInputBar extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
+                    gradient: AppGradients.when(canSend),
                     color: canSend
-                        ? AppColors.amber
-                        : AppColors.amber.withValues(alpha: 0.4),
+                        ? null
+                        : AppColors.amberLight.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,

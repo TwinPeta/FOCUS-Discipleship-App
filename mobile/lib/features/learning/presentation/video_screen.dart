@@ -14,6 +14,7 @@ import '../domain/learning_models.dart';
 import '../domain/playback_controller.dart';
 import 'learning_providers.dart';
 import 'widgets/viewer_parts.dart';
+import '../../../core/theme/app_gradients.dart';
 
 /// Data saver preference (lower quality, no autoplay), shared by videos.
 final dataSaverProvider = StateProvider<bool>((ref) => false);
@@ -277,7 +278,11 @@ class _Player extends StatelessWidget {
                           Container(color: AppColors.white),
                           FractionallySizedBox(
                             widthFactor: progress.clamp(0, 1).toDouble(),
-                            child: Container(color: AppColors.amber),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                gradient: AppGradients.brand,
+                              ),
+                            ),
                           ),
                         ],
                       ),

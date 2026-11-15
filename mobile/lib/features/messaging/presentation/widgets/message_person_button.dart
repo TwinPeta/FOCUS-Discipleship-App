@@ -11,6 +11,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../community/domain/person.dart';
 import '../../data/messaging_repository.dart';
 import '../providers/messaging_providers.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 /// Opens (or creates) the thread with [person] and shows it. [replace]
 /// swaps the current page for the conversation (New message, screen 54).
@@ -91,7 +92,7 @@ class MessagePersonButton extends ConsumerWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.amber,
+            gradient: AppGradients.brand,
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,

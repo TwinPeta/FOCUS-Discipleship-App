@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/dashed_rrect_painter.dart';
 import '../../domain/membership.dart';
 import '../providers/community_providers.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 /// The hub's right-hand "specific community" slot, driven by
 /// [MembershipStatus] (section 6.3, "Membership states of the specific
@@ -189,7 +190,7 @@ class _ApprovedSlot extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 132),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.amber,
+            gradient: AppGradients.brand,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(

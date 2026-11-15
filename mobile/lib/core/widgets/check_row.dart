@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_gradients.dart';
 
 /// Cream, radius-14 row with a 22px checkbox, used for consent and
 /// "post anonymously" style toggles.
@@ -38,7 +39,8 @@ class CheckRow extends StatelessWidget {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: value ? AppColors.amber : AppColors.white,
+                  color: value ? null : AppColors.white,
+                  gradient: AppGradients.when(value),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppColors.ink, width: 2),
                 ),

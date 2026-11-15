@@ -3,7 +3,10 @@ import 'package:flutter/widgets.dart';
 class AppColors {
   AppColors._();
 
-  static const amber = Color(0xFFF4B400);
+  /// Flat brand amber where a gradient cannot be drawn (painted art,
+  /// switch tracks, thin accents); equals the gradient's light end.
+  /// Fills use [AppGradients.brand].
+  static const amber = amberLight;
 
   /// Brand gradient (roadmap v2): the light end is the normal surface
   /// (headers, primary buttons, chips); the dark end is for emphasis only

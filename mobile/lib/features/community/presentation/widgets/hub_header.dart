@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 import '../../../notifications/presentation/notification_providers.dart';
 import '../../../profile/domain/user_profile.dart';
+import '../../../../core/theme/app_gradients.dart';
 
 class HubHeader extends StatelessWidget {
   const HubHeader({super.key, required this.profile});
@@ -19,7 +20,7 @@ class HubHeader extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.amber,
+        gradient: AppGradients.brand,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
