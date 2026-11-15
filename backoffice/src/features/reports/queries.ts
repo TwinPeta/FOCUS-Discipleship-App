@@ -8,7 +8,8 @@
  */
 
 import type { ReportFiltersState, ScheduleReportInput } from "./schemas";
-import { readFallback, requireBackend } from "@/lib/api/mockFallback";
+import { apiClient } from "@/lib/api/client";
+import { mutate } from "@/lib/api/mutate";
 
 export interface MembersTimePoint {
   period: string;
@@ -51,88 +52,12 @@ export const REPORT_TYPE_LABELS: Record<ScheduleReportInput["reportType"], strin
   content_completions: "Content completions",
 };
 
-export const MOCK_REPORTS_DATA: ReportsData = {
-  membersOverTime: [
-    { period: "Jun", totalMembers: 980, activeMembers: 740 },
-    { period: "Jul", totalMembers: 1045, activeMembers: 810 },
-    { period: "Aug", totalMembers: 1120, activeMembers: 890 },
-    { period: "Sep", totalMembers: 1210, activeMembers: 970 },
-    { period: "Oct", totalMembers: 1260, activeMembers: 1020 },
-    { period: "Nov", totalMembers: 1340, activeMembers: 1105 },
-  ],
-  completionsByType: [
-    { type: "Devotionals", completions: 312 },
-    { type: "Videos", completions: 218 },
-    { type: "Documents", completions: 114 },
-    { type: "Quizzes", completions: 176 },
-  ],
-  activeCommunities: [
-    {
-      id: "comm-makerere",
-      name: "Makerere University",
-      campus: "Kampala Central",
-      memberCount: 342,
-      activePercent: 86,
-    },
-    {
-      id: "comm-kyambogo",
-      name: "Kyambogo University",
-      campus: "Kampala East",
-      memberCount: 254,
-      activePercent: 81,
-    },
-    {
-      id: "comm-mubs",
-      name: "MUBS Kampala",
-      campus: "Nakawa",
-      memberCount: 198,
-      activePercent: 77,
-    },
-    {
-      id: "comm-gulu",
-      name: "Gulu University",
-      campus: "Northern Region",
-      memberCount: 164,
-      activePercent: 73,
-    },
-  ],
-  scheduledReports: [
-    {
-      id: "sched-1",
-      reportType: "discipleship_summary",
-      reportLabel: "Discipleship summary",
-      cadence: "monthly",
-      recipientEmail: "leadership@focusuganda.org",
-      active: true,
-    },
-    {
-      id: "sched-2",
-      reportType: "community_health",
-      reportLabel: "Community health & attendance",
-      cadence: "weekly",
-      recipientEmail: "mentors@focusuganda.org",
-      active: true,
-    },
-  ],
-};
-
 export async function fetchReportsData(
   filters: ReportFiltersState,
 ): Promise<ReportsData> {
-  try {
-    const params = new URLSearchParams({
-      range: filters.range,
-      campus: filters.campus,
-      community: filters.community,
-    });
-    const res = await fetch(`/api/proxy/reports?${params.toString()}`);
-    if (res.ok) {
-      return (await res.json()) as ReportsData;
-    }
-  } catch {
-    // Fall back to mock data in dev mode
-  }
-  return readFallback(() => MOCK_REPORTS_DATA, "reports");
+  return apiClient<ReportsData>("/reports", {
+    params: { range: filters.range, campus: filters.campus, community: filters.community },
+  });
 }
 
 export async function exportReportFile(
@@ -141,13 +66,14 @@ export async function exportReportFile(
   data: ReportsData,
 ): Promise<void> {
   try {
+    // Records the export in the audit log; the file itself is built from the data already on screen
     await fetch("/api/proxy/reports/export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ format, filters }),
     });
   } catch {
-    // Non-blocking in dev mode
+    // The download still works if the audit call cannot be made
   }
 
   if (format === "csv") {
@@ -172,25 +98,9 @@ export async function exportReportFile(
 export async function createScheduledReport(
   input: ScheduleReportInput,
 ): Promise<ScheduledReport> {
-  try {
-    const res = await fetch("/api/proxy/reports/schedules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (res.ok) {
-      return (await res.json()) as ScheduledReport;
-    }
-  } catch {
-    // Fall back to local object in dev mode
-  }
-  requireBackend();
-  return {
-    id: `sched-${Date.now()}`,
-    reportType: input.reportType,
-    reportLabel: REPORT_TYPE_LABELS[input.reportType],
-    cadence: input.cadence,
-    recipientEmail: input.recipientEmail,
-    active: true,
-  };
+  return mutate<ScheduledReport>("/reports/schedules", "POST", input);
+}
+
+export async function setScheduledReportActive(id: string, active: boolean): Promise<ScheduledReport> {
+  return mutate<ScheduledReport>(`/reports/schedules/${id}`, "PATCH", { active });
 }

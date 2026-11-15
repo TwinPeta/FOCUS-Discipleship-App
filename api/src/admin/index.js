@@ -9,5 +9,6 @@ router.use(C.adminAuth);
 router.use('/', require('./people').router);
 router.use('/', require('./content').router);
 router.use('/', require('./governance').router);
+router.use('/', require('./media').router);
 
 module.exports = router;

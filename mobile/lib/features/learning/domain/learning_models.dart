@@ -19,9 +19,16 @@ class LearningItem {
 }
 
 class VideoContent {
-  const VideoContent({required this.item, required this.duration});
+  const VideoContent({
+    required this.item,
+    required this.duration,
+    this.streamUrl,
+  });
   final LearningItem item;
   final Duration duration;
+
+  /// Where the video plays from; null until one has been added.
+  final String? streamUrl;
 }
 
 class DevotionalContent {

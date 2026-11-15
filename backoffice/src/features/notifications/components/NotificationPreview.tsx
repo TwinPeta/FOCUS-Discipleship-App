@@ -17,8 +17,8 @@ interface NotificationPreviewProps {
 
 function interpolateSample(text: string): string {
   return text
-    .replace(/\{\{member_name\}\}/g, "Sarah Namukasa")
-    .replace(/\{\{community_name\}\}/g, "Makerere University")
+    .replace(/\{\{member_name\}\}/g, "[Member name]")
+    .replace(/\{\{community_name\}\}/g, "[Community name]")
     .replace(/\{\{item_title\}\}/g, "Faithful Discipleship")
     .replace(/\{\{message_preview\}\}/g, "Registration has opened for the annual conference.");
 }

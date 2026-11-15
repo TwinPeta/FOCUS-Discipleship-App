@@ -34,25 +34,6 @@ class _PickedMedia {
   final String path;
 }
 
-const _emojiOptions = [
-  '😀',
-  '😂',
-  '🙏',
-  '❤️',
-  '🔥',
-  '🎉',
-  '👏',
-  '🙌',
-  '😊',
-  '😍',
-  '🤝',
-  '✨',
-  '👍',
-  '😢',
-  '🙇',
-  '💯',
-];
-
 /// Screen 13: the post composer, reached from both feeds via
 /// `/community/:id/compose` (specific) or `/general-feed/compose` (general;
 /// the community id is resolved from the profile's institution).
@@ -75,7 +56,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   final List<_PickedMedia> _media = [];
-  bool _emojiPanelOpen = false;
   bool _isPosting = false;
 
   @override
@@ -176,25 +156,14 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
     if (picked == null || !mounted || !_canAttach) return;
     setState(() {
       _media.add(_PickedMedia(kind: _MediaKind.photo, path: picked.path));
-      _emojiPanelOpen = false;
     });
   }
 
-  void _toggleEmojiPanel() {
-    setState(() => _emojiPanelOpen = !_emojiPanelOpen);
-  }
-
-  void _insertEmoji(String emoji) {
-    final selection = _textController.selection;
-    final text = _textController.text;
-    final start = selection.start >= 0 ? selection.start : text.length;
-    final end = selection.end >= 0 ? selection.end : text.length;
-    final newText = text.replaceRange(start, end, emoji);
-    _textController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: start + emoji.length),
-    );
-    setState(() {});
+  /// Emojis come from the phone's own keyboard: the emoji button focuses the
+  /// field and brings the system keyboard up.
+  void _showKeyboard() {
+    _focusNode.requestFocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.show');
   }
 
   void _removeMedia(int index) {
@@ -422,36 +391,6 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                   ),
                 ),
               ),
-              if (_emojiPanelOpen)
-                Container(
-                  height: 178,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: AppColors.cream,
-                    border: Border(
-                      top: BorderSide(color: AppColors.inputBorder),
-                    ),
-                  ),
-                  child: GridView.count(
-                    crossAxisCount: 7,
-                    children: [
-                      for (final emoji in _emojiOptions)
-                        InkWell(
-                          onTap: () => _insertEmoji(emoji),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Center(
-                            child: Text(
-                              emoji,
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               Container(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 decoration: const BoxDecoration(
@@ -467,9 +406,8 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                     const SizedBox(width: 8),
                     _ToolbarButton(
                       icon: Icons.emoji_emotions_outlined,
-                      semanticLabel: 'Emoji',
-                      active: _emojiPanelOpen,
-                      onPressed: _toggleEmojiPanel,
+                      semanticLabel: 'Emoji keyboard',
+                      onPressed: _showKeyboard,
                     ),
                     const SizedBox(width: 10),
                     if (_media.isNotEmpty)
@@ -498,13 +436,11 @@ class _ToolbarButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onPressed,
-    this.active = false,
   });
 
   final IconData icon;
   final String semanticLabel;
   final VoidCallback onPressed;
-  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -518,12 +454,9 @@ class _ToolbarButton extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: active ? AppColors.amber : AppColors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: active ? AppColors.ink : AppColors.inputBorder,
-              width: active ? 2 : 1.5,
-            ),
+            border: Border.all(color: AppColors.inputBorder, width: 1.5),
           ),
           alignment: Alignment.center,
           child: Icon(icon, size: 22, color: AppColors.ink),

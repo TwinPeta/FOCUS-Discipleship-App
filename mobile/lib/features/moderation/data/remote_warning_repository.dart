@@ -6,8 +6,7 @@ import 'warning_repository.dart';
 /// server when a moderator or the FCU team warns someone; the app only reads
 /// and acknowledges its own.
 class RemoteWarningRepository implements WarningRepository {
-  RemoteWarningRepository(this._api, {required String? Function() myId})
-    : _myId = myId;
+  RemoteWarningRepository(this._api, {required this._myId});
 
   final ApiClient _api;
   final String? Function() _myId;

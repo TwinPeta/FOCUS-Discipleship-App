@@ -1,14 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/community/data/community_repository.dart';
-import 'package:focus_1/features/community/data/member_repository.dart';
 import 'package:focus_1/features/community/domain/person.dart';
-import 'package:focus_1/features/feed/data/post_repository.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
 import 'package:focus_1/features/messaging/data/messaging_repository.dart';
-import 'package:focus_1/features/messaging/data/moderation_repository.dart';
-import 'package:focus_1/features/prayer/data/prayer_repository.dart';
-import 'package:focus_1/features/testimony/data/testimony_repository.dart';
+
+import '../support/fakes.dart';
 
 /// Blocking is enforced in the repositories: everything a blocked person
 /// wrote disappears, and messaging them is refused.

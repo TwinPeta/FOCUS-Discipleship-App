@@ -14,30 +14,39 @@ import { AnnouncementForm } from "@/features/announcements/components/Announceme
 import { AnnouncementList } from "@/features/announcements/components/AnnouncementList";
 import {
   fetchAnnouncements,
-  MOCK_ANNOUNCEMENTS,
   type Announcement,
 } from "@/features/announcements/queries";
 import { StoryList } from "@/features/stories/components/StoryList";
 import { StoryUploader } from "@/features/stories/components/StoryUploader";
 import {
   fetchLandingStories,
-  MOCK_STORIES,
   saveLandingStories,
   type LandingStory,
 } from "@/features/stories/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function AnnouncementsPage() {
   const [activeTab, setActiveTab] = useState<"announcements" | "stories">("announcements");
-  const [announcements, setAnnouncements] = useState<Announcement[]>(MOCK_ANNOUNCEMENTS);
-  const [stories, setStories] = useState<LandingStory[]>(MOCK_STORIES);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [stories, setStories] = useState<LandingStory[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchAnnouncements().then((res) => {
-      if (active) setAnnouncements(res);
+    fetchAnnouncements()
+      .then((res) => {
+        if (active) setAnnouncements(res);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
-    fetchLandingStories().then((res) => {
-      if (active) setStories(res);
+    fetchLandingStories()
+      .then((res) => {
+        if (active) setStories(res);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
     return () => {
       active = false;
@@ -59,6 +68,7 @@ export default function AnnouncementsPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">

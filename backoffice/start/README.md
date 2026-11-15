@@ -10,14 +10,14 @@ The staff back office for the FCU Student Community App: manage institutions and
 ## First run
 ```bash
 pnpm install
-cp .env.example .env.local        # keep NEXT_PUBLIC_API_MOCKING=enabled until the backend exists
+cp .env.example .env.local        # API_BASE_URL must point at a running API (see ../api/README.md)
 pnpm dev                          # http://localhost:3000
 ```
 
 ## Working with the backend
 1. Ask the backend developer for `openapi.yaml` (even a draft). Put it in `../docs/openapi.yaml`.
 2. `pnpm api:generate` creates `src/lib/api/schema.d.ts`.
-3. Until the backend is ready, build against MSW mocks (`mocks/`). Add the handler and fixtures before each feature.
+3. There is no mock mode: every screen reads and writes the real API. Run it locally with `cd ../api && npm start` (start it with `ADMIN_EMAIL` and `ADMIN_PASSWORD` set to create the first admin, then add data in the back office).
 4. Browser calls go through `src/app/api/proxy/[...path]` so tokens stay in httpOnly cookies.
 5. `docs/api-needs.md` lists what the screens need from the API.
 
@@ -44,7 +44,6 @@ pnpm dev                          # http://localhost:3000
 | `src/features/` | One module per feature: components, queries, schemas |
 | `src/components/` | Shared UI: layout, data-table, common (side panel, filters, dropzone), feedback, shadcn `ui/` |
 | `src/lib/` | API client, auth, permissions and scope, env, logging |
-| `mocks/` | MSW handlers and fixtures |
 | `tests/` | Unit, component, e2e, a11y |
 | `docs/` | Screen map, feature specs, API needs, permissions, brand, design vs BRD |
 | `start/` | This folder |

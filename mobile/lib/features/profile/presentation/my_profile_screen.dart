@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -161,14 +160,10 @@ class _Header extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          GestureDetector(
-            // Debug builds only: long-press opens the scenario registry.
-            onLongPress: kDebugMode ? () => context.push('/debug') : null,
-            child: Text(
-              profile.fullName,
-              style: AppTextStyles.profileName,
-              textAlign: TextAlign.center,
-            ),
+          Text(
+            profile.fullName,
+            style: AppTextStyles.profileName,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(

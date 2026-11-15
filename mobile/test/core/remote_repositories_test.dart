@@ -41,9 +41,7 @@ class _Api {
     client: MockClient((request) async {
       seen.add(request);
       final route = routes['${request.method} ${request.url.path}'];
-      return route == null
-          ? _json(404, {'code': 'not_found'})
-          : route(request);
+      return route == null ? _json(404, {'code': 'not_found'}) : route(request);
     }),
   );
 }
@@ -58,73 +56,79 @@ Map<String, dynamic> _user(String id, String name, String role) => {
 
 void main() {
   group('RemoteCommunityRepository', () {
-    test('the General community carries leadership and meeting labels', () async {
-      final api = _Api({
-        'GET /v1/me/communities': (_) => _json(200, {
-          'general': {
-            'community': {'id': 'c-gen'},
-            'membership_status': 'member',
-          },
-          'specific': null,
-        }),
-        'GET /v1/communities/c-gen': (_) => _json(200, {
-          'id': 'c-gen',
-          'type': 'general',
-          'name': 'General community',
-          'initials': 'GE',
-          'description': 'Everyone',
-          'institution': {'id': 'i1', 'name': 'Makerere University'},
-          'meeting': {
-            'recurrence': 'weekly',
-            'weekday': 'tue',
-            'start_time': '17:00',
-            'location': 'Room 3',
-          },
-          'leadership': [
-            _user('u1', 'Grace', 'super_mentor'),
-            _user('u2', 'David', 'mentor'),
-          ],
-        }),
-      });
-      final repo = RemoteCommunityRepository(api.client);
+    test(
+      'the General community carries leadership and meeting labels',
+      () async {
+        final api = _Api({
+          'GET /v1/me/communities': (_) => _json(200, {
+            'general': {
+              'community': {'id': 'c-gen'},
+              'membership_status': 'member',
+            },
+            'specific': null,
+          }),
+          'GET /v1/communities/c-gen': (_) => _json(200, {
+            'id': 'c-gen',
+            'type': 'general',
+            'name': 'General community',
+            'initials': 'GE',
+            'description': 'Everyone',
+            'institution': {'id': 'i1', 'name': 'Makerere University'},
+            'meeting': {
+              'recurrence': 'weekly',
+              'weekday': 'tue',
+              'start_time': '17:00',
+              'location': 'Room 3',
+            },
+            'leadership': [
+              _user('u1', 'Grace', 'super_mentor'),
+              _user('u2', 'David', 'mentor'),
+            ],
+          }),
+        });
+        final repo = RemoteCommunityRepository(api.client);
 
-      final c = await repo.getGeneralCommunity('ignored', 'ignored');
+        final c = await repo.getGeneralCommunity('ignored', 'ignored');
 
-      expect(c.id, 'c-gen');
-      expect(c.institutionId, 'i1');
-      expect(c.meetingDay, 'Every Tuesday');
-      expect(c.meetingTime, '5:00 PM');
-      expect(c.room, 'Room 3');
-      expect(c.superMentor?.id, 'u1');
-      expect(c.mentors.map((m) => m.id), ['u2']);
-    });
+        expect(c.id, 'c-gen');
+        expect(c.institutionId, 'i1');
+        expect(c.meetingDay, 'Every Tuesday');
+        expect(c.meetingTime, '5:00 PM');
+        expect(c.room, 'Room 3');
+        expect(c.superMentor?.id, 'u1');
+        expect(c.mentors.map((m) => m.id), ['u2']);
+      },
+    );
   });
 
   group('RemoteMembershipRepository', () {
-    test('a pending request that becomes a membership is an unseen result', () async {
-      var status = 'pending';
-      final api = _Api({
-        'GET /v1/me/communities': (_) => _json(200, {
-          'general': null,
-          'specific': {
-            'community': {'id': 'c1'},
-            'membership_status': status,
-          },
-        }),
-      });
-      final repo = RemoteMembershipRepository(api.client);
+    test(
+      'a pending request that becomes a membership is an unseen result',
+      () async {
+        var status = 'pending';
+        final api = _Api({
+          'GET /v1/me/communities': (_) => _json(200, {
+            'general': null,
+            'specific': {
+              'community': {'id': 'c1'},
+              'membership_status': status,
+            },
+          }),
+        });
+        final repo = RemoteMembershipRepository(api.client);
 
-      final pending = await repo.getMembership();
-      expect(pending.status, MembershipStatus.pending);
+        final pending = await repo.getMembership();
+        expect(pending.status, MembershipStatus.pending);
 
-      status = 'member';
-      final approved = await repo.getMembership();
-      expect(approved.status, MembershipStatus.approved);
-      expect(approved.hasUnseenResult, isTrue);
+        status = 'member';
+        final approved = await repo.getMembership();
+        expect(approved.status, MembershipStatus.approved);
+        expect(approved.hasUnseenResult, isTrue);
 
-      final seen = await repo.markResultSeen();
-      expect(seen.hasUnseenResult, isFalse);
-    });
+        final seen = await repo.markResultSeen();
+        expect(seen.hasUnseenResult, isFalse);
+      },
+    );
 
     test('a declined request shows its note until it is cleared', () async {
       final api = _Api({
@@ -152,22 +156,25 @@ void main() {
       expect((await repo.getMembership()).status, MembershipStatus.none);
     });
 
-    test('requesting while another community is active hits the limit', () async {
-      final api = _Api({
-        'GET /v1/me/communities': (_) => _json(200, {
-          'general': null,
-          'specific': {
-            'community': {'id': 'other'},
-            'membership_status': 'member',
-          },
-        }),
-      });
-      final repo = RemoteMembershipRepository(api.client);
-      await expectLater(
-        repo.requestToJoin('c1'),
-        throwsA(isA<MembershipLimitReached>()),
-      );
-    });
+    test(
+      'requesting while another community is active hits the limit',
+      () async {
+        final api = _Api({
+          'GET /v1/me/communities': (_) => _json(200, {
+            'general': null,
+            'specific': {
+              'community': {'id': 'other'},
+              'membership_status': 'member',
+            },
+          }),
+        });
+        final repo = RemoteMembershipRepository(api.client);
+        await expectLater(
+          repo.requestToJoin('c1'),
+          throwsA(isA<MembershipLimitReached>()),
+        );
+      },
+    );
 
     test('leaving calls the API and clears the membership', () async {
       final api = _Api({
@@ -210,8 +217,10 @@ void main() {
 
     test('maps a post with its photo and role badge', () async {
       final api = _Api({
-        'GET /v1/communities/c1/posts': (_) =>
-            _json(200, {'items': [post()], 'next_cursor': 'abc'}),
+        'GET /v1/communities/c1/posts': (_) => _json(200, {
+          'items': [post()],
+          'next_cursor': 'abc',
+        }),
       });
       final page = await repo(api).getPosts('c1', PostScope.specific);
 
@@ -224,8 +233,9 @@ void main() {
 
     test('liking uses the server counts', () async {
       final api = _Api({
-        'GET /v1/communities/c1/posts': (_) =>
-            _json(200, {'items': [post()]}),
+        'GET /v1/communities/c1/posts': (_) => _json(200, {
+          'items': [post()],
+        }),
         'PUT /v1/posts/p1/like': (_) =>
             _json(200, {'like_count': 3, 'liked_by_me': true}),
       });
@@ -238,30 +248,34 @@ void main() {
       expect(liked.likedByMe, isTrue);
     });
 
-    test('creating a post sends an idempotency key and returns the stored post', () async {
-      final api = _Api({
-        'POST /v1/communities/c1/posts': (_) => _json(201, post()),
-      });
-      final stored = await repo(api).createPost(
-        Post(
-          id: 'local-1',
-          communityId: 'c1',
-          scope: PostScope.specific,
-          author: const Person(id: 'me', name: 'Me', role: PersonRole.member),
-          body: 'Hello',
-          createdAt: DateTime(2026),
-        ),
-      );
-      final request = api.seen.single;
-      expect(request.headers['Idempotency-Key'], 'local-1');
-      expect(jsonDecode(request.body)['text'], 'Hello');
-      expect(stored.id, 'p1'); // the server's id replaces the local one
-    });
+    test(
+      'creating a post sends an idempotency key and returns the stored post',
+      () async {
+        final api = _Api({
+          'POST /v1/communities/c1/posts': (_) => _json(201, post()),
+        });
+        final stored = await repo(api).createPost(
+          Post(
+            id: 'local-1',
+            communityId: 'c1',
+            scope: PostScope.specific,
+            author: const Person(id: 'me', name: 'Me', role: PersonRole.member),
+            body: 'Hello',
+            createdAt: DateTime(2026),
+          ),
+        );
+        final request = api.seen.single;
+        expect(request.headers['Idempotency-Key'], 'local-1');
+        expect(jsonDecode(request.body)['text'], 'Hello');
+        expect(stored.id, 'p1'); // the server's id replaces the local one
+      },
+    );
 
     test('a hidden post stays out of the feed', () async {
       final api = _Api({
-        'GET /v1/communities/c1/posts': (_) =>
-            _json(200, {'items': [post()]}),
+        'GET /v1/communities/c1/posts': (_) => _json(200, {
+          'items': [post()],
+        }),
       });
       final posts = repo(api);
       await posts.hidePost('p1');
@@ -278,8 +292,18 @@ void main() {
       final api = _Api({
         'GET /v1/conversations/t1/messages': (_) => _json(200, {
           'items': [
-            {'id': 'm2', 'sender_id': 'me-id', 'text': 'B', 'sent_at': '2026-01-01T10:01:00Z'},
-            {'id': 'm1', 'sender_id': 'u9', 'text': 'A', 'sent_at': '2026-01-01T10:00:00Z'},
+            {
+              'id': 'm2',
+              'sender_id': 'me-id',
+              'text': 'B',
+              'sent_at': '2026-01-01T10:01:00Z',
+            },
+            {
+              'id': 'm1',
+              'sender_id': 'u9',
+              'text': 'A',
+              'sent_at': '2026-01-01T10:00:00Z',
+            },
           ],
         }),
       });
@@ -288,19 +312,22 @@ void main() {
       expect(messages.map((m) => m.isMine), [false, true]);
     });
 
-    test('the under-18 limit from the server becomes MessagingRestricted', () async {
-      final api = _Api({
-        'POST /v1/conversations': (_) =>
-            _json(403, {'code': 'messaging_restricted'}),
-      });
-      await expectLater(
-        repo(api).openOrCreateThread(
-          const Person(id: 'u9', name: 'Adult', role: PersonRole.member),
-          'Member',
-        ),
-        throwsA(isA<MessagingRestricted>()),
-      );
-    });
+    test(
+      'the under-18 limit from the server becomes MessagingRestricted',
+      () async {
+        final api = _Api({
+          'POST /v1/conversations': (_) =>
+              _json(403, {'code': 'messaging_restricted'}),
+        });
+        await expectLater(
+          repo(api).openOrCreateThread(
+            const Person(id: 'u9', name: 'Adult', role: PersonRole.member),
+            'Member',
+          ),
+          throwsA(isA<MessagingRestricted>()),
+        );
+      },
+    );
   });
 
   group('RemoteMeetingRepository', () {
@@ -320,9 +347,8 @@ void main() {
           'past': [meeting(attended: true)],
         }),
       });
-      final schedule = await RemoteMeetingRepository(
-        api.client,
-      ).getSchedule('c1', now: DateTime(2026, 5, 12));
+      final schedule = await RemoteMeetingRepository(api.client)
+          .getSchedule('c1', now: DateTime(2026, 5, 12));
       expect(schedule.next?.room, 'Room 3');
       expect(schedule.next?.going, isTrue);
       expect(schedule.past.single.attended, isTrue);
@@ -373,8 +399,9 @@ void main() {
 
     test('lists cases, then warning one hides it on this device', () async {
       final api = _Api({
-        'GET /v1/communities/c1/moderation/cases': (_) =>
-            _json(200, {'items': [caseJson]}),
+        'GET /v1/communities/c1/moderation/cases': (_) => _json(200, {
+          'items': [caseJson],
+        }),
         'POST /v1/communities/c1/moderation/cases/post%3Ap1/action': (_) =>
             _json(200, {...caseJson, 'outcome': 'warned'}),
       });
@@ -389,7 +416,10 @@ void main() {
       expect(open.single.authorId, 'u1');
       expect(repo.isHidden('p1'), isFalse);
 
-      final done = await repo.warnAuthor('post:p1', actorRole: UserRole.superMentor);
+      final done = await repo.warnAuthor(
+        'post:p1',
+        actorRole: UserRole.superMentor,
+      );
       expect(done.outcome, ModerationOutcome.warned);
       expect(done.isOpen, isFalse);
       expect(jsonDecode(api.seen.last.body), {'action': 'warn'});
@@ -398,8 +428,9 @@ void main() {
 
     test('acting on a closed case says so', () async {
       final api = _Api({
-        'GET /v1/communities/c1/moderation/cases': (_) =>
-            _json(200, {'items': [caseJson]}),
+        'GET /v1/communities/c1/moderation/cases': (_) => _json(200, {
+          'items': [caseJson],
+        }),
         'POST /v1/communities/c1/moderation/cases/post%3Ap1/action': (_) =>
             _json(409, {'code': 'case_closed'}),
       });
@@ -422,7 +453,9 @@ void main() {
         'acknowledged': false,
       };
       final api = _Api({
-        'GET /v1/me/warnings': (_) => _json(200, {'items': [warning]}),
+        'GET /v1/me/warnings': (_) => _json(200, {
+          'items': [warning],
+        }),
         'POST /v1/me/warnings/w1/acknowledge': (_) =>
             _json(200, {...warning, 'acknowledged': true}),
       });

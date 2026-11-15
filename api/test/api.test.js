@@ -1,11 +1,10 @@
 process.env.NODE_ENV = 'test';
-process.env.SEED_DEMO_DATA = 'false';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
 const { createApp } = require('../src/app');
-const { seed, DEMO_PASSWORD } = require('../src/db/seed');
+const { seed, DEMO_PASSWORD } = require('./helpers/seed');
 const store = require('../src/db/store');
 const contract = require('./helpers/contract');
 

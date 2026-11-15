@@ -1,22 +1,21 @@
 process.env.NODE_ENV = 'test';
-process.env.SEED_DEMO_DATA = 'false';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
 const { createApp } = require('../src/app');
-const { seed, DEMO_PASSWORD } = require('../src/db/seed');
+const { seed, DEMO_PASSWORD } = require('./helpers/seed');
 const store = require('../src/db/store');
 const contract = require('./helpers/contract');
 
 let server, base, ctx;
 let spec; // docs/api/openapi-admin.yaml: every response in this file is checked against it
 const A = '/v1/admin';
-const call = async (method, path, { token, body } = {}) => {
+const call = async (method, path, { token, body, raw } = {}) => {
   const res = await fetch(base + A + path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: { 'Content-Type': raw || 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? (raw ? body : JSON.stringify(body)) : undefined, // raw = content type of a binary body
   });
   const text = await res.text();
   let json = null; try { json = text ? JSON.parse(text) : null; } catch { json = text; }
@@ -325,6 +324,10 @@ test('contract sweep: remaining staff operations return what the spec says', asy
   ok(await call('GET', '/reports/schedules', S), 200);
   const sch = await call('POST', '/reports/schedules', { ...S, body: { reportType: 'community_health', cadence: 'weekly', recipientEmail: 'sweep@fcu.test' } });
   ok(sch, 201);
+  const paused = await call('PATCH', `/reports/schedules/${sch.body.id}`, { ...S, body: { active: false } });
+  ok(paused, 200);
+  assert.equal(paused.body.active, false);
+  ok(await call('PATCH', `/reports/schedules/${sch.body.id}`, { ...S, body: {} }), 422);
   ok(await call('DELETE', `/reports/schedules/${sch.body.id}`, S), 204);
 
   // my community (super-mentor)
@@ -347,6 +350,127 @@ test('contract sweep: remaining staff operations return what the spec says', asy
 });
 
 // Keeps the docs honest: an operation documented but never called by a test has an unchecked schema.
+// ───────── staff file uploads ─────────
+test('staff uploads: slot -> bytes -> complete -> permanent address that serves the file', async () => {
+  const sys = (await login('admin@fcu.test')).token;
+  const bytes = Buffer.from('fake-png-bytes');
+  const slot = await call('POST', '/media', { token: sys, body: { purpose: 'cover_photo', content_type: 'image/png', size_bytes: bytes.length } });
+  assert.equal(slot.status, 201);
+  assert.equal(slot.body.direct, false);
+  assert.match(slot.body.url, /\/uploads\/[0-9a-f-]{36}$/);
+
+  // not complete until the bytes arrive
+  assert.equal((await call('POST', `/media/${slot.body.media_id}/complete`, { token: sys })).status, 409);
+  assert.equal((await call('PUT', `/media/${slot.body.media_id}/upload`, { token: sys, body: bytes, raw: 'image/png' })).status, 204);
+  assert.equal((await call('PUT', `/media/${slot.body.media_id}/upload`, { token: sys, body: bytes, raw: 'image/png' })).status, 409, 'cannot be overwritten');
+  const done = await call('POST', `/media/${slot.body.media_id}/complete`, { token: sys });
+  assert.equal(done.status, 200);
+  const served = await fetch(done.body.url.replace(/^https?:\/\/[^/]+/, base));
+  assert.equal(served.status, 200);
+  assert.equal(served.headers.get('content-type'), 'image/png');
+  assert.deepEqual(Buffer.from(await served.arrayBuffer()), bytes);
+
+  // rules per purpose, and one person cannot touch another's upload
+  assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'cover_photo', content_type: 'image/gif', size_bytes: 10 } })).status, 422);
+  assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'cover_photo', content_type: 'image/png', size_bytes: 6 * 1024 * 1024 } })).status, 422);
+  assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'content_video', content_type: 'video/mp4', size_bytes: 400 * 1024 * 1024 } })).status, 201);
+  assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'nope', content_type: 'image/png', size_bytes: 1 } })).status, 422);
+  const other = (await login('content@fcu.test')).token;
+  assert.equal((await call('POST', `/media/${slot.body.media_id}/complete`, { token: other })).status, 404);
+  assert.equal((await call('POST', '/media', { body: { purpose: 'cover_photo', content_type: 'image/png', size_bytes: 1 } })).status, 401);
+});
+
 test('zz every documented staff operation is exercised by a test', async () => {
   assert.deepEqual(contract.unexercised(spec), []);
+});
+
+// ───────── server-side sessions ─────────
+test('sessions live on the server: opaque cookie, logout/expiry/revocation end them immediately', async () => {
+  const me = (headers) => fetch(base + A + '/auth/me', { headers }).then((r) => r.status);
+  const a = await login('admin@fcu.test');
+  assert.match(a.token, /^[0-9a-f]{64}$/, 'the cookie is an opaque random handle, not a JWT');
+  assert.ok(!(a.headers.getSetCookie() || []).some((c) => c.startsWith('fcu_refresh=')), 'no client-held refresh token');
+
+  // The browser path: the cookie alone is enough
+  assert.equal(await me({ Cookie: `fcu_access=${a.token}` }), 200);
+
+  // Two devices; each sees the other, and the current one is flagged
+  const b = await login('admin@fcu.test');
+  const list = (await call('GET', '/account/sessions', { token: a.token })).body.sessions;
+  assert.ok(list.length >= 2);
+  assert.equal(list.filter((s) => s.current).length, 1);
+
+  // Revoking the other device ends it on its very next request
+  const other = list.find((s) => !s.current);
+  assert.equal((await call('DELETE', `/account/sessions/${other.id}`, { token: a.token })).status, 200);
+  const statuses = await Promise.all([a.token, b.token].map((t) => me({ Authorization: `Bearer ${t}` })));
+  assert.deepEqual(statuses.slice().sort(), [200, 401], 'exactly the revoked device is signed out');
+
+  // Logout revokes server-side: replaying the old cookie fails
+  const c = await login('admin@fcu.test');
+  const out = await fetch(base + A + '/auth/logout', { method: 'POST', headers: { Cookie: `fcu_access=${c.token}` } });
+  assert.equal(out.status, 200);
+  assert.match(out.headers.getSetCookie().join(';'), /fcu_access=;/);
+  assert.equal(await me({ Cookie: `fcu_access=${c.token}` }), 401);
+});
+
+test('sessions expire when idle or past the absolute limit, and activity slides a remembered cookie', async () => {
+  const me = (t) => fetch(base + A + '/auth/me', { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.status);
+  const find = (t) => store.first('staffSessions', (s) => s.tokenHash === require('crypto').createHash('sha256').update(t).digest('hex'));
+
+  const idle = await login('admin@fcu.test');
+  find(idle.token).lastActiveAt = new Date(Date.now() - 9 * 3600e3).toISOString(); // default idle limit is 8 h
+  assert.equal(await me(idle.token), 401);
+
+  const remembered = await login('admin@fcu.test', { rememberMe: true });
+  find(remembered.token).lastActiveAt = new Date(Date.now() - 9 * 3600e3).toISOString();
+  assert.equal(await me(remembered.token), 200, 'a remembered session tolerates a longer idle period');
+  find(remembered.token).lastActiveAt = new Date(Date.now() - 6 * 60e3).toISOString(); // stale enough to be re-recorded
+  const res = await fetch(base + A + '/auth/me', { headers: { Cookie: `fcu_access=${remembered.token}` } });
+  assert.match((res.headers.getSetCookie() || []).join(';'), /fcu_access=.*Max-Age=\d+/, 'activity re-issues the cookie (sliding expiry)');
+
+  const old = await login('admin@fcu.test');
+  find(old.token).expiresAt = Date.now() - 1000; // absolute limit
+  assert.equal(await me(old.token), 401);
+});
+
+test('password change signs out other devices; suspension signs out everywhere', async () => {
+  const me = (t) => fetch(base + A + '/auth/me', { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.status);
+  const phone = await login('content@fcu.test');
+  const laptop = await login('content@fcu.test');
+  const change = await call('POST', '/account/password', { token: laptop.token, body: { currentPassword: DEMO_PASSWORD, newPassword: 'NewPass123' } });
+  assert.equal(change.status, 200);
+  assert.equal(await me(phone.token), 401, 'the other device is signed out');
+  assert.equal(await me(laptop.token), 200, 'the device that changed the password stays in');
+  // put the password back for any later test
+  await call('POST', '/account/password', { token: laptop.token, body: { currentPassword: 'NewPass123', newPassword: DEMO_PASSWORD + 'x' } });
+  store.first('users', (u) => u.email === 'content@fcu.test').passwordHash = require('bcryptjs').hashSync(DEMO_PASSWORD, 4);
+
+  const target = await login('content@fcu.test');
+  const admin = await login('admin@fcu.test');
+  const id = store.first('users', (u) => u.email === 'content@fcu.test').id;
+  assert.equal((await call('POST', `/members/${id}/suspend`, { token: admin.token, body: { reason: 'testing sessions' } })).status, 200);
+  assert.equal(await me(target.token), 401, 'suspension ends the session at once');
+  store.first('users', (u) => u.id === id).suspended = false;
+});
+
+test('a person keeps at most 10 sessions (least recently used goes first) and expired ones are swept', async () => {
+  const sessions = require('../src/admin/sessions');
+  const email = 'content@fcu.test';
+  const first = await login(email);
+  const firstSession = store.first('staffSessions', (x) => x.tokenHash === require('crypto').createHash('sha256').update(first.token).digest('hex'));
+  firstSession.lastActiveAt = new Date(Date.now() - 3600e3).toISOString(); // the oldest
+  const tokens = [];
+  for (let i = 0; i < sessions.MAX_PER_USER; i++) tokens.push((await login(email)).token);
+  const status = (t) => fetch(base + A + '/auth/me', { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.status);
+  assert.equal(await status(first.token), 401, 'the oldest session was dropped');
+  assert.equal(await status(tokens[tokens.length - 1]), 200, 'the newest one works');
+  const id = store.first('users', (u) => u.email === email).id;
+  assert.ok(sessions.active(id).length <= sessions.MAX_PER_USER);
+
+  // sweep forgets expired sessions of everybody
+  store.first('staffSessions', (x) => x.userId === id).expiresAt = Date.now() - 1000;
+  const before = store.col('staffSessions').length;
+  sessions.sweep();
+  assert.equal(store.col('staffSessions').length, before - 1);
 });

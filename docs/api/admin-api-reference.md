@@ -1,10 +1,10 @@
 # FCU Back Office – Staff API — endpoint reference
 
-> Generated from `live-openapi-admin.yaml` (OpenAPI 3.1.0, API version 1.0.0) by `docs/api/tools/openapi_to_markdown.js`. Do not edit by hand; regenerate.
+> Generated from `openapi-admin.yaml` (OpenAPI 3.1.0, API version 1.0.0) by `docs/api/tools/openapi_to_markdown.js`. Do not edit by hand; regenerate.
 
-**Servers:** `http://localhost:4000/v1/admin` (This server (production)), `https://apis.focusuganda.org/v1/admin` (Production), `http://localhost:4000/v1/admin` (Local development)
+**Servers:** `https://apis.focusuganda.org/v1/admin` (Production), `http://localhost:4000/v1/admin` (Local development)
 
-**87 operations** in 20 groups.
+**91 operations** in 21 groups.
 
 ## Index
 
@@ -14,8 +14,8 @@ Staff sign-in, session cookies, password reset
 
 | Method | Path | Summary | Auth |
 |---|---|---|---|
-| `POST` | [`/auth/login`](#post-auth-login) | Staff login (sets httpOnly fcu_access / fcu_refresh cookies) | none (public) |
-| `POST` | [`/auth/logout`](#post-auth-logout) | Clear session cookies | none (public) |
+| `POST` | [`/auth/login`](#post-auth-login) | Staff login (creates a server-side session, sets the httpOnly fcu_access cookie) | none (public) |
+| `POST` | [`/auth/logout`](#post-auth-logout) | Sign out (ends the session on the server and clears the cookie) | none (public) |
 | `POST` | [`/auth/forgot-password`](#post-auth-forgot-password) | Request a reset link (always 200) | none (public) |
 | `POST` | [`/auth/reset-password`](#post-auth-reset-password) | Set a new password from a reset token (410 if expired/used) | none (public) |
 | `GET` | [`/auth/me`](#get-auth-me) | Current staff user | cookieAuth or bearerAuth |
@@ -208,6 +208,7 @@ Scheduled and on-demand reports
 | `POST` | [`/reports/export`](#post-reports-export) | Export as csv or json (pdf/xlsx → 501) | cookieAuth or bearerAuth |
 | `GET` | [`/reports/schedules`](#get-reports-schedules) | Scheduled reports | cookieAuth or bearerAuth |
 | `POST` | [`/reports/schedules`](#post-reports-schedules) | Schedule a report | cookieAuth or bearerAuth |
+| `PATCH` | [`/reports/schedules/{id}`](#patch-reports-schedules-id) | Pause or resume a schedule | cookieAuth or bearerAuth |
 | `DELETE` | [`/reports/schedules/{id}`](#delete-reports-schedules-id) | Remove a schedule | cookieAuth or bearerAuth |
 
 ### My community
@@ -231,9 +232,19 @@ The signed-in staff member: profile, password, sessions
 | Method | Path | Summary | Auth |
 |---|---|---|---|
 | `PATCH` | [`/account/profile`](#patch-account-profile) | Update own name/avatar | cookieAuth or bearerAuth |
-| `POST` | [`/account/password`](#post-account-password) | Change password (revokes refresh tokens) | cookieAuth or bearerAuth |
-| `GET` | [`/account/sessions`](#get-account-sessions) | Own active sessions | cookieAuth or bearerAuth |
-| `DELETE` | [`/account/sessions/{id}`](#delete-account-sessions-id) | Revoke a session | cookieAuth or bearerAuth |
+| `POST` | [`/account/password`](#post-account-password) | Change password (signs out every other device) | cookieAuth or bearerAuth |
+| `GET` | [`/account/sessions`](#get-account-sessions) | Own active sessions (server-side; `current` marks this device) | cookieAuth or bearerAuth |
+| `DELETE` | [`/account/sessions/{id}`](#delete-account-sessions-id) | Revoke a session (that device is signed out on its next request) | cookieAuth or bearerAuth |
+
+### Media
+
+File uploads for covers, thumbnails, videos, documents and story videos
+
+| Method | Path | Summary | Auth |
+|---|---|---|---|
+| `POST` | [`/media`](#post-media) | Start an upload (returns where to send the file and its permanent address) | cookieAuth or bearerAuth |
+| `PUT` | [`/media/{id}/upload`](#put-media-id-upload) | Send the file bytes (local-storage mode only; with R2 upload to the signed URL instead) | cookieAuth or bearerAuth |
+| `POST` | [`/media/{id}/complete`](#post-media-id-complete) | Confirm the upload arrived; returns the permanent file address | cookieAuth or bearerAuth |
 
 ## Endpoints
 
@@ -242,7 +253,7 @@ The signed-in staff member: profile, password, sessions
 <a id="post-auth-login"></a>
 ### `POST /auth/login`
 
-**Staff login (sets httpOnly fcu_access / fcu_refresh cookies)**
+**Staff login (creates a server-side session, sets the httpOnly fcu_access cookie)**
 
 Roles: public
 
@@ -269,7 +280,7 @@ Roles: public
 <a id="post-auth-logout"></a>
 ### `POST /auth/logout`
 
-**Clear session cookies**
+**Sign out (ends the session on the server and clears the cookie)**
 
 Roles: public
 
@@ -2169,6 +2180,38 @@ Roles: SYSTEM_ADMIN, CONTENT_ADMIN
 | `403` | RFC 7807 problem | [Problem](#schema-problem) |
 | `422` | RFC 7807 problem | [Problem](#schema-problem) |
 
+<a id="patch-reports-schedules-id"></a>
+### `PATCH /reports/schedules/{id}`
+
+**Pause or resume a schedule**
+
+Roles: SYSTEM_ADMIN, CONTENT_ADMIN
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `patchReportsSchedulesId`
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `id` | path | string | yes |  |
+
+**Request body** (`application/json`, required)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `active` | boolean | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [ReportSchedule](#schema-reportschedule) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+| `404` | RFC 7807 problem | [Problem](#schema-problem) |
+| `422` | RFC 7807 problem | [Problem](#schema-problem) |
+
 <a id="delete-reports-schedules-id"></a>
 ### `DELETE /reports/schedules/{id}`
 
@@ -2388,7 +2431,7 @@ Roles: staff
 <a id="post-account-password"></a>
 ### `POST /account/password`
 
-**Change password (revokes refresh tokens)**
+**Change password (signs out every other device)**
 
 Roles: staff
 
@@ -2407,7 +2450,7 @@ Roles: staff
 <a id="get-account-sessions"></a>
 ### `GET /account/sessions`
 
-**Own active sessions**
+**Own active sessions (server-side; `current` marks this device)**
 
 Roles: staff
 
@@ -2425,7 +2468,7 @@ Roles: staff
 <a id="delete-account-sessions-id"></a>
 ### `DELETE /account/sessions/{id}`
 
-**Revoke a session**
+**Revoke a session (that device is signed out on its next request)**
 
 Roles: staff
 
@@ -2445,6 +2488,95 @@ Roles: staff
 | `200` | OK | [Ok](#schema-ok) |
 | `401` | RFC 7807 problem | [Problem](#schema-problem) |
 | `403` | RFC 7807 problem | [Problem](#schema-problem) |
+
+## Media
+
+<a id="post-media"></a>
+### `POST /media`
+
+**Start an upload (returns where to send the file and its permanent address)**
+
+Roles: staff. Allowed per `purpose`: `cover_photo` (jpeg/png, 5 MB), `content_thumbnail` (jpeg/png/webp, 5 MB),
+`content_video` (mp4/webm/quicktime, 500 MB), `content_document` (pdf/doc/docx, 25 MB), `story_video` (mp4/webm/quicktime, 200 MB).
+
+With Cloudflare R2 (`direct: true`) the browser `PUT`s the file to `upload_url` with `upload_headers`; otherwise it sends
+the bytes to `PUT /media/{id}/upload`. Then call `POST /media/{id}/complete` and store the returned `url` on the record.
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `postMedia`
+
+**Request body** (`application/json`, required): [MediaSlotBody](#schema-mediaslotbody)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `purpose` | string (`cover_photo`, `content_thumbnail`, `content_video`, `content_document`, `story_video`) | yes |  |
+| `content_type` | string | yes |  |
+| `size_bytes` | integer | yes | ≥ 1 |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `201` | Created | [MediaSlot](#schema-mediaslot) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `403` | RFC 7807 problem | [Problem](#schema-problem) |
+| `422` | RFC 7807 problem | [Problem](#schema-problem) |
+
+<a id="put-media-id-upload"></a>
+### `PUT /media/{id}/upload`
+
+**Send the file bytes (local-storage mode only; with R2 upload to the signed URL instead)**
+
+Roles: staff (the uploader). Body is the raw file; `Content-Type` must match the slot.
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `putMediaIdUpload`
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `id` | path | string | yes |  |
+
+**Request body** (`*/*`, required)
+
+Type: string · binary
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `204` | Stored | — |
+| `400` | RFC 7807 problem | [Problem](#schema-problem) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `404` | RFC 7807 problem | [Problem](#schema-problem) |
+| `409` | RFC 7807 problem | [Problem](#schema-problem) |
+| `413` | RFC 7807 problem | [Problem](#schema-problem) |
+
+<a id="post-media-id-complete"></a>
+### `POST /media/{id}/complete`
+
+**Confirm the upload arrived; returns the permanent file address**
+
+Roles: staff (the uploader)
+
+- **Auth:** cookieAuth or bearerAuth
+- **Operation id:** `postMediaIdComplete`
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `id` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [MediaReady](#schema-mediaready) |
+| `401` | RFC 7807 problem | [Problem](#schema-problem) |
+| `404` | RFC 7807 problem | [Problem](#schema-problem) |
+| `409` | RFC 7807 problem | [Problem](#schema-problem) |
 
 ## Schemas
 
@@ -2821,6 +2953,36 @@ Roles: staff
 | `completionsByType` | array of any |  |  |
 | `activeCommunities` | array of object |  |  |
 | `scheduledReports` | array of any |  |  |
+
+<a id="schema-mediaslotbody"></a>
+### MediaSlotBody
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `purpose` | string (`cover_photo`, `content_thumbnail`, `content_video`, `content_document`, `story_video`) | yes |  |
+| `content_type` | string | yes |  |
+| `size_bytes` | integer | yes | ≥ 1 |
+
+<a id="schema-mediaslot"></a>
+### MediaSlot
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `media_id` | string | yes |  |
+| `url` | string | yes | Permanent address of the file once uploaded |
+| `direct` | boolean | yes | true: PUT to upload_url; false: PUT the bytes to /media/{id}/upload |
+| `upload_url` | string \| null | yes | nullable |
+| `upload_headers` | object | yes |  |
+| `expires_at` | string · date-time | yes |  |
+
+<a id="schema-mediaready"></a>
+### MediaReady
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `media_id` | string | yes |  |
+| `status` | string | yes |  |
+| `url` | string | yes |  |
 
 <a id="schema-sessionlist"></a>
 ### SessionList

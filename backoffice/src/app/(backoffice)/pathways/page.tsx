@@ -15,18 +15,24 @@ import { Plus } from "lucide-react";
 import { PathwayList } from "@/features/pathways/components/PathwayList";
 import {
   fetchPathways,
-  MOCK_PATHWAYS,
   type Pathway,
 } from "@/features/pathways/queries";
 import { ROUTES } from "@/lib/constants/routes";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function PathwaysPage() {
-  const [pathways, setPathways] = useState<Pathway[]>(MOCK_PATHWAYS);
+  const [pathways, setPathways] = useState<Pathway[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchPathways().then((res) => {
-      if (active) setPathways(res);
+    fetchPathways()
+      .then((res) => {
+        if (active) setPathways(res);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
     return () => {
       active = false;
@@ -35,6 +41,7 @@ export default function PathwaysPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">

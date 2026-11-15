@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -61,13 +60,13 @@ import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
 import '../../features/resources/presentation/general_resources_screen.dart';
+import '../../features/search/presentation/search_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/testimony/presentation/share_testimony_screen.dart';
 import '../../features/testimony/presentation/testimonies_screen.dart';
 import '../../features/testimony/presentation/testimony_screen.dart';
-import '../debug/debug_scenarios_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/community_shell.dart';
 import '../widgets/placeholder_screen.dart';
@@ -178,11 +177,6 @@ final List<RouteBase> appRoutes = [
       path: p.path,
       builder: (context, state) =>
           PlaceholderScreen(owner: p.owner, title: p.title),
-    ),
-  if (kDebugMode)
-    GoRoute(
-      path: '/debug',
-      builder: (context, state) => const DebugScenariosScreen(),
     ),
   GoRoute(
     path: '/request/approved',
@@ -438,6 +432,7 @@ final List<RouteBase> appRoutes = [
     path: '/badge/:id/earned',
     builder: (context, state) => BadgeEarnedScreen(badgeId: _id(state)),
   ),
+  GoRoute(path: '/search', builder: (context, state) => const SearchScreen()),
 ];
 
 class _Tab {

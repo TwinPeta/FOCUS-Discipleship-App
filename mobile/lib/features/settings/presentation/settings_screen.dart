@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -141,15 +140,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onPressed: _signingOut ? null : _signOut,
                 ),
                 const SizedBox(height: 16),
-                GestureDetector(
-                  // Debug builds only: long-press opens the scenario registry.
-                  onLongPress: kDebugMode ? () => open('/debug') : null,
-                  child: Text(
-                    'Version $appVersion',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.fieldLabel.copyWith(
-                      color: AppColors.placeholder,
-                    ),
+                Text(
+                  'Version $appVersion',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.fieldLabel.copyWith(
+                    color: AppColors.placeholder,
                   ),
                 ),
               ],

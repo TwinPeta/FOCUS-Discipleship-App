@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -45,10 +44,9 @@ class NotificationsScreen extends ConsumerWidget {
   ) async {
     try {
       if (!n.isRead) {
-        await ref.read(notificationRepositoryProvider).markRead(n.id);
-        ref.invalidate(notificationsProvider);
+        await ref.read(notificationsProvider.notifier).markRead(n.id);
       }
-      if (context.mounted) unawaited(context.push(n.targetRoute));
+      if (context.mounted) unawaited(context.push(notificationRoute(n)));
     } catch (_) {
       if (context.mounted) showErrorSnack(context);
     }
@@ -56,8 +54,7 @@ class NotificationsScreen extends ConsumerWidget {
 
   Future<void> _markAllRead(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(notificationRepositoryProvider).markAllRead();
-      ref.invalidate(notificationsProvider);
+      await ref.read(notificationsProvider.notifier).markAllRead();
     } catch (_) {
       if (context.mounted) showErrorSnack(context);
     }

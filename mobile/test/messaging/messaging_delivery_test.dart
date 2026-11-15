@@ -2,16 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/core/providers/repository_providers.dart';
-import 'package:focus_1/features/community/data/community_repository.dart';
 import 'package:focus_1/features/community/presentation/providers/community_providers.dart';
-import 'package:focus_1/features/feed/data/post_repository.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
 import 'package:focus_1/features/feed/presentation/providers/feed_providers.dart';
-import 'package:focus_1/features/messaging/data/messaging_repository.dart';
-import 'package:focus_1/features/messaging/data/moderation_repository.dart';
 import 'package:focus_1/features/messaging/domain/message.dart';
 import 'package:focus_1/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:focus_1/features/messaging/presentation/providers/moderation_providers.dart';
+
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 /// Fails the first [failures] sends, then behaves normally.
 class _FlakyMessagingRepository extends FakeMessagingRepository {
@@ -19,7 +18,11 @@ class _FlakyMessagingRepository extends FakeMessagingRepository {
   int failures;
 
   @override
-  Future<Message> sendMessage(String threadId, String text) async {
+  Future<Message> sendMessage(
+    String threadId,
+    String text, {
+    String? clientId,
+  }) async {
     if (failures > 0) {
       failures--;
       throw Exception('network');
@@ -29,7 +32,7 @@ class _FlakyMessagingRepository extends FakeMessagingRepository {
 }
 
 ProviderContainer _container(List<Override> overrides) {
-  final c = ProviderContainer(
+  final c = fakeContainer(
     overrides: [
       moderationRepositoryProvider.overrideWith(
         (ref) => FakeModerationRepository(),

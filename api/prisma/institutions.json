@@ -1,0 +1,127 @@
+[
+ {
+  "name": "Makerere University",
+  "type": "university",
+  "country": "UG"
+ },
+ {
+  "name": "Kyambogo University",
+  "type": "university",
+  "country": "UG"
+ },
+ {
+  "name": "Uganda Christian University",
+  "type": "university",
+  "country": "UG"
+ },
+ {
+  "name": "Kampala Parents School",
+  "type": "high_school",
+  "country": "UG"
+ },
+ {
+  "name": "University of Nairobi",
+  "type": "university",
+  "country": "KE"
+ },
+ {
+  "name": "University of Rwanda",
+  "type": "university",
+  "country": "RW"
+ },
+ {
+  "name": "Mbarara University of Science and Technology",
+  "type": "university",
+  "country": "UG"
+ },
+ {
+  "name": "Kenyatta University",
+  "type": "university",
+  "country": "KE"
+ },
+ {
+  "name": "Strathmore University",
+  "type": "university",
+  "country": "KE"
+ },
+ {
+  "name": "Moi University",
+  "type": "university",
+  "country": "KE"
+ },
+ {
+  "name": "Mount Kenya University Rwanda",
+  "type": "university",
+  "country": "RW"
+ },
+ {
+  "name": "University of Kigali",
+  "type": "university",
+  "country": "RW"
+ },
+ {
+  "name": "Adventist University of Central Africa",
+  "type": "university",
+  "country": "RW"
+ },
+ {
+  "name": "Gayaza High School",
+  "type": "high_school",
+  "country": "UG"
+ },
+ {
+  "name": "Kings College Budo",
+  "type": "high_school",
+  "country": "UG"
+ },
+ {
+  "name": "Namilyango College",
+  "type": "high_school",
+  "country": "UG"
+ },
+ {
+  "name": "St. Mary's College Kisubi",
+  "type": "high_school",
+  "country": "UG"
+ },
+ {
+  "name": "Alliance High School",
+  "type": "high_school",
+  "country": "KE"
+ },
+ {
+  "name": "Kenya High School",
+  "type": "high_school",
+  "country": "KE"
+ },
+ {
+  "name": "Starehe Boys Centre",
+  "type": "high_school",
+  "country": "KE"
+ },
+ {
+  "name": "Precious Blood Riruta",
+  "type": "high_school",
+  "country": "KE"
+ },
+ {
+  "name": "Lycee de Kigali",
+  "type": "high_school",
+  "country": "RW"
+ },
+ {
+  "name": "Green Hills Academy",
+  "type": "high_school",
+  "country": "RW"
+ },
+ {
+  "name": "FAWE Girls School",
+  "type": "high_school",
+  "country": "RW"
+ },
+ {
+  "name": "Riviera High School",
+  "type": "high_school",
+  "country": "RW"
+ }
+]

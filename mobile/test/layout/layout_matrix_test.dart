@@ -54,7 +54,6 @@ const _approvedRoutes = [
   '/document/resource-4',
   '/resources/video/pathway-1-step-4?pathway=pathway-1&community=growth-circle',
   '/badge/first-steps/earned',
-  '/debug',
   '/login',
   '/nope',
 ];

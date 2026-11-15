@@ -10,6 +10,7 @@ import 'package:focus_1/features/settings/presentation/privacy_screen.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 /// The harness seeds testProfile's account with this password.
 const _password = 'Password1234';

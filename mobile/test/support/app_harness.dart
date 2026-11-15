@@ -5,11 +5,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/core/router/app_router.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
-import 'package:focus_1/features/auth/data/auth_repository.dart';
-import 'package:focus_1/features/community/data/membership_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
-import 'package:focus_1/features/profile/data/profile_repository.dart';
 
+import 'fake_backend.dart';
+import 'fakes.dart';
 import 'pump_utils.dart';
 
 /// Boots the real app (real router, guards and fake repositories) with a
@@ -52,6 +51,7 @@ Future<ProviderContainer> pumpFcuApp(
 
   final container = ProviderContainer(
     overrides: [
+      ...fakeBackend(),
       authRepositoryProvider.overrideWith((ref) => auth),
       profileRepositoryProvider.overrideWith((ref) => profiles),
       membershipRepositoryProvider.overrideWith((ref) => memberships),

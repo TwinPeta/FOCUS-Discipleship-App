@@ -5,6 +5,7 @@ import 'package:focus_1/core/connectivity/connectivity_service.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 /// Screens 56/57/59 applied to the inbox and the conversation.
 void main() {

@@ -12,10 +12,12 @@
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import { QueryProvider } from "./QueryProvider";
+import { SessionExpiryWatcher } from "./SessionExpiryWatcher";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryProvider>
+      <SessionExpiryWatcher />
       {children}
       <Toaster position="top-right" richColors closeButton />
     </QueryProvider>

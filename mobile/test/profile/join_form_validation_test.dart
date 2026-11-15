@@ -7,9 +7,11 @@ import 'package:focus_1/core/theme/app_theme.dart';
 import 'package:focus_1/features/profile/presentation/join_form_screen.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fake_backend.dart';
 
 Widget _wrap() {
   return ProviderScope(
+    overrides: fakeBackend(),
     child: MaterialApp.router(
       theme: AppTheme.light(),
       routerConfig: GoRouter(

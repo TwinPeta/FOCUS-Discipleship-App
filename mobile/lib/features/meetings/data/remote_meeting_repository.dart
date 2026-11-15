@@ -51,7 +51,10 @@ class RemoteMeetingRepository implements MeetingRepository {
   @override
   Future<Meeting> setGoing(String meetingId, {required bool going}) async {
     final json = objectOf(
-      await _api.put('/meetings/${_path(meetingId)}/going', body: {'going': going}),
+      await _api.put(
+        '/meetings/${_path(meetingId)}/going',
+        body: {'going': going},
+      ),
     );
     if (json == null) throw const ApiException(500, message: 'Empty reply');
     return _meeting(json);

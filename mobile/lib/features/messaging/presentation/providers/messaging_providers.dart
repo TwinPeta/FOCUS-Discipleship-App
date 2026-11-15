@@ -72,7 +72,7 @@ class ThreadMessagesController
     try {
       final sent = await ref
           .read(messageRepositoryProvider)
-          .sendMessage(arg, pending.text);
+          .sendMessage(arg, pending.text, clientId: pending.id);
       _replace(pending.id, sent);
       ref.invalidate(threadsProvider);
     } catch (_) {

@@ -11,8 +11,6 @@ import { z } from "zod";
 
 const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().min(1).default("FCU Backoffice"),
-  NEXT_PUBLIC_API_MOCKING: z.enum(["enabled", "disabled"]).default("disabled"),
-  NEXT_PUBLIC_UPLOAD_ENDPOINT: z.string().optional().default(""),
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
@@ -24,15 +22,11 @@ const serverEnvSchema = publicEnvSchema.extend({
 
 export const publicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-  NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING,
-  NEXT_PUBLIC_UPLOAD_ENDPOINT: process.env.NEXT_PUBLIC_UPLOAD_ENDPOINT,
 });
 
 export function getServerEnv() {
   return serverEnvSchema.parse({
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-    NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING,
-    NEXT_PUBLIC_UPLOAD_ENDPOINT: process.env.NEXT_PUBLIC_UPLOAD_ENDPOINT,
     API_BASE_URL: process.env.API_BASE_URL,
     AUTH_ACCESS_COOKIE: process.env.AUTH_ACCESS_COOKIE,
     AUTH_REFRESH_COOKIE: process.env.AUTH_REFRESH_COOKIE,

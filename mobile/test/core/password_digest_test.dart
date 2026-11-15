@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/core/utils/password_policy.dart';
+import '../support/fakes.dart';
 
 /// Reference FNV-1a 32-bit with exact BigInt arithmetic.
 String _reference(String password, {String salt = 'fcu-fake-salt'}) {

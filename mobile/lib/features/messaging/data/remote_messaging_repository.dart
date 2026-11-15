@@ -11,10 +11,9 @@ import 'messaging_repository.dart';
 class RemoteMessagingRepository implements MessagingRepository {
   RemoteMessagingRepository(
     this._api, {
-    required String? Function() myId,
+    required this._myId,
     bool Function()? isRestricted,
-  }) : _myId = myId,
-       _isRestricted = isRestricted ?? _never;
+  }) : _isRestricted = isRestricted ?? _never;
 
   final ApiClient _api;
   final String? Function() _myId;
@@ -72,7 +71,10 @@ class RemoteMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<Thread> openOrCreateThread(Person participant, String roleLabel) async {
+  Future<Thread> openOrCreateThread(
+    Person participant,
+    String roleLabel,
+  ) async {
     if (!canMessage(participant)) throw const MessagingRestricted();
     try {
       final json = objectOf(
@@ -114,14 +116,20 @@ class RemoteMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<Message> sendMessage(String threadId, String text) async {
+  Future<Message> sendMessage(
+    String threadId,
+    String text, {
+    String? clientId,
+  }) async {
+    // One key per outgoing message: a retry reuses it (like posts and
+    // prayer requests, which key on the client-side id).
+    final key =
+        '$threadId-${clientId ?? DateTime.now().microsecondsSinceEpoch}';
     try {
       final json = objectOf(
         await _api.post(
           '/conversations/$threadId/messages',
-          headers: {
-            'Idempotency-Key': '$threadId-${DateTime.now().microsecondsSinceEpoch}',
-          },
+          headers: {'Idempotency-Key': key},
           body: {'text': text},
         ),
       );

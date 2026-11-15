@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/community/data/membership_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
+
+import '../support/fakes.dart';
 
 void main() {
   FakeMembershipRepository repo() =>

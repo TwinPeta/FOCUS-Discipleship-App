@@ -8,7 +8,7 @@
  */
 
 import { Role } from "@/types/enums";
-import { requireBackend } from "@/lib/api/mockFallback";
+import { mutate } from "@/lib/api/mutate";
 
 export type PermissionCode = "V" | "C" | "E" | "A" | "D" | "X";
 
@@ -298,26 +298,5 @@ export interface StaffAccountResult {
 export async function createStaffAccount(
   input: StaffAccountInput,
 ): Promise<StaffAccountResult> {
-  try {
-    const res = await fetch("/api/proxy/roles/staff", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (res.ok) {
-      return (await res.json()) as StaffAccountResult;
-    }
-  } catch {
-    // Fall back to mock response in dev mode when backend is offline
-  }
-  requireBackend();
-
-  return {
-    id: `staff-${Date.now()}`,
-    fullName: input.fullName,
-    email: input.email,
-    role: input.role,
-    communityId: input.communityId || null,
-    createdAt: new Date().toISOString(),
-  };
+  return mutate<StaffAccountResult>("/roles/staff", "POST", input);
 }

@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/testimony/data/testimony_repository.dart';
 import 'package:focus_1/features/testimony/domain/testimony.dart';
+
+import '../support/fakes.dart';
 
 Testimony _story({
   String id = 'mine-1',

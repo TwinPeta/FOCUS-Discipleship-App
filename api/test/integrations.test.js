@@ -58,7 +58,7 @@ test('prisma persistence: flush writes changes and load restores them', async ()
 });
 
 test('every demo record survives a trip through the relational mapping unchanged', async () => {
-  const { seed } = require('../src/db/seed');
+  const { seed } = require('./helpers/seed');
   const M = require('../src/db/mapping');
   const { client, tables } = fakePrisma();
   prisma.useClient(client);
@@ -103,7 +103,7 @@ test('mailer: templates render and are captured in the test outbox', async () =>
 
 test('emails are sent for email OTP and staff password reset', async () => {
   const { createApp } = require('../src/app');
-  const { seed } = require('../src/db/seed');
+  const { seed } = require('./helpers/seed');
   store.reset(); seed();
   const server = require('http').createServer(createApp());
   await new Promise((r) => server.listen(0, r));
@@ -151,5 +151,44 @@ test('R2 storage: signed upload slot, lazy confirmation, redirect on read', asyn
   } finally {
     config.r2Enabled = false;
     storage.useClient(null);
+  }
+});
+
+test('staff uploads with R2: signed direct PUT, confirmed against the bucket, permanent address', async () => {
+  const config = require('../src/config');
+  const storage = require('../src/services/storage');
+  const { createApp } = require('../src/app');
+  const { seed, DEMO_PASSWORD } = require('./helpers/seed');
+  store.reset(); seed();
+  config.r2 = { accountId: 'acct', accessKeyId: 'k', secretAccessKey: 's', bucket: 'b', publicUrl: 'https://cdn.example.com' };
+  config.r2Enabled = true;
+  const server = require('http').createServer(createApp());
+  await new Promise((r) => server.listen(0, r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const login = await fetch(base + '/v1/admin/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@fcu.test', password: DEMO_PASSWORD }) });
+    const token = decodeURIComponent(login.headers.getSetCookie().find((c) => c.startsWith('fcu_access=')).split(';')[0].slice(11));
+    const api = (method, path, body) => fetch(base + '/v1/admin' + path, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: body ? JSON.stringify(body) : undefined });
+
+    const slot = await (await api('POST', '/media', { purpose: 'content_thumbnail', content_type: 'image/webp', size_bytes: 1000 })).json();
+    assert.equal(slot.direct, true);
+    assert.match(slot.upload_url, /^https:\/\/acct\.r2\.cloudflarestorage\.com\/b\/media\/content_thumbnail\/.*X-Amz-Signature=/);
+    assert.deepEqual(slot.upload_headers, { 'Content-Type': 'image/webp' });
+    assert.equal((await api('PUT', `/media/${slot.media_id}/upload`)).status, 409, 'with R2 the file goes to the bucket, not through the API');
+
+    let size = null;
+    storage.useClient({ send: async () => { if (size === null) { const e = new Error('nf'); e.name = 'NotFound'; throw e; } return { ContentLength: size }; } });
+    assert.equal((await api('POST', `/media/${slot.media_id}/complete`)).status, 409);
+    size = 1000;
+    const done = await api('POST', `/media/${slot.media_id}/complete`);
+    assert.equal(done.status, 200);
+    assert.equal((await done.json()).url, slot.url);
+    const read = await fetch(slot.url.replace(/^https?:\/\/[^/]+/, base), { redirect: 'manual' });
+    assert.equal(read.status, 302);
+    assert.equal(read.headers.get('location'), `https://cdn.example.com/media/content_thumbnail/${slot.media_id}`);
+  } finally {
+    config.r2Enabled = false;
+    storage.useClient(null);
+    server.close();
   }
 });

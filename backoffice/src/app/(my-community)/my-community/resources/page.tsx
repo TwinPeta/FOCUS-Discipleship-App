@@ -13,13 +13,15 @@ import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
 import {
   fetchMyCommunityOverview,
-  MOCK_MY_COMMUNITY,
   type CommunityResource,
 } from "@/features/my-community/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function MyCommunityResourcesPage() {
-  const [communityName, setCommunityName] = useState(MOCK_MY_COMMUNITY.communityName);
-  const [resources, setResources] = useState<CommunityResource[]>(MOCK_MY_COMMUNITY.resources);
+  const [communityName, setCommunityName] = useState("");
+  const [resources, setResources] = useState<CommunityResource[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -27,7 +29,10 @@ export default function MyCommunityResourcesPage() {
       if (!active) return;
       setCommunityName(res.communityName);
       setResources(res.resources);
-    });
+    })
+      .catch((e: unknown) => {
+        if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       active = false;
     };
@@ -35,9 +40,10 @@ export default function MyCommunityResourcesPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Resources — {communityName}
+          Resources — {communityName || "your community"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           Read-only published discipleship materials available to your community.

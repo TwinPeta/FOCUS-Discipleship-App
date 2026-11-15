@@ -7,6 +7,7 @@ function rateLimit({ windowMs, max, key = () => '' }) {
     if (process.env.NODE_ENV === 'test') return next();
     const k = `${req.ip}|${key(req)}`;
     const t = Date.now();
+    if (hits.size > 5000) for (const [key2, r] of hits) if (r.reset < t) hits.delete(key2); // do not grow without bound
     const rec = hits.get(k);
     if (!rec || rec.reset < t) {
       hits.set(k, { count: 1, reset: t + windowMs });

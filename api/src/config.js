@@ -17,7 +17,13 @@ module.exports = {
   accessTtl: process.env.ACCESS_TOKEN_TTL || '15m',
   accessTtlSeconds: 900,
   refreshTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30),
-  seedDemoData: process.env.SEED_DEMO_DATA !== 'false',
+  // Back-office (staff) sessions live on the server: an opaque cookie, looked up on every request.
+  // Idle timeout slides with activity; the absolute limit cannot be extended.
+  staffSession: {
+    idleHours: Number(process.env.STAFF_SESSION_IDLE_HOURS || 8),
+    rememberDays: Number(process.env.STAFF_SESSION_REMEMBER_DAYS || 7),
+    maxDays: Number(process.env.STAFF_SESSION_MAX_DAYS || 30),
+  },
 
   // PostgreSQL. Unset -> in-memory only (dev/tests).
   databaseUrl: env === 'test' ? '' : process.env.DATABASE_URL || '', // tests never touch a real database

@@ -9,7 +9,6 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import { InactiveMembersList } from "@/features/dashboard/components/InactiveMembersList";
@@ -18,23 +17,14 @@ import { NeedsAttention } from "@/features/dashboard/components/NeedsAttention";
 import { WeeklyActivityChart } from "@/features/dashboard/components/WeeklyActivityChart";
 import {
   fetchDashboardData,
-  MOCK_DASHBOARD_DATA,
-  type DashboardData,
 } from "@/features/dashboard/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { PanelSkeleton } from "@/components/feedback/Skeletons";
 import { ROUTES } from "@/lib/constants/routes";
+import { useRemoteData } from "@/lib/hooks/useRemoteData";
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData>(MOCK_DASHBOARD_DATA);
-
-  useEffect(() => {
-    let active = true;
-    fetchDashboardData().then((res) => {
-      if (active) setData(res);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { data, loading, error, reload } = useRemoteData(fetchDashboardData);
 
   return (
     <main className="space-y-6">
@@ -54,22 +44,28 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Key metrics">
-        {data.kpis.map((kpi) => (
-          <KpiCard key={kpi.id} kpi={kpi} />
-        ))}
-      </section>
+      {error && <ErrorState message={error} onRetry={reload} />}
+      {!data && loading && <PanelSkeleton />}
+      {data && (
+        <>
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Key metrics">
+          {data.kpis.map((kpi) => (
+            <KpiCard key={kpi.id} kpi={kpi} />
+          ))}
+        </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <WeeklyActivityChart data={data.weeklyActivity} />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <WeeklyActivityChart data={data.weeklyActivity} />
+          </div>
+          <div>
+            <NeedsAttention items={data.needsAttention} />
+          </div>
         </div>
-        <div>
-          <NeedsAttention items={data.needsAttention} />
-        </div>
-      </div>
 
-      <InactiveMembersList members={data.inactiveMembers} />
+        <InactiveMembersList members={data.inactiveMembers} />
+        </>
+      )}
     </main>
   );
 }

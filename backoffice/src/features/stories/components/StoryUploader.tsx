@@ -13,6 +13,7 @@ import { useState, type FormEvent } from "react";
 import { Plus, Video, X } from "lucide-react";
 import { ConsentReminder } from "./ConsentReminder";
 import { createLandingStory, type LandingStory } from "../queries";
+import { uploadFile } from "@/lib/upload";
 
 interface StoryUploaderProps {
   onStoryCreated: (story: LandingStory) => void;
@@ -23,6 +24,25 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
   const [studentName, setStudentName] = useState("");
   const [institution, setInstitution] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+
+  async function handleVideoFile(file?: File) {
+    if (!file) return;
+    setVideoError(null);
+    if (file.size > 200 * 1024 * 1024) {
+      setVideoError("Video must be 200 MB or smaller.");
+      return;
+    }
+    setVideoUploading(true);
+    try {
+      setVideoUrl(await uploadFile(file, "story_video"));
+    } catch (e) {
+      setVideoError(e instanceof Error ? e.message : "Upload failed. Please try again.");
+    } finally {
+      setVideoUploading(false);
+    }
+  }
   const [duration, setDuration] = useState("1:30");
   const [consentObtained, setConsentObtained] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +154,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
                 type="text"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
-                placeholder="e.g. Makerere University"
+                placeholder="Institution"
                 className="w-full rounded-md border border-border px-3 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-primary"
                 required
               />
@@ -143,7 +163,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label htmlFor="story-url" className="block text-xs font-medium text-muted">
-                  Video URL (mp4 / stream)
+                  Video (upload a file or paste a link)
                 </label>
                 <input
                   id="story-url"
@@ -154,6 +174,21 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
                   className="w-full rounded-md border border-border px-3 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-primary"
                   required
                 />
+                <input
+                  id="story-file"
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime"
+                  aria-label="Upload a story video file"
+                  disabled={videoUploading}
+                  onChange={(e) => void handleVideoFile(e.target.files?.[0])}
+                  className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-white file:px-2 file:py-1 file:text-xs"
+                />
+                {videoUploading && <p className="text-xs text-muted">Uploading video...</p>}
+                {videoError && (
+                  <p role="alert" className="text-xs text-red-700">
+                    {videoError}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">

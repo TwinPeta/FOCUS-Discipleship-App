@@ -11,6 +11,7 @@ import 'package:focus_1/features/community/presentation/providers/membership_pro
 import 'package:focus_1/features/profile/presentation/profile_providers.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fake_backend.dart';
 
 class _FakeMembershipController extends MembershipController {
   _FakeMembershipController(this.initial);
@@ -23,6 +24,7 @@ class _FakeMembershipController extends MembershipController {
 Widget _wrapHub(Membership membership) {
   return ProviderScope(
     overrides: [
+      ...fakeBackend(),
       currentProfileProvider.overrideWith((ref) => testProfile),
       membershipProvider.overrideWith(
         () => _FakeMembershipController(membership),
@@ -51,6 +53,7 @@ Widget _wrapHub(Membership membership) {
 Widget _wrapDetail(Membership membership, String communityId) {
   return ProviderScope(
     overrides: [
+      ...fakeBackend(),
       currentProfileProvider.overrideWith((ref) => testProfile),
       membershipProvider.overrideWith(
         () => _FakeMembershipController(membership),

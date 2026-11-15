@@ -9,73 +9,49 @@
 
 import { cookies } from "next/headers";
 import { getServerEnv } from "@/lib/env";
-import { MemberStatus, Role } from "@/types/enums";
 import type { Session, SessionUser } from "@/types/user";
 import { getAuthCookieNames } from "./cookies";
 
-const MOCK_USERS: Record<string, SessionUser> = {
-  SYSTEM_ADMIN: {
-    id: "staff-sys-1",
-    email: "admin@focusuganda.org",
-    fullName: "Grace Nakato",
-    role: Role.SystemAdmin,
-    status: MemberStatus.Active,
-  },
-  CONTENT_ADMIN: {
-    id: "staff-cnt-1",
-    email: "content@focusuganda.org",
-    fullName: "Daniel Okello",
-    role: Role.ContentAdmin,
-    status: MemberStatus.Active,
-  },
-  SUPER_MENTOR: {
-    id: "staff-sm-1",
-    email: "mentor@focusuganda.org",
-    fullName: "Sarah Namukasa",
-    role: Role.SuperMentor,
-    status: MemberStatus.Active,
-    communityId: "comm-mak-1",
-    communityName: "Makerere University CU",
-  },
-};
+export type SessionState =
+  | { status: "ok"; session: Session }
+  | { status: "none" } // not signed in
+  | { status: "expired" } // the API no longer recognises the cookie
+  | { status: "suspended" }
+  | { status: "unavailable" }; // the API could not be reached
 
-export function parseMockAccessToken(token: string | undefined): SessionUser | null {
-  if (!token || !token.startsWith("mock:")) return null;
-  const roleKey = token.slice("mock:".length);
-  return MOCK_USERS[roleKey] ?? null;
-}
-
-export async function getServerSession(): Promise<Session | null> {
+/** Asks the API who this cookie belongs to. The API owns the session; this only reports its answer. */
+export async function getSessionState(): Promise<SessionState> {
   const cookieStore = await cookies();
   const { access } = getAuthCookieNames();
   const token = cookieStore.get(access)?.value;
-
-  if (!token) return null;
+  if (!token) return { status: "none" };
 
   const env = getServerEnv();
-
-  if (env.NEXT_PUBLIC_API_MOCKING === "enabled") {
-    const mockUser = parseMockAccessToken(token);
-    if (mockUser) {
-      return { user: mockUser };
-    }
-  }
-
   try {
     const res = await fetch(`${env.API_BASE_URL}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { cookie: `${access}=${encodeURIComponent(token)}` },
       cache: "no-store",
     });
 
-    if (!res.ok) return null;
+    if (res.status === 401) return { status: "expired" };
+    if (res.status === 403) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string };
+      return body.code?.toLowerCase() === "account_suspended"
+        ? { status: "suspended" }
+        : { status: "expired" };
+    }
+    if (!res.ok) return { status: "unavailable" };
+
     const data = (await res.json()) as { user?: SessionUser } | SessionUser;
     const user = "user" in data && data.user ? data.user : (data as SessionUser);
-    if (!user?.id || !user?.role) return null;
-
-    return { user };
+    if (!user?.id || !user?.role) return { status: "expired" };
+    return { status: "ok", session: { user } };
   } catch {
-    return null;
+    return { status: "unavailable" };
   }
+}
+
+export async function getServerSession(): Promise<Session | null> {
+  const state = await getSessionState();
+  return state.status === "ok" ? state.session : null;
 }

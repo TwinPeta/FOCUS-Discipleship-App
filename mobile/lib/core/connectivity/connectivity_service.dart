@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
-/// Online/offline status. Only a fake exists for now; a real implementation
-/// (e.g. `connectivity_plus`) can replace [FakeConnectivityService] later
-/// without touching any screen.
+import '../config/api_config.dart';
+
+/// Online/offline status of the app's backend.
 abstract class ConnectivityService {
   bool get isOnline;
   Stream<bool> get onlineChanges;
@@ -13,12 +14,25 @@ abstract class ConnectivityService {
   Future<bool> check();
 }
 
-class FakeConnectivityService implements ConnectivityService {
-  // ignore: prefer_initializing_formals
-  FakeConnectivityService({bool online = true}) : _online = online;
+/// Online means "the FCU API answers". It asks the API's public health
+/// endpoint every [interval] and whenever [check] is called, so the banner
+/// also appears when the phone has a signal but the server cannot be reached.
+class ApiConnectivityService implements ConnectivityService {
+  ApiConnectivityService({
+    required this._healthUrl,
+    http.Client? client,
+    Duration interval = const Duration(seconds: 20),
+    this._timeout = const Duration(seconds: 6),
+  }) : _client = client ?? http.Client() {
+    _timer = Timer.periodic(interval, (_) => unawaited(check()));
+  }
 
-  bool _online;
+  final Uri _healthUrl;
+  final http.Client _client;
+  final Duration _timeout;
+  late final Timer _timer;
   final _controller = StreamController<bool>.broadcast();
+  bool _online = true;
 
   @override
   bool get isOnline => _online;
@@ -27,20 +41,32 @@ class FakeConnectivityService implements ConnectivityService {
   Stream<bool> get onlineChanges => _controller.stream;
 
   @override
-  Future<bool> check() async => _online;
-
-  /// Debug scenarios and tests flip the connection here.
-  void setOnline(bool online) {
-    if (online == _online) return;
-    _online = online;
-    _controller.add(online);
+  Future<bool> check() async {
+    var online = true;
+    try {
+      final response = await _client.get(_healthUrl).timeout(_timeout);
+      online = response.statusCode < 500;
+    } catch (_) {
+      online = false;
+    }
+    if (online != _online) {
+      _online = online;
+      if (!_controller.isClosed) _controller.add(online);
+    }
+    return _online;
   }
 
-  void dispose() => _controller.close();
+  void dispose() {
+    _timer.cancel();
+    _client.close();
+    _controller.close();
+  }
 }
 
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
-  final service = FakeConnectivityService();
+  final service = ApiConnectivityService(
+    healthUrl: Uri.parse('${ApiConfig.baseUrl}/health'),
+  );
   ref.onDispose(service.dispose);
   return service;
 });

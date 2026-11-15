@@ -93,12 +93,14 @@ class RemoteActivityRepository implements ActivityRepository {
     required UserRole? actorRole,
   }) async {
     if (actorRole != UserRole.superMentor) throw NotSuperMentor(communityId);
-    final json = await _api.get('/communities/$communityId/members/last-active');
+    final json = await _api.get(
+      '/communities/$communityId/members/last-active',
+    );
     return {
       for (final j in itemsOf(json))
-        if (DateTime.tryParse((j['last_active_at'] as String?) ?? '')
-            case final at?)
-          j['user_id'] as String: at,
+        j['user_id'] as String: ?DateTime.tryParse(
+          (j['last_active_at'] as String?) ?? '',
+        ),
     };
   }
 }

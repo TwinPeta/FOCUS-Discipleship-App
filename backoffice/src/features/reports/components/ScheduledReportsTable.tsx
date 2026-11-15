@@ -13,7 +13,7 @@ import type { ScheduledReport } from "../queries";
 
 interface ScheduledReportsTableProps {
   schedules: ScheduledReport[];
-  onToggleActive: (id: string) => void;
+  onToggleActive: (id: string) => void | Promise<void>;
 }
 
 export function ScheduledReportsTable({

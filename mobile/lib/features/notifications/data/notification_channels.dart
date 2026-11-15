@@ -7,16 +7,3 @@ abstract class NotificationChannel {
   DeliveryChannel get channel;
   Future<void> deliver(AppNotification notification);
 }
-
-/// Stand-in for an email service: records what would be sent.
-class FakeEmailChannel implements NotificationChannel {
-  final List<AppNotification> sent = [];
-
-  @override
-  DeliveryChannel get channel => DeliveryChannel.email;
-
-  @override
-  Future<void> deliver(AppNotification notification) async {
-    sent.add(notification);
-  }
-}

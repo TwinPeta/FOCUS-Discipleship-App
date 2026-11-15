@@ -35,12 +35,10 @@ class RemoteProfileRepository implements ProfileRepository {
       return true;
     }
     try {
-      final json =
-          await _api.get(
-                '/auth/username-available',
-                query: {'username': lower},
-              )
-              as Map<String, dynamic>;
+      final json = await _api.get(
+        '/auth/username-available',
+        query: {'username': lower},
+      ) as Map<String, dynamic>;
       return json['available'] == true;
     } on ApiException catch (e) {
       if (e.status == 422) return false; // not a valid username
@@ -50,16 +48,14 @@ class RemoteProfileRepository implements ProfileRepository {
 
   /// The API stores institutions by id; the app picks them by name.
   Future<String> _institutionId(UserProfile p) async {
-    final json =
-        await _api.get(
-              '/lookups/institutions',
-              query: {
-                'type': institutionTypeToApi(p.institutionType),
-                'country': countryCodeOf(p.country),
-                'q': p.institutionName,
-              },
-            )
-            as Map<String, dynamic>;
+    final json = await _api.get(
+      '/lookups/institutions',
+      query: {
+        'type': institutionTypeToApi(p.institutionType),
+        'country': countryCodeOf(p.country),
+        'q': p.institutionName,
+      },
+    ) as Map<String, dynamic>;
     final items = (json['items'] as List).cast<Map<String, dynamic>>();
     final wanted = p.institutionName.trim().toLowerCase();
     for (final item in items) {
@@ -84,9 +80,8 @@ class RemoteProfileRepository implements ProfileRepository {
 
   @override
   Future<UserProfile> createProfile(UserProfile profile) {
-    return _inFlightCreate ??= _create(
-      profile,
-    ).whenComplete(() => _inFlightCreate = null);
+    return _inFlightCreate ??= _create(profile)
+        .whenComplete(() => _inFlightCreate = null);
   }
 
   Future<UserProfile> _create(UserProfile profile) async {
@@ -96,7 +91,9 @@ class RemoteProfileRepository implements ProfileRepository {
       final institutionId = await _institutionId(profile);
       return _cached = await _auth.register(profile, institutionId);
     } on ApiException catch (e) {
-      if (e.code == 'username_taken') throw UsernameTakenError(profile.username);
+      if (e.code == 'username_taken') {
+        throw UsernameTakenError(profile.username);
+      }
       if (e.code == 'email_taken') {
         throw const ProfileValidationError({
           'email': 'An account already uses this email. Sign in instead.',
@@ -120,19 +117,16 @@ class RemoteProfileRepository implements ProfileRepository {
     if (errors.isNotEmpty) throw ProfileValidationError(errors);
     try {
       final institutionId = await _institutionId(profile);
-      final json =
-          await _api.patch(
-                '/me',
-                body: {
-                  'full_name': profile.fullName.trim(),
-                  'country': countryCodeOf(profile.country),
-                  'email': profile.email.trim(),
-                  if (profile.phone.trim().isNotEmpty)
-                    'phone': profile.phone.trim(),
-                  'institution_id': institutionId,
-                },
-              )
-              as Map<String, dynamic>;
+      final json = await _api.patch(
+        '/me',
+        body: {
+          'full_name': profile.fullName.trim(),
+          'country': countryCodeOf(profile.country),
+          'email': profile.email.trim(),
+          if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
+          'institution_id': institutionId,
+        },
+      ) as Map<String, dynamic>;
       return _cached = profileFromApi(json);
     } on ApiException catch (e) {
       if (e.code == 'email_taken') {
