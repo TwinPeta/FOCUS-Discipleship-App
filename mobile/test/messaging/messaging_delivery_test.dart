@@ -18,7 +18,11 @@ class _FlakyMessagingRepository extends FakeMessagingRepository {
   int failures;
 
   @override
-  Future<Message> sendMessage(String threadId, String text) async {
+  Future<Message> sendMessage(
+    String threadId,
+    String text, {
+    String? clientId,
+  }) async {
     if (failures > 0) {
       failures--;
       throw Exception('network');

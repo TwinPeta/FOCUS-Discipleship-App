@@ -29,7 +29,7 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
   String? _screenshotPath;
 
   Future<void> _pickScreenshot() async {
-    final picked = await pickPhoto(context);
+    final picked = await pickPhoto(context, ref);
     if (picked == null || !mounted) return;
     setState(() => _screenshotPath = picked.path);
   }

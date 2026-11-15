@@ -85,9 +85,9 @@ Ownership is split by **feature folder**, so the two agents rarely edit the same
 | A1.6 settings dedupe + appearance (in progress, sprint A1), A1.7 restyle (after theme) | A | in progress | |
 | B1.1 unified composer | B | not started | |
 | B1.2 Q&A (ask, answers, write, questions to answer) | B | blocked: J1 (no question endpoints in `openapi.yaml`) | |
-| B1.3 search | B | in progress (2026-11-15): client-side over existing `/communities` + members endpoints until J2 lands | |
-| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | B1.5 in progress; B1.4 blocked: J3 (server `POST /media` has no document purpose); B1.6 needs package approval (`permission_handler`) | |
-| B1.7 notifications workflow | B | in progress: unread polling (bell dot), tap routing, read sync on existing `/me/notifications*`; plus API guide gap 6b (message idempotency key) | |
+| B1.3 search | B | done: client-side over existing `/communities` + members endpoints until J2 lands. **Agent A:** add a search icon to the Home/Communities header opening `/search` (see wiring.md) | see `git log --grep "B1.3"` |
+| B1.4 documents 10 MB, B1.5 phone emojis, B1.6 permissions | B | B1.5 done (`git log --grep "B1.5"`); B1.4 blocked: J3 (server `POST /media` has no document purpose); B1.6 done (`git log --grep "B1.6"`) | |
+| B1.7 notifications workflow + B2.1 live updates + B2.2 push | B | done: 60 s unread polling (fallback), tap routing via server `target_route`, read/read-all sync, muted counts; API guide gap 6b fixed. B2.1: `/v1/realtime` socket (reconnect with backoff, 4401 refresh) refreshes notifications, inbox, threads, membership, presence. B2.2: local system notifications from live events; `POST/DELETE /devices` ready, needs Firebase + a server sender for closed-app push | see `git log --grep "B1.7"` and `--grep "B2.1"` |
 | J1-J5 backend endpoints | Joseph | not started | |
 
 ## 3. Claiming work (prevents double work)

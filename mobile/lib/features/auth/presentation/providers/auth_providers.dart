@@ -22,6 +22,8 @@ class AuthController extends AsyncNotifier<AuthSession?> {
   }
 
   Future<void> signOut() async {
+    // While the tokens are still valid, so the DELETE /devices is signed.
+    await ref.read(deviceRegistrationProvider)?.unregister();
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncValue.data(null);
   }

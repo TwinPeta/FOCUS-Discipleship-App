@@ -15,6 +15,7 @@ export 'fakes/moderation_repository.dart';
 export 'fakes/notification_channels.dart';
 export 'fakes/notification_repository.dart';
 export 'fakes/pathway_repository.dart';
+export 'fakes/permission_service.dart';
 export 'fakes/playback_controller.dart';
 export 'fakes/post_repository.dart';
 export 'fakes/prayer_repository.dart';

@@ -12,6 +12,9 @@ class RemoteNotificationRepository implements NotificationRepository {
 
   final ApiClient _api;
 
+  /// The app's type for the API's `type` string; null for an unknown one.
+  static NotificationType? typeOf(String? t) => _type(t);
+
   static NotificationType? _type(String? t) {
     switch (t) {
       case 'request_approved':

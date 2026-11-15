@@ -142,7 +142,11 @@ class FakeMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<Message> sendMessage(String threadId, String text) async {
+  Future<Message> sendMessage(
+    String threadId,
+    String text, {
+    String? clientId,
+  }) async {
     await Future.delayed(latency);
     final thread = _threads.where((t) => t.id == threadId).firstOrNull;
     if (thread != null) _checkAllowed(thread.participant);
