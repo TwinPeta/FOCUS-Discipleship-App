@@ -23,7 +23,8 @@ function sessionUser(u) {
 }
 C.sessionUser = sessionUser;
 
-router.post('/login', rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body && r.body.email }), (req, res, next) => {
+// Two limits: per account (guessing one password) and per address (trying many accounts)
+router.post('/login', rateLimit({ windowMs: 900000, max: 60 }), rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body && r.body.email }), (req, res, next) => {
   try {
     const b = check(req.body, { email: { required: true, type: 'string' }, password: { required: true, type: 'string' } });
     const id = b.email.trim().toLowerCase();

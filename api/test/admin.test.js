@@ -453,3 +453,24 @@ test('password change signs out other devices; suspension signs out everywhere',
   assert.equal(await me(target.token), 401, 'suspension ends the session at once');
   store.first('users', (u) => u.id === id).suspended = false;
 });
+
+test('a person keeps at most 10 sessions (least recently used goes first) and expired ones are swept', async () => {
+  const sessions = require('../src/admin/sessions');
+  const email = 'content@fcu.test';
+  const first = await login(email);
+  const firstSession = store.first('staffSessions', (x) => x.tokenHash === require('crypto').createHash('sha256').update(first.token).digest('hex'));
+  firstSession.lastActiveAt = new Date(Date.now() - 3600e3).toISOString(); // the oldest
+  const tokens = [];
+  for (let i = 0; i < sessions.MAX_PER_USER; i++) tokens.push((await login(email)).token);
+  const status = (t) => fetch(base + A + '/auth/me', { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.status);
+  assert.equal(await status(first.token), 401, 'the oldest session was dropped');
+  assert.equal(await status(tokens[tokens.length - 1]), 200, 'the newest one works');
+  const id = store.first('users', (u) => u.email === email).id;
+  assert.ok(sessions.active(id).length <= sessions.MAX_PER_USER);
+
+  // sweep forgets expired sessions of everybody
+  store.first('staffSessions', (x) => x.userId === id).expiresAt = Date.now() - 1000;
+  const before = store.col('staffSessions').length;
+  sessions.sweep();
+  assert.equal(store.col('staffSessions').length, before - 1);
+});

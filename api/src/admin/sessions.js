@@ -10,6 +10,7 @@ const LEGACY_COOKIES = [process.env.AUTH_REFRESH_COOKIE || 'fcu_refresh']; // cl
 const MIN = 60e3;
 const HOUR = 3600e3;
 const DAY = 864e5;
+const MAX_PER_USER = 10; // a person with more devices than this loses the least recently used one
 const TOUCH_EVERY = 5 * MIN; // how often activity is written (and a remembered cookie slid forward)
 
 const hash = (t) => crypto.createHash('sha256').update(t).digest('hex');
@@ -40,6 +41,8 @@ function create(user, req, remember) {
   const token = crypto.randomBytes(32).toString('hex');
   const ua = String(req.headers['user-agent'] || '');
   purgeExpired(user.id);
+  const open = active(user.id).sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? -1 : 1));
+  open.slice(0, Math.max(0, open.length - MAX_PER_USER + 1)).forEach((old) => revoke(old.id));
   const session = store.insert('staffSessions', {
     userId: user.id, tokenHash: hash(token), remember: !!remember, expiresAt: Date.now() + config.staffSession.maxDays * DAY,
     deviceName: /Mobile/.test(ua) ? 'Mobile browser' : 'Desktop browser',
@@ -69,6 +72,8 @@ const revoke = (id) => store.remove('staffSessions', (s) => s.id === id);
 /** Ends every session of a user (suspension, deletion, password reset), optionally keeping one. */
 const revokeAll = (userId, exceptId) => store.remove('staffSessions', (s) => s.userId === userId && s.id !== exceptId);
 const purgeExpired = (userId) => store.remove('staffSessions', (s) => s.userId === userId && !live(s));
+/** Removes every expired session (all users). Called on a timer so abandoned sessions do not pile up. */
+const sweep = () => store.remove('staffSessions', (s) => !live(s));
 const active = (userId) => store.where('staffSessions', (s) => s.userId === userId && live(s));
 
-module.exports = { COOKIE, create, find, touch, revoke, revokeAll, active, setCookie, clearCookies, tokenFrom };
+module.exports = { COOKIE, MAX_PER_USER, create, find, touch, revoke, revokeAll, active, sweep, setCookie, clearCookies, tokenFrom };

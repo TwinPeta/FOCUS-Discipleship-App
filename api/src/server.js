@@ -29,6 +29,7 @@ async function main() {
   realtime.attach(server);
   server.listen(config.port, () => console.log(`FCU API listening on ${config.baseUrl}/v1`));
 
+  setInterval(() => require('./admin/sessions').sweep(), 3600e3).unref(); // forget expired back-office sessions
   setInterval(() => pg.flush(), 5000).unref(); // safety net for changes made outside a request (e.g. websocket handlers)
 
   const shutdown = () => server.close(async () => { await pg.close().catch((e) => console.error(e.message)); process.exit(0); });
