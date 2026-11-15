@@ -47,7 +47,7 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
       _consent;
 
   Future<void> _pickPhoto() async {
-    final picked = await pickPhoto(context);
+    final picked = await pickPhoto(context, ref);
     if (picked == null || !mounted) return;
     setState(() => _photoName = picked.name);
   }

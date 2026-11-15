@@ -152,7 +152,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
 
   Future<void> _pickPhoto() async {
     if (!_checkAttachLimit()) return;
-    final picked = await pickPhoto(context);
+    final picked = await pickPhoto(context, ref);
     if (picked == null || !mounted || !_canAttach) return;
     setState(() {
       _media.add(_PickedMedia(kind: _MediaKind.photo, path: picked.path));

@@ -245,3 +245,7 @@ All 20 screens in scope are implemented and wired; `flutter analyze` is clean an
 
 ## Stubs intentionally left
 video/devotional/document viewers, quiz player, "Read story" detail, post comments, prayer "Respond", Bible characters/texts topic pages
+
+## Roadmap v2: B1.6 runtime permissions
+- [x] B1.6 camera, photos and notifications permissions (`lib/core/permissions/`). `ensurePermission` returns true at once when granted; otherwise a reason sheet (Continue / Not now), then the system request; permanently denied shows "Open settings". `pickPhoto` (so the Join/Edit profile photo picker, composer, testimony and report photos) asks for camera or photos before image_picker; skipped on web. Tests: `test/permissions/permission_prompt_test.dart`.
+- Assumptions: `pickPhoto` now takes a `WidgetRef`. Already permanently denied skips the reason sheet and goes straight to the settings explanation. On Android, photos checks READ_MEDIA_IMAGES (13+) and READ_EXTERNAL_STORAGE (12 and below, `maxSdkVersion 32`) and takes the best of both. Limited photo access and provisional notifications count as granted. There is no `ios/Podfile` in the repo (Flutter generates it on the first iOS build), so the permission_handler `PERMISSION_CAMERA`, `PERMISSION_PHOTOS` and `PERMISSION_NOTIFICATIONS` macros still need adding to its `post_install` then.

@@ -18,6 +18,7 @@ import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/remote_auth_repository.dart';
 import '../../features/profile/data/remote_profile_repository.dart';
 import '../config/api_config.dart';
+import '../permissions/app_permissions.dart';
 import '../network/api_client.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
@@ -215,4 +216,10 @@ final meetingRepositoryProvider = Provider<MeetingRepository>(
 
 final privacyRepositoryProvider = Provider<PrivacyRepository>(
   (ref) => RemotePrivacyRepository(ref.watch(apiClientProvider)),
+);
+
+/// Runtime permissions (camera, photos, notifications). Tests use
+/// `FakePermissionService` through `fakeBackend()`.
+final permissionServiceProvider = Provider<PermissionService>(
+  (ref) => const SystemPermissionService(),
 );

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
@@ -8,6 +9,8 @@ import 'package:focus_1/core/media/photo_picker.dart';
 import 'package:focus_1/core/media/upload_policy.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
 import 'package:focus_1/core/widgets/message_input_bar.dart';
+
+import '../support/fake_backend.dart';
 
 /// Returns a fixed file instead of opening the gallery, and records the
 /// compression settings it was asked for.
@@ -77,20 +80,25 @@ void main() {
 
   Future<XFile?> run(WidgetTester tester, _FakePicker picker) async {
     late BuildContext ctx;
+    late WidgetRef ref;
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
-        home: Scaffold(
-          body: Builder(
-            builder: (c) {
-              ctx = c;
-              return const SizedBox.shrink();
-            },
+      ProviderScope(
+        overrides: fakeBackend(),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: Scaffold(
+            body: Consumer(
+              builder: (c, r, _) {
+                ctx = c;
+                ref = r;
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ),
     );
-    final result = await pickPhoto(ctx, picker: picker);
+    final result = await pickPhoto(ctx, ref, picker: picker);
     await tester.pump();
     return result;
   }

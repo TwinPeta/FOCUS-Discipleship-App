@@ -46,3 +46,4 @@ Running the API locally? It starts empty: create the first admin and add institu
 - Email delivery of notifications is not sent yet (in-app only).
 - The school picker still uses the built-in list (`institution_data.dart`); names must exist in the API's institutions (the dev seed includes them, production needs them added in the back office).
 - Android release builds need `https://` (or a network security config for plain `http://`).
+- Notifications permission: the service and prompt exist (`AppPermission.notifications`) but nothing asks yet; B2.2 push should call `ensurePermission` before registering. The iOS `Podfile` (not in the repo yet) needs the permission_handler macros in `post_install` once generated.
