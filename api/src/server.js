@@ -19,6 +19,8 @@ async function main() {
   } else {
     console.warn('DATABASE_URL not set: using the in-memory store (data is lost on restart).');
   }
+  const healed = require('./utils/joinRequests').reconcile();
+  if (healed) { console.log(`Repaired ${healed} join request/membership records that disagreed.`); await pg.flush(); }
   for (const problem of require('./services/mailer').configProblems()) console.warn(`[config] ${problem}`);
   if (config.env === 'production' && /localhost/.test(config.baseUrl)) console.warn(`[config] BASE_URL is ${config.baseUrl}: uploaded file links and error links would point at it. Set it to the public API address.`);
   if (config.env === 'production' && !config.r2Enabled) console.warn('R2_* not set: media is stored on local disk.');
@@ -33,7 +35,7 @@ async function main() {
   setInterval(() => require('./utils/inactivity').run(), 6 * 3600e3).unref(); // "we miss you" reminders
   setInterval(() => require('./utils/announcements').publishDue(), 60e3).unref(); // scheduled announcements go out on time
   setInterval(() => require('./admin/sessions').sweep(), 3600e3).unref(); // forget expired back-office sessions
-  setInterval(() => pg.flush(), 5000).unref(); // safety net for changes made outside a request (e.g. websocket handlers)
+  setInterval(() => pg.flush(), 15000).unref(); // safety net for changes made outside a request (e.g. websocket handlers)
 
   const shutdown = () => server.close(async () => { await pg.close().catch((e) => console.error(e.message)); process.exit(0); });
   process.on('SIGINT', shutdown);

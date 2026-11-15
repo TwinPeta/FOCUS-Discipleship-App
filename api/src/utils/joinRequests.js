@@ -42,4 +42,30 @@ function decide(j, { approve, by = null, note = null }) {
   return j;
 }
 
-module.exports = { decide };
+/**
+ * Brings join requests and memberships back in agreement. Older code decided a request in one place but not the other, which
+ * left a student "pending" for good (or an approved student still listed as pending for the super-mentor). Safe to run any time.
+ * Returns how many records it corrected.
+ */
+function reconcile(userId = null) {
+  let fixed = 0;
+  const mine = (x) => !userId || x.userId === userId;
+  // A request still "pending" although the student already is a member of that community: it was approved.
+  store.where('joinRequests', (j) => mine(j) && j.status === 'pending').forEach((j) => {
+    const m = store.first('memberships', (x) => x.userId === j.userId && x.communityId === j.communityId);
+    if (m && m.status === 'member') { j.status = 'approved'; j.decidedAt = j.decidedAt || store.now(); fixed++; }
+    else if (!m) { j.status = 'cancelled'; j.decidedAt = j.decidedAt || store.now(); fixed++; } // nothing left to approve
+  });
+  // A pending membership whose request was decided (or never existed): follow the request, or create the missing one.
+  store.where('memberships', (m) => mine(m) && m.status === 'pending').forEach((m) => {
+    const reqs = store.where('joinRequests', (j) => j.userId === m.userId && j.communityId === m.communityId);
+    if (reqs.some((j) => j.status === 'pending')) return;
+    const last = reqs.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+    if (last && last.status === 'approved') { m.status = 'member'; m.joinedAt = m.joinedAt || last.decidedAt || store.now(); fixed++; }
+    else if (last) { store.remove('memberships', (x) => x.id === m.id); fixed++; } // declined or withdrawn
+    else { store.insert('joinRequests', { communityId: m.communityId, userId: m.userId, status: 'pending', decidedAt: null }); fixed++; }
+  });
+  return fixed;
+}
+
+module.exports = { decide, reconcile };

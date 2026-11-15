@@ -190,3 +190,19 @@ test('a pending membership carries its request id, and super-mentors get a live 
   const after = await (await get('/v1/me/communities', bearer(token))).json();
   assert.equal(after.specific.join_request_id, null, 'null once a member');
 });
+
+test('requests left half-decided by older code are repaired instead of leaving the student pending', async () => {
+  const { token, request } = await ask();
+  store.get('joinRequests', request.id).status = 'approved'; // decided, but the membership was never confirmed
+  const mine = await (await get('/v1/me/communities', bearer(token))).json();
+  assert.equal(mine.specific.membership_status, 'member', 'the student is no longer pending');
+  assert.equal(mine.specific.join_request_id, null);
+});
+
+test('a decided request is never listed to the super-mentor as pending', async () => {
+  const { request } = await ask();
+  store.first('memberships', (m) => m.userId === store.get('joinRequests', request.id).userId && m.status === 'pending').status = 'member'; // approved elsewhere
+  const list = await (await get(`/v1/communities/${growth().id}/join-requests`, bearer(await appToken('super@fcu.test')))).json();
+  assert.ok(!list.items.some((x) => x.id === request.id));
+  assert.equal(store.get('joinRequests', request.id).status, 'approved');
+});

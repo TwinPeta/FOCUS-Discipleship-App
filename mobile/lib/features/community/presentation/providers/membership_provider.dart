@@ -29,6 +29,16 @@ class MembershipController extends AsyncNotifier<Membership> {
       );
       ref.onDispose(timer.cancel);
     }
+    // Moving from pending to decided (seen by the poll, a push or the socket) must also refresh the community pages,
+    // which carry their own copy of "pending" and would otherwise keep showing it.
+    final before = state.valueOrNull;
+    if (before != null &&
+        before.status == MembershipStatus.pending &&
+        membership.status != MembershipStatus.pending) {
+      final id = before.communityId;
+      if (id != null) ref.invalidate(communityByIdProvider(id));
+      ref.invalidate(specificCommunitiesProvider);
+    }
     return membership;
   }
 

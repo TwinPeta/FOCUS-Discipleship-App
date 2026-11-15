@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/community/presentation/providers/join_request_providers.dart';
 
 import '../../features/community/presentation/providers/community_providers.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
@@ -72,6 +73,15 @@ void applyRealtimeEvent(Ref<Object?> ref, RealtimeEvent event) {
         ref.invalidate(threadMessagesProvider(id));
       } else {
         ref.invalidate(threadMessagesProvider);
+      }
+    case 'join_request.created':
+      // A student asked to join a community this person leads: show it now.
+      final id = event.data['community_id'];
+      if (id is String) {
+        ref.invalidate(pendingJoinRequestsProvider(id));
+        ref.invalidate(communityByIdProvider(id));
+      } else {
+        ref.invalidate(pendingJoinRequestsProvider);
       }
     case 'join_request.decided':
       ref.invalidate(membershipProvider);

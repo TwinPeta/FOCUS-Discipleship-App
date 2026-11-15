@@ -87,6 +87,7 @@ router.post('/export', (req, res) => {
 });
 
 router.get('/communities', (req, res) => {
+  require('../utils/joinRequests').reconcile(req.user.id); // a request left half-decided must not keep the student pending
   const mine = store.where('memberships', (m) => m.userId === req.user.id);
   const dto = (m) => ({
     community: S.communitySummary(store.get('communities', m.communityId), req.user.id),

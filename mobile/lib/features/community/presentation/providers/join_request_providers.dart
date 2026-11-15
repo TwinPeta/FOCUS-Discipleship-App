@@ -9,9 +9,9 @@ import 'membership_provider.dart';
 
 /// Pending join requests for one community (screen 31, and the count on
 /// Manage). The repository enforces the super-mentor check with the current
-/// role. The server sends the super-mentor no notification or socket event
-/// for a new request, so while a screen shows the list it is re-fetched on
-/// the notifications poll interval.
+/// role. A new request arrives as the `join_request.created` socket event;
+/// while a screen shows the list it is also re-fetched on the notifications
+/// poll interval, in case the socket missed it.
 final pendingJoinRequestsProvider = FutureProvider.autoDispose
     .family<List<JoinRequest>, String>((ref, communityId) {
       final timer = Timer(

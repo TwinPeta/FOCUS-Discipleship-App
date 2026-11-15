@@ -16,6 +16,10 @@ const M = require('./mapping');
  */
 let client = null;
 let snap = {}; // collection -> Map(id -> json string) as last persisted
+// Fast path for the diff: the plain (unsorted) JSON of each document as last seen. A document whose plain JSON is
+// unchanged is unchanged; only the others pay for the key-sorted comparison. Checking every document on every flush
+// used to stall the whole API as the data grew.
+const rawSeen = new Map(); // `${collection}/${id}` -> plain JSON
 let chain = Promise.resolve();
 let timer = null;
 
@@ -56,6 +60,7 @@ async function load() {
     throw new Error(`The Prisma client is out of date (no model for: ${stale.join(', ')}). Run \`npm run prisma:generate\` (or \`npm install\`), then \`npm run db:deploy\` to apply new migrations.`);
   }
   snap = {};
+  rawSeen.clear();
   let rows = 0;
   for (const c of M.order()) {
     const r = await p[dg(c)].findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
@@ -74,13 +79,17 @@ async function doFlush() {
   const names = M.order(); // parents first
   const upserts = [];
   const deletes = [];
+  const pendingRaw = new Map(); // becomes rawSeen only once the transaction commits
   const next = {};
   for (const c of names) {
     const before = snap[c] || new Map();
     const after = new Map();
     for (const d of store.db[c]) {
+      const key = `${c}/${d.id}`;
+      const raw = JSON.stringify(d);
+      if (rawSeen.get(key) === raw && before.has(d.id)) { after.set(d.id, before.get(d.id)); continue; }
       const j = stable(d);
-      if (before.get(d.id) === j) { after.set(d.id, j); continue; }
+      if (before.get(d.id) === j) { rawSeen.set(key, raw); after.set(d.id, j); continue; }
       const row = M.resolveFks(c, M.toRow(c, d), exists);
       if (!row) { // orphan: required parent missing; not persisted
         if (!warned.has(d.id)) { warned.add(d.id); console.warn(`[db] skipped ${c}/${d.id}: missing parent record`); }
@@ -89,14 +98,17 @@ async function doFlush() {
       const { id, ...rest } = row;
       upserts.push(p[dg(c)].upsert({ where: { id }, create: row, update: rest }));
       after.set(d.id, j);
+      pendingRaw.set(key, raw);
     }
     const gone = [...before.keys()].filter((id) => !after.has(id));
+    gone.forEach((id) => rawSeen.delete(`${c}/${id}`));
     if (gone.length) deletes.unshift(p[dg(c)].deleteMany({ where: { id: { in: gone } } })); // children before parents
     next[c] = after;
   }
   const ops = [...deletes, ...upserts];
   if (!ops.length) return 0;
   await p.$transaction(ops);
+  pendingRaw.forEach((v, k) => rawSeen.set(k, v));
   snap = next; // only advance once committed; on failure the next flush retries the same diff
   return ops.length;
 }

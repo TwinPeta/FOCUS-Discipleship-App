@@ -103,6 +103,7 @@ router.get('/communities/:communityId/join-requests', (req, res, next) => {
   try {
     if (!store.get('communities', req.params.communityId)) throw notFound('Community');
     requireSuperMentor(req.params.communityId, req.user.id);
+    require('../utils/joinRequests').reconcile(); // never list a request that was in fact decided
     const status = req.query.status || 'pending';
     const items = store.where('joinRequests', (j) => j.communityId === req.params.communityId && j.status === status).sort(byNewest);
     res.json({ items: items.map((j) => joinRequestDto(j, req.user.id)) });

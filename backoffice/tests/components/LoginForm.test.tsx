@@ -12,7 +12,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
-const pushMock = vi.fn();
+const pushMock = vi.fn(); // the form now does a full page load (location.assign) instead of router.push
+const assignMock = vi.fn();
 const refreshMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -26,6 +27,8 @@ describe("LoginForm", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     pushMock.mockReset();
+    assignMock.mockReset();
+    Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, assign: assignMock } });
     refreshMock.mockReset();
   });
 
@@ -77,7 +80,7 @@ describe("LoginForm", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/my-community");
+      expect(assignMock).toHaveBeenCalledWith("/my-community");
     });
   });
 });

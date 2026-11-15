@@ -11,7 +11,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -26,7 +25,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ returnTo, initialError }: LoginFormProps) {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(
     initialError === "suspended"
@@ -84,8 +82,10 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
       const data = (await res.json()) as { user?: { role?: Role } };
       const role = data.user?.role;
       const target = role ? resolvePostLoginRedirect(role, returnTo) : ROUTES.dashboard;
-      router.push(target);
-      router.refresh();
+      // A full page load, not router.push: the client router may hold a "redirect to /login" it cached while the
+      // person was signed out, and would replay it (the login -> dashboard -> login loop). A real navigation always
+      // sends the fresh session cookie.
+      window.location.assign(target);
     } catch {
       setServerError("Unable to sign in right now. Please try again.");
     }
