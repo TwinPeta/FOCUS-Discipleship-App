@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/core/router/app_router.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/presentation/providers/community_providers.dart';
 import 'package:focus_1/features/resources/presentation/general_resources_screen.dart';
@@ -10,15 +9,20 @@ import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
 
 void main() {
+  // Learn needs no specific-community membership.
   for (final status in [MembershipStatus.none, MembershipStatus.approved]) {
     testWidgets(
       'Learn on the General feed opens General resources (${status.name})',
       (tester) async {
         final container = await pumpFcuApp(tester, membership: status);
         await goTo(tester, container, '/general-feed');
+        await settle(tester, steps: 20);
 
-        final learn = find.text('Learn');
+        // The quick links scroll sideways; Learn is last.
+        final learn = find.text('Learn', skipOffstage: false);
         expect(learn, findsOneWidget);
+        await tester.ensureVisible(learn);
+        await tester.pump();
         await tester.tap(learn);
         await settle(tester, steps: 12);
 
@@ -28,17 +32,23 @@ void main() {
           find.byType(ResourcesScreen),
         );
         expect(screen.communityId, general.id);
+        expect(screen.inCommunityShell, isFalse);
         expect(find.text('The faith of Abraham'), findsOneWidget);
-        expect(
-          container
-              .read(routerProvider)
-              .routerDelegate
-              .currentConfiguration
-              .uri
-              .path,
-          '/general-feed/resources',
-        );
       },
     );
   }
+
+  testWidgets('/general-feed/resources opens directly (deep link)', (
+    tester,
+  ) async {
+    final container = await pumpFcuApp(
+      tester,
+      membership: MembershipStatus.none,
+    );
+    await goTo(tester, container, '/general-feed/resources');
+    await settle(tester, steps: 12);
+
+    expect(find.byType(GeneralResourcesScreen), findsOneWidget);
+    expect(find.text('The faith of Abraham'), findsOneWidget);
+  });
 }
