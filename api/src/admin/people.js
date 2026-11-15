@@ -331,15 +331,7 @@ router.get('/join-requests', C.allow(SYS, SM, CA), (req, res) => {
 });
 function decide(req, j, approve, reason) {
   if (!C.inScope(req.scope, j.communityId)) throw notFound('Join request');
-  if (j.status !== 'pending') throw conflict('not_pending', 'This request was already decided');
-  if (approve) {
-    const other = store.first('memberships', (m) => m.userId === j.userId && m.status === 'member' && m.communityId !== j.communityId && store.get('communities', m.communityId)?.type === 'specific');
-    if (other) throw conflict('community_limit_reached', 'Student already belongs to another specific community');
-  }
-  j.status = approve ? 'approved' : 'rejected'; j.decidedAt = store.now(); j.decidedBy = req.user.id; j.note = reason || null;
-  if (approve) { const m = store.first('memberships', (x) => x.userId === j.userId && x.communityId === j.communityId); if (m) { m.status = 'member'; m.joinedAt = store.now(); } }
-  else store.remove('memberships', (m) => m.userId === j.userId && m.communityId === j.communityId && m.status === 'pending');
-  try { realtime.emit(j.userId, 'join_request.decided', { request_id: j.id, community_id: j.communityId, status: j.status }); } catch { /* realtime optional */ }
+  require('../utils/joinRequests').decide(j, { approve, by: req.user.id, note: reason });
 }
 router.post('/join-requests/bulk-approve', C.allow(SYS, SM), (req, res, next) => {
   try {

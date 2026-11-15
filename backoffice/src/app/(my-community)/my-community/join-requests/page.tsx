@@ -83,6 +83,7 @@ export default function MyCommunityJoinRequestsPage() {
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{req.studentName}</div>
                     <div className="text-xs text-muted">{req.email}</div>
+                    {req.communityName && <div className="text-xs text-muted">{req.communityName}</div>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted">
                     {req.note ?? "—"}

@@ -2162,7 +2162,7 @@ components:
         communityName: { type: string }
         campus: { type: string }
         kpis: { type: object, properties: { members: { type: integer }, pendingRequests: { type: integer }, reportsToReview: { type: integer }, inactiveMembers: { type: integer } } }
-        pendingRequests: { type: array, items: {} }
+        pendingRequests: { type: array, description: "Join requests for every community this super-mentor leads", items: { type: object, properties: { id: { type: string }, studentName: { type: string }, email: { type: string }, requestedAt: { type: string, format: date-time }, note: { type: string }, communityName: { type: string } }, required: [id, studentName, email, requestedAt] } }
         nextMeeting: { type: object, properties: { day: { type: string }, time: { type: string }, place: { type: string } } }
         followUpMembers: { type: array, items: {} }
         members: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, email: { type: string }, roleLabel: { type: string }, joinedAt: { type: string, format: date-time }, active: { type: boolean } }, required: [id, name, email, roleLabel, joinedAt, active] } }

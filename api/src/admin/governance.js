@@ -264,12 +264,13 @@ function myCommunity(req) {
   if (!c) throw notFound('Community');
   return c;
 }
-const myJr = (j) => { const u = store.get('users', j.userId) || {}; return { id: j.id, studentName: u.fullName || '', email: u.email || '', requestedAt: j.createdAt, note: j.note || undefined }; };
+const myJr = (j) => { const u = store.get('users', j.userId) || {}; return { id: j.id, studentName: u.fullName || '', email: u.email || '', requestedAt: j.createdAt, note: j.note || undefined, communityName: comm(j.communityId)?.name || undefined }; };;
 router.get('/my-community', C.allow(SM), (req, res, next) => {
   try {
     const c = myCommunity(req);
     const ms = store.where('memberships', (m) => m.communityId === c.id && m.status === 'member');
-    const pending = store.where('joinRequests', (j) => j.communityId === c.id && j.status === 'pending');
+    // every community they lead (usually one), so a request is never out of sight
+    const pending = store.where('joinRequests', (j) => (req.scope || [c.id]).includes(j.communityId) && j.status === 'pending');
     const inactiveDays = C.getSetting('inactivityDays', 14);
     const follow = ms.map((m) => store.get('users', m.userId)).filter(Boolean).map((u) => ({ u, d: Math.floor((Date.now() - Date.parse(C.lastActive(u))) / 864e5) })).filter((x) => x.d >= inactiveDays);
     const reports = store.col('reports').filter((r) => targetOf(r).communityId === c.id);
@@ -288,13 +289,10 @@ router.get('/my-community', C.allow(SM), (req, res, next) => {
 });
 const ownJoin = (approve) => (req, res, next) => {
   try {
-    const c = myCommunity(req); const j = C.must('joinRequests', req.params.id, 'Join request');
-    if (j.communityId !== c.id) throw notFound('Join request');
-    if (j.status !== 'pending') throw conflict('not_pending', 'This request was already decided');
-    if (approve && store.first('memberships', (m) => m.userId === j.userId && m.status === 'member' && m.communityId !== c.id && store.get('communities', m.communityId)?.type === 'specific')) throw conflict('community_limit_reached', 'Student already belongs to another specific community');
-    j.status = approve ? 'approved' : 'rejected'; j.decidedAt = store.now(); j.decidedBy = req.user.id; j.note = (req.body && req.body.reason) || null;
-    if (approve) { const m = store.first('memberships', (x) => x.userId === j.userId && x.communityId === c.id); if (m) { m.status = 'member'; m.joinedAt = store.now(); } }
-    else store.remove('memberships', (m) => m.userId === j.userId && m.communityId === c.id && m.status === 'pending');
+    myCommunity(req); // must be a super-mentor with a community
+    const j = C.must('joinRequests', req.params.id, 'Join request');
+    if (!C.inScope(req.scope, j.communityId)) throw notFound('Join request'); // any community they lead, not just the first
+    require('../utils/joinRequests').decide(j, { approve, by: req.user.id, note: req.body && req.body.reason });
     res.json({ ok: true });
   } catch (e) { next(e); }
 };

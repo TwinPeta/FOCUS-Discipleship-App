@@ -3146,7 +3146,7 @@ Roles: SYSTEM_ADMIN. 409 when push is not configured on the server or the admini
 | `communityName` | string |  |  |
 | `campus` | string |  |  |
 | `kpis` | object |  |  |
-| `pendingRequests` | array of any |  |  |
+| `pendingRequests` | array of object |  | Join requests for every community this super-mentor leads |
 | `nextMeeting` | object |  |  |
 | `followUpMembers` | array of any |  |  |
 | `members` | array of object |  |  |

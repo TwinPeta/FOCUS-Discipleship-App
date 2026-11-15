@@ -186,7 +186,7 @@ test('badges, announcements, stories, notification rules, settings', async () =>
   assert.equal(re.body.items[0].studentName, 'Bob');
 
   const rules = await call('GET', '/notifications/rules', { token: sys });
-  assert.equal(rules.body.items.length, 7);
+  assert.equal(rules.body.items.length, 8);
   const r0 = rules.body.items[0];
   assert.equal((await call('PATCH', `/notifications/rules/${r0.id}`, { token: sys, body: { channels: { inApp: false, email: false, sms: false } } })).status, 422);
   assert.equal((await call('PATCH', `/notifications/rules/${r0.id}`, { token: sys, body: { enabled: false } })).body.enabled, false);

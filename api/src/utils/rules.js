@@ -5,6 +5,7 @@ const store = require('../db/store');
 // [trigger, label, who gets it, title, message]. Placeholders are the ones the back-office editor offers:
 // {{member_name}} {{community_name}} {{item_title}} {{message_preview}}
 const RULE_SEED = [
+  ['join_request_received', 'Join request received', 'Super-mentor', 'New join request', '{{member_name}} asked to join {{community_name}}. Open the back office to approve or decline.'],
   ['join_request_approved', 'Join request approved', 'Student', 'Welcome to {{community_name}}', 'Your request was approved. See you at the next meeting!'],
   ['join_request_declined', 'Join request declined', 'Student', 'About your join request', 'Your request to join {{community_name}} could not be approved.'],
   ['inactivity_reminder', 'Inactivity reminder', 'Student', 'We miss you', 'It has been a while, {{member_name}}. Come back and continue your journey.'],
@@ -17,12 +18,15 @@ const RULE_SEED = [
 // Wording saved before the editor and the seed agreed on names keeps working.
 const ALIASES = { community: 'community_name', title: 'item_title', message: 'message_preview', name: 'member_name' };
 
+/** Creates any default rule that does not exist yet (so rules added in a later version appear for existing databases). */
 function ensureRules() {
-  if (store.col('notificationRules').length) return;
-  RULE_SEED.forEach(([triggerKey, triggerLabel, recipient, title, message]) => store.insert('notificationRules', {
-    triggerKey, triggerLabel, recipient, channels: { inApp: true, email: triggerKey !== 'prayer_received', sms: false },
-    enabled: true, template: { title, message }, updatedAt: store.now(),
-  }));
+  for (const [triggerKey, triggerLabel, recipient, title, message] of RULE_SEED) {
+    if (store.first('notificationRules', (r) => r.triggerKey === triggerKey)) continue;
+    store.insert('notificationRules', {
+      triggerKey, triggerLabel, recipient, channels: { inApp: true, email: triggerKey !== 'prayer_received', sms: false },
+      enabled: true, template: { title, message }, updatedAt: store.now(),
+    });
+  }
 }
 
 /** The rule for a trigger (created from the defaults on first use), or null for a trigger without one. */

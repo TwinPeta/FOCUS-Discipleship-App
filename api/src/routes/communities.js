@@ -87,6 +87,11 @@ router.post('/communities/:communityId/join-requests', (req, res, next) => {
 
     const jr = store.insert('joinRequests', { communityId: c.id, userId: req.user.id, status: 'pending', decidedAt: null });
     store.insert('memberships', { communityId: c.id, userId: req.user.id, role: 'member', status: 'pending', joinedAt: null });
+    // The community's super-mentors hear about it by email (they have no in-app inbox in the back office), so requests do not sit unseen
+    require('../utils/notify').emailStaff(
+      store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.userId),
+      'join_request_received', { member_name: req.user.fullName, community_name: c.name },
+    );
     res.status(201).json(joinRequestDto(jr, req.user.id));
   } catch (e) { next(e); }
 });
@@ -119,23 +124,7 @@ router.post('/join-requests/:requestId/decision', (req, res, next) => {
     if (!j) throw notFound('Join request');
     requireSuperMentor(j.communityId, req.user.id);
     const b = check(req.body, { decision: { required: true, type: 'string', enum: ['approve', 'reject'] }, note: { type: 'string', max: 500 } });
-    if (j.status !== 'pending') throw conflict('not_pending', 'This request was already decided');
-    j.status = b.decision === 'approve' ? 'approved' : 'rejected';
-    j.decidedAt = store.now();
-    j.note = b.note || null;
-    if (b.decision === 'approve') {
-      const m = store.first('memberships', (x) => x.userId === j.userId && x.communityId === j.communityId);
-      if (m) { m.status = 'member'; m.joinedAt = store.now(); }
-    } else {
-      store.remove('memberships', (m) => m.userId === j.userId && m.communityId === j.communityId && m.status === 'pending');
-    }
-    notify(j.userId, b.decision === 'approve' ? 'request_approved' : 'request_declined', {
-      title: b.decision === 'approve' ? 'Your request was approved' : 'Your request was not accepted',
-      body: b.decision === 'approve' ? null : (j.note || null),
-      targetRoute: b.decision === 'approve' ? '/request/approved' : '/request/declined',
-      vars: { community_name: (store.get('communities', j.communityId) || {}).name },
-    });
-    realtime.emit(j.userId, 'join_request.decided', { request_id: j.id, community_id: j.communityId, status: j.status });
+    require('../utils/joinRequests').decide(j, { approve: b.decision === 'approve', by: req.user.id, note: b.note });
     res.json(joinRequestDto(j, req.user.id));
   } catch (e) { next(e); }
 });

@@ -22,6 +22,8 @@ export interface OwnJoinRequest {
   email: string;
   requestedAt: string;
   note?: string;
+  /** Set when the super-mentor leads more than one community. */
+  communityName?: string;
 }
 
 export interface NextMeetingDetails {

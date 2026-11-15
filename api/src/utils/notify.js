@@ -48,10 +48,11 @@ function emailIt(user, { title, body }) {
  * Tells [userId] about something: an in-app notification (unless they muted its category or turned in-app off) and an
  * email (when they chose email). Staff rules apply on top: a switched-off trigger or channel sends nothing, and the
  * rule's wording replaces the default when [vars] are given ({{member_name}}, {{community_name}}, ...).
- * Moderator warnings always go through. Pass `email: false` to leave the email to the caller.
+ * Moderator warnings always go through. Pass `email: false` to leave the email to the caller. `detail` is a personal
+ * message that is kept after the wording (a mentor's reason for declining).
  * Returns the in-app notification, or null. Never throws: a notification must not break the action that caused it.
  */
-function notify(userId, type, { title, body = null, targetRoute, rule: ruleKey, vars, email = true }) {
+function notify(userId, type, { title, body = null, targetRoute, rule: ruleKey, vars, email = true, detail = null }) {
   try {
     if (!userId || !(type in CATEGORY)) return null;
     const user = store.get('users', userId);
@@ -68,6 +69,8 @@ function notify(userId, type, { title, body = null, targetRoute, rule: ruleKey, 
       if (t) title = t;
       if (m || t) body = m || null;
     }
+    // A person's own words (a mentor's reason for declining) are never replaced by the rule's wording
+    if (detail) body = body ? `${body}\n\n${detail}` : detail;
 
     if (email && ruleAllows(rule, 'email') && (!category || prefs.channels.includes('email'))) emailIt(user, { title, body });
     if ((category && !prefs.channels.includes('inApp')) || !ruleAllows(rule, 'inApp')) return null;
