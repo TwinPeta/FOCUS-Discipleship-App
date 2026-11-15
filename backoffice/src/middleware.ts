@@ -8,18 +8,15 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
+import { publicOrigin } from "@/lib/auth/publicOrigin";
 import { AUTH_ROUTES, ROUTES } from "@/lib/constants/routes";
 
 const ACCESS_COOKIE_NAME = process.env.AUTH_ACCESS_COOKIE || "fcu_access";
 
-/**
- * Redirect using the public host. Behind nginx, req.url carries the internal address (127.0.0.1:3001), so
- * `new URL(path, req.url)` would send users there; the browser's own host arrives in the forwarded headers.
- */
+/** Redirect to the address the browser used, not the server's internal one (see lib/auth/publicOrigin.ts). */
 function redirectTo(req: NextRequest, location: string): NextResponse {
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
-  const proto = (req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "")).split(",")[0].trim();
-  return NextResponse.redirect(new URL(location, `${proto}://${host.split(",")[0].trim()}`));
+  const origin = publicOrigin(req.headers, req.nextUrl, process.env.NODE_ENV === "production");
+  return NextResponse.redirect(new URL(location, origin));
 }
 
 function isPublicPath(pathname: string): boolean {
