@@ -33,6 +33,8 @@ import '../../features/community/data/membership_repository.dart';
 import '../../features/feed/data/post_repository.dart';
 import '../../features/feed/data/remote_post_repository.dart';
 import '../network/media_uploader.dart';
+import '../push/device_registration.dart';
+import '../realtime/realtime_client.dart';
 import '../../features/learning/data/learning_repository.dart';
 import '../../features/landing/data/stories_repository.dart';
 import '../../features/activity/data/activity_repository.dart';
@@ -223,3 +225,52 @@ final privacyRepositoryProvider = Provider<PrivacyRepository>(
 final permissionServiceProvider = Provider<PermissionService>(
   (ref) => const SystemPermissionService(),
 );
+
+/// True when the app talks to the real API (not the test fakes, and a base
+/// URL is set). Live updates and device registration only run then.
+final liveApiEnabledProvider = Provider<bool>(
+  (ref) =>
+      ApiConfig.baseUrl.isNotEmpty &&
+      ref.watch(authRepositoryProvider) is RemoteAuthRepository,
+);
+
+/// The realtime socket (`/v1/realtime`). Connected while signed in and
+/// closed on sign-out; a no-op client with an empty stream when the API is
+/// off. Consumed by `realtimeBindingsProvider`.
+final realtimeClientProvider = Provider<RealtimeClient>((ref) {
+  if (!ref.watch(liveApiEnabledProvider)) return NoopRealtimeClient();
+  final client = SocketRealtimeClient(api: ref.watch(apiClientProvider));
+  ref.onDispose(client.dispose);
+  ref.listen(authSessionProvider, (_, session) {
+    if (session == null) {
+      client.stop();
+    } else {
+      client.start();
+    }
+  }, fireImmediately: true);
+  return client;
+});
+
+/// Where the push token comes from: [NoPushTokenSource] until Firebase is
+/// added (see [PushTokenSource]).
+final pushTokenSourceProvider = Provider<PushTokenSource>(
+  (ref) => const NoPushTokenSource(),
+);
+
+/// Registers the device with `POST /devices` while signed in; null when the
+/// API is off. `AuthController.signOut` unregisters it before the tokens go.
+final deviceRegistrationProvider = Provider<DeviceRegistration?>((ref) {
+  if (!ref.watch(liveApiEnabledProvider)) return null;
+  final registration = DeviceRegistration(
+    ref.watch(apiClientProvider),
+    source: ref.watch(pushTokenSourceProvider),
+  );
+  ref.listen(authSessionProvider, (_, session) {
+    if (session == null) {
+      registration.unregister();
+    } else {
+      registration.register();
+    }
+  }, fireImmediately: true);
+  return registration;
+});

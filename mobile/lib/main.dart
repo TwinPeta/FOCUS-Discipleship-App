@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'core/push/push_service.dart';
+import 'core/realtime/realtime_bindings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -11,6 +13,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureFonts();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Phone notifications (local only); a no-op on web. Tests never run main.
+  await LocalPushPlatform.instance.init();
   runApp(const ProviderScope(child: FcuApp()));
 }
 
@@ -28,6 +32,9 @@ class FcuApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Live updates (realtime socket) and device registration; no-ops when
+    // the API is off.
+    ref.watch(realtimeBindingsProvider);
     return MaterialApp.router(
       title: 'FCU',
       debugShowCheckedModeBanner: false,

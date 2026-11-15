@@ -127,7 +127,7 @@ Errors are RFC 7807 `application/problem+json` with a stable **`code`**. Branch 
 
 ---
 
-## 6. Realtime (optional)
+## 6. Realtime
 
 `GET /v1/realtime?token=<access_token>` upgraded to a WebSocket. The server pushes JSON events:
 
@@ -138,7 +138,7 @@ Errors are RFC 7807 `application/problem+json` with a stable **`code`**. Branch 
 | `join_request.decided` | show the approved/declined screen without polling |
 | `notification.created` | bell dot |
 
-Everything is also available by polling REST, so the socket is an optimisation. **Not used by the app yet.**
+Everything is also available by polling REST, so the socket is an optimisation. **The app uses it** (`mobile/lib/core/realtime/`): it connects while signed in (`wss://<host>/v1/realtime?token=<access_token>`, built from `API_BASE_URL`), reconnects with 1, 2, 5, 10, 30 s backoff, refreshes the token once on a `4401` close, and disconnects on sign-out. `notification.created` refreshes the bell (the 60 s poll stays as a fallback) and shows a phone notification; `message.created`/`message.read` refresh the inbox and the open conversation; `join_request.decided` refreshes the membership; `presence.updated` is stored per community but not shown yet (the header still shows a placeholder count).
 
 ---
 
@@ -177,7 +177,7 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | Media | create slot, complete, direct upload | `media_uploader` |
 | Devices | register / remove push token | — (push not built) |
 
-**Not called by the app today (7):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `DELETE /join-requests/{requestId}` (cancel a pending request), `GET /realtime`, `POST /devices` + `DELETE /devices/{deviceId}` (push), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`).
+**Not called by the app today (4):** `GET /health`, `GET /lookups/countries` (the app uses its own country list), `DELETE /join-requests/{requestId}` (cancel a pending request), `PUT /media/{mediaId}/upload` (by design; the app uses `upload_url`). `POST /devices` + `DELETE /devices/{deviceId}` are wired (`core/push/device_registration.dart`) but only fire once a push token source exists (Firebase); today the app has none.
 
 ---
 
@@ -190,6 +190,6 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | 3 | Password minimum: server **8**, app **10** characters | product | pick one; the app being stricter is safe for now |
 | 4 | Text limits: server allows posts up to 5000 characters, the app stops at 2000 | product | fine (app stricter); align if longer posts are wanted |
 | 5 | Tokens are in memory only, so users sign in again after closing the app | app | `flutter_secure_storage` (needs approval) |
-| 6 | ETag/`If-None-Match` and realtime are supported by the server but not used by the app | app | add when tuning for slow connections |
+| 6 | ETag/`If-None-Match` is supported by the server but not used by the app. Realtime is now used (section 6) | app | add ETags when tuning for slow connections |
 | 6b | The message `Idempotency-Key` is built from the current time (`remote_messaging_repository.dart`), so a retried send gets a new key and can create a duplicate | app | generate the key once per message (like posts and prayer requests do) |
-| 7 | Roadmap v2 needs new endpoints that don't exist yet: questions and answers, search, resources in the General community, notification delivery (J1–J5) | backend | see `mobile/docs/roadmap_v2.md` |
+| 7 | Roadmap v2 needs new endpoints that don't exist yet: questions and answers, search, resources in the General community, notification delivery (J1–J5). Push: the server stores device tokens but has no sender and there is no Firebase project, so phone notifications are local (from the socket, while the app runs) | backend | see `mobile/docs/roadmap_v2.md`; for push add a Firebase project, a sender, and a `FirebasePushTokenSource` in the app |
