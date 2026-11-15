@@ -92,6 +92,9 @@ router.get('/communities', (req, res) => {
     community: S.communitySummary(store.get('communities', m.communityId), req.user.id),
     membership_status: m.status === 'member' ? 'member' : 'pending',
     joined_at: m.joinedAt || null,
+    // While pending, which request it is (so the app can cancel it without a second call)
+    join_request_id: m.status === 'member' ? null
+      : ((store.first('joinRequests', (j) => j.userId === req.user.id && j.communityId === m.communityId && j.status === 'pending') || {}).id || null),
   });
   const find = (type) => mine.find((m) => store.get('communities', m.communityId)?.type === type);
   const g = find('general');

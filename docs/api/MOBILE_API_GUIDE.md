@@ -203,3 +203,5 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | B4 | A student who muted "join request updates" or turned in-app off gets no record of the decision (the socket event still arrives) | consider always recording decisions, or document it |
 | B5 | `GET /me/communities` gives a pending membership only as `membership_status`, without the request id; the app must call `GET /me/join-requests` to cancel | include `join_request_id` |
 
+**Backend status (2026-11-15):** B2 fixed (all four ways of deciding a request share one function and notify the student in-app, by email, by push and live). B1: the community's super-mentors are now emailed and receive a `join_request.created` socket event (`{request_id, community_id}`); there is still no in-app notification type for it. B5 fixed: `GET /me/communities` returns `join_request_id` on a pending membership. B4 is deliberate: a student who muted "join request updates" is not alerted, but the decision always shows in `GET /me/communities` and `GET /me/join-requests`. B3 unchanged.
+

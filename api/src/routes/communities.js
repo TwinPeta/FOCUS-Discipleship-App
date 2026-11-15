@@ -88,6 +88,9 @@ router.post('/communities/:communityId/join-requests', (req, res, next) => {
     const jr = store.insert('joinRequests', { communityId: c.id, userId: req.user.id, status: 'pending', decidedAt: null });
     store.insert('memberships', { communityId: c.id, userId: req.user.id, role: 'member', status: 'pending', joinedAt: null });
     // The community's super-mentors hear about it by email (they have no in-app inbox in the back office), so requests do not sit unseen
+    store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').forEach((m) => {
+      try { realtime.emit(m.userId, 'join_request.created', { request_id: jr.id, community_id: c.id }); } catch { /* live updates are optional */ }
+    });
     require('../utils/notify').emailStaff(
       store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.userId),
       'join_request_received', { member_name: req.user.fullName, community_name: c.name },

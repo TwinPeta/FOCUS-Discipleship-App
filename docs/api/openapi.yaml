@@ -2010,6 +2010,7 @@ components:
         community: { $ref: '#/components/schemas/CommunitySummary' }
         membership_status: { type: string, enum: [member, pending] }
         joined_at: { type: [string, 'null'], format: date-time }
+        join_request_id: { type: [string, 'null'], description: "While pending: the request's id, so it can be cancelled (DELETE /join-requests/{id}) without another call. Null once a member." }
     Member:
       allOf:
         - $ref: '#/components/schemas/UserRef'

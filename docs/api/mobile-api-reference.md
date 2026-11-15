@@ -1,8 +1,8 @@
 # FCU Student Community – Mobile API — endpoint reference
 
-> Generated from `live-openapi.yaml` (OpenAPI 3.1.0, API version 1.0.0) by `docs/api/tools/openapi_to_markdown.js`. Do not edit by hand; regenerate.
+> Generated from `openapi.yaml` (OpenAPI 3.1.0, API version 1.0.0) by `docs/api/tools/openapi_to_markdown.js`. Do not edit by hand; regenerate.
 
-**Servers:** `http://localhost:4000/v1` (This server (production)), `https://apis.focusuganda.org/v1` (Production), `http://localhost:4000/v1` (Local development)
+**Servers:** `https://apis.focusuganda.org/v1` (Production), `http://localhost:4000/v1` (Local development)
 
 **85 operations** in 16 groups. The "App" column says whether the Flutter app's code calls the path today.
 
@@ -174,8 +174,8 @@ Push notifications
 
 | Method | Path | Summary | Auth | App |
 |---|---|---|---|---|
-| `POST` | [`/devices`](#post-devices) | Register a push token | bearerAuth | — |
-| `DELETE` | [`/devices/{deviceId}`](#delete-devices-deviceid) | Remove a push token (on logout) | bearerAuth | — |
+| `POST` | [`/devices`](#post-devices) | Register a push token | bearerAuth | yes |
+| `DELETE` | [`/devices/{deviceId}`](#delete-devices-deviceid) | Remove a push token (on logout) | bearerAuth | yes |
 
 ### Landing
 
@@ -2029,7 +2029,7 @@ Type: string · binary
 
 - **Auth:** bearerAuth
 - **Operation id:** `registerDevice`
-- **Called by the app:** —
+- **Called by the app:** yes
 
 **Request body** (`application/json`, required)
 
@@ -2053,7 +2053,7 @@ Type: string · binary
 
 - **Auth:** bearerAuth
 - **Operation id:** `unregisterDevice`
-- **Called by the app:** —
+- **Called by the app:** yes
 
 **Parameters**
 
@@ -2469,6 +2469,7 @@ Type: string (`super_mentor`, `mentor`, `member`)
 | `community` | [CommunitySummary](#schema-communitysummary) |  |  |
 | `membership_status` | string (`member`, `pending`) |  |  |
 | `joined_at` | string \| null · date-time |  | nullable |
+| `join_request_id` | string \| null |  | While pending: the request's id, so it can be cancelled (DELETE /join-requests/{id}) without another call. Null once a member. — nullable |
 
 <a id="schema-member"></a>
 ### Member

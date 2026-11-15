@@ -175,3 +175,18 @@ test('a database that already has the original rules gets the newer ones without
   assert.ok(rules.ruleOf('join_request_received'), 'the new rule appears');
   assert.match(rules.ruleOf('join_request_approved').template.title, /\(edited\)$/, 'existing edits are kept');
 });
+
+test('a pending membership carries its request id, and super-mentors get a live event when a student asks', async () => {
+  const { token, request } = await ask();
+  const mine = await (await get('/v1/me/communities', bearer(token))).json();
+  assert.equal(mine.specific.membership_status, 'pending');
+  assert.equal(mine.specific.join_request_id, request.id, 'so the app can cancel it directly');
+  const asked = events.find((e) => e.name === 'join_request.created');
+  assert.ok(asked, 'a live event');
+  assert.equal(asked.userId, user('super@fcu.test').id);
+  assert.deepEqual(asked.data, { request_id: request.id, community_id: growth().id });
+
+  assert.equal(await PATHS['back office (system admin)'](request.id), 200);
+  const after = await (await get('/v1/me/communities', bearer(token))).json();
+  assert.equal(after.specific.join_request_id, null, 'null once a member');
+});
