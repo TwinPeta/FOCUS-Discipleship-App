@@ -28,6 +28,7 @@ class RemoteStoriesRepository implements StoriesRepository {
           authorName: (j['student_name'] as String?) ?? '',
           institution: (j['institution_name'] as String?) ?? '',
           duration: _duration(j['duration_seconds'] as int?),
+          videoUrl: j['video_url'] as String?,
         ),
     ];
   }

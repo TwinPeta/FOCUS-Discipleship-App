@@ -9,6 +9,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/bold_button.dart';
 import 'bold_style.dart';
 import 'illustration_collage.dart';
+import '../../../../core/config/landing_videos.dart';
+import '../../../../core/utils/open_link.dart';
 
 class LandingHeroSection extends StatelessWidget {
   const LandingHeroSection({super.key, required this.onWatchStories});
@@ -42,11 +44,11 @@ class LandingHeroSection extends StatelessWidget {
           const SizedBox(height: 18),
           Center(
             child: IllustrationCollage(
-              onPlayTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Videos coming soon')),
-                );
-              },
+              onPlayTap: () => openVideo(
+                context,
+                LandingVideos.featured.url,
+                title: LandingVideos.featured.title,
+              ),
             ),
           ),
           const SizedBox(height: 18),

@@ -27,6 +27,7 @@ import '../../features/feed/presentation/composer_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
 import '../../features/feed/presentation/post_detail_screen.dart';
 import '../../features/landing/presentation/landing_screen.dart';
+import '../../features/landing/presentation/video_player_screen.dart';
 import '../../features/learning/presentation/badge_earned_screen.dart';
 import '../../features/learning/presentation/devotional_screen.dart';
 import '../../features/learning/presentation/document_screen.dart';
@@ -172,6 +173,13 @@ final List<RouteBase> appRoutes = [
     builder: (context, state) => const ForgotPasswordScreen(),
   ),
   GoRoute(path: '/charter', builder: (context, state) => const CharterScreen()),
+  GoRoute(
+    path: '/watch',
+    builder: (context, state) => VideoPlayerScreen(
+      url: state.uri.queryParameters['url'] ?? '',
+      title: state.uri.queryParameters['title'],
+    ),
+  ),
   for (final p in placeholderRoutes)
     GoRoute(
       path: p.path,

@@ -208,14 +208,17 @@ class PostActionButton extends StatelessWidget {
        );
 
   /// The comments control.
-  const PostActionButton.comment({Key? key, required int count, VoidCallback? onTap})
-    : this(
-        key: key,
-        icon: Icons.mode_comment_outlined,
-        count: count,
-        semanticLabel: 'Comments, $count',
-        onTap: onTap,
-      );
+  const PostActionButton.comment({
+    Key? key,
+    required int count,
+    VoidCallback? onTap,
+  }) : this(
+         key: key,
+         icon: Icons.mode_comment_outlined,
+         count: count,
+         semanticLabel: 'Comments, $count',
+         onTap: onTap,
+       );
 
   final IconData icon;
   final int count;

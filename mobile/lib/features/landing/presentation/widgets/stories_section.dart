@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/config/landing_videos.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/open_link.dart';
 import '../../domain/story_video.dart';
 import '../providers/stories_provider.dart';
 import 'bold_style.dart';
@@ -70,6 +72,10 @@ class StoriesSection extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     return _StoryCard(
                       story: stories[index],
+                      videoUrl: LandingVideos.forStory(
+                        index,
+                        stories[index].videoUrl,
+                      ),
                       artBackground:
                           _artBackgrounds[index % _artBackgrounds.length],
                     );
@@ -85,15 +91,20 @@ class StoriesSection extends ConsumerWidget {
 }
 
 class _StoryCard extends StatelessWidget {
-  const _StoryCard({required this.story, required this.artBackground});
+  const _StoryCard({
+    required this.story,
+    required this.artBackground,
+    required this.videoUrl,
+  });
 
   final StoryVideo story;
+
+  /// The story's own video, or a curated fallback.
+  final String videoUrl;
   final Color artBackground;
 
-  void _playTapped(BuildContext context) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Videos coming soon')));
-  }
+  void _playTapped(BuildContext context) =>
+      openVideo(context, videoUrl, title: story.quote);
 
   @override
   Widget build(BuildContext context) {
