@@ -57,7 +57,7 @@ router.post('/moderation/reports/:id/action', C.allow(SYS, SM), (req, res, next)
       case 'WARN': if (!authorId) throw conflict('no_target', 'No user to warn'); sanction(req, authorId, communityId, 'WARNING', notes); r.status = 'resolved'; break;
       case 'HIDE': if (!t) throw conflict('no_target', 'Nothing to hide'); t.hidden = true; r.status = 'resolved'; break;
       case 'ESCALATE': r.status = 'in_review'; r.escalated = true; break;
-      case 'SUSPEND': if (!author) throw conflict('no_target', 'No user to suspend'); author.suspended = true; sanction(req, authorId, communityId, 'SUSPENSION', notes); store.remove('refreshTokens', (x) => x.userId === authorId); r.status = 'resolved'; break;
+      case 'SUSPEND': if (!author) throw conflict('no_target', 'No user to suspend'); author.suspended = true; sanction(req, authorId, communityId, 'SUSPENSION', notes).until = new Date(Date.now() + 7 * 86400000).toISOString(); store.remove('refreshTokens', (x) => x.userId === authorId); r.status = 'resolved'; break;
       case 'DELETE': if (!t || !col) throw conflict('no_target', 'Nothing to delete'); store.remove(col, (x) => x.id === t.id); r.status = 'resolved'; break;
     }
     r.resolution = { action: b.action, notes, by: req.user.id, at: store.now() };

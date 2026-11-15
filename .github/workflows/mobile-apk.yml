@@ -50,8 +50,10 @@ jobs:
           dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
           flutter test $dirs test/widget_test.dart
 
+      # Set the repository variable API_BASE_URL (e.g. https://apis.focusuganda.org/v1) to build against the real
+      # backend; leave it unset to build the offline demo on fake data.
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

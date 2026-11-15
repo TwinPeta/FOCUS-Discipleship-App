@@ -25,7 +25,14 @@ class TestimoniesController
       ...current.where((t) => t.id != pending.id),
     ]);
     try {
-      await ref.read(testimonyRepositoryProvider).submitStory(pending);
+      final saved = await ref
+          .read(testimonyRepositoryProvider)
+          .submitStory(pending);
+      // The server may assign its own id: swap the stored copy in.
+      state = AsyncValue.data([
+        for (final t in state.valueOrNull ?? const <Testimony>[])
+          t.id == pending.id ? saved : t,
+      ]);
     } catch (_) {
       state = AsyncValue.data(
         (state.valueOrNull ?? const <Testimony>[])

@@ -4,7 +4,7 @@ import '../../../../core/widgets/post_photo_art.dart';
 import '../../../../core/widgets/sized_file_image.dart';
 import '../../domain/post.dart';
 
-/// The widget for a post's photo (seeded art or a picked file), or null
+/// The widget for a post's photo (seeded art, a picked file or an uploaded photo), or null
 /// when the post has none. Shared by the feed and the post screen.
 Widget? postPhotoView(BuildContext context, PostPhoto? photo) {
   return switch (photo) {
@@ -17,6 +17,12 @@ Widget? postPhotoView(BuildContext context, PostPhoto? photo) {
         logicalSize: MediaQuery.sizeOf(context).width,
       ),
       fit: BoxFit.cover,
+    ),
+    PostPhoto(:final url?) => Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
     ),
     PostPhoto() => null,
   };

@@ -7,8 +7,10 @@ const http = require('http');
 const { createApp } = require('../src/app');
 const { seed, DEMO_PASSWORD } = require('../src/db/seed');
 const store = require('../src/db/store');
+const contract = require('./helpers/contract');
 
 let server, base, ctx;
+let spec; // docs/api/openapi-admin.yaml: every response in this file is checked against it
 const A = '/v1/admin';
 const call = async (method, path, { token, body } = {}) => {
   const res = await fetch(base + A + path, {
@@ -18,6 +20,7 @@ const call = async (method, path, { token, body } = {}) => {
   });
   const text = await res.text();
   let json = null; try { json = text ? JSON.parse(text) : null; } catch { json = text; }
+  if (spec) contract.check(spec, method, A + path, res.status, typeof json === 'string' ? null : json); // text bodies (CSV) have no JSON schema to check
   return { status: res.status, body: json, headers: res.headers };
 };
 // The proxy forwards Authorization from the httpOnly cookie, so tests use the cookie value as Bearer.
@@ -28,12 +31,17 @@ const login = async (email, extra = {}) => {
 };
 
 test.before(async () => {
+  spec = await contract.load('openapi-admin.yaml', '/v1/admin');
   store.reset(); ctx = seed();
   server = http.createServer(createApp());
   await new Promise((r) => server.listen(0, r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
-test.after(() => server.close());
+test.after(() => {
+  server.close();
+  console.log(`# contract (admin): ${spec.checked} responses checked; ${contract.unexercised(spec).length} documented operations not called by any test`);
+  assert.deepEqual([...spec.violations], [], `responses that do not match docs/api/openapi-admin.yaml (${spec.checked} checked)`);
+});
 
 test('staff login: cookie set, roles resolved, students/suspended refused', async () => {
   const sys = await login('admin@fcu.test', { rememberMe: true });
@@ -246,4 +254,99 @@ test('dashboard, reports, my-community, account', async () => {
   assert.equal(fp.status, 200); // no account enumeration
   assert.equal((await call('POST', '/auth/reset-password', { body: { token: 'bogus', password: 'Newpass123' } })).status, 410);
   assert.equal((await call('GET', '/bible-links?q=ps', { token: sys })).body.items.length, 1);
+});
+
+// Calls the remaining operations once so their responses are checked against the documented schemas too.
+test('contract sweep: remaining staff operations return what the spec says', async () => {
+  const ok = (r, ...codes) => assert.ok(codes.includes(r.status), `expected ${codes} got ${r.status} ${JSON.stringify(r.body)}`);
+  const sys = (await login('admin@fcu.test')).token;
+  const sm = (await login('super@fcu.test')).token;
+  const ca = (await login('content@fcu.test')).token;
+  const S = { token: sys };
+  const inst = ctx.generalMak.institutionId;
+
+  // members
+  ok(await call('GET', '/members/inactive', S), 200);
+  const member = await call('POST', '/members', { ...S, body: { fullName: 'Sweep Member', email: 'sweepm@fcu.test', institutionId: inst, role: 'STUDENT' } });
+  ok(member, 201);
+  ok(await call('GET', `/members/${member.body.id}`, S), 200);
+  ok(await call('PATCH', `/members/${member.body.id}/community`, { ...S, body: { communityId: ctx.growth.id } }), 200);
+  ok(await call('POST', `/members/${member.body.id}/remind`, S), 200, 204);
+  ok(await call('GET', '/institutions', S), 200);
+
+  // join requests: decline
+  const jr = store.insert('joinRequests', { communityId: ctx.growth.id, userId: ctx.friend.id, status: 'pending', decidedAt: null });
+  ok(await call('POST', `/join-requests/${jr.id}/decline`, { token: sm, body: { reason: 'Not this term' } }), 200);
+
+  // staff role
+  ok(await call('POST', '/roles/staff', { ...S, body: { fullName: 'Sweep Staff', email: 'sweepstaff@fcu.test', role: 'CONTENT_ADMIN', sendInviteEmail: false } }), 201);
+
+  // content and pathways
+  const c = await call('POST', '/content', { token: ca, body: { title: 'Sweep devotional', type: 'DEVOTIONAL', bibleLink: 'char-ruth' } });
+  ok(c, 201);
+  ok(await call('GET', `/content/${c.body.id}`, { token: ca }), 200);
+  ok(await call('PATCH', `/content/${c.body.id}`, { token: ca, body: { title: 'Sweep devotional (edited)' } }), 200);
+  ok(await call('GET', '/pathways', S), 200);
+  const path = await call('POST', '/pathways', { token: ca, body: { name: 'Sweep path', theme: 'Faith', steps: [{ contentId: c.body.id, title: 'Sweep', contentType: 'devotional' }], published: false } });
+  ok(path, 201);
+  ok(await call('GET', `/pathways/${path.body.id}`, S), 200);
+  ok(await call('PUT', `/pathways/${path.body.id}`, { token: ca, body: { name: 'Sweep path v2', theme: 'Faith', steps: [{ contentId: c.body.id, title: 'Sweep', contentType: 'devotional' }], published: false } }), 200);
+  ok(await call('PATCH', `/pathways/${path.body.id}`, { token: ca, body: { theme: 'Hope' } }), 200);
+  ok(await call('DELETE', `/pathways/${path.body.id}`, { token: ca }), 204);
+
+  // badges, announcements, stories
+  ok(await call('GET', '/badges', S), 200);
+  const badge = await call('POST', '/badges', { ...S, body: { name: 'Sweep Badge', description: 'x', ruleType: 'pray_requests', ruleTargetCount: 3, icon: 'heart', status: 'active', visibleOnProfile: true } });
+  ok(badge, 201);
+  ok(await call('PATCH', `/badges/${badge.body.id}`, { ...S, body: { ruleTargetCount: 4 } }), 200);
+  ok(await call('GET', '/announcements', S), 200);
+  const ann = await call('POST', '/announcements', { ...S, body: { title: 'Sweep', message: 'Hello', audienceType: 'all', publishTiming: 'scheduled', scheduledFor: new Date(Date.now() + 7 * 86400000).toISOString() } });
+  ok(ann, 201);
+  ok(await call('PATCH', `/announcements/${ann.body.id}`, { ...S, body: { message: 'Hello again' } }), 200);
+  ok(await call('GET', '/stories', S), 200);
+  const story = await call('POST', '/stories', { ...S, body: { studentName: 'Sweep', institution: 'MAK', videoUrl: 'https://x/s.mp4', duration: '1:00', consentObtained: true } });
+  ok(story, 201);
+  ok(await call('PATCH', `/stories/${story.body.id}`, { ...S, body: { duration: '1:10' } }), 200);
+
+  // moderation
+  ok(await call('GET', '/moderation/testimonies', S), 200);
+  ok(await call('GET', '/moderation/posts?all=true', S), 200);
+  const post = store.insert('posts', { communityId: ctx.growth.id, authorId: ctx.friend.id, text: 'sweep spam', mediaIds: [], pinned: false });
+  store.insert('reports', { reporterId: ctx.student.id, targetType: 'post', targetId: post.id, reason: 'spam', details: 'x', status: 'open' });
+  ok(await call('POST', `/moderation/posts/${post.id}/action`, { token: sm, body: { action: 'WARN_AUTHOR', notes: 'Please keep it kind' } }), 200);
+  const sanction = store.first('sanctions', (x) => x.userId === ctx.friend.id && x.active);
+  if (sanction) ok(await call('POST', `/moderation/sanctions/${sanction.id}/reinstate`, { ...S, body: { reason: 'Reviewed and reinstated' } }), 200);
+
+  // privacy, audit, reports
+  const consent = store.first('guardianConsents', () => true);
+  if (consent) ok(await call('POST', `/privacy/guardian-consents/${consent.id}/remind`, S), 200, 204);
+  ok(await call('POST', '/audit-log/export', { ...S, body: {} }), 200);
+  ok(await call('POST', '/reports/export', { ...S, body: { reportType: 'community_health', format: 'csv' } }), 200, 501);
+  ok(await call('GET', '/reports/schedules', S), 200);
+  const sch = await call('POST', '/reports/schedules', { ...S, body: { reportType: 'community_health', cadence: 'weekly', recipientEmail: 'sweep@fcu.test' } });
+  ok(sch, 201);
+  ok(await call('DELETE', `/reports/schedules/${sch.body.id}`, S), 204);
+
+  // my community (super-mentor)
+  const jr2 = store.insert('joinRequests', { communityId: ctx.growth.id, userId: ctx.mentor.id, status: 'pending', decidedAt: null });
+  ok(await call('POST', `/my-community/join-requests/${jr2.id}/approve`, { token: sm }), 200, 409);
+  const jr3 = store.insert('joinRequests', { communityId: ctx.growth.id, userId: member.body.id, status: 'pending', decidedAt: null });
+  ok(await call('POST', `/my-community/join-requests/${jr3.id}/decline`, { token: sm, body: {} }), 200, 409);
+  ok(await call('POST', `/my-community/members/${ctx.student.id}/remind`, { token: sm }), 200, 204);
+  ok(await call('POST', '/my-community/announcements', { token: sm, body: { title: 'Sweep', message: 'Meeting moved' } }), 201, 200);
+  const rep2 = store.insert('reports', { reporterId: ctx.student.id, targetType: 'post', targetId: store.insert('posts', { communityId: ctx.growth.id, authorId: ctx.friend.id, text: 'x', mediaIds: [], pinned: false }).id, reason: 'spam', status: 'open' });
+  ok(await call('POST', `/my-community/moderation/${rep2.id}`, { token: sm, body: { decision: 'dismiss' } }), 200);
+
+  // account
+  ok(await call('PATCH', '/account/profile', { ...S, body: { fullName: 'Admin User' } }), 200);
+  const sessions = await call('GET', '/account/sessions', S);
+  ok(sessions, 200);
+  const other = sessions.body.sessions.find((x) => !x.current);
+  if (other) ok(await call('DELETE', `/account/sessions/${other.id}`, S), 204, 200);
+  ok(await call('POST', '/auth/logout', S), 200, 204);
+});
+
+// Keeps the docs honest: an operation documented but never called by a test has an unchecked schema.
+test('zz every documented staff operation is exercised by a test', async () => {
+  assert.deepEqual(contract.unexercised(spec), []);
 });

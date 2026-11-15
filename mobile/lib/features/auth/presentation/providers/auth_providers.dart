@@ -70,7 +70,7 @@ class SignUpController extends Notifier<SignUpDraft> {
     }
     state = SignUpDraft(
       details: state.details,
-      passwordDigest: fakePasswordDigest(password),
+      passwordDigest: ref.read(passwordSealProvider)(password),
     );
   }
 
@@ -95,7 +95,11 @@ class SignUpController extends Notifier<SignUpDraft> {
         .read(profileControllerProvider.notifier)
         .create(details.copyWith(id: session.accountId));
     // Profile first, then the session: the router sees a complete account.
-    ref.read(authControllerProvider.notifier).setSession(session);
+    // With a real backend the account id only exists once the profile has
+    // been created, so the session takes it from the profile.
+    ref
+        .read(authControllerProvider.notifier)
+        .setSession(AuthSession(accountId: profile.id, email: session.email));
     state = SignUpDraft.empty;
     return profile;
   }

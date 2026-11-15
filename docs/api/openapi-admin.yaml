@@ -1,7 +1,8 @@
 openapi: 3.1.0
 info:
   title: FCU Back Office – Staff API
-  version: 0.1.0
+  version: 1.0.0
+  summary: The staff API used by the FCU back office web app.
   description: |
     Staff (back-office) API, mounted under `/v1/admin`. The mobile API is documented in `openapi.yaml`.
 
@@ -16,7 +17,21 @@ info:
 
     **Errors:** RFC 7807 problem+json with a stable `code`; validation errors are 422 with an `errors[]` list.
     Lists return `{ items, total }` (plus `counts` where tabs need them).
+
+    **Rate limits:** `POST /auth/login` 20 per 15 minutes per email; `POST /auth/forgot-password` 10 per hour. Over the limit: `429` with `Retry-After`.
+
+    **Auditing:** every state-changing action by staff is written to the audit log (`GET /audit-log`), with who, what and when.
+
+    **Versioning:** backwards-compatible changes only within `/v1`; a breaking change ships as a new version.
+  contact:
+    name: FOCUS Uganda – FCU app team
+    url: https://focusuganda.org
+  license:
+    name: Proprietary – FOCUS Uganda
+    identifier: LicenseRef-Proprietary
 servers:
+  - url: https://apis.focusuganda.org/v1/admin
+    description: Production
   - url: http://localhost:4000/v1/admin
     description: Local development
 security:
@@ -24,25 +39,45 @@ security:
   - bearerAuth: []
 tags:
   - name: Auth
+    description: "Staff sign-in, session cookies, password reset"
   - name: Dashboard
+    description: "Headline numbers for the home screen"
   - name: Members
+    description: "Students and staff: create, import, roles, suspend, remind"
   - name: Institutions
+    description: "Universities and high schools shown at sign-up"
   - name: Communities
+    description: "General and specific communities, leaders, closing"
   - name: Join requests
+    description: "Approve or decline requests to join a community"
   - name: Roles
+    description: "Staff accounts and their roles"
   - name: Content
+    description: "Library content (videos, devotionals, quizzes, documents) and its review workflow"
   - name: Pathways
+    description: "Discipleship pathways and their steps"
   - name: Badges
+    description: "Badges and the rules that award them"
   - name: Announcements
+    description: "Messages to everyone or to one community"
   - name: Stories
+    description: "Landing page student stories"
   - name: Notifications
+    description: "Notification rules"
   - name: Settings
+    description: "Platform settings"
   - name: Moderation
+    description: "Reports, flagged posts, testimony review and sanctions"
   - name: Privacy
+    description: "Data export and deletion requests, guardian consents"
   - name: Audit
+    description: "The log of what staff did, and its export"
   - name: Reports
+    description: "Scheduled and on-demand reports"
   - name: My community
+    description: "What a super-mentor sees and does for their own community"
   - name: Account
+    description: "The signed-in staff member: profile, password, sessions"
 paths:
   /auth/login:
     post:
@@ -145,7 +180,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Dashboard' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /members:
@@ -325,7 +360,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/InstitutionList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -343,7 +378,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Institution' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -365,7 +400,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Institution' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -380,7 +415,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/CommunityList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -398,7 +433,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Community' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -415,7 +450,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/CommunityDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     patch:
@@ -435,7 +470,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/CommunityDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -450,7 +485,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/JoinRequestList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /join-requests/bulk-approve:
@@ -486,7 +521,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/JoinRequest' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -508,7 +543,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/JoinRequest' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -528,7 +563,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Member' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -543,7 +578,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { oneOf: [{ $ref: '#/components/schemas/ContentItemList' }, { type: array, items: { $ref: '#/components/schemas/ContentItem' } }] }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -561,7 +596,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ContentItem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -578,7 +613,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ContentItemDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     patch:
@@ -598,7 +633,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ContentItemDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -620,7 +655,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ContentItem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -635,7 +670,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/BibleLinkList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /pathways:
@@ -649,7 +684,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/PathwayList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -667,7 +702,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Pathway' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -684,7 +719,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/PathwayDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     patch:
@@ -704,7 +739,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/PathwayDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -725,7 +760,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/PathwayDetail' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -751,7 +786,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/BadgeList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -769,7 +804,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Badge' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -791,7 +826,28 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Badge' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Badges]
+      operationId: patchBadgesId
+      summary: "Update badge (same as PUT)"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BadgeBody' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Badge' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -817,7 +873,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/AnnouncementList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -835,7 +891,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Announcement' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -852,7 +908,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Announcement' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -867,7 +923,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/StoryList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -885,7 +941,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Story' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -902,7 +958,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Story' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -922,7 +978,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/StoryList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -937,7 +993,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/NotificationRuleList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /notifications/rules/{id}:
@@ -953,7 +1009,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/NotificationRule' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -968,7 +1024,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/InactivityThreshold' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     put:
@@ -981,7 +1037,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/InactivityThreshold' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -998,7 +1054,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/SettingsSection' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     patch:
@@ -1013,7 +1069,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/SettingsSection' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1028,7 +1084,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/ModerationReportList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /moderation/reports/{id}/action:
@@ -1049,7 +1105,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ModerationReport' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1064,7 +1120,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/ModerationTestimonyList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /moderation/testimonies/{id}/review:
@@ -1085,7 +1141,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ModerationTestimony' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1100,7 +1156,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/ModerationPostList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /moderation/posts/{id}/action:
@@ -1121,7 +1177,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ModerationPost' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1136,7 +1192,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/SanctionList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /moderation/sanctions/{id}/reinstate:
@@ -1157,7 +1213,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/Sanction' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1172,7 +1228,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/GuardianConsentList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /privacy/guardian-consents/{id}/remind:
@@ -1203,7 +1259,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/DataRequestList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /privacy/data-requests/{id}/process:
@@ -1219,7 +1275,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/DataRequest' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1234,7 +1290,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/AuditEntryList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /audit-log/export:
@@ -1263,7 +1319,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ReportsCatalog' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /reports/export:
@@ -1271,16 +1327,19 @@ paths:
       tags: [Reports]
       operationId: postReportsExport
       summary: "Export as csv or json (pdf/xlsx \u2192 501)"
-      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR"
+      description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN, SUPER_MENTOR. `csv` returns the file as text; `json` returns the rows."
       responses:
         '200':
-          description: OK
+          description: The export
           content:
+            text/csv:
+              schema: { type: string }
             application/json:
               schema: { $ref: '#/components/schemas/Object' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '501': { $ref: '#/components/responses/Problem' }
   /reports/schedules:
     get:
       tags: [Reports]
@@ -1292,7 +1351,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/List' }
+              schema: { $ref: '#/components/schemas/ReportScheduleList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
     post:
@@ -1310,7 +1369,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/ReportSchedule' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1337,7 +1396,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/MyCommunity' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /my-community/join-requests/{id}/approve:
@@ -1416,13 +1475,18 @@ paths:
       tags: [My community]
       operationId: postMycommunityAnnouncements
       summary: "Write to the group"
-      description: "Roles: SUPER_MENTOR"
+      description: "Roles: SUPER_MENTOR. Publishes straight away to the members of the super-mentor's community."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [message], properties: { title: { type: string }, message: { type: string } } }
       responses:
-        '200':
-          description: OK
+        '201':
+          description: Published
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { type: object, properties: { id: { type: string } }, required: [id] }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -1484,7 +1548,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Object' }
+              schema: { $ref: '#/components/schemas/SessionList' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
   /account/sessions/{id}:
@@ -1514,6 +1578,523 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
   schemas:
+    Institution:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string }
+        country: { type: string }
+        city: { type: string }
+        generalCoverUrl: { type: string }
+        shownInSignup: { type: boolean }
+        communityCount: { type: integer }
+        studentCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, type, country, city, generalCoverUrl, shownInSignup, communityCount, studentCount, createdAt]
+    Community:
+      type: object
+      properties:
+        id: { type: string }
+        institutionId: { type: string }
+        institutionName: { type: string }
+        kind: { type: string }
+        name: { type: string }
+        description: { type: string }
+        coverPhotoUrl: { type: string }
+        meetingDay: { type: string }
+        meetingTime: { type: string }
+        meetingPlace: { type: string }
+        superMentorId: { type: string }
+        superMentorName: { type: [string, "null"] }
+        mentorIds: { type: array, items: { type: string } }
+        openForJoinRequests: { type: boolean }
+        status: { type: string }
+        memberCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, institutionId, institutionName, kind, name, description, coverPhotoUrl, meetingDay, meetingTime, meetingPlace, superMentorId, superMentorName, mentorIds, openForJoinRequests, status, memberCount, createdAt]
+    CommunityDetail:
+      type: object
+      properties:
+        id: { type: string }
+        institutionId: { type: string }
+        institutionName: { type: string }
+        kind: { type: string }
+        name: { type: string }
+        description: { type: string }
+        coverPhotoUrl: { type: string }
+        meetingDay: { type: string }
+        meetingTime: { type: string }
+        meetingPlace: { type: string }
+        superMentorId: { type: string }
+        superMentorName: { type: [string, "null"] }
+        mentorIds: { type: array, items: {} }
+        openForJoinRequests: { type: boolean }
+        status: { type: string }
+        memberCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id]
+    JoinRequest:
+      type: object
+      properties:
+        id: { type: string }
+        studentId: { type: string }
+        studentUsername: { type: string }
+        institutionName: { type: string }
+        requestedCommunityId: { type: string }
+        requestedCommunityName: { type: string }
+        requestedAt: { type: string, format: date-time }
+        status: { type: string }
+        currentSpecificCommunityId: { type: [string, "null"] }
+        currentSpecificCommunityName: { type: [string, "null"] }
+      required: [id]
+    ContentItem:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        type: { type: string }
+        bibleLink: { type: string }
+        language: { type: string }
+        tags: { type: array, items: {} }
+        description: { type: string }
+        validatorName: { type: string }
+        pathwayIds: { type: array, items: {} }
+        body: { type: string }
+        videoUrl: { type: string }
+        thumbnailUrl: { type: string }
+        documentUrl: { type: string }
+        status: { type: string }
+        authorName: { type: string }
+        validatedAt: { type: [string, "null"], format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+        approvalTrail: { type: array, items: { type: object, properties: { id: { type: string }, action: { type: string }, actorName: { type: string }, notes: {}, createdAt: { type: string, format: date-time } }, required: [id, action, actorName, notes, createdAt] } }
+        published: { type: boolean }
+      required: [id, title, type]
+    ContentItemDetail:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        type: { type: string }
+        bibleLink: { type: string }
+        language: { type: string }
+        tags: { type: array, items: {} }
+        description: { type: string }
+        validatorName: { type: string }
+        pathwayIds: { type: array, items: {} }
+        body: { type: string }
+        videoUrl: { type: string }
+        thumbnailUrl: { type: string }
+        documentUrl: { type: string }
+        status: { type: string }
+        authorName: { type: string }
+        validatedAt: {}
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+        approvalTrail: { type: array, items: { type: object, properties: { id: { type: string }, action: { type: string }, actorName: { type: string }, notes: {}, createdAt: { type: string, format: date-time } }, required: [id, action, actorName, notes, createdAt] } }
+      required: [id, title, type, bibleLink, language, tags, description, validatorName, pathwayIds, body, videoUrl, thumbnailUrl, documentUrl, status, authorName, validatedAt, updatedAt, version, approvalTrail]
+    BibleLink:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        kind: { type: string }
+      required: [id, label, kind]
+    Pathway:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        theme: { type: string }
+        level: { type: string }
+        description: { type: string }
+        steps: { type: array, items: { type: object, properties: { id: { type: string }, contentId: { type: string }, title: { type: string }, contentType: { type: string }, order: { type: integer }, required: { type: boolean } }, required: [id, contentId, title, contentType, order, required] } }
+        unlockRule: { type: string }
+        badgeAwardedId: {}
+        badgeName: {}
+        learnersCount: { type: integer }
+        published: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, theme, level, description, steps, unlockRule, badgeAwardedId, badgeName, learnersCount, published, updatedAt]
+    PathwayDetail:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        theme: { type: string }
+        level: { type: string }
+        description: { type: string }
+        steps: { type: array, items: { type: object, properties: { id: { type: string }, contentId: { type: string }, title: { type: string }, contentType: { type: string }, order: { type: integer }, required: { type: boolean } }, required: [id, contentId, title, contentType, order, required] } }
+        unlockRule: { type: string }
+        badgeAwardedId: {}
+        badgeName: {}
+        learnersCount: { type: integer }
+        published: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, theme, level, description, steps, unlockRule, badgeAwardedId, badgeName, learnersCount, published, updatedAt]
+    Badge:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        ruleType: { type: string }
+        ruleTargetCount: { type: integer }
+        ruleDescription: { type: string }
+        icon: { type: string }
+        earnedCount: { type: integer }
+        visibleOnProfile: { type: boolean }
+        status: { type: string }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, description, ruleType, ruleTargetCount, ruleDescription, icon, earnedCount, visibleOnProfile, status, updatedAt]
+    Announcement:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        message: { type: string }
+        audienceType: { type: string }
+        communityId: {}
+        communityName: { type: string }
+        imageUrl: {}
+        scheduledFor: { type: [string, "null"], format: date-time }
+        status: { type: string }
+        authorName: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, title, message, audienceType, communityId, communityName, imageUrl, scheduledFor, status, authorName, createdAt]
+    Story:
+      type: object
+      properties:
+        id: { type: string }
+        studentName: { type: string }
+        institution: { type: string }
+        videoUrl: { type: string }
+        duration: { type: string }
+        visible: { type: boolean }
+        order: { type: integer }
+        consentObtained: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required: [id, studentName, institution, videoUrl, duration, visible, order, consentObtained, createdAt]
+    NotificationRule:
+      type: object
+      properties:
+        id: { type: string }
+        triggerKey: { type: string }
+        triggerLabel: { type: string }
+        recipient: { type: string }
+        channels: { type: object, properties: { inApp: { type: boolean }, email: { type: boolean }, sms: { type: boolean } }, required: [inApp, email, sms] }
+        enabled: { type: boolean }
+        template: { type: object, properties: { title: { type: string }, message: { type: string } }, required: [title, message] }
+        updatedAt: { type: string, format: date-time }
+      required: [id, triggerKey, triggerLabel, recipient, channels, enabled, template, updatedAt]
+    ModerationReport:
+      type: object
+      properties:
+        id: { type: string }
+        reason: { type: string }
+        reporterName: { type: string }
+        reportedUserId: { type: string }
+        reportedUserName: { type: string }
+        reportedUserRole: { type: string }
+        communityId: { type: string }
+        communityName: { type: string }
+        details: { type: string }
+        screenshotUrl: {}
+        earlierReportsCount: { type: integer }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id]
+    ModerationTestimony:
+      type: object
+      properties:
+        id: { type: string }
+        authorName: { type: string }
+        communityId: { type: string }
+        communityName: { type: string }
+        story: { type: string }
+        videoUrl: {}
+        studentAgreement: { type: boolean }
+        notes: {}
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, authorName, communityId, communityName, story, videoUrl, studentAgreement, notes, status, createdAt]
+    ModerationPost:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        authorName: { type: string }
+        communityId: { type: string }
+        communityName: { type: string }
+        content: { type: string }
+        reportCount: { type: integer }
+        hidden: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required: [id, kind, authorName, communityId, communityName, content, reportCount, hidden, createdAt]
+    Sanction:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        userName: { type: string }
+        communityId: { type: string }
+        communityName: { type: string }
+        type: { type: string }
+        reason: { type: string }
+        issuedBy: { type: string }
+        issuedAt: { type: string, format: date-time }
+        active: { type: boolean }
+      required: [id]
+    GuardianConsent:
+      type: object
+      properties:
+        id: { type: string }
+        studentName: { type: string }
+        guardianName: { type: string }
+        guardianContact: { type: string }
+        status: { type: string }
+        updatedAt: { type: string, format: date-time }
+      required: [id]
+    DataRequest:
+      type: object
+      properties:
+        id: { type: string }
+        memberName: { type: string }
+        memberEmail: { type: string }
+        type: { type: string }
+        requestedAt: { type: string, format: date-time }
+        deadlineAt: { type: string, format: date-time }
+        status: { type: string }
+      required: [id]
+    AuditEntry:
+      type: object
+      properties:
+        id: { type: string }
+        occurredAt: { type: string, format: date-time }
+        actorName: { type: string }
+        actorRole: { type: string }
+        action: { type: string }
+        actionLabel: { type: string }
+        target: { type: string }
+        place: { type: string }
+      required: [id]
+    ReportSchedule:
+      type: object
+      properties:
+        id: { type: string }
+        reportType: { type: string }
+        reportLabel: { type: string }
+        cadence: { type: string }
+        recipientEmail: { type: string }
+        active: { type: boolean }
+      required: [id, reportType, reportLabel, cadence, recipientEmail, active]
+    Dashboard:
+      type: object
+      properties:
+        kpis: { type: array, items: { type: object, properties: { id: { type: string }, label: { type: string }, value: { type: string }, changePercent: { type: integer } }, required: [id, label, value, changePercent] } }
+        weeklyActivity: { type: array, items: { type: object, properties: { day: { type: string }, logins: { type: integer }, completions: { type: integer } }, required: [day, logins, completions] } }
+        needsAttention: { type: array, items: { type: object, properties: { id: { type: string }, label: { type: string }, count: { type: integer }, href: { type: string } }, required: [id] } }
+        inactiveMembers: { type: array, items: {} }
+    ReportsCatalog:
+      type: object
+      properties:
+        membersOverTime: { type: array, items: { type: object, properties: { period: { type: string }, totalMembers: { type: integer }, activeMembers: { type: integer } }, required: [period, totalMembers, activeMembers] } }
+        completionsByType: { type: array, items: {} }
+        activeCommunities: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, campus: { type: string }, memberCount: { type: integer }, activePercent: { type: integer } }, required: [id, name, campus, memberCount, activePercent] } }
+        scheduledReports: { type: array, items: {} }
+    SessionList:
+      type: object
+      properties:
+        sessions: { type: array, items: { type: object, properties: { id: { type: string }, deviceName: { type: string }, browser: { type: string }, os: { type: string }, ipAddress: { type: string }, lastActiveAt: { type: string, format: date-time }, current: { type: boolean } }, required: [id, deviceName, browser, os, ipAddress, lastActiveAt, current] } }
+      required: [sessions]
+    MyCommunity:
+      type: object
+      properties:
+        communityId: { type: string }
+        communityName: { type: string }
+        campus: { type: string }
+        kpis: { type: object, properties: { members: { type: integer }, pendingRequests: { type: integer }, reportsToReview: { type: integer }, inactiveMembers: { type: integer } } }
+        pendingRequests: { type: array, items: {} }
+        nextMeeting: { type: object, properties: { day: { type: string }, time: { type: string }, place: { type: string } } }
+        followUpMembers: { type: array, items: {} }
+        members: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, email: { type: string }, roleLabel: { type: string }, joinedAt: { type: string, format: date-time }, active: { type: boolean } }, required: [id, name, email, roleLabel, joinedAt, active] } }
+        reports: { type: array, items: { type: object, properties: { id: { type: string }, targetSummary: { type: string }, reason: { type: string }, reportedBy: { type: string }, createdAt: { type: string, format: date-time }, status: { type: string } }, required: [id] } }
+        resources: { type: array, items: { type: object, properties: { id: { type: string }, title: { type: string }, type: { type: string }, pathway: { type: string }, publishedAt: { type: string, format: date-time } }, required: [id, title, type, pathway, publishedAt] } }
+    InstitutionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Institution"
+        total: { type: integer }
+      required: [items, total]
+    CommunityList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Community"
+        total: { type: integer }
+      required: [items, total]
+    JoinRequestList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/JoinRequest"
+        total: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer }, description: "Counts per tab (for example per status)" }
+      required: [items, total]
+    ContentItemList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ContentItem"
+        total: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer }, description: "Counts per tab (for example per status)" }
+      required: [items, total]
+    BibleLinkList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BibleLink"
+        total: { type: integer }
+      required: [items, total]
+    PathwayList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Pathway"
+        total: { type: integer }
+      required: [items, total]
+    BadgeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Badge"
+        total: { type: integer }
+      required: [items, total]
+    AnnouncementList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Announcement"
+        total: { type: integer }
+      required: [items, total]
+    StoryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Story"
+        total: { type: integer }
+      required: [items, total]
+    NotificationRuleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/NotificationRule"
+        total: { type: integer }
+      required: [items, total]
+    ModerationReportList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModerationReport"
+        total: { type: integer }
+        counts: { type: object, additionalProperties: { type: integer }, description: "Counts per tab (for example per status)" }
+      required: [items, total]
+    ModerationTestimonyList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModerationTestimony"
+        total: { type: integer }
+      required: [items, total]
+    ModerationPostList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModerationPost"
+        total: { type: integer }
+      required: [items, total]
+    SanctionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Sanction"
+        total: { type: integer }
+      required: [items, total]
+    GuardianConsentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/GuardianConsent"
+        total: { type: integer }
+      required: [items, total]
+    DataRequestList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DataRequest"
+        total: { type: integer }
+      required: [items, total]
+    AuditEntryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AuditEntry"
+        total: { type: integer }
+      required: [items, total]
+    ReportScheduleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ReportSchedule"
+        total: { type: integer }
+      required: [items, total]
+    InactivityThreshold:
+      type: object
+      properties:
+        days: { type: integer, minimum: 1, maximum: 365 }
+      required: [days]
+    SettingsSection:
+      description: "The fields depend on {section}: charter, consents, minors or retention"
+      anyOf: [{ type: object, title: charter, properties: { version: { type: string }, effectiveDate: { type: string, format: date }, text: { type: string }, requireAcceptance: { type: boolean }, repromptOnChange: { type: boolean } } }, { type: object, title: consents, properties: { accountCreationText: { type: string }, communitySpacesText: { type: string }, mentorContactText: { type: string } } }, { type: object, title: minors, properties: { ageThreshold: { type: integer, minimum: 13, maximum: 21 }, requireGuardianConsent: { type: boolean }, limitAdultDirectMessages: { type: boolean }, requireVerifiedMentors: { type: boolean } } }, { type: object, title: retention, properties: { inactiveRetentionMonths: { type: integer, minimum: 1, maximum: 120 }, deletionDeadlineDays: { type: integer, minimum: 1, maximum: 90 } } }]
     Problem:
       type: object
       properties:

@@ -1,13 +1,13 @@
 # FCU Student Community App – Mobile API
 
-Source of truth: [`openapi.yaml`](./openapi.yaml) (OpenAPI 3.1). View it with Swagger UI, Redoc or Stoplight.
+Source of truth: [`openapi.yaml`](./openapi.yaml) (mobile) and [`openapi-admin.yaml`](./openapi-admin.yaml) (staff), both OpenAPI 3.1. The running API serves them with Swagger UI at `/docs`; `api/test/docs.test.js` and the contract checks in the API tests keep them in step with the code (see `api/README.md`).
 Derived from the *FCU Student Community App – Mobile Design* (22 screens) and the *FOCUS Uganda BRD v0.4*.
 
 ## Conventions
 
 | Topic | Rule |
 |---|---|
-| Base URL | `https://api.fcu.example/v1` (placeholder) |
+| Base URL | `https://apis.focusuganda.org/v1` (production), `http://localhost:4000/v1` (local) |
 | Auth | `Authorization: Bearer <JWT>`; access token 15 min, rotating refresh token |
 | Pagination | `?limit=` (≤100) + `?cursor=`; response has `next_cursor` |
 | Errors | RFC 7807 `application/problem+json` with a stable `code` |

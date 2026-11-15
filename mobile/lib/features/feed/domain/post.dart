@@ -17,10 +17,14 @@ class PostPage {
 /// The single photo shown above a post's caption: a picked file, or (for
 /// seeded posts) vector placeholder art.
 class PostPhoto {
-  const PostPhoto.file(String this.path) : isArt = false;
-  const PostPhoto.art() : path = null, isArt = true;
+  const PostPhoto.file(String this.path) : url = null, isArt = false;
+  const PostPhoto.network(String this.url) : path = null, isArt = false;
+  const PostPhoto.art() : path = null, url = null, isArt = true;
 
   final String? path;
+
+  /// A photo already uploaded to the backend.
+  final String? url;
   final bool isArt;
 }
 

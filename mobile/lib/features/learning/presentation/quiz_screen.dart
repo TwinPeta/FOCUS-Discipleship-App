@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -82,12 +84,18 @@ class _QuizViewState extends ConsumerState<_QuizView> {
       _review ? widget.reviewAnswers!.elementAtOrNull(_index) : _selected;
   bool get _revealed => _review || _checked;
 
+  /// A real backend scores the quiz and never sends the right answers, so
+  /// there is nothing to reveal after each question: go straight on.
+  bool get _answersHidden =>
+      widget.quiz.questions.any((q) => q.correctIndex < 0);
+
   void _check() {
     if (_selected == null) return;
     setState(() {
       _checked = true;
       _answers[_index] = _selected!;
     });
+    if (_answersHidden) unawaited(_next());
   }
 
   Future<void> _next() async {
@@ -216,6 +224,8 @@ class _QuizViewState extends ConsumerState<_QuizView> {
                         selected: _shownSelection == i,
                         state: !_revealed
                             ? _OptionState.open
+                            : _answersHidden
+                            ? _OptionState.neutral
                             : i == question.correctIndex
                             ? _OptionState.correct
                             : _shownSelection == i
@@ -233,7 +243,9 @@ class _QuizViewState extends ConsumerState<_QuizView> {
                 color: AppColors.white,
                 child: AppPrimaryButton(
                   label: !_revealed
-                      ? 'Check answer'
+                      ? (_answersHidden
+                            ? (_last ? 'See my result' : 'Next question')
+                            : 'Check answer')
                       : _last
                       ? (_review ? 'Done' : 'See my result')
                       : 'Next question',

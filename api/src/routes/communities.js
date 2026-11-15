@@ -6,6 +6,7 @@ const { paginate, byNewest } = require('../utils/pagination');
 const { requireMember, requireSuperMentor } = require('../middleware/auth');
 const realtime = require('../realtime/socket');
 const S = require('../utils/serialize');
+const { notify } = require('../utils/notify');
 
 function joinRequestDto(j, viewerId) {
   return {
@@ -15,6 +16,7 @@ function joinRequestDto(j, viewerId) {
     status: j.status,
     created_at: j.createdAt,
     decided_at: j.decidedAt || null,
+    note: j.note || null, // the super-mentor's message when declining
   };
 }
 
@@ -56,6 +58,20 @@ router.get('/communities/:communityId/members', requireMember, (req, res) => {
     })),
     next_cursor: page.next_cursor,
   });
+});
+
+// When each member last did anything, for the super-mentor's "members to follow up". Timestamps only, never the events.
+router.get('/communities/:communityId/members/last-active', (req, res, next) => {
+  try {
+    if (!store.get('communities', req.params.communityId)) throw notFound('Community');
+    requireSuperMentor(req.params.communityId, req.user.id);
+    const ids = new Set(store.where('memberships', (m) => m.communityId === req.params.communityId && m.status === 'member').map((m) => m.userId));
+    const last = {};
+    store.where('events', (e) => ids.has(e.userId) && !e.internal).forEach((e) => {
+      if (!last[e.userId] || last[e.userId] < e.createdAt) last[e.userId] = e.createdAt;
+    });
+    res.json({ items: Object.entries(last).map(([user_id, last_active_at]) => ({ user_id, last_active_at })) });
+  } catch (e) { next(e); }
 });
 
 router.post('/communities/:communityId/join-requests', (req, res, next) => {
@@ -113,8 +129,27 @@ router.post('/join-requests/:requestId/decision', (req, res, next) => {
     } else {
       store.remove('memberships', (m) => m.userId === j.userId && m.communityId === j.communityId && m.status === 'pending');
     }
+    notify(j.userId, b.decision === 'approve' ? 'request_approved' : 'request_declined', {
+      title: b.decision === 'approve' ? 'Your request was approved' : 'Your request was not accepted',
+      body: b.decision === 'approve' ? null : (j.note || null),
+      targetRoute: b.decision === 'approve' ? '/request/approved' : '/request/declined',
+    });
     realtime.emit(j.userId, 'join_request.decided', { request_id: j.id, community_id: j.communityId, status: j.status });
     res.json(joinRequestDto(j, req.user.id));
+  } catch (e) { next(e); }
+});
+
+// Leave my specific community (the General community cannot be left; a super-mentor must be replaced by staff first).
+router.delete('/communities/:communityId/membership', (req, res, next) => {
+  try {
+    const c = store.get('communities', req.params.communityId);
+    if (!c) throw notFound('Community');
+    if (c.type !== 'specific') throw conflict('not_leavable', 'The general community cannot be left');
+    const m = store.first('memberships', (x) => x.communityId === c.id && x.userId === req.user.id && x.status === 'member');
+    if (!m) throw notFound('Membership');
+    if (m.role === 'super_mentor') throw conflict('super_mentor_cannot_leave', 'Ask the FCU team to hand over leadership first');
+    store.remove('memberships', (x) => x.id === m.id);
+    res.status(204).end();
   } catch (e) { next(e); }
 });
 

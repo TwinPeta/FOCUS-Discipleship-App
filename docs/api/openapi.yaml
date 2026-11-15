@@ -1,26 +1,76 @@
 openapi: 3.1.0
 info:
-  title: FCU Student Community App – Mobile API
-  version: 0.1.0
+  title: FCU Student Community – Mobile API
+  version: 1.0.0
+  summary: REST API behind the FCU (Fellowship of Christian Unions) / FOCUS Uganda student app for iOS and Android.
   description: |
-    REST API backing the FCU (Fellowship of Christian Unions) / FOCUS Uganda mobile app (iOS & Android).
-    Derived from the 22-screen mobile design and BRD v0.4 (FR-01..FR-12 MVP, plus the community,
-    pathway, testimony and activity features shown in the design).
+    The API behind the FCU student community app: sign-up and sign-in, communities and join requests, the
+    community feed, prayer wall and testimonies, discipleship pathways and resources, messaging, notifications,
+    meetings, and safety tools (reporting, blocking, moderation).
 
-    **Conventions**
-    - Base path `/v1`, JSON over HTTPS, UTF-8. Timestamps are ISO-8601 UTC. IDs are opaque strings.
-    - Auth: `Authorization: Bearer <access_token>` (JWT, 15 min) + rotating refresh token.
-    - Pagination: cursor-based. `?limit=` (default 20, max 100) and `?cursor=`; responses carry `next_cursor` (null at end).
-    - Errors: RFC 7807 `application/problem+json` (see `Problem`).
-    - Idempotency: send `Idempotency-Key` on POSTs that create content (posts, messages, reports).
-    - Offline/low-bandwidth (BRD FR-06): list endpoints support `If-None-Match`/ETag; resources expose `offline_available` and `download_url`.
-    - Moderation states: user content (posts, testimonies, prayer requests) carries `status`. Testimonies are always `pending_review` on creation (BRD 8.1).
-    - Open questions flagged `x-open-question` are assumptions to confirm with FOCUS Uganda.
+    The staff (back office) API is documented separately; pick **Back Office (staff) API** in the selector above.
+
+    ## Getting started
+    1. `POST /auth/register` (or `POST /auth/login`) returns `access_token` (JWT, 15 minutes) and `refresh_token`.
+    2. Send `Authorization: Bearer <access_token>` on every other call.
+    3. When a call returns `401`, `POST /auth/refresh` with the refresh token. Refresh tokens **rotate**: each is single use,
+       so store the new one. If refresh also fails with `401`, sign the user out.
+    4. `GET /me` returns the profile; `GET /me/communities` returns the General community and the (at most one) specific one.
+
+    ## Conventions
+    | Topic | Rule |
+    |---|---|
+    | Base path | `/v1` (see **Servers**). JSON over HTTPS, UTF-8. |
+    | Time and IDs | Timestamps are ISO-8601 UTC. IDs are opaque strings: never parse them. |
+    | Pagination | Cursor based. `?limit=` (default 20, max 100) and `?cursor=`. Responses carry `next_cursor`, `null` on the last page. |
+    | Caching | `GET` responses carry a weak `ETag`; send `If-None-Match` to get `304 Not Modified` on slow connections. |
+    | Idempotency | Send an `Idempotency-Key` header (any unique string, e.g. a UUID) on `POST`s that create content: posts, prayer requests, messages and reports. A retry with the same key and the same user returns the original response (header `Idempotent-Replay: true`) instead of creating a duplicate. Keys are remembered for 24 hours. |
+    | Uploads | `POST /media` returns a signed `upload_url`; `PUT` the file bytes to it with the returned `upload_headers`; attach the `media_id` to a post, testimony, report or profile. Photos only (JPEG, PNG, WebP, HEIC), 10 MB at most; the app compresses to about 2 MB first. |
+    | Realtime | Optional WebSocket at `/v1/realtime`. Everything it pushes is also available by polling the REST endpoints. |
+
+    ## Errors
+    Errors use [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) `application/problem+json` with a stable, machine-readable `code`.
+    Show the `title`/`detail` to people if you like, but branch on `code`.
+
+    | Status | When | Codes |
+    |---|---|---|
+    | 400 | Malformed request | `invalid_json`, `otp_invalid`, `empty_body` |
+    | 401 | Missing, invalid or expired token | `unauthorized` |
+    | 403 | Allowed to sign in but not to do this | `forbidden`, `account_suspended`, `messaging_restricted`, `blocked`, `wrong_institution`, `pathway_locked`, `direct_upload_required` |
+    | 404 | Not found, or you are not a member of the community it belongs to | `not_found`, `route_not_found` |
+    | 409 | The request conflicts with current state | `username_taken`, `email_taken`, `phone_taken`, `community_limit_reached`, `already_enrolled`, `not_enrolled`, `not_pending`, `not_joinable`, `not_leavable`, `super_mentor_cannot_leave`, `already_checked_in`, `check_in_closed`, `case_closed`, `no_target`, `upload_incomplete`, `already_uploaded` |
+    | 413 | Body or file too large | `payload_too_large` |
+    | 422 | Validation failed; `errors[]` lists `{ field, message }` | `validation_failed` |
+    | 429 | Too many requests; wait `Retry-After` seconds | `rate_limited` |
+    | 500 | Unexpected server error. Safe to retry reads. | `internal_error` |
+
+    ## Rate limits
+    Limits are per client IP address (and per identifier where noted). Sign-in screens should honour `Retry-After`.
+    | Endpoint | Limit |
+    |---|---|
+    | `POST /auth/register` | 20 per hour |
+    | `POST /auth/login` | 20 per 15 minutes, per identifier |
+    | `POST /auth/otp/request` | 5 per 10 minutes, per destination |
+    | `POST /auth/otp/verify` | 20 per 10 minutes |
+
+    ## Account states
+    - **Minors** (under 18) can use the app, but may only message other minors and verified mentors until a guardian is confirmed (`403 messaging_restricted`).
+    - **Suspended** accounts are read-only: `GET` still works (so the app can show `GET /me/suspension`), every change returns `403 account_suspended`.
+    - **Deleted** accounts (`DELETE /me`) can no longer sign in.
+
+    ## Versioning and support
+    `/v1` only receives backwards-compatible changes (new endpoints, new optional fields, new enum values: clients must ignore what they do not know).
+    A breaking change ships as `/v2`, and `/v1` keeps working for at least six months after that. `info.version` follows semantic versioning.
+    Assumptions still to confirm with FOCUS Uganda are marked `x-open-question`.
+  contact:
+    name: FOCUS Uganda – FCU app team
+    url: https://focusuganda.org
+  license:
+    name: Proprietary – FOCUS Uganda
+    identifier: LicenseRef-Proprietary
 servers:
-  - url: https://api.fcu.example/v1
-    description: Production (placeholder)
-  - url: https://staging-api.fcu.example/v1
-    description: Staging (placeholder)
+  - url: https://apis.focusuganda.org/v1
+    description: Production
   - url: http://localhost:4000/v1
     description: Local development
 security:
@@ -342,6 +392,41 @@ paths:
       summary: Request an export of my personal data
       responses:
         '202': { description: Export queued; a download link is sent by email/notification }
+  /me/guardian:
+    get:
+      tags: [Profile]
+      operationId: getMyGuardian
+      summary: My guardian (minors)
+      responses:
+        '200':
+          description: The recorded guardian, or null
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GuardianResponse' }
+    put:
+      tags: [Profile]
+      operationId: setMyGuardian
+      summary: Record my guardian (users under 18)
+      description: The app asks for this after sign-up. Messaging stays restricted until staff confirm consent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                relationship: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GuardianResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /me/communities:
     get:
       tags: [Profile, Communities]
@@ -361,6 +446,123 @@ paths:
                     description: Null until a join request is made. `membership_status` shows `pending` while awaiting the super-mentor.
                     oneOf:
                       - $ref: '#/components/schemas/MyMembership'
+                      - type: 'null'
+  /me/notifications:
+    get:
+      tags: [Profile]
+      operationId: listMyNotifications
+      summary: My in-app notifications (newest first)
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      unread_count: { type: integer }
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Notification' }
+  /me/notifications/read-all:
+    post:
+      tags: [Profile]
+      operationId: markAllNotificationsRead
+      summary: Mark every notification read
+      responses:
+        '204': { description: Done }
+  /me/notifications/{notificationId}/read:
+    post:
+      tags: [Profile]
+      operationId: markNotificationRead
+      summary: Mark one notification read
+      parameters:
+        - { name: notificationId, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Done }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/notification-preferences:
+    get:
+      tags: [Profile]
+      operationId: getNotificationPreferences
+      summary: My notification settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPreferences' }
+    put:
+      tags: [Profile]
+      operationId: setNotificationPreferences
+      summary: Save my notification settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationPreferences' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPreferences' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /me/warnings:
+    get:
+      tags: [Profile]
+      operationId: listMyWarnings
+      summary: Warnings I received
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Warning' }
+  /me/warnings/{warningId}/acknowledge:
+    post:
+      tags: [Profile]
+      operationId: acknowledgeWarning
+      summary: Mark a warning as read and understood
+      parameters:
+        - { name: warningId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Warning' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/suspension:
+    get:
+      tags: [Profile]
+      operationId: getMySuspension
+      summary: My current suspension, if any
+      description: While suspended the account is read-only (`403 account_suspended` on changes). A suspension without an end date set by staff lasts 7 days from when it was issued.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suspension:
+                    oneOf:
+                      - type: object
+                        properties:
+                          reason: { type: string }
+                          until: { type: string, format: date-time }
                       - type: 'null'
   /me/activity:
     get:
@@ -476,6 +678,135 @@ paths:
                         type: array
                         items: { $ref: '#/components/schemas/Member' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /communities/{communityId}/meetings:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Communities]
+      operationId: listMeetings
+      summary: The next weekly meeting and the last three
+      description: Meetings are derived from the community's weekly `meeting`. `next` stays current while check-in is open.
+      parameters:
+        - { name: now, in: query, description: 'ISO time to compute the schedule as of (default: now)', schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  next: { oneOf: [{ $ref: '#/components/schemas/MeetingOccurrence' }, { type: 'null' }] }
+                  past:
+                    type: array
+                    items: { $ref: '#/components/schemas/MeetingOccurrence' }
+  /meetings/{meetingId}/going:
+    parameters:
+      - { name: meetingId, in: path, required: true, schema: { type: string, example: 'c1@2026-05-12' } }
+    put:
+      tags: [Communities]
+      operationId: setMeetingGoing
+      summary: RSVP to a meeting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [going]
+              properties: { going: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeetingOccurrence' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /meetings/{meetingId}/check-in:
+    parameters:
+      - { name: meetingId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Communities]
+      operationId: checkInToMeeting
+      summary: Record "I am here"
+      description: Open from 30 minutes before the start to 2 hours after, by the server's clock. `409 check_in_closed` or `409 already_checked_in` otherwise.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeetingOccurrence' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /communities/{communityId}/moderation/cases:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Mentor tools]
+      operationId: listModerationCases
+      summary: Open reports on content in my community (super-mentor only)
+      description: Reports about the same post, comment, prayer request or testimony form one case.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ModerationCase' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /communities/{communityId}/moderation/cases/{caseId}/action:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+      - { name: caseId, in: path, required: true, schema: { type: string, example: 'post:abc' } }
+    post:
+      tags: [Mentor tools]
+      operationId: actOnModerationCase
+      summary: Keep, hide, warn the author, or escalate to the FCU team
+      description: '`warn` also hides the content, records a warning for the author and notifies them. `escalate` moves the reports to the staff queue.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties: { action: { type: string, enum: [keep, hide, warn, escalate] } }
+      responses:
+        '200':
+          description: The case with its outcome
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModerationCase' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /communities/{communityId}/members/last-active:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    get:
+      tags: [Mentor tools]
+      operationId: listMembersLastActive
+      summary: When each member last did anything (super-mentor only)
+      description: Timestamps only, never the events themselves. Members with no activity are absent.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id: { type: string }
+                        last_active_at: { type: string, format: date-time }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /communities/{communityId}/join-requests:
     parameters:
       - $ref: '#/components/parameters/CommunityId'
@@ -512,6 +843,18 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/JoinRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /communities/{communityId}/membership:
+    parameters:
+      - $ref: '#/components/parameters/CommunityId'
+    delete:
+      tags: [Communities]
+      operationId: leaveCommunity
+      summary: Leave my specific community
+      description: Not allowed for the General community (`409 not_leavable`) or for its super-mentor (`409 super_mentor_cannot_leave`).
+      responses:
+        '204': { description: Left; the user can request another community }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /join-requests/{requestId}:
     parameters:
       - { name: requestId, in: path, required: true, schema: { type: string } }
@@ -744,6 +1087,20 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PrayerRequest' }
+  /prayer-requests/{prayerRequestId}:
+    parameters:
+      - { name: prayerRequestId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Prayer]
+      operationId: getPrayerRequest
+      summary: One prayer request
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PrayerRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /prayer-requests/{prayerRequestId}/prayed:
     parameters:
       - { name: prayerRequestId, in: path, required: true, schema: { type: string } }
@@ -798,7 +1155,7 @@ paths:
                     properties:
                       items:
                         type: array
-                        items: { $ref: '#/components/schemas/Comment' }
+                        items: { $ref: '#/components/schemas/PrayerResponse' }
     post:
       tags: [Prayer]
       operationId: respondToPrayerRequest
@@ -816,7 +1173,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Comment' }
+              schema: { $ref: '#/components/schemas/PrayerResponse' }
   # ───────────────────────── Testimonies ─────────────────────────
   /communities/{communityId}/testimonies:
     parameters:
@@ -1221,6 +1578,22 @@ paths:
                 properties:
                   id: { type: string }
                   status: { type: string, enum: [open] }
+  /me/blocks:
+    get:
+      tags: [Safety]
+      operationId: listMyBlocks
+      summary: People I have blocked
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/UserRef' }
   /users/{userId}/block:
     parameters:
       - { name: userId, in: path, required: true, schema: { type: string } }
@@ -1274,6 +1647,7 @@ paths:
   /media/{mediaId}/complete:
     post:
       tags: [Media]
+      operationId: completeMediaUpload
       summary: Confirm a direct (R2) upload finished
       description: Optional. With Cloudflare R2 the client PUTs to a signed URL; the API also verifies the upload lazily when the media is attached. Returns 409 if the file is missing or larger than declared.
       parameters:
@@ -1404,9 +1778,13 @@ components:
   schemas:
     Problem:
       type: object
+      examples:
+        - { type: 'https://apis.focusuganda.org/errors/username_taken', title: Conflict, status: 409, code: username_taken, detail: Username is taken }
+        - { type: 'https://apis.focusuganda.org/errors/validation_failed', title: Validation failed, status: 422, code: validation_failed, detail: One or more fields are invalid, errors: [{ field: password, message: must be at least 8 characters }] }
+        - { type: 'https://apis.focusuganda.org/errors/rate_limited', title: Too many requests, status: 429, code: rate_limited, detail: Please slow down and retry later }
       required: [type, title, status]
       properties:
-        type: { type: string, example: 'https://api.fcu.example/errors/community_limit_reached' }
+        type: { type: string, example: 'https://apis.focusuganda.org/errors/community_limit_reached' }
         title: { type: string }
         status: { type: integer }
         code: { type: string, example: community_limit_reached }
@@ -1437,6 +1815,18 @@ components:
             user: { $ref: '#/components/schemas/MyProfile' }
     RegisterRequest:
       type: object
+      examples:
+        - full_name: Grace Namuli
+          username: gracen
+          birthdate: '2003-05-12'
+          country: UG
+          email: grace@example.com
+          phone: '+256700000000'
+          institution_type: university
+          institution_id: 'b1f0c6e2-3c5a-4d0e-9a1e-2f6f3c1d8a77'
+          password: 'a long passphrase'
+          accepted_terms: true
+          accepted_code_of_conduct: true
       required: [full_name, username, birthdate, country, institution_type, institution_id, password, accepted_terms, accepted_code_of_conduct]
       anyOf:
         - required: [email]
@@ -1456,12 +1846,83 @@ components:
         accepted_code_of_conduct: { type: boolean, description: Community guidelines shown at sign-up (BRD §8.2) }
         guardian:
           type: object
-          description: Required when the user is a minor (x-open-question - exact definition of minor and consent mechanism TBD with FOCUS Uganda)
+          description: Optional. Minors can send it now or later via `PUT /me/guardian` (x-open-question - exact definition of minor and consent mechanism TBD with FOCUS Uganda)
           properties:
             name: { type: string }
             relationship: { type: string }
             phone: { type: string }
             email: { type: string, format: email }
+    MeetingOccurrence:
+      type: object
+      properties:
+        id: { type: string, example: 'c1@2026-05-12', description: communityId@local date }
+        community_id: { type: string }
+        starts_at: { type: string, format: date-time }
+        room: { type: string }
+        going: { type: boolean }
+        attended: { type: boolean }
+    ModerationCase:
+      type: object
+      properties:
+        id: { type: string, example: 'post:abc' }
+        community_id: { type: string }
+        content: { type: string, enum: [post, comment, prayer_request, testimony] }
+        target_id: { type: string }
+        author:
+          oneOf:
+            - type: object
+              properties: { id: { type: string }, full_name: { type: string } }
+            - type: 'null'
+          description: Null for anonymous prayer requests
+        preview: { type: string }
+        reason: { type: string, description: The most common reason given }
+        report_count: { type: integer, description: Distinct reporters }
+        first_reporter_name: { type: string }
+        reported_at: { type: string, format: date-time }
+        level: { type: integer }
+        outcome: { type: string, enum: [kept, hidden, warned, escalated], description: Present on the reply to an action }
+    Warning:
+      type: object
+      properties:
+        id: { type: string }
+        reason: { type: string }
+        preview: { type: string }
+        created_at: { type: string, format: date-time }
+        acknowledged: { type: boolean }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [request_approved, request_declined, comment_reply, prayed_for_you, prayer_response, announcement, meeting_reminder, inactivity, moderator_warning]
+        title: { type: string }
+        body: { type: [string, 'null'] }
+        target_route: { type: string, description: 'App screen to open, e.g. /post/{id}' }
+        read_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+    NotificationPreferences:
+      type: object
+      required: [channels, muted]
+      properties:
+        channels:
+          type: array
+          items: { type: string, enum: [inApp, email] }
+        muted:
+          type: array
+          description: Muted categories. Moderator warnings cannot be muted.
+          items: { type: string, enum: [joinRequestUpdates, replies, prayerResponses, announcements, meetingReminders, inactivityReminders] }
+    GuardianResponse:
+      type: object
+      properties:
+        guardian:
+          type: [object, 'null']
+          properties:
+            name: { type: string }
+            relationship: { type: [string, 'null'] }
+            email: { type: [string, 'null'] }
+            phone: { type: [string, 'null'] }
+            status: { type: string, enum: [pending, confirmed] }
     Institution:
       type: object
       properties:
@@ -1510,8 +1971,10 @@ components:
         name: { type: string, example: Growth Circle }
         initials: { type: string, example: GC }
         institution: { $ref: '#/components/schemas/Institution' }
-        super_mentor: { $ref: '#/components/schemas/UserRef' }
-        meeting: { $ref: '#/components/schemas/Meeting' }
+        super_mentor:
+          oneOf: [{ $ref: '#/components/schemas/UserRef' }, { type: 'null' }]
+        meeting:
+          oneOf: [{ $ref: '#/components/schemas/Meeting' }, { type: 'null' }]
         can_request: { type: boolean, description: False when the caller already has a pending/approved specific community }
         membership_status: { type: string, enum: [none, pending, member] }
     Community:
@@ -1562,6 +2025,7 @@ components:
         status: { type: string, enum: [pending, approved, rejected, cancelled] }
         created_at: { type: string, format: date-time }
         decided_at: { type: [string, 'null'], format: date-time }
+        note: { type: [string, 'null'], description: The super-mentor's message when declining }
     MediaItem:
       type: object
       properties:
@@ -1592,6 +2056,16 @@ components:
         author: { $ref: '#/components/schemas/UserRef' }
         text: { type: string }
         created_at: { type: string, format: date-time }
+    PrayerResponse:
+      type: object
+      properties:
+        id: { type: string }
+        author:
+          oneOf: [{ $ref: '#/components/schemas/UserRef' }, { type: 'null' }]
+          description: Null when the reply is anonymous
+        anonymous: { type: boolean, description: True when the owner of an anonymous request replied on it }
+        text: { type: string }
+        created_at: { type: string, format: date-time }
     ReactionState:
       type: object
       properties:
@@ -1601,6 +2075,7 @@ components:
       type: object
       properties:
         id: { type: string }
+        community_id: { type: string }
         author:
           oneOf:
             - $ref: '#/components/schemas/UserRef'
@@ -1615,6 +2090,7 @@ components:
       type: object
       properties:
         id: { type: string }
+        community_id: { type: string }
         format: { type: string, enum: [video, story] }
         title: { type: string }
         excerpt: { type: string }
@@ -1628,6 +2104,7 @@ components:
         reviewed: { type: boolean, description: Shows the "Reviewed" badge }
         approved_by: { type: [string, 'null'], description: Approver name (traceability, BRD §8.1) }
         published_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
     PathwaySummary:
       type: object
       properties:

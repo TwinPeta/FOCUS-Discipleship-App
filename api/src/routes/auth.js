@@ -67,8 +67,9 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
     const inst = store.get('institutions', b.institution_id);
     if (!inst || inst.type !== b.institution_type) errs.push({ field: 'institution_id', message: 'unknown institution' });
     const isMinor = !errs.length && ageOf(b.birthdate) < 18;
-    if (isMinor && !(b.guardian && b.guardian.name && (b.guardian.phone || b.guardian.email)))
-      errs.push({ field: 'guardian', message: 'guardian name and a phone or email are required for users under 18' });
+    // Guardian details may be sent now or later via PUT /me/guardian; until consent the account stays restricted.
+    if (isMinor && b.guardian && !(b.guardian.name && (b.guardian.phone || b.guardian.email)))
+      errs.push({ field: 'guardian', message: 'guardian name and a phone or email are required' });
     if (b.photo_media_id && store.get('media', b.photo_media_id)?.purpose !== 'profile_photo')
       errs.push({ field: 'photo_media_id', message: 'unknown photo' });
     if (errs.length) throw validation(errs);
@@ -86,7 +87,7 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
       photoMediaId: b.photo_media_id || null, platformRole: 'student',
       emailVerified: false, phoneVerified: false, verifiedMentor: false,
       minorStatus: isMinor ? 'pending_guardian_consent' : 'adult',
-      guardian: isMinor ? b.guardian : null,
+      guardian: isMinor ? (b.guardian || null) : null,
       consents: { terms: store.now(), codeOfConduct: store.now() },
     });
 
@@ -106,6 +107,7 @@ router.post('/login', rateLimit({ windowMs: 900000, max: 20, key: (r) => r.body 
     const ph = normPhone(b.identifier.trim());
     const user = store.first('users', (u) => !u.deletedAt && (u.email === id || u.username === id.replace(/^@/, '') || u.phone === ph));
     if (!user || !bcrypt.compareSync(b.password, user.passwordHash)) throw unauthorized('Invalid credentials');
+    require('../utils/sanctions').activeSuspension(user); // lifts a suspension that has ended
     res.json(session(user));
   } catch (e) { next(e); }
 });

@@ -16,6 +16,30 @@ function seed() {
   store.insert('institutions', { name: 'University of Nairobi', type: 'university', country: 'KE' });
   store.insert('institutions', { name: 'University of Rwanda', type: 'university', country: 'RW' });
 
+  // The schools offered by the mobile app's picker (mobile/lib/features/profile/data/institution_data.dart),
+  // so sign-up from the app finds them. In production, add institutions in the back office instead.
+  [
+    ['Mbarara University of Science and Technology', 'university', 'UG'],
+    ['Kenyatta University', 'university', 'KE'],
+    ['Strathmore University', 'university', 'KE'],
+    ['Moi University', 'university', 'KE'],
+    ['Mount Kenya University Rwanda', 'university', 'RW'],
+    ['University of Kigali', 'university', 'RW'],
+    ['Adventist University of Central Africa', 'university', 'RW'],
+    ['Gayaza High School', 'high_school', 'UG'],
+    ['Kings College Budo', 'high_school', 'UG'],
+    ['Namilyango College', 'high_school', 'UG'],
+    ['St. Mary\'s College Kisubi', 'high_school', 'UG'],
+    ['Alliance High School', 'high_school', 'KE'],
+    ['Kenya High School', 'high_school', 'KE'],
+    ['Starehe Boys Centre', 'high_school', 'KE'],
+    ['Precious Blood Riruta', 'high_school', 'KE'],
+    ['Lycee de Kigali', 'high_school', 'RW'],
+    ['Green Hills Academy', 'high_school', 'RW'],
+    ['FAWE Girls School', 'high_school', 'RW'],
+    ['Riviera High School', 'high_school', 'RW'],
+  ].forEach(([name, type, country]) => store.insert('institutions', { name, type, country }));
+
   // General communities (one per institution)
   store.col('institutions').forEach((i) => {
     store.insert('communities', {

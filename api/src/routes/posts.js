@@ -7,6 +7,7 @@ const { requireMember, isLeaderRole } = require('../middleware/auth');
 const { idempotency } = require('../middleware/idempotency');
 const { logEvent } = require('../utils/activity');
 const S = require('../utils/serialize');
+const { notify } = require('../utils/notify');
 
 function ownedMedia(ids, userId) {
   for (const id of ids || []) {
@@ -96,6 +97,9 @@ router.post('/posts/:postId/comments', loadPost, (req, res, next) => {
   try {
     const b = check(req.body, { text: { required: true, type: 'string', min: 1, max: 2000 } });
     const c = store.insert('comments', { postId: req.post.id, authorId: req.user.id, text: b.text.trim() });
+    if (req.post.authorId !== req.user.id) {
+      notify(req.post.authorId, 'comment_reply', { title: `${req.user.fullName} commented on your post`, body: b.text.trim().slice(0, 140), targetRoute: `/post/${req.post.id}` });
+    }
     res.status(201).json(S.comment(c, req.post.communityId));
   } catch (e) { next(e); }
 });

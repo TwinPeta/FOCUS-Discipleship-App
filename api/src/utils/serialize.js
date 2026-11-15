@@ -125,6 +125,7 @@ function prayerRequest(r, viewerId) {
   const prayed = store.where('prayed', (p) => p.prayerRequestId === r.id);
   return {
     id: r.id,
+    community_id: r.communityId,
     author: r.anonymous ? null : userRef(store.get('users', r.authorId), r.communityId),
     text: r.text,
     prayed_count: prayed.length,
@@ -141,6 +142,7 @@ function testimony(t, { detail = false } = {}) {
   const m = mediaList(t.mediaIds);
   return {
     id: t.id,
+    community_id: t.communityId,
     format: m.some((x) => x.kind === 'video') ? 'video' : 'story',
     title: t.title,
     excerpt: t.body.slice(0, 160),
@@ -152,6 +154,7 @@ function testimony(t, { detail = false } = {}) {
     reviewed: t.status === 'published',
     approved_by: approver ? approver.fullName : null,
     published_at: t.publishedAt || null,
+    created_at: t.createdAt || null,
   };
 }
 

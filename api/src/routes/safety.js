@@ -3,6 +3,7 @@ const store = require('../db/store');
 const { check } = require('../utils/validate');
 const { notFound, validation } = require('../utils/errors');
 const { idempotency } = require('../middleware/idempotency');
+const S = require('../utils/serialize');
 
 const TARGETS = { user: 'users', message: 'messages', post: 'posts', comment: 'comments', testimony: 'testimonies', prayer_request: 'prayerRequests' };
 const REASONS = ['harassment_bullying', 'offensive_content', 'breaks_community_rules', 'spam_or_fake_profile', 'other'];
@@ -29,6 +30,13 @@ router.post('/reports', idempotency, (req, res, next) => {
     });
     res.status(201).json({ id: r.id, status: 'open' });
   } catch (e) { next(e); }
+});
+
+// The people I have blocked (so the app can show and undo them).
+router.get('/me/blocks', (req, res) => {
+  const items = store.where('blocks', (x) => x.blockerId === req.user.id)
+    .map((x) => S.userRef(store.get('users', x.blockedId))).filter(Boolean);
+  res.json({ items });
 });
 
 router.put('/users/:userId/block', (req, res, next) => {

@@ -102,6 +102,19 @@ module.exports = {
   otps: { cols: { destination: 's', purpose: 's', hash: 's', expiresAt: 'e', attempts: 'i' }, index: ['destination'] },
   resetTokens: { cols: { userId: 's', token: 's', expiresAt: 'e', used: 'b' }, fk: { userId: ['users'] }, unique: ['token'] },
 
+  // ── in-app notifications (the mobile app's list and settings)
+  notifications: {
+    cols: { userId: 's', type: 's', title: 's', body: 's?', targetRoute: 's', readAt: 'd?' },
+    fk: { userId: ['users'] }, index: ['userId'],
+  },
+  notificationPrefs: { cols: { userId: 's', channels: 'ss', muted: 'ss' }, fk: { userId: ['users'] }, unique: ['userId'] },
+
+  // ── meetings: RSVP and check-in per weekly meeting (the meeting itself is derived from communities.meeting)
+  meetingAttendance: {
+    cols: { userId: 's', communityId: 's', meetingId: 's', going: 'b', attendedAt: 'd?' },
+    fk: { userId: ['users'], communityId: ['communities'] }, index: ['userId', 'meetingId'],
+  },
+
   // ── back office
   content: {
     cols: {
