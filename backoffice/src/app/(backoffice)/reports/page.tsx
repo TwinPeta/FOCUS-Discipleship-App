@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AuditNotice } from "@/components/common/AuditNotice";
 import { ActiveCommunitiesList } from "@/features/reports/components/ActiveCommunitiesList";
 import { CompletionsByTypeChart } from "@/features/reports/components/CompletionsByTypeChart";
@@ -20,11 +20,13 @@ import { ScheduleReportDialog } from "@/features/reports/components/ScheduleRepo
 import { ScheduledReportsTable } from "@/features/reports/components/ScheduledReportsTable";
 import {
   fetchReportsData,
-  MOCK_REPORTS_DATA,
-  type ReportsData,
+  setScheduledReportActive,
   type ScheduledReport,
 } from "@/features/reports/queries";
 import type { ReportFiltersState } from "@/features/reports/schemas";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { PanelSkeleton } from "@/components/feedback/Skeletons";
+import { useRemoteData } from "@/lib/hooks/useRemoteData";
 
 export default function ReportsPage() {
   const [filters, setFilters] = useState<ReportFiltersState>({
@@ -32,32 +34,23 @@ export default function ReportsPage() {
     campus: "all",
     community: "all",
   });
-  const [data, setData] = useState<ReportsData>(MOCK_REPORTS_DATA);
-
-  useEffect(() => {
-    let active = true;
-    fetchReportsData(filters).then((res) => {
-      if (active) setData(res);
-    });
-    return () => {
-      active = false;
-    };
-  }, [filters]);
+  const { data, setData, loading, error, reload } = useRemoteData(
+    () => fetchReportsData(filters),
+    [filters.range, filters.campus, filters.community],
+  );
 
   function handleCreatedSchedule(schedule: ScheduledReport) {
-    setData((prev) => ({
-      ...prev,
-      scheduledReports: [schedule, ...prev.scheduledReports],
-    }));
+    setData((prev) => prev && { ...prev, scheduledReports: [schedule, ...prev.scheduledReports] });
   }
 
-  function handleToggleSchedule(id: string) {
-    setData((prev) => ({
-      ...prev,
-      scheduledReports: prev.scheduledReports.map((s) =>
-        s.id === id ? { ...s, active: !s.active } : s,
-      ),
-    }));
+  async function handleToggleSchedule(id: string) {
+    const current = data?.scheduledReports.find((s) => s.id === id);
+    if (!current) return;
+    const saved = await setScheduledReportActive(id, !current.active);
+    setData(
+      (prev) =>
+        prev && { ...prev, scheduledReports: prev.scheduledReports.map((s) => (s.id === id ? saved : s)) },
+    );
   }
 
   return (
@@ -73,7 +66,7 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <ExportButtons filters={filters} data={data} />
+          {data && <ExportButtons filters={filters} data={data} />}
           <ScheduleReportDialog onCreated={handleCreatedSchedule} />
         </div>
       </div>
@@ -81,17 +74,23 @@ export default function ReportsPage() {
       <AuditNotice message="Exporting reports to CSV or PDF is recorded in the audit log." />
       <ReportFilters value={filters} onChange={setFilters} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <MembersOverTimeChart data={data.membersOverTime} />
-        <CompletionsByTypeChart data={data.completionsByType} />
-      </div>
+      {error && <ErrorState message={error} onRetry={reload} />}
+      {!data && loading && <PanelSkeleton />}
+      {data && (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <MembersOverTimeChart data={data.membersOverTime} />
+            <CompletionsByTypeChart data={data.completionsByType} />
+          </div>
 
-      <ActiveCommunitiesList communities={data.activeCommunities} />
+          <ActiveCommunitiesList communities={data.activeCommunities} />
 
-      <ScheduledReportsTable
-        schedules={data.scheduledReports}
-        onToggleActive={handleToggleSchedule}
-      />
+          <ScheduledReportsTable
+            schedules={data.scheduledReports}
+            onToggleActive={handleToggleSchedule}
+          />
+        </>
+      )}
     </main>
   );
 }

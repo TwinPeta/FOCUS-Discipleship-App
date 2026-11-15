@@ -7,14 +7,13 @@ import 'package:focus_1/core/router/app_router.dart';
 import 'package:focus_1/core/router/route_guards.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
 import 'package:focus_1/core/widgets/states/error_view.dart';
-import 'package:focus_1/features/auth/data/auth_repository.dart';
 import 'package:focus_1/features/auth/domain/auth_models.dart';
-import 'package:focus_1/features/community/data/membership_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
-import 'package:focus_1/features/profile/data/profile_repository.dart';
 import 'package:focus_1/features/profile/domain/user_profile.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 GuardContext _ctx(
   String location, {
@@ -130,7 +129,7 @@ void main() {
           }
         }
       });
-      final container = ProviderContainer(
+      final container = fakeContainer(
         overrides: [
           authRepositoryProvider.overrideWith((ref) => auth),
           profileRepositoryProvider.overrideWith((ref) => profiles),

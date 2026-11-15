@@ -7,6 +7,7 @@ import 'package:focus_1/core/theme/app_theme.dart';
 import 'package:focus_1/features/messaging/presentation/report_user_screen.dart';
 
 import '../support/pump_utils.dart';
+import '../support/fake_backend.dart';
 
 void main() {
   testWidgets('Send report stays disabled until a reason is chosen', (
@@ -14,6 +15,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: fakeBackend(),
         child: MaterialApp.router(
           theme: AppTheme.light(),
           routerConfig: GoRouter(

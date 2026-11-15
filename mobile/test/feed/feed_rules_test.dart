@@ -6,7 +6,9 @@ import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/feed/data/post_repository.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
 import 'package:focus_1/features/feed/presentation/providers/feed_providers.dart';
-import 'package:focus_1/features/messaging/data/moderation_repository.dart';
+
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 class _FailingLikes extends FakePostRepository {
   _FailingLikes() : super(latency: Duration.zero);
@@ -16,7 +18,7 @@ class _FailingLikes extends FakePostRepository {
 }
 
 ProviderContainer _container(PostRepository repo) {
-  final c = ProviderContainer(
+  final c = fakeContainer(
     overrides: [
       postRepositoryProvider.overrideWith((ref) => repo),
       moderationRepositoryProvider.overrideWith(

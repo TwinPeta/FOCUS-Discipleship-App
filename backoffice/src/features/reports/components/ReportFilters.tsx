@@ -9,6 +9,7 @@
 
 "use client";
 
+import { useLookups } from "@/lib/hooks/useLookups";
 import type { ReportFiltersState } from "../schemas";
 
 interface ReportFiltersProps {
@@ -17,6 +18,7 @@ interface ReportFiltersProps {
 }
 
 export function ReportFilters({ value, onChange }: ReportFiltersProps) {
+  const { institutions, communities } = useLookups();
   return (
     <div className="grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-3">
       <div className="space-y-1">
@@ -43,7 +45,7 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
 
       <div className="space-y-1">
         <label htmlFor="report-campus" className="block text-xs font-medium text-muted">
-          Campus / Region
+          Institution
         </label>
         <select
           id="report-campus"
@@ -52,9 +54,11 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
           className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
         >
           <option value="all">All campuses</option>
-          <option value="kampala-central">Kampala Central</option>
-          <option value="kampala-east">Kampala East</option>
-          <option value="northern">Northern Region</option>
+          {institutions.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -69,10 +73,11 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
           className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
         >
           <option value="all">All communities</option>
-          <option value="comm-makerere">Makerere University</option>
-          <option value="comm-kyambogo">Kyambogo University</option>
-          <option value="comm-mubs">MUBS Kampala</option>
-          <option value="comm-gulu">Gulu University</option>
+          {communities.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </div>
     </div>

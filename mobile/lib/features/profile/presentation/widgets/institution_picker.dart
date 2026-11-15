@@ -1,14 +1,24 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+
+import '../../../../core/providers/repository_providers.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/labeled_dropdown.dart';
 import '../../../../core/widgets/segmented_toggle.dart';
-import '../../data/institution_data.dart';
 import '../../domain/user_profile.dart';
 
 /// "I study at": University / High school toggle plus the institution list
 /// for [country]. Shared by the Join form (2) and Edit profile (47).
-class InstitutionPicker extends StatelessWidget {
+/// The institutions for a country and type, from the server.
+final institutionOptionsProvider = FutureProvider.autoDispose
+    .family<List<String>, ({String country, InstitutionType type})>(
+      (ref, key) => ref
+          .watch(institutionRepositoryProvider)
+          .names(country: key.country, type: key.type),
+    );
+
+class InstitutionPicker extends ConsumerWidget {
   const InstitutionPicker({
     super.key,
     required this.country,
@@ -28,17 +38,13 @@ class InstitutionPicker extends StatelessWidget {
   final ValueChanged<String?> onNameChanged;
   final String? errorText;
 
-  static List<String> optionsFor(String country, InstitutionType type) {
-    final byCountry = type == InstitutionType.university
-        ? InstitutionData.universitiesByCountry
-        : InstitutionData.highSchoolsByCountry;
-    return byCountry[country] ?? const [];
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final university = type == InstitutionType.university;
-    final options = optionsFor(country, type);
+    final loaded = ref.watch(
+      institutionOptionsProvider((country: country, type: type)),
+    );
+    final options = loaded.valueOrNull ?? const <String>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -64,10 +70,16 @@ class InstitutionPicker extends StatelessWidget {
           value: options.contains(name) ? name : null,
           items: options,
           itemLabel: (n) => n,
-          hint: university
+          hint: loaded.isLoading
+              ? 'Loading...'
+              : university
               ? 'Select your university'
               : 'Select your high school',
-          errorText: errorText,
+          errorText: loaded.hasError
+              ? 'Could not load the list. Check your connection and try again.'
+              : (options.isEmpty && !loaded.isLoading
+                    ? 'No schools are listed here yet.'
+                    : errorText),
           onChanged: onNameChanged,
         ),
       ],

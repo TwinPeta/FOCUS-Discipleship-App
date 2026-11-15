@@ -57,7 +57,7 @@ router.post('/moderation/reports/:id/action', C.allow(SYS, SM), (req, res, next)
       case 'WARN': if (!authorId) throw conflict('no_target', 'No user to warn'); sanction(req, authorId, communityId, 'WARNING', notes); r.status = 'resolved'; break;
       case 'HIDE': if (!t) throw conflict('no_target', 'Nothing to hide'); t.hidden = true; r.status = 'resolved'; break;
       case 'ESCALATE': r.status = 'in_review'; r.escalated = true; break;
-      case 'SUSPEND': if (!author) throw conflict('no_target', 'No user to suspend'); author.suspended = true; sanction(req, authorId, communityId, 'SUSPENSION', notes).until = new Date(Date.now() + 7 * 86400000).toISOString(); store.remove('refreshTokens', (x) => x.userId === authorId); r.status = 'resolved'; break;
+      case 'SUSPEND': if (!author) throw conflict('no_target', 'No user to suspend'); author.suspended = true; require('./sessions').revokeAll(author.id); sanction(req, authorId, communityId, 'SUSPENSION', notes).until = new Date(Date.now() + 7 * 86400000).toISOString(); store.remove('refreshTokens', (x) => x.userId === authorId); r.status = 'resolved'; break;
       case 'DELETE': if (!t || !col) throw conflict('no_target', 'Nothing to delete'); store.remove(col, (x) => x.id === t.id); r.status = 'resolved'; break;
     }
     r.resolution = { action: b.action, notes, by: req.user.id, at: store.now() };
@@ -163,7 +163,7 @@ router.post('/privacy/data-requests/:id/process', C.allow(SYS), (req, res, next)
     if (d.type === 'DELETION' && u) {
       // Irreversible: anonymise personal data (content stays but is detached from identity)
       Object.assign(u, { deletedAt: u.deletedAt || store.now(), fullName: 'Deleted user', email: `deleted-${u.id}@invalid`, phone: null, birthdate: null, photoUrl: null, username: `deleted-${u.id.slice(0, 8)}`, passwordHash: bcrypt.hashSync(u.id + Date.now(), 4) });
-      store.remove('refreshTokens', (t) => t.userId === u.id); store.remove('devices', (x) => x.userId === u.id);
+      store.remove('refreshTokens', (t) => t.userId === u.id); require('./sessions').revokeAll(u.id); store.remove('devices', (x) => x.userId === u.id);
     }
     d.status = 'DONE'; d.processedBy = req.user.id; d.processedAt = store.now();
     C.audit(req, 'data_request_processed', `${d.type} · ${d.id.slice(0, 8)}`, 'Privacy');
@@ -228,6 +228,14 @@ router.post('/reports/schedules', C.allow(SYS, CA), (req, res, next) => {
   try {
     const b = check(req.body, { reportType: { required: true, type: 'string', enum: Object.keys(REPORT_LABELS) }, cadence: { required: true, type: 'string', enum: ['weekly', 'monthly', 'quarterly'] }, recipientEmail: { required: true, type: 'string', email: true } });
     res.status(201).json(schedDto(store.insert('reportSchedules', { ...b, active: true })));
+  } catch (e) { next(e); }
+});
+router.patch('/reports/schedules/:id', C.allow(SYS, CA), (req, res, next) => {
+  try {
+    const b = check(req.body, { active: { required: true, type: 'boolean' } });
+    const sch = C.must('reportSchedules', req.params.id, 'Schedule');
+    sch.active = b.active;
+    res.json(schedDto(sch));
   } catch (e) { next(e); }
 });
 router.delete('/reports/schedules/:id', C.allow(SYS, CA), (req, res, next) => { try { C.must('reportSchedules', req.params.id, 'Schedule'); store.remove('reportSchedules', (s) => s.id === req.params.id); res.status(204).end(); } catch (e) { next(e); } });
@@ -326,20 +334,23 @@ router.post('/account/password', (req, res, next) => {
     if (bcrypt.compareSync(b.newPassword, req.user.passwordHash)) throw validation([{ field: 'newPassword', message: 'must differ from the current password' }]);
     req.user.passwordHash = bcrypt.hashSync(b.newPassword, 10);
     store.remove('refreshTokens', (t) => t.userId === req.user.id);
+    require('./sessions').revokeAll(req.user.id, req.session.id); // every other device is signed out; this one stays
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
 const sessDto = (s, cur) => ({ id: s.id, deviceName: s.deviceName, browser: s.browser, os: s.os, ipAddress: s.ipAddress, lastActiveAt: s.lastActiveAt, current: cur });
 router.get('/account/sessions', (req, res) => {
-  const mine = store.where('staffSessions', (s) => s.userId === req.user.id).sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
-  const tok = (req.headers.authorization || '').slice(-16);
-  res.json({ sessions: mine.map((s) => sessDto(s, s.token === tok)) });
+  const mine = require('./sessions').active(req.user.id).sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
+  res.json({ sessions: mine.map((s) => sessDto(s, s.id === req.session.id)) });
 });
 router.delete('/account/sessions/:id', (req, res, next) => {
   try {
     const s = store.first('staffSessions', (x) => x.id === req.params.id && x.userId === req.user.id);
     if (!s) throw notFound('Session');
-    store.remove('staffSessions', (x) => x.id === s.id); res.json({ ok: true });
+    const sessions = require('./sessions');
+    sessions.revoke(s.id);
+    if (s.id === req.session.id) sessions.clearCookies(res); // ended our own session
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 

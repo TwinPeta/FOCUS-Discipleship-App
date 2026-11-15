@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/core/utils/date_utils.dart';
 import 'package:focus_1/core/widgets/switch_row.dart';
-import 'package:focus_1/features/notifications/data/notification_channels.dart';
-import 'package:focus_1/features/notifications/data/notification_repository.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
 import 'package:focus_1/features/notifications/domain/notification_preferences.dart';
 import 'package:focus_1/features/notifications/presentation/notification_providers.dart';
@@ -13,6 +11,7 @@ import 'package:focus_1/features/notifications/presentation/notifications_screen
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 void main() {
   late FakeEmailChannel email;

@@ -38,7 +38,6 @@ const _legs = <(String, String)>[
   ('/profile', '/profile/edit'),
   ('/profile', '/settings'),
   ('/profile', '/settings/profile'),
-  ('/profile', '/debug'),
   (_feed, '/community/growth-circle/compose'),
   (_feed, '/post/growth-circle-post-1'),
   (_feed, '/messages'),

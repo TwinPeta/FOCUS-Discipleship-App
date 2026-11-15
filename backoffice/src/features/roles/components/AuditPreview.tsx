@@ -7,47 +7,18 @@
  * STATUS: implemented
  */
 
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { fetchAuditEntries } from "@/features/audit/queries";
 import { ROUTES } from "@/lib/constants/routes";
+import { formatDateTime } from "@/lib/format/date";
+import { useRemoteData } from "@/lib/hooks/useRemoteData";
 
-export interface AuditPreviewItem {
-  id: string;
-  actor: string;
-  action: string;
-  target: string;
-  timestamp: string;
-}
-
-const DEFAULT_RECENT_ENTRIES: AuditPreviewItem[] = [
-  {
-    id: "aud-101",
-    actor: "Sarah K. (System admin)",
-    action: "Updated role",
-    target: "Peter O. -> Super-mentor (Makerere)",
-    timestamp: "Today, 09:42",
-  },
-  {
-    id: "aud-102",
-    actor: "David M. (Content admin)",
-    action: "Published devotional",
-    target: "Walking in Faith — Week 4",
-    timestamp: "Yesterday, 16:15",
-  },
-  {
-    id: "aud-103",
-    actor: "Sarah K. (System admin)",
-    action: "Exported audit log",
-    target: "Last 30 days (CSV)",
-    timestamp: "Yesterday, 11:08",
-  },
-];
-
-export function AuditPreview({
-  entries = DEFAULT_RECENT_ENTRIES,
-}: {
-  entries?: AuditPreviewItem[];
-}) {
+export function AuditPreview() {
+  const { data, loading, error } = useRemoteData(() => fetchAuditEntries({ search: "", action: "all", role: "all", period: "all" }));
+  const entries = (data ?? []).slice(0, 5);
   return (
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div className="flex items-center justify-between gap-2">
@@ -69,17 +40,21 @@ export function AuditPreview({
       </div>
 
       <div className="divide-y divide-border rounded-lg border border-border">
+        {error && <p role="alert" className="px-3 py-2.5 text-xs text-red-700">{error}</p>}
+        {!error && !loading && entries.length === 0 && (
+          <p className="px-3 py-2.5 text-xs text-muted">No audit activity recorded yet.</p>
+        )}
         {entries.map((entry) => (
           <div
             key={entry.id}
             className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs"
           >
             <div>
-              <span className="font-semibold text-foreground">{entry.actor}</span>{" "}
-              <span className="text-muted">· {entry.action} ·</span>{" "}
+              <span className="font-semibold text-foreground">{entry.actorName}</span>{" "}
+              <span className="text-muted">· {entry.actionLabel} ·</span>{" "}
               <span className="text-foreground">{entry.target}</span>
             </div>
-            <span className="text-muted">{entry.timestamp}</span>
+            <span className="text-muted">{formatDateTime(entry.occurredAt)}</span>
           </div>
         ))}
       </div>

@@ -84,7 +84,9 @@ class RemotePrayerRepository implements PrayerRepository {
 
   @override
   Future<List<PrayerResponse>> getResponses(String requestId) async {
-    final items = await _api.getAllItems('/prayer-requests/$requestId/responses');
+    final items = await _api.getAllItems(
+      '/prayer-requests/$requestId/responses',
+    );
     return [for (final j in items) _response(j, requestId)];
   }
 
@@ -112,7 +114,10 @@ class RemotePrayerRepository implements PrayerRepository {
     required String authorName,
   }) async {
     final json = objectOf(
-      await _api.post('/prayer-requests/$requestId/responses', body: {'text': body}),
+      await _api.post(
+        '/prayer-requests/$requestId/responses',
+        body: {'text': body},
+      ),
     );
     if (json == null) throw const ApiException(500, message: 'Empty reply');
     return _response(json, requestId);

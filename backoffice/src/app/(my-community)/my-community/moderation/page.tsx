@@ -14,14 +14,16 @@ import { ArrowUpRight, CheckCircle2 } from "lucide-react";
 import { AuditNotice } from "@/components/common/AuditNotice";
 import {
   fetchMyCommunityOverview,
-  MOCK_MY_COMMUNITY,
   resolveOwnReportL1,
   type OwnCommunityReport,
 } from "@/features/my-community/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function MyCommunityModerationPage() {
-  const [communityName, setCommunityName] = useState(MOCK_MY_COMMUNITY.communityName);
-  const [reports, setReports] = useState<OwnCommunityReport[]>(MOCK_MY_COMMUNITY.reports);
+  const [communityName, setCommunityName] = useState("");
+  const [reports, setReports] = useState<OwnCommunityReport[]>([]);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -29,7 +31,10 @@ export default function MyCommunityModerationPage() {
       if (!active) return;
       setCommunityName(res.communityName);
       setReports(res.reports);
-    });
+    })
+      .catch((e: unknown) => {
+        if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       active = false;
     };
@@ -44,9 +49,10 @@ export default function MyCommunityModerationPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Moderation (Level 1) — {communityName}
+          Moderation (Level 1) — {communityName || "your community"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           Review reports within your community. Severe violations can be escalated to Level 2 admins (suspensions and deletions require L2/System admin).

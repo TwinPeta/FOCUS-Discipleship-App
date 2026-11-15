@@ -1,6 +1,5 @@
 import '../../../core/network/api_client.dart';
 import '../domain/membership.dart';
-import 'community_api_mapper.dart';
 import 'membership_repository.dart';
 
 /// [MembershipRepository] backed by the FCU API.
@@ -81,9 +80,8 @@ class RemoteMembershipRepository implements MembershipRepository {
   @override
   Future<Membership> requestToJoin(String communityId) {
     // Two rapid taps share one in-flight request.
-    return _inFlightRequest ??= _request(
-      communityId,
-    ).whenComplete(() => _inFlightRequest = null);
+    return _inFlightRequest ??= _request(communityId)
+        .whenComplete(() => _inFlightRequest = null);
   }
 
   Future<Membership> _request(String communityId) async {

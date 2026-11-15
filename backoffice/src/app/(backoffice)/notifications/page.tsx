@@ -16,23 +16,33 @@ import { TemplateEditor } from "@/features/notifications/components/TemplateEdit
 import {
   fetchInactivityDays,
   fetchNotificationRules,
-  MOCK_NOTIFICATION_RULES,
   updateNotificationRule,
   type NotificationRule,
 } from "@/features/notifications/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function NotificationsPage() {
-  const [rules, setRules] = useState<NotificationRule[]>(MOCK_NOTIFICATION_RULES);
-  const [inactivityDays, setInactivityDays] = useState(14);
+  const [rules, setRules] = useState<NotificationRule[]>([]);
+  const [inactivityDays, setInactivityDays] = useState<number | null>(null);
   const [editingRule, setEditingRule] = useState<NotificationRule | null>(null);
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchNotificationRules().then((res) => {
-      if (active) setRules(res);
+    fetchNotificationRules()
+      .then((res) => {
+        if (active) setRules(res);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
-    fetchInactivityDays().then((days) => {
-      if (active) setInactivityDays(days);
+    fetchInactivityDays()
+      .then((days) => {
+        if (active) setInactivityDays(days);
+      })
+      .catch((e: unknown) => {
+      if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
     });
     return () => {
       active = false;
@@ -52,6 +62,7 @@ export default function NotificationsPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
           Notifications &amp; Inactivity Rules
@@ -66,7 +77,9 @@ export default function NotificationsPage() {
         Push notifications and transactional emails are delivered across all configured triggers. SMS delivery mentioned in initial BRD is deferred pending telecom gateway integration.
       </div>
 
-      <InactivityDaysField initialDays={inactivityDays} />
+      {inactivityDays !== null && (
+        <InactivityDaysField key={inactivityDays} initialDays={inactivityDays} />
+      )}
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Notification Triggers</h2>

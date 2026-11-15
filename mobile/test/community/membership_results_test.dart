@@ -1,12 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:focus_1/features/community/data/membership_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
-import 'package:focus_1/features/notifications/data/notification_repository.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 void main() {
   late FakeNotificationRepository notifications;

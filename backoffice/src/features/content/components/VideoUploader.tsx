@@ -1,7 +1,7 @@
 /**
  * src/features/content/components/VideoUploader.tsx
  *
- * WHAT: Resumable video uploader up to 500 MB (tus-js-client) with progress and retry
+ * WHAT: Video uploader up to 500 MB with progress and retry (the file goes straight to storage, see lib/upload.ts)
  * REQUIREMENTS: FR-01
  * SPEC: docs/features/06-content-validation.md
  * STATUS: implemented
@@ -10,9 +10,8 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import * as tus from "tus-js-client";
 import { MAX_VIDEO_BYTES } from "@/features/content/schemas";
-import { publicEnv } from "@/lib/env";
+import { uploadFile } from "@/lib/upload";
 
 interface VideoUploaderProps {
   value?: string;
@@ -27,42 +26,18 @@ export function VideoUploader({ value, onUploaded }: VideoUploaderProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastFile, setLastFile] = useState<File | null>(null);
 
-  function startUpload(file: File) {
+  async function startUpload(file: File) {
     setError(null);
     setProgress(0);
-
-    const endpoint = publicEnv.NEXT_PUBLIC_UPLOAD_ENDPOINT;
-    if (!endpoint) {
-      // Local/mock fallback before tus upload endpoint is configured
-      const mockUrl = `mock://videos/${encodeURIComponent(file.name)}`;
-      setProgress(100);
-      setStatus("done");
-      onUploaded(mockUrl);
-      return;
-    }
-
     setStatus("uploading");
-    const upload = new tus.Upload(file, {
-      endpoint,
-      retryDelays: [0, 3000, 5000, 10000],
-      metadata: {
-        filename: file.name,
-        filetype: file.type,
-      },
-      onError: () => {
-        setStatus("error");
-        setError("Upload interrupted. You can retry to resume from where it stopped.");
-      },
-      onProgress: (bytesUploaded, bytesTotal) => {
-        setProgress(Math.round((bytesUploaded / bytesTotal) * 100));
-      },
-      onSuccess: () => {
-        setStatus("done");
-        onUploaded(upload.url ?? "");
-      },
-    });
-
-    upload.start();
+    try {
+      const url = await uploadFile(file, "content_video", setProgress);
+      setStatus("done");
+      onUploaded(url);
+    } catch (e) {
+      setStatus("error");
+      setError(e instanceof Error ? e.message : "Upload failed. Please try again.");
+    }
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -75,7 +50,7 @@ export function VideoUploader({ value, onUploaded }: VideoUploaderProps) {
     }
 
     setLastFile(file);
-    startUpload(file);
+    void startUpload(file);
   }
 
   return (
@@ -84,15 +59,14 @@ export function VideoUploader({ value, onUploaded }: VideoUploaderProps) {
         <label htmlFor="video-upload" className="text-sm font-medium text-foreground">
           Video file
         </label>
-        <span className="text-xs text-muted-foreground">
-          Up to 500 MB (lighter versions created automatically)
-        </span>
+        <span className="text-xs text-muted-foreground">MP4, WebM or MOV, up to 500 MB</span>
       </div>
 
       <input
         id="video-upload"
         type="file"
-        accept="video/*"
+        accept="video/mp4,video/webm,video/quicktime"
+        disabled={status === "uploading"}
         onChange={handleFileChange}
         className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-border file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium"
       />
@@ -100,30 +74,23 @@ export function VideoUploader({ value, onUploaded }: VideoUploaderProps) {
       {status === "uploading" && (
         <div className="space-y-1">
           <div className="h-2 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-xs text-muted-foreground">Uploading... {progress}%</p>
         </div>
       )}
 
-      {status === "done" && (
-        <p className="text-xs font-medium text-emerald-800">
-          Video ready{value ? ` (${value})` : ""}.
-        </p>
-      )}
+      {status === "done" && <p className="text-xs font-medium text-emerald-800">Video uploaded.</p>}
 
       {error && (
         <div className="flex items-center justify-between gap-2">
           <p role="alert" className="text-xs text-red-700">
             {error}
           </p>
-          {lastFile && (
+          {lastFile && status === "error" && (
             <button
               type="button"
-              onClick={() => startUpload(lastFile)}
+              onClick={() => void startUpload(lastFile)}
               className="rounded border border-border bg-white px-2.5 py-1 text-xs font-medium"
             >
               Retry

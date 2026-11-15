@@ -4,17 +4,16 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:focus_1/core/router/route_guards.dart';
 import 'package:focus_1/features/auth/domain/auth_models.dart';
-import 'package:focus_1/features/community/data/join_request_repository.dart';
 import 'package:focus_1/features/community/domain/join_request.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/domain/user_role.dart';
 import 'package:focus_1/features/community/presentation/join_requests_screen.dart';
 import 'package:focus_1/features/community/presentation/providers/membership_provider.dart';
-import 'package:focus_1/features/notifications/data/notification_repository.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+import '../support/fakes.dart';
 
 const _sm = UserRole.superMentor;
 const _community = 'growth-circle';

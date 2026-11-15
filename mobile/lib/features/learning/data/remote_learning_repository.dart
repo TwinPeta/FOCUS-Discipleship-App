@@ -15,7 +15,8 @@ class RemoteLearningRepository implements LearningRepository {
 
   final Map<String, Reflection> _reflections = {};
   final Map<String, QuizAttempt> _attempts = {};
-  final Map<String, List<List<String>>> _optionIds = {}; // quiz -> question -> option ids
+  final Map<String, List<List<String>>> _optionIds =
+      {}; // quiz -> question -> option ids
   final Map<String, List<String>> _questionIds = {};
 
   Future<Map<String, dynamic>> _resource(String id) async {
@@ -49,6 +50,7 @@ class RemoteLearningRepository implements LearningRepository {
     return VideoContent(
       item: _item(j, LearningKind.video),
       duration: Duration(seconds: (j['duration_seconds'] as int?) ?? 0),
+      streamUrl: j['stream_url'] as String?,
     );
   }
 
@@ -174,7 +176,10 @@ class RemoteLearningRepository implements LearningRepository {
     for (var i = 0; i < questions.length && i < answers.length; i++) {
       final choice = answers[i];
       if (choice >= 0 && choice < options[i].length) {
-        body.add({'question_id': questions[i], 'option_id': options[i][choice]});
+        body.add({
+          'question_id': questions[i],
+          'option_id': options[i][choice],
+        });
       }
     }
     final json = objectOf(
@@ -195,10 +200,7 @@ class RemoteLearningRepository implements LearningRepository {
 
   @override
   Future<void> markComplete(String contentId) async {
-    await _api.put(
-      '/resources/$contentId/progress',
-      body: {'completed': true},
-    );
+    await _api.put('/resources/$contentId/progress', body: {'completed': true});
   }
 
   @override

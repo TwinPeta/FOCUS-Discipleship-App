@@ -14,16 +14,18 @@ import { MailCheck, Send } from "lucide-react";
 import { AuditNotice } from "@/components/common/AuditNotice";
 import {
   fetchMyCommunityOverview,
-  MOCK_MY_COMMUNITY,
   sendFollowUpReminder,
   type OwnCommunityMember,
 } from "@/features/my-community/queries";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function MyCommunityMembersPage() {
-  const [communityName, setCommunityName] = useState(MOCK_MY_COMMUNITY.communityName);
-  const [members, setMembers] = useState<OwnCommunityMember[]>(MOCK_MY_COMMUNITY.members);
+  const [communityName, setCommunityName] = useState("");
+  const [members, setMembers] = useState<OwnCommunityMember[]>([]);
   const [search, setSearch] = useState("");
   const [sentIds, setSentIds] = useState<Record<string, boolean>>({});
+
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -31,7 +33,10 @@ export default function MyCommunityMembersPage() {
       if (!active) return;
       setCommunityName(res.communityName);
       setMembers(res.members);
-    });
+    })
+      .catch((e: unknown) => {
+        if (active) setLoadError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       active = false;
     };
@@ -54,9 +59,10 @@ export default function MyCommunityMembersPage() {
 
   return (
     <main className="space-y-6">
+      {loadError && <ErrorState message={loadError} />}
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Members — {communityName}
+          Members — {communityName || "your community"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           Scoped to your community only. Role changes and exports are managed by System admins.

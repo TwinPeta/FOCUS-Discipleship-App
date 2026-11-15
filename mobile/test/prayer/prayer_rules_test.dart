@@ -1,13 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/core/providers/repository_providers.dart';
-import 'package:focus_1/features/activity/data/activity_repository.dart';
 import 'package:focus_1/features/activity/domain/activity_event.dart';
-import 'package:focus_1/features/messaging/data/moderation_repository.dart';
-import 'package:focus_1/features/prayer/data/prayer_repository.dart';
 import 'package:focus_1/features/prayer/domain/prayer_request.dart';
 import 'package:focus_1/features/prayer/presentation/providers/prayer_providers.dart';
+
+import '../support/fakes.dart';
+import '../support/fake_backend.dart';
 
 void main() {
   test('anonymous prayer requests carry no author', () async {
@@ -56,7 +55,7 @@ void main() {
   test(
     '"I prayed" toggles once per user and keeps the count in sync',
     () async {
-      final container = ProviderContainer(
+      final container = fakeContainer(
         overrides: [
           prayerRepositoryProvider.overrideWith(
             (ref) => FakePrayerRepository(latency: Duration.zero),
@@ -97,7 +96,7 @@ void main() {
     're-marking the same request never records a second prayed event',
     () async {
       final activity = FakeActivityRepository(latency: Duration.zero);
-      final container = ProviderContainer(
+      final container = fakeContainer(
         overrides: [
           prayerRepositoryProvider.overrideWith(
             (ref) => FakePrayerRepository(latency: Duration.zero),

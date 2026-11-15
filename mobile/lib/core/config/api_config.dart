@@ -1,15 +1,14 @@
-/// Where the app finds the backend. Chosen at build time, never hard-coded:
+/// Where the app finds the backend. The production API is the default; point a
+/// build somewhere else (a staging server, your own machine) with:
 ///
 ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/v1        (Android emulator -> your Mac)
 ///   flutter run --dart-define=API_BASE_URL=http://localhost:4000/v1       (iOS simulator)
-///   flutter build apk --dart-define=API_BASE_URL=https://apis.focusuganda.org/v1
-///
-/// With no value the app runs on its built-in fake data (this is what the
-/// tests and the offline demo use).
+///   flutter build apk --dart-define=API_BASE_URL=https://staging-api.focusuganda.org/v1
 class ApiConfig {
   ApiConfig._();
 
-  static const baseUrl = String.fromEnvironment('API_BASE_URL');
-
-  static bool get useRemote => baseUrl.isNotEmpty;
+  static const baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://apis.focusuganda.org/v1',
+  );
 }
