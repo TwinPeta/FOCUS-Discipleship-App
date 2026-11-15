@@ -193,3 +193,13 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | 6 | ETag/`If-None-Match` is supported by the server but not used by the app. Realtime is now used (section 6) | app | add ETags when tuning for slow connections |
 | 6b | The message `Idempotency-Key` is built from the current time (`remote_messaging_repository.dart`), so a retried send gets a new key and can create a duplicate | app | generate the key once per message (like posts and prayer requests do) |
 | 7 | Roadmap v2 needs new endpoints that don't exist yet: questions and answers, search, resources in the General community, notification delivery (J1–J5). Push: the server stores device tokens but has no sender and there is no Firebase project, so phone notifications are local (from the socket, while the app runs) | backend | see `mobile/docs/roadmap_v2.md`; for push add a Firebase project, a sender, and a `FirebasePushTokenSource` in the app |
+
+### Join requests: backend gaps found 2026-11-15 (app side fixed in `8d63c87`)
+| # | Finding | Suggested fix |
+|---|---|---|
+| B1 | `POST /communities/:id/join-requests` does not notify the community's super-mentor at all (no notification type, no socket event). The app polls the pending list while Manage or Join requests is open, as a stopgap | add a `join_request_created` notification (+ socket event) to the super-mentor |
+| B2 | Back-office decisions (`api/src/admin/people.js` `decide`, including bulk approve) send the socket event but never call `notify()`: the student gets no notification or email | call the same notify as `POST /join-requests/:id/decision` |
+| B3 | `join_request.decided` goes only to a connected socket and is never replayed | fine as an optimisation; the app now also polls membership while pending |
+| B4 | A student who muted "join request updates" or turned in-app off gets no record of the decision (the socket event still arrives) | consider always recording decisions, or document it |
+| B5 | `GET /me/communities` gives a pending membership only as `membership_status`, without the request id; the app must call `GET /me/join-requests` to cancel | include `join_request_id` |
+
