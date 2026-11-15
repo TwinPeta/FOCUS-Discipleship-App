@@ -9,9 +9,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_mode_provider.dart';
 import '../../../core/utils/initials.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/app_secondary_button.dart';
+import '../../../core/widgets/bottom_sheet_scaffold.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/initials_avatar.dart';
@@ -58,6 +60,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(currentProfileProvider);
+    final themeMode = ref.watch(themeModeProvider);
     void open(String route) => unawaited(context.push(route));
 
     return AmberHeaderScaffold(
@@ -121,6 +124,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                SettingsRow(
+                  icon: Icons.contrast_rounded,
+                  title: 'Appearance',
+                  subtitle: themeModeLabel(themeMode),
+                  onTap: () => unawaited(showAppearanceSheet(context)),
+                ),
+                const SizedBox(height: 10),
                 for (final row in _rows) ...[
                   SettingsRow(
                     icon: row.icon,
@@ -157,12 +167,6 @@ typedef _Row = ({IconData icon, String title, String subtitle, String? route});
 
 const List<_Row> _rows = [
   (
-    icon: Icons.person_outline_rounded,
-    title: 'Edit profile',
-    subtitle: 'Photo, name, phone',
-    route: '/settings/profile',
-  ),
-  (
     icon: Icons.notifications_none_rounded,
     title: 'Notifications',
     subtitle: 'In-app and email',
@@ -187,6 +191,70 @@ const List<_Row> _rows = [
     route: '/help',
   ),
 ];
+
+/// The Appearance row's subtitle for [mode].
+String themeModeLabel(ThemeMode mode) => switch (mode) {
+  ThemeMode.light => 'Light',
+  ThemeMode.dark => 'Dark',
+  ThemeMode.system => 'System',
+};
+
+/// Appearance chooser (A1.6): Light, Dark or System, stored in
+/// [themeModeProvider]. Choosing one applies it and closes the sheet.
+Future<void> showAppearanceSheet(BuildContext context) =>
+    showAppBottomSheet<void>(context, builder: (_) => const _AppearanceSheet());
+
+class _AppearanceSheet extends ConsumerWidget {
+  const _AppearanceSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+    return BottomSheetScaffold(
+      title: 'Appearance',
+      children: [
+        RadioGroup<ThemeMode>(
+          groupValue: current,
+          onChanged: (mode) {
+            if (mode == null) return;
+            ref.read(themeModeProvider.notifier).set(mode);
+            Navigator.of(context).pop();
+          },
+          // Own Material so the tiles' ink shows over the white sheet.
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              children: [
+                for (final mode in const [
+                  ThemeMode.light,
+                  ThemeMode.dark,
+                  ThemeMode.system,
+                ])
+                  RadioListTile<ThemeMode>(
+                    value: mode,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: AppColors.ink,
+                    title: Text(
+                      themeModeLabel(mode),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: mode == ThemeMode.system
+                        ? Text(
+                            'Match this device',
+                            style: AppTextStyles.body.copyWith(fontSize: 12.5),
+                          )
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 /// A settings row: icon tile, title, subtitle, chevron. Shared by Settings
 /// (46) and Privacy & data (48).

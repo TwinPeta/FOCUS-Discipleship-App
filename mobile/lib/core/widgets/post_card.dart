@@ -157,20 +157,14 @@ class PostCard extends StatelessWidget {
             Wrap(
               spacing: 0,
               children: [
-                PostActionButton(
-                  icon: liked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  label: likeCount > 0 ? 'Like ($likeCount)' : 'Like',
-                  highlighted: liked,
+                PostActionButton.like(
+                  liked: liked,
+                  count: likeCount,
                   onTap: onLikeTap,
                 ),
                 const SizedBox(width: 18),
-                PostActionButton(
-                  icon: Icons.mode_comment_outlined,
-                  label: commentCount > 0
-                      ? 'Comment ($commentCount)'
-                      : 'Comment',
+                PostActionButton.comment(
+                  count: commentCount,
                   onTap: onCommentTap,
                 ),
               ],
@@ -182,21 +176,62 @@ class PostCard extends StatelessWidget {
   }
 }
 
-/// The 44px icon + label buttons under a post (like, comment). Inactive
-/// when [onTap] is null.
+/// The 44px icon + count buttons under a post (like, comment). The row shows
+/// only the icon and the number; screen readers get the words through
+/// [semanticLabel] (for example "Like, 24 likes"). Inactive when [onTap] is
+/// null.
 class PostActionButton extends StatelessWidget {
   const PostActionButton({
     super.key,
     required this.icon,
-    required this.label,
+    required this.count,
+    required this.semanticLabel,
     this.onTap,
     this.highlighted = false,
+    this.toggled,
   });
 
+  /// The like control: a filled heart when [liked].
+  PostActionButton.like({
+    Key? key,
+    required bool liked,
+    required int count,
+    VoidCallback? onTap,
+  }) : this(
+         key: key,
+         icon: liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+         count: count,
+         semanticLabel: 'Like, ${countLabel(count, 'like')}',
+         highlighted: liked,
+         toggled: liked,
+         onTap: onTap,
+       );
+
+  /// The comments control.
+  const PostActionButton.comment({
+    Key? key,
+    required int count,
+    VoidCallback? onTap,
+  }) : this(
+         key: key,
+         icon: Icons.mode_comment_outlined,
+         count: count,
+         semanticLabel: 'Comments, $count',
+         onTap: onTap,
+       );
+
   final IconData icon;
-  final String label;
+  final int count;
+  final String semanticLabel;
   final VoidCallback? onTap;
   final bool highlighted;
+
+  /// Reported to screen readers as a toggle state when not null.
+  final bool? toggled;
+
+  /// "1 like", "24 likes".
+  static String countLabel(int n, String noun) =>
+      '$n $noun${n == 1 ? '' : 's'}';
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +239,8 @@ class PostActionButton extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onTap != null,
-      label: label,
+      toggled: toggled,
+      label: semanticLabel,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -219,7 +255,7 @@ class PostActionButton extends StatelessWidget {
                 Icon(icon, size: 18, color: color),
                 const SizedBox(width: 6),
                 Text(
-                  label,
+                  '$count',
                   style: AppTextStyles.body.copyWith(
                     fontSize: 12.5,
                     color: color,

@@ -6,7 +6,7 @@ import 'package:focus_1/features/community/domain/membership.dart';
 import '../support/app_harness.dart';
 
 /// Regression baseline for screens 1-5 at 390x844, rendered with the
-/// bundled Source Sans 3. Regenerate deliberately with:
+/// bundled Bricolage Grotesque. Regenerate deliberately with:
 ///   flutter test test/golden --update-goldens
 /// (Goldens are rasterised per platform; these were produced on Windows.)
 void main() {

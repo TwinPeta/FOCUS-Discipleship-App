@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core/push/push_service.dart';
 import 'core/realtime/realtime_bindings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,12 +18,12 @@ Future<void> main() async {
   runApp(const ProviderScope(child: FcuApp()));
 }
 
-/// Source Sans 3 ships in `assets/google_fonts/`; never fetch it at runtime.
+/// Bricolage Grotesque ships in `assets/fonts/` (declared in pubspec.yaml),
+/// so nothing is fetched at runtime. Registers its OFL licence.
 void configureFonts() {
-  GoogleFonts.config.allowRuntimeFetching = false;
   LicenseRegistry.addLicense(() async* {
-    final license = await rootBundle.loadString('assets/google_fonts/OFL.txt');
-    yield LicenseEntryWithLineBreaks(['google_fonts'], license);
+    final license = await rootBundle.loadString('assets/fonts/OFL.txt');
+    yield LicenseEntryWithLineBreaks(['Bricolage Grotesque'], license);
   });
 }
 
@@ -32,6 +32,7 @@ class FcuApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     // Live updates (realtime socket) and device registration; no-ops when
     // the API is off.
     ref.watch(realtimeBindingsProvider);
@@ -39,12 +40,17 @@ class FcuApp extends ConsumerWidget {
       title: 'FCU',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
       routerConfig: ref.watch(routerProvider),
-      // Every screen sits on amber, cream or white: dark status-bar icons.
+      // Light: every screen sits on amber, cream or white, so dark
+      // status-bar icons. Dark theme: light icons.
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.dark.copyWith(
-          statusBarColor: const Color(0x00000000),
-        ),
+        value:
+            (Theme.of(context).brightness == Brightness.dark
+                    ? SystemUiOverlayStyle.light
+                    : SystemUiOverlayStyle.dark)
+                .copyWith(statusBarColor: const Color(0x00000000)),
         child: child!,
       ),
     );

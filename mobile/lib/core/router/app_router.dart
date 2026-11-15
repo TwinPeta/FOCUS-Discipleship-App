@@ -27,6 +27,7 @@ import '../../features/feed/presentation/composer_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
 import '../../features/feed/presentation/post_detail_screen.dart';
 import '../../features/landing/presentation/landing_screen.dart';
+import '../../features/landing/presentation/video_player_screen.dart';
 import '../../features/learning/presentation/badge_earned_screen.dart';
 import '../../features/learning/presentation/devotional_screen.dart';
 import '../../features/learning/presentation/document_screen.dart';
@@ -59,6 +60,7 @@ import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/resources/presentation/resources_screen.dart';
+import '../../features/resources/presentation/general_resources_screen.dart';
 import '../../features/search/presentation/search_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
@@ -171,6 +173,13 @@ final List<RouteBase> appRoutes = [
     builder: (context, state) => const ForgotPasswordScreen(),
   ),
   GoRoute(path: '/charter', builder: (context, state) => const CharterScreen()),
+  GoRoute(
+    path: '/watch',
+    builder: (context, state) => VideoPlayerScreen(
+      url: state.uri.queryParameters['url'] ?? '',
+      title: state.uri.queryParameters['title'],
+    ),
+  ),
   for (final p in placeholderRoutes)
     GoRoute(
       path: p.path,
@@ -313,6 +322,11 @@ final List<RouteBase> appRoutes = [
         path: 'compose',
         builder: (context, state) =>
             const ComposerScreen(scope: PostScope.general),
+      ),
+      // "Learn": General community resources (no membership needed).
+      GoRoute(
+        path: 'resources',
+        builder: (context, state) => const GeneralResourcesScreen(),
       ),
     ],
   ),

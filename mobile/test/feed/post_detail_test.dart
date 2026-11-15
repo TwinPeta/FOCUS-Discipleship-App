@@ -129,7 +129,8 @@ void main() {
     expect(find.textContaining('Room 204'), findsOneWidget);
     expect(find.text('Peter Ssentongo'), findsNothing); // inside a rich text
     expect(find.textContaining('Peter Ssentongo'), findsOneWidget);
-    expect(find.text('2 comments'), findsOneWidget);
+    expect(find.bySemanticsLabel('Comments, 2'), findsOneWidget);
+    expect(find.text('2 comments'), findsNothing);
 
     final field = find.byType(TextField);
     expect(tester.widget<TextField>(field).enabled, isTrue);

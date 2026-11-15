@@ -66,6 +66,7 @@ const publicPaths = <String>{
   '/charter',
   '/help',
   '/loading',
+  '/watch',
 };
 
 bool isPublic(String path) =>

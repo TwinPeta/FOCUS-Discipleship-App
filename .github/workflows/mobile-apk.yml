@@ -16,6 +16,10 @@ concurrency:
   group: mobile-apk-${{ github.ref }}
   cancel-in-progress: true
 
+# Publishing a GitHub Release (in-app updates) needs write access to contents.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,8 +56,34 @@ jobs:
 
       # The app always talks to the real API (production by default). Set the repository variable API_BASE_URL
       # (e.g. a staging server) to build against a different one.
+      # Fixed signing key (repository secrets) so each new APK installs over
+      # the previous one. Without the secrets, the runner's throwaway debug
+      # key is used and testers must uninstall before updating.
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FCU_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/fcu.keystore"
+            echo "FCU_KEYSTORE_PATH=$RUNNER_TEMP/fcu.keystore" >> "$GITHUB_ENV"
+            echo "Using the fixed FCU signing key."
+          else
+            echo "::warning::FCU_KEYSTORE_BASE64 is not set; this APK is signed with a throwaway key and will not install over older builds."
+          fi
+
+      # The app always talks to the real API (production by default). Set the repository variable API_BASE_URL
+      # (e.g. a staging server) to build against a different one. The build number (run number) lets the
+      # app detect newer releases.
       - name: Build debug APK
-        run: flutter build apk --debug --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://apis.focusuganda.org/v1' }}
+        env:
+          FCU_KEYSTORE_PASSWORD: ${{ secrets.FCU_KEYSTORE_PASSWORD }}
+          FCU_KEY_ALIAS: ${{ secrets.FCU_KEY_ALIAS }}
+          FCU_KEY_PASSWORD: ${{ secrets.FCU_KEY_PASSWORD }}
+        run: >-
+          flutter build apk --debug
+          --build-number=${{ github.run_number }}
+          --dart-define=APP_BUILD_NUMBER=${{ github.run_number }}
+          --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://apis.focusuganda.org/v1' }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -62,3 +92,13 @@ jobs:
           path: mobile/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
           if-no-files-found: error
+
+      # Public download for testers and the app's "Update available" banner.
+      # Tag: android-build-<run number>; asset: fcu.apk.
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/fcu.apk"
+          gh release create "android-build-${{ github.run_number }}" "$RUNNER_TEMP/fcu.apk"             --repo "${{ github.repository }}"             --target "${{ github.sha }}"             --title "FCU Android test build ${{ github.run_number }}"             --notes "Debug build of ${{ github.sha }}. Install fcu.apk on Android; the app also offers updates from here."             --latest

@@ -19,7 +19,7 @@ subprojects {
 // flutter_plugin_android_lifecycle requires compileSdk 36+. Raise every
 // Android library to at least 36. Compile-time only: minSdk and targetSdk
 // (which devices can install the app) are unchanged.
-val minPluginCompileSdk = 36
+val minPluginCompileSdk = 37
 subprojects {
     afterEvaluate {
         extensions

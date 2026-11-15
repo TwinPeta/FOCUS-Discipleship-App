@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../domain/story_video.dart';
+import '../../../../core/utils/open_link.dart';
+import '../landing_card.dart';
 import '../providers/stories_provider.dart';
 import 'bold_style.dart';
 import 'student_face_painter.dart';
@@ -69,7 +70,7 @@ class StoriesSection extends ConsumerWidget {
                       const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     return _StoryCard(
-                      story: stories[index],
+                      card: LandingCard.forStory(index, stories[index]),
                       artBackground:
                           _artBackgrounds[index % _artBackgrounds.length],
                     );
@@ -85,15 +86,14 @@ class StoriesSection extends ConsumerWidget {
 }
 
 class _StoryCard extends StatelessWidget {
-  const _StoryCard({required this.story, required this.artBackground});
+  const _StoryCard({required this.card, required this.artBackground});
 
-  final StoryVideo story;
+  /// What the card shows and plays (see [LandingCard.forStory]).
+  final LandingCard card;
   final Color artBackground;
 
-  void _playTapped(BuildContext context) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Videos coming soon')));
-  }
+  void _playTapped(BuildContext context) =>
+      openVideo(context, card.url, title: card.title);
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +106,7 @@ class _StoryCard extends StatelessWidget {
         children: [
           Semantics(
             button: true,
-            label: 'Play video: ${story.quote}',
+            label: 'Play video: ${card.title}',
             child: GestureDetector(
               onTap: () => _playTapped(context),
               child: SizedBox(
@@ -116,6 +116,8 @@ class _StoryCard extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Container(color: artBackground),
+                    // The drawn art stays underneath: it shows while the
+                    // real thumbnail loads, and offline.
                     const Padding(
                       padding: EdgeInsets.all(24),
                       child: RepaintBoundary(
@@ -127,6 +129,16 @@ class _StoryCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (card.thumbnailUrl != null)
+                      Positioned.fill(
+                        child: Image.network(
+                          card.thumbnailUrl!,
+                          fit: BoxFit.cover,
+                          excludeFromSemantics: true,
+                          errorBuilder: (context, error, stack) =>
+                              const SizedBox.shrink(),
+                        ),
+                      ),
                     Container(
                       width: 52,
                       height: 52,
@@ -141,25 +153,29 @@ class _StoryCard extends StatelessWidget {
                         size: 28,
                       ),
                     ),
-                    Positioned(
-                      left: 10,
-                      top: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AppColors.ink, width: 1.5),
-                        ),
-                        child: Text(
-                          '[${story.duration}]',
-                          style: AppTextStyles.chip,
+                    if (card.duration != null)
+                      Positioned(
+                        left: 10,
+                        top: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppColors.ink,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            card.duration!,
+                            style: AppTextStyles.chip,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -171,7 +187,7 @@ class _StoryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  story.quote,
+                  card.title,
                   style: AppTextStyles.cardTitle.copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -181,7 +197,7 @@ class _StoryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${story.authorName} · ${story.institution}',
+                  card.subtitle,
                   style: AppTextStyles.body.copyWith(
                     fontSize: 13,
                     color: AppColors.inkDeemphasized80,
