@@ -7,6 +7,10 @@ const config = require('../config');
  * - not set, production -> logged as an error; callers are never blocked or failed by email problems
  */
 const outbox = [];
+/** The last sends and what happened to them, so staff can see a failure without server logs. */
+const recent = [];
+const mask = (to) => String(to).replace(/^(.).*(@.*)$/, '$1***$2');
+function record(entry) { recent.unshift({ at: new Date().toISOString(), ...entry }); recent.length = Math.min(recent.length, 20); }
 let client = null;
 /** Test hook: swap the Resend client. */
 const useClient = (c) => { client = c; };
@@ -47,6 +51,11 @@ const templates = {
     text: `Hello ${guardianName || ''},\n\n${minorName} signed up for FCU Student Community and is under 18, so we need a parent or guardian to confirm they may take part. Until then their account stays limited.\n\n${replyable ? 'Please reply to this email to give or decline your consent.' : `A member of the FOCUS team (${from}) will be in touch.`}`,
     html: layout('We need your consent', `<p>Hello ${esc(guardianName || '')},</p><p><strong>${esc(minorName)}</strong> signed up for FCU Student Community and is under 18, so we need a parent or guardian to confirm they may take part. Until then their account stays limited.</p><p>${replyable ? 'Please reply to this email to give or decline your consent.' : `A member of the FOCUS team (${esc(from)}) will be in touch.`}</p>`),
   }),
+  test: ({ by }) => ({
+    subject: 'FCU test email',
+    text: `This is a test email from the FCU back office${by ? `, sent by ${by}` : ''}. If you can read it, email delivery works.`,
+    html: layout('Email is working', `<p>This is a test email from the FCU back office${by ? `, sent by ${esc(by)}` : ''}. If you can read it, email delivery works.</p>`),
+  }),
   reminder: ({ name, from }) => ({
     subject: 'Checking in on you',
     text: `Hi ${name}, ${from} is checking in. We'd love to see you back in the community.`,
@@ -84,12 +93,19 @@ async function send(to, template, data) {
   const msg = { from: config.mailFrom, to, ...t, ...(config.mailReplyTo ? { replyTo: config.mailReplyTo } : {}) };
   if (config.env === 'test') { outbox.push({ template, ...msg }); return { id: 'test' }; }
   if (!config.resendApiKey) {
-    if (config.env === 'production') { console.error(`[mail] RESEND_API_KEY not set; dropped "${t.subject}"`); return null; }
+    if (config.env === 'production') { record({ template, to: mask(to), ok: false, error: 'RESEND_API_KEY is not set' }); console.error(`[mail] RESEND_API_KEY not set; dropped "${t.subject}"`); return null; }
     console.log(`[mail:dev] to=${to} subject="${t.subject}"\n${t.text}`);
     outbox.push({ template, ...msg });
     return { id: 'dev' };
   }
-  return deliver(msg);
+  try {
+    const out = await deliver(msg);
+    record({ template, to: mask(to), ok: true, id: out && out.id });
+    return out;
+  } catch (e) {
+    record({ template, to: mask(to), ok: false, error: e.message });
+    throw e;
+  }
 }
 
 // One at a time, at a steady pace: an announcement to a whole campus must not trip Resend's rate limit and lose emails.
@@ -102,6 +118,26 @@ function notify(to, template, data) {
     .then(() => wait(config.resendApiKey ? config.mailGapMs : 0));
 }
 
+/** What staff need to diagnose email: the settings that matter (never the key) and what recently happened. */
+function status() {
+  return {
+    configured: !!config.resendApiKey,
+    from: config.mailFrom,
+    replyTo: config.mailReplyTo || null,
+    backofficeUrl: config.backofficeUrl,
+    notificationEmails: config.notificationEmails,
+    problems: configProblems(),
+    recent: recent.slice(),
+  };
+}
+
+/** Sends a real test message and reports Resend's own answer (throws with its message on failure). */
+async function sendTest(to, by) {
+  const out = await send(to, 'test', { by });
+  if (!out) throw new Error('Email is not configured: RESEND_API_KEY is not set.');
+  return out;
+}
+
 /** Settings that would make real emails useless or wrong (links to localhost, an unverified sender). Logged at startup. */
 function configProblems(env = config) {
   const problems = [];
@@ -112,4 +148,4 @@ function configProblems(env = config) {
   return problems;
 }
 
-module.exports = { send, notify, deliver, useClient, configProblems, outbox, templates };
+module.exports = { send, notify, deliver, useClient, configProblems, status, sendTest, outbox, recent, templates };

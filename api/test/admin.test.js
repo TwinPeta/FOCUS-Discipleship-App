@@ -380,6 +380,37 @@ test('staff uploads: slot -> bytes -> complete -> permanent address that serves 
   assert.equal((await call('POST', '/media', { body: { purpose: 'cover_photo', content_type: 'image/png', size_bytes: 1 } })).status, 401);
 });
 
+// ───────── email diagnostics ─────────
+test('email diagnostics: status never shows the key, a test send reports success, and only a system admin may use them', async () => {
+  const sys = (await login('admin@fcu.test')).token;
+  const status = await call('GET', '/email/status', { token: sys });
+  assert.equal(status.status, 200);
+  assert.ok(Array.isArray(status.body.problems) && Array.isArray(status.body.recent));
+  assert.ok(!JSON.stringify(status.body).includes('re_'), 'no key in the response');
+  const sent = await call('POST', '/email/test', { token: sys, body: {} });
+  assert.equal(sent.status, 200);
+  assert.equal(sent.body.to, 'admin@fcu.test');
+  assert.equal(require('../src/services/mailer').outbox.at(-1).template, 'test');
+  assert.equal((await call('POST', '/email/test', { token: sys, body: { to: 'not-an-email' } })).status, 422);
+  const content = (await login('content@fcu.test')).token;
+  assert.equal((await call('GET', '/email/status', { token: content })).status, 403);
+  assert.equal((await call('POST', '/email/test', { token: content, body: {} })).status, 403);
+  // a failing provider is spelled out (502 with the provider's own message), and recorded for later
+  const config = require('../src/config'); const mailer = require('../src/services/mailer');
+  const env = config.env; const key = config.resendApiKey;
+  config.env = 'development'; config.resendApiKey = 're_fake';
+  mailer.useClient({ emails: { send: async () => ({ data: null, error: { message: 'The akarocloud.org domain is not verified', statusCode: 403 } }) } });
+  try {
+    const failed = await call('POST', '/email/test', { token: sys, body: { to: 'someone@example.com' } });
+    assert.equal(failed.status, 502);
+    assert.match(failed.body.detail, /not verified/);
+    const after = await call('GET', '/email/status', { token: sys });
+    assert.equal(after.body.recent[0].ok, false);
+    assert.match(after.body.recent[0].error, /not verified/);
+    assert.equal(after.body.recent[0].to, 's***@example.com', 'addresses are masked');
+  } finally { config.env = env; config.resendApiKey = key; mailer.useClient(null); }
+});
+
 test('zz every documented staff operation is exercised by a test', async () => {
   assert.deepEqual(contract.unexercised(spec), []);
 });

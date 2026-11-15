@@ -10,5 +10,6 @@ router.use('/', require('./people').router);
 router.use('/', require('./content').router);
 router.use('/', require('./governance').router);
 router.use('/', require('./media').router);
+router.use('/', require('./email').router);
 
 module.exports = router;

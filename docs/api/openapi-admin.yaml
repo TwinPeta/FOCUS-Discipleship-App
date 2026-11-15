@@ -84,6 +84,8 @@ tags:
     description: "The signed-in staff member: profile, password, sessions"
   - name: Media
     description: "File uploads for covers, thumbnails, videos, documents and story videos"
+  - name: Email
+    description: "Why email is (not) working: settings, recent sends, and a test message"
 paths:
   /auth/login:
     post:
@@ -1630,6 +1632,43 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
+  /email/status:
+    get:
+      tags: [Email]
+      operationId: getEmailStatus
+      summary: "Email settings (never the key) and what happened to the last sends"
+      description: "Roles: SYSTEM_ADMIN. `problems` lists settings that would break email (unverified sender, links to localhost); `recent` shows the last 20 sends with Resend's error when one failed."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailStatus' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /email/test:
+    post:
+      tags: [Email]
+      operationId: postEmailTest
+      summary: "Send a real test email and report Resend's own answer"
+      description: "Roles: SYSTEM_ADMIN. Sends to `to`, or to the signed-in administrator when omitted. On failure the problem's `detail` is the provider's message (wrong key, unverified sender...)."
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { to: { type: string, format: email } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmailTestResult' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
   /account/sessions:
     get:
       tags: [Account]
@@ -2021,6 +2060,35 @@ components:
         status: { type: string }
         url: { type: string }
       required: [media_id, status, url]
+    EmailStatus:
+      type: object
+      properties:
+        configured: { type: boolean }
+        from: { type: string }
+        replyTo: { type: [string, 'null'] }
+        backofficeUrl: { type: string }
+        notificationEmails: { type: boolean }
+        problems: { type: array, items: { type: string } }
+        recent:
+          type: array
+          items:
+            type: object
+            properties:
+              at: { type: string, format: date-time }
+              template: { type: string }
+              to: { type: string, description: "masked" }
+              ok: { type: boolean }
+              id: { type: string }
+              error: { type: string }
+            required: [at, template, to, ok]
+      required: [configured, from, replyTo, backofficeUrl, notificationEmails, problems, recent]
+    EmailTestResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        to: { type: string }
+        id: { type: [string, 'null'] }
+      required: [ok, to, id]
     SessionList:
       type: object
       properties:

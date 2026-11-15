@@ -10,6 +10,7 @@
 import { AuditNotice } from "@/components/common/AuditNotice";
 import { CharterForm } from "@/features/settings/components/CharterForm";
 import { ConsentTextsForm } from "@/features/settings/components/ConsentTextsForm";
+import { EmailDeliveryCard } from "@/features/settings/components/EmailDeliveryCard";
 import { MinorsForm } from "@/features/settings/components/MinorsForm";
 import { RetentionForm } from "@/features/settings/components/RetentionForm";
 
@@ -51,6 +52,13 @@ export default function SettingsPage() {
         <h2 className="text-base font-semibold text-foreground">Data retention</h2>
         <div className="mt-4">
           <RetentionForm />
+        </div>
+      </section>
+
+      <section className="rounded-card border border-border bg-white p-6">
+        <h2 className="text-base font-semibold text-foreground">Email delivery</h2>
+        <div className="mt-4">
+          <EmailDeliveryCard />
         </div>
       </section>
     </div>
