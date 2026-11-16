@@ -67,7 +67,7 @@ List<SectionMenuItem> communityMenuItems(
       label: 'Learn',
       icon: Icons.school_outlined,
       active: activePath == 'general/resources',
-      onSelected: () => context.push('/general-feed/resources'),
+      onSelected: () => context.go('/general-feed/resources'),
     ),
     if (communityId == null)
       SectionMenuItem(
