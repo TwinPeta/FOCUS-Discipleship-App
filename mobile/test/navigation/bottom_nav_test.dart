@@ -42,7 +42,7 @@ void main() {
     expect(path(), '/communities');
     expect(find.byType(AppBottomNav), findsOneWidget);
 
-    await _tapTab(tester, Icons.chat_bubble_outline_rounded);
+    await _tapTab(tester, Icons.chat_outlined);
     expect(path(), '/messages');
     expect(find.byType(AppBottomNav), findsOneWidget);
     expect(navText('Messages'), findsOneWidget);

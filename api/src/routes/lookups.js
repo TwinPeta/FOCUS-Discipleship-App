@@ -3,6 +3,11 @@ const store = require('../db/store');
 const { paginate } = require('../utils/pagination');
 const S = require('../utils/serialize');
 
+// What the app needs to know about how the back office is set up (read at start, no sign-in needed).
+router.get('/app-config', (_req, res) => {
+  res.json({ join_requests: { auto_approve: require('../utils/joinRequests').autoApproveOn() } });
+});
+
 router.get('/countries', (_req, res) => {
   res.json({
     items: [

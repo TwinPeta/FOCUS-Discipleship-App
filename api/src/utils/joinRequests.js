@@ -42,4 +42,7 @@ function decide(j, { approve, by = null, note = null }) {
   return j;
 }
 
-module.exports = { decide };
+/** Back office setting joinRequests.autoApprove (on unless staff switched it off). */
+const autoApproveOn = () => (store.first('settings', (s) => s.key === 'joinRequests')?.value || {}).autoApprove !== false;
+
+module.exports = { decide, autoApproveOn };

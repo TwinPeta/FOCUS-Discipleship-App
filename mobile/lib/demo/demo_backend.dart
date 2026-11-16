@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+
 import '../core/connectivity/connectivity_service.dart';
 import '../core/providers/repository_providers.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
@@ -11,6 +13,9 @@ import 'fakes.dart';
 /// real API); the tests start from here, and so does the web demo build
 /// (`DEMO_MODE`, see `demo_mode.dart`).
 List<Override> fakeBackend() => [
+  appConfigProvider.overrideWith(
+    (ref) async => const AppConfig(autoApproveJoin: false),
+  ),
   passwordSealProvider.overrideWith((ref) => fakePasswordDigest),
   authRepositoryProvider.overrideWith((ref) => FakeAuthRepository()),
   profileRepositoryProvider.overrideWith((ref) => FakeProfileRepository()),

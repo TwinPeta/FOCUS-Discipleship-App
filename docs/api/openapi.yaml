@@ -295,6 +295,29 @@ paths:
       responses:
         '204': { description: Logged out }
   # ───────────────────────── Lookups ─────────────────────────
+  /lookups/app-config:
+    get:
+      tags: [Lookups]
+      operationId: getAppConfig
+      summary: How the back office is set up, for the app
+      description: >-
+        `join_requests.auto_approve`: a request to join a specific community is approved at once (back office
+        Settings > Join requests; on by default). When false the app shows the "request pending" state.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [join_requests]
+                properties:
+                  join_requests:
+                    type: object
+                    required: [auto_approve]
+                    properties:
+                      auto_approve: { type: boolean }
   /lookups/countries:
     get:
       tags: [Lookups]

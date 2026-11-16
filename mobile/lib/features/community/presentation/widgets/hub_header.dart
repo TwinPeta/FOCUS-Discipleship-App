@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/count_badge.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 import '../../../notifications/presentation/notification_providers.dart';
+import '../../../messaging/presentation/providers/messaging_providers.dart';
 import '../../../profile/domain/user_profile.dart';
 
 /// Communities hub header (screen 3): "Welcome, Grace" (first name) with the
@@ -51,6 +52,8 @@ class HubHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              const _ChatsButton(),
+              const SizedBox(width: 8),
               const _NotificationBell(),
               const SizedBox(width: 10),
               Semantics(
@@ -83,17 +86,42 @@ class HubHeader extends StatelessWidget {
   }
 }
 
-/// 48px bell; a count badge when there are unread notifications. Opens
-/// Notifications (screen 44).
-class _NotificationBell extends ConsumerWidget {
-  const _NotificationBell();
+/// Chats, like WhatsApp: the number of unread messages across all
+/// conversations (each chat shows its own count in Messages).
+class _ChatsButton extends ConsumerWidget {
+  const _ChatsButton();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unread = ref.watch(unreadNotificationCountProvider);
+    final unread = ref.watch(unreadMessageCountProvider);
+    return _HeaderIconButton(
+      icon: Icons.chat_outlined,
+      label: unread == 0 ? 'Messages' : 'Messages, $unread unread',
+      count: unread,
+      onTap: () => context.go('/messages'),
+    );
+  }
+}
+
+/// 48px white circle with an icon and an optional count badge.
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: unread == 0 ? 'Notifications' : 'Notifications, $unread unread',
+      label: label,
       excludeSemantics: true,
       child: SizedBox(
         width: 48,
@@ -106,24 +134,36 @@ class _NotificationBell extends ConsumerWidget {
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: () => context.push('/notifications'),
-                child: Center(
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: AppColors.ink,
-                  ),
-                ),
+                onTap: onTap,
+                child: Center(child: Icon(icon, color: AppColors.ink)),
               ),
             ),
-            if (unread > 0)
+            if (count > 0)
               Positioned(
                 top: -4,
                 right: -4,
-                child: IgnorePointer(child: CountBadge(count: unread)),
+                child: IgnorePointer(child: CountBadge(count: count)),
               ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 48px bell; a count badge when there are unread notifications. Opens
+/// Notifications (screen 44).
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(unreadNotificationCountProvider);
+    return _HeaderIconButton(
+      icon: Icons.notifications_none_rounded,
+      label: unread == 0 ? 'Notifications' : 'Notifications, $unread unread',
+      count: unread,
+      onTap: () => context.push('/notifications'),
     );
   }
 }

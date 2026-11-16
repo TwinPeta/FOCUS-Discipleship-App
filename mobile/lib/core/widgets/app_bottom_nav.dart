@@ -10,6 +10,7 @@ import '../../features/messaging/presentation/providers/messaging_providers.dart
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
+import '../push/app_icon_badge.dart';
 import 'count_badge.dart';
 
 /// The four top-level destinations.
@@ -68,6 +69,9 @@ class AppBottomNav extends ConsumerWidget {
       ),
     );
     final unreadMessages = ref.watch(unreadMessageCountProvider);
+    // The phone's home-screen icon shows the same total (like WhatsApp).
+    // Skipped when the number has not changed.
+    updateAppIconBadge(unreadMessages);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -99,8 +103,8 @@ class AppBottomNav extends ConsumerWidget {
               const _CreateButton(),
               tab(
                 AppTab.messages,
-                Icons.chat_bubble_outline_rounded,
-                Icons.chat_bubble_rounded,
+                Icons.chat_outlined,
+                Icons.chat_rounded,
                 'Messages',
                 'Messages',
                 badge: unreadMessages,

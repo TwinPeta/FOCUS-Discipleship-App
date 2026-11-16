@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/config/app_config.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_primary_button.dart';
@@ -175,6 +177,7 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
                   ),
                 ),
                 _RequestBar(
+                  autoApprove: ref.watch(joinAutoApproveProvider),
                   isLoading: _isRequesting,
                   disabled: alreadyHasMembership,
                   onPressed: alreadyHasMembership ? null : _requestToJoin,
@@ -227,7 +230,11 @@ class _RequestBar extends StatelessWidget {
     required this.disabled,
     required this.onPressed,
     this.onCancel,
+    this.autoApprove = false,
   });
+
+  /// Joining is instant (back office auto-approval): "Join community".
+  final bool autoApprove;
 
   final bool isLoading;
   final bool disabled;
@@ -247,7 +254,7 @@ class _RequestBar extends StatelessWidget {
       child: Column(
         children: [
           AppPrimaryButton(
-            label: 'Request to join',
+            label: autoApprove ? 'Join community' : 'Request to join',
             isLoading: isLoading,
             onPressed: onPressed,
           ),
@@ -255,6 +262,9 @@ class _RequestBar extends StatelessWidget {
           Text(
             disabled
                 ? 'You already have a pending request or have joined a specific community.'
+                : autoApprove
+                ? 'You can join only one specific community. You join straight '
+                      'away.'
                 : 'You can join only one specific community. Your request goes to the '
                       'super-mentor for approval, and you will be notified.',
             style: AppTextStyles.fieldLabel.copyWith(

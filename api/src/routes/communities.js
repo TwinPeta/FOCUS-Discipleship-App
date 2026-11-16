@@ -93,8 +93,7 @@ router.post('/communities/:communityId/join-requests', (req, res, next) => {
     });
     // Auto-approval (back office setting joinRequests.autoApprove, on by default): approved straight away through the same
     // path as a super-mentor's approval, so the student is told the same way. Off: the super-mentors are emailed as before.
-    const autoApprove = (store.first('settings', (s) => s.key === 'joinRequests')?.value || {}).autoApprove !== false;
-    if (autoApprove) {
+    if (require('../utils/joinRequests').autoApproveOn()) {
       require('../utils/joinRequests').decide(jr, { approve: true, note: 'Approved automatically' });
     } else {
       require('../utils/notify').emailStaff(
