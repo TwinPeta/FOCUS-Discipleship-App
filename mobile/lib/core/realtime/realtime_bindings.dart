@@ -14,9 +14,8 @@ import '../push/push_service.dart';
 import '../router/app_router.dart';
 import 'realtime_client.dart';
 
-/// Live "online now" counts by community id, from `presence.updated`. No
-/// screen shows it: the community header has no online count (screen 14
-/// review).
+/// Live "online now" counts by community id, from `presence.updated`
+/// (shown on Info & members, screen 6).
 final liveOnlineCountsProvider = StateProvider<Map<String, int>>(
   (ref) => const {},
 );
@@ -85,6 +84,8 @@ void applyRealtimeEvent(Ref<Object?> ref, RealtimeEvent event) {
       if (id is String && count is int) {
         final counts = ref.read(liveOnlineCountsProvider.notifier);
         counts.state = {...counts.state, id: count};
+        // Who is online changed: reload that community's members.
+        ref.invalidate(communityMembersProvider(id));
       }
   }
 }
