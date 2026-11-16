@@ -22,7 +22,9 @@ import '../../messaging/domain/report.dart';
 import '../../messaging/presentation/content_report_screens.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/testimony.dart';
+import '../../feed/presentation/widgets/post_photo_view.dart';
 import 'providers/testimony_detail_providers.dart';
+import 'widgets/story_video.dart';
 
 /// Screen 53: Testimony (`/testimony/:id`). Others only ever open reviewed
 /// stories; a pending one opens only for its author.
@@ -109,11 +111,22 @@ class _Body extends ConsumerWidget {
                 '${t.authorName} · ${t.institution}',
                 style: AppTextStyles.bodyMedium,
               ),
-              const SizedBox(height: 14),
-              Text(
-                t.excerpt ?? 'This testimony is a video.',
-                style: AppTextStyles.body.copyWith(height: 1.6),
-              ),
+              if (t.videoUrl != null) ...[
+                const SizedBox(height: 14),
+                StoryVideo(testimony: t),
+              ],
+              if (t.excerpt case final text? when text.trim().isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(text, style: AppTextStyles.body.copyWith(height: 1.6)),
+              ],
+              for (final photo in t.photos)
+                if (postPhotoView(context, photo) case final image?) ...[
+                  const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+                    child: AspectRatio(aspectRatio: 4 / 3, child: image),
+                  ),
+                ],
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:focus_1/features/testimony/data/testimony_repository.dart';
 import 'package:focus_1/features/testimony/domain/testimony.dart';
+import 'package:focus_1/features/feed/domain/post.dart' show PostPhoto;
 
 class FakeTestimonyRepository implements TestimonyRepository {
   FakeTestimonyRepository({
@@ -32,6 +33,11 @@ class FakeTestimonyRepository implements TestimonyRepository {
         authorName: 'Patience Achieng',
         institution: 'Makerere University',
         duration: '1:50',
+        excerpt:
+            'In my first week I did not know anyone on campus. A friend '
+            'brought me to Growth Circle, and the people there became my '
+            'family away from home.',
+        videoUrl: 'https://example.test/stories/second-family.mp4',
         status: TestimonyStatus.reviewed,
         createdAt: now.subtract(const Duration(days: 3)),
       ),
@@ -47,6 +53,7 @@ class FakeTestimonyRepository implements TestimonyRepository {
         authorId: 'm-1',
         authorName: 'David Okello',
         institution: 'Makerere University',
+        photos: const [PostPhoto.art()],
         status: TestimonyStatus.reviewed,
         createdAt: now.subtract(const Duration(days: 10)),
       ),
@@ -82,7 +89,26 @@ class FakeTestimonyRepository implements TestimonyRepository {
     );
     final existing = list.where((t) => t.id == testimony.id).firstOrNull;
     if (existing != null) return existing;
-    final stored = testimony.withStatus(TestimonyStatus.pending);
+    final stored = Testimony(
+      id: testimony.id,
+      communityId: testimony.communityId,
+      type: attachments.videoPath != null
+          ? TestimonyType.video
+          : testimony.type,
+      title: testimony.title,
+      excerpt: testimony.excerpt,
+      authorId: testimony.authorId,
+      authorName: testimony.authorName,
+      institution: testimony.institution,
+      duration: testimony.duration,
+      status: TestimonyStatus.pending,
+      createdAt: testimony.createdAt,
+      videoUrl: attachments.videoPath,
+      photos: [
+        if (attachments.photoPath != null)
+          PostPhoto.file(attachments.photoPath!),
+      ],
+    );
     list.insert(0, stored);
     return stored;
   }
