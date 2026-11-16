@@ -212,7 +212,7 @@ test('feed, like, comment, idempotent post creation', async () => {
   assert.equal(c.status, 201);
 });
 
-test('posts: questions and anonymous posts (author hidden, still the owner's)', async () => {
+test('posts: questions and anonymous posts (author hidden, still marked as mine)', async () => {
   const token = await login('mentor@fcu.test');
   const other = await login('student@fcu.test');
   const q = await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'How do you keep a quiet time?', kind: 'question', anonymous: true } });
