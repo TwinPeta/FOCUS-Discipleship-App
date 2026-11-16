@@ -5,7 +5,6 @@ import 'widgets/feature_cards_section.dart';
 import 'widgets/final_cta_section.dart';
 import 'widgets/join_steps_section.dart';
 import 'widgets/landing_hero_section.dart';
-import 'widgets/marquee_strip.dart';
 import 'widgets/stories_section.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -38,7 +37,6 @@ class _LandingScreenState extends State<LandingScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             LandingHeroSection(onWatchStories: _scrollToStories),
-            const MarqueeStrip(),
             const FeatureCardsSection(),
             KeyedSubtree(key: _storiesKey, child: const StoriesSection()),
             const JoinStepsSection(),

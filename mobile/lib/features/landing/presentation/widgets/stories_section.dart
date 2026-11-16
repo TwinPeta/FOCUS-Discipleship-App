@@ -6,7 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/open_link.dart';
 import '../landing_card.dart';
 import '../providers/stories_provider.dart';
-import 'bold_style.dart';
+import '../../../../core/theme/app_shadows.dart';
 import 'student_face_painter.dart';
 
 const List<Color> _artBackgrounds = [
@@ -23,29 +23,30 @@ class StoriesSection extends ConsumerWidget {
     final storiesAsync = ref.watch(storiesProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 0, 12),
+      padding: const EdgeInsets.fromLTRB(0, 40, 0, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Hear it from students',
               style: AppTextStyles.landingSectionH2,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.only(right: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Short video stories from students like you.',
-              style: AppTextStyles.body,
+              style: AppTextStyles.body.copyWith(fontSize: 18),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           SizedBox(
-            // 250 art + text block; the text part grows with text scale.
-            height: 322 + MediaQuery.textScalerOf(context).scale(70),
+            // 230 art + text block, plus room for the cards' shadow; the
+            // text part grows with text scale.
+            height: 230 + 28 + 28 + MediaQuery.textScalerOf(context).scale(80),
             child: storiesAsync.when(
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.ink),
@@ -64,7 +65,7 @@ class StoriesSection extends ConsumerWidget {
                 }
                 return ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(right: 24),
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 22),
                   itemCount: stories.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(width: 16),
@@ -98,8 +99,12 @@ class _StoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 250,
-      decoration: boldCardDecoration(color: AppColors.white, radius: 24),
+      width: 238,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppShadows.lifted,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,8 +115,8 @@ class _StoryCard extends StatelessWidget {
             child: GestureDetector(
               onTap: () => _playTapped(context),
               child: SizedBox(
-                width: 250,
-                height: 250,
+                width: 238,
+                height: 230,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -119,10 +124,10 @@ class _StoryCard extends StatelessWidget {
                     // The drawn art stays underneath: it shows while the
                     // real thumbnail loads, and offline.
                     const Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: EdgeInsets.all(20),
                       child: RepaintBoundary(
                         child: CustomPaint(
-                          size: Size(202, 202),
+                          size: Size(190, 190),
                           painter: StudentFacePainter(
                             fillColor: AppColors.white,
                           ),
@@ -140,11 +145,18 @@ class _StoryCard extends StatelessWidget {
                         ),
                       ),
                     Container(
-                      width: 52,
-                      height: 52,
-                      decoration: const BoxDecoration(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
                         color: AppColors.white,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.ink.withValues(alpha: 0.25),
+                            offset: const Offset(0, 4),
+                            blurRadius: 14,
+                          ),
+                        ],
                       ),
                       alignment: Alignment.center,
                       child: const Icon(
@@ -155,20 +167,16 @@ class _StoryCard extends StatelessWidget {
                     ),
                     if (card.duration != null)
                       Positioned(
-                        left: 10,
-                        top: 10,
+                        left: 12,
+                        top: 12,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 10,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.white,
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: AppColors.ink,
-                              width: 1.5,
-                            ),
                           ),
                           child: Text(
                             card.duration!,
@@ -199,8 +207,9 @@ class _StoryCard extends StatelessWidget {
                 Text(
                   card.subtitle,
                   style: AppTextStyles.body.copyWith(
-                    fontSize: 13,
-                    color: AppColors.inkDeemphasized80,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.inkDeemphasized85,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

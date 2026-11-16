@@ -19,4 +19,14 @@ class AppShadows {
       blurRadius: 3,
     ),
   ];
+
+  /// Lifted soft shadow for the landing page's cards and white pills
+  /// (design: `0 8px 24px rgba(17,17,17,.10)`).
+  static List<BoxShadow> lifted = [
+    BoxShadow(
+      color: AppColors.ink.withValues(alpha: 0.10),
+      offset: const Offset(0, 8),
+      blurRadius: 24,
+    ),
+  ];
 }
