@@ -246,13 +246,16 @@ class ResendCodeRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    locked
-                        ? 'Try again in ${clock(secondsLeft)}'
-                        : 'New code in ${clock(secondsLeft)}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  // Wraps on narrow phones with large text.
+                  Flexible(
+                    child: Text(
+                      locked
+                          ? 'Try again in ${clock(secondsLeft)}'
+                          : 'New code in ${clock(secondsLeft)}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ],
