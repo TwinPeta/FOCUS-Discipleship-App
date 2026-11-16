@@ -42,10 +42,8 @@ void main() {
     expect(app.read(routerProvider).state.uri.path, '/general-feed');
     final general = await app.read(generalCommunityProvider.future);
     final posts = await app.read(
-      feedPostsProvider((
-        communityId: general.id,
-        scope: PostScope.general,
-      )).future,
+      feedPostsProvider((communityId: general.id, scope: PostScope.general))
+          .future,
     );
     final q = posts.firstWhere(
       (p) => p.body == 'How do you keep a quiet time?',

@@ -30,10 +30,17 @@ class PostCard extends StatelessWidget {
     this.onOpen,
     this.onMore,
     this.kindLabel,
+    this.kindIcon = Icons.help_outline_rounded,
+    this.isQuestion = false,
   });
 
-  /// "Question" chip above the text (null for a normal post).
+  /// Chip above the text: "Question", "Announcement" (null: none).
   final String? kindLabel;
+  final IconData kindIcon;
+
+  /// A question: the actions are "Answer" and the number of answers
+  /// (its comments) instead of like / comment.
+  final bool isQuestion;
 
   final String authorName;
   final String authorInitials;
@@ -123,11 +130,7 @@ class PostCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.help_outline_rounded,
-                    size: 16,
-                    color: AppColors.ink,
-                  ),
+                  Icon(kindIcon, size: 16, color: AppColors.ink),
                   const SizedBox(width: 4),
                   Text(
                     kindLabel!,
@@ -178,7 +181,37 @@ class PostCard extends StatelessWidget {
               ),
             ),
           ],
-          if (showActions) ...[
+          if (showActions && isQuestion) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 14,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    side: BorderSide(color: AppColors.inputBorder, width: 1.5),
+                    minimumSize: const Size(44, 40),
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: onCommentTap,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text(
+                    'Answer',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Text(
+                  PostActionButton.countLabel(commentCount, 'answer'),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.inkDeemphasized80,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ] else if (showActions) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 0,

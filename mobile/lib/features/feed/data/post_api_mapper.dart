@@ -51,6 +51,7 @@ Post postFromApi(
     kind: j['kind'] == 'question' ? PostKind.question : PostKind.post,
     anonymous: j['anonymous'] == true,
     isMine: j['is_mine'] == true,
+    pinned: j['pinned'] == true,
   );
 }
 

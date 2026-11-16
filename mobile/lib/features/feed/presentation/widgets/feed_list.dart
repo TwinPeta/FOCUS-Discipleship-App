@@ -98,7 +98,15 @@ class FeedList extends ConsumerWidget {
               key: ValueKey(post.id),
               authorName: post.displayName,
               authorInitials: post.displayInitials,
-              kindLabel: post.kind == PostKind.question ? 'Question' : null,
+              kindLabel: post.kind == PostKind.question
+                  ? 'Question'
+                  : post.pinned
+                  ? 'Announcement'
+                  : null,
+              kindIcon: post.kind == PostKind.question
+                  ? Icons.help_outline_rounded
+                  : Icons.campaign_outlined,
+              isQuestion: post.kind == PostKind.question,
               timestamp: formatRelativeTime(post.createdAt),
               body: post.body,
               roleBadgeLabel: post.roleLabel,

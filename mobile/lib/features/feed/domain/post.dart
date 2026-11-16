@@ -48,6 +48,7 @@ class Post {
     this.kind = PostKind.post,
     this.anonymous = false,
     this.isMine = false,
+    this.pinned = false,
   });
 
   final String id;
@@ -73,6 +74,9 @@ class Post {
   /// Written by the signed-in student (also when anonymous).
   final bool isMine;
 
+  /// Pinned by a leader: shown first, as an announcement.
+  final bool pinned;
+
   /// The name to show: "Anonymous" for anonymous posts.
   String get displayName => anonymous ? 'Anonymous' : author.name;
   String get displayInitials => anonymous ? '?' : author.initials;
@@ -93,6 +97,7 @@ class Post {
     PostKind? kind,
     bool? anonymous,
     bool? isMine,
+    bool? pinned,
   }) {
     return Post(
       id: id ?? this.id,
@@ -110,6 +115,7 @@ class Post {
       kind: kind ?? this.kind,
       anonymous: anonymous ?? this.anonymous,
       isMine: isMine ?? this.isMine,
+      pinned: pinned ?? this.pinned,
     );
   }
 }

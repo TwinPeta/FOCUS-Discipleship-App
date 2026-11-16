@@ -13,7 +13,6 @@ import '../../community/presentation/providers/community_providers.dart';
 import '../../community/presentation/providers/membership_provider.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../domain/post.dart';
-import 'widgets/compose_fab.dart';
 import 'widgets/composer_row.dart';
 import 'widgets/feed_list.dart';
 import '../../../core/theme/app_gradients.dart';
@@ -41,7 +40,6 @@ class GeneralFeedScreen extends ConsumerWidget {
         void compose() => context.push('/create?type=post&to=general');
 
         return GeneralShell(
-          floatingActionButton: ComposeFab(onPressed: compose),
           body: FeedList(
             feedKey: (communityId: community.id, scope: PostScope.general),
             onCompose: compose,
@@ -49,7 +47,7 @@ class GeneralFeedScreen extends ConsumerWidget {
               ComposerRow(
                 initials: profile?.initials ?? 'Y',
                 photoPath: profile?.photoPath,
-                onTap: compose,
+                target: 'general',
               ),
               if (!hasApprovedSpecific) const _FindCommunityPromo(),
             ],

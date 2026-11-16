@@ -13,6 +13,8 @@ import 'package:focus_1/features/profile/presentation/profile_providers.dart';
 import '../support/pump_utils.dart';
 import '../support/fake_backend.dart';
 
+import 'package:focus_1/core/utils/meeting_dates.dart';
+
 class _FakeMembershipController extends MembershipController {
   _FakeMembershipController(this.initial);
   final Membership initial;
