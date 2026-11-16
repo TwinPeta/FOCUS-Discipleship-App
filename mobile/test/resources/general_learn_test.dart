@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/presentation/providers/community_providers.dart';
@@ -18,11 +19,11 @@ void main() {
         await goTo(tester, container, '/general-feed');
         await settle(tester, steps: 20);
 
-        // The quick links scroll sideways; Learn is last.
-        final learn = find.text('Learn', skipOffstage: false);
+        // Learn is in the header's "⋯" sections menu.
+        await tester.tap(find.byIcon(Icons.more_horiz_rounded).first);
+        await settle(tester);
+        final learn = find.text('Learn');
         expect(learn, findsOneWidget);
-        await tester.ensureVisible(learn);
-        await tester.pump();
         await tester.tap(learn);
         await settle(tester, steps: 12);
 
