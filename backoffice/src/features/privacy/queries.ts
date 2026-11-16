@@ -15,8 +15,13 @@ import type {
 
 export interface GuardianConsentRecord {
   id: string;
+  userId?: string;
   studentName: string;
   guardianName: string;
+  /** As entered by the student in the app (screen 24). */
+  guardianRelationship?: string | null;
+  guardianPhone?: string | null;
+  guardianEmail?: string | null;
   guardianContact: string;
   status: GuardianConsentStatus;
   updatedAt: string;
@@ -46,6 +51,15 @@ export async function sendGuardianReminder(id: string): Promise<void> {
     method: "POST",
   });
   if (!res.ok) throw new Error("Failed to send reminder");
+}
+
+/** Records that the guardian agreed: lifts the minor's restrictions (audited). */
+export async function confirmGuardianConsent(id: string): Promise<GuardianConsentRecord> {
+  const res = await fetch(`/api/proxy/privacy/guardian-consents/${id}/confirm`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to confirm consent");
+  return (await res.json()) as GuardianConsentRecord;
 }
 
 export async function fetchDataRequests(): Promise<DataRequestRecord[]> {

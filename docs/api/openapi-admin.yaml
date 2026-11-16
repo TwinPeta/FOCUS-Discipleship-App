@@ -1258,6 +1258,23 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+  /privacy/guardian-consents/{id}/confirm:
+    post:
+      tags: [Privacy]
+      operationId: postPrivacyGuardianconsentsIdConfirm
+      summary: "Record that the guardian agreed (lifts the minor's restrictions; audited)"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GuardianConsent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /privacy/data-requests:
     get:
       tags: [Privacy]
@@ -2016,9 +2033,13 @@ components:
       properties:
         id: { type: string }
         studentName: { type: string }
+        userId: { type: string }
         guardianName: { type: string }
+        guardianRelationship: { type: [string, 'null'] }
+        guardianPhone: { type: [string, 'null'] }
+        guardianEmail: { type: [string, 'null'] }
         guardianContact: { type: string }
-        status: { type: string }
+        status: { type: string, enum: [PENDING, RECEIVED] }
         updatedAt: { type: string, format: date-time }
       required: [id]
     DataRequest:
@@ -2386,6 +2407,16 @@ components:
         birthdate: { type: [string, 'null'] }
         isMinor: { type: boolean }
         guardianConsentStatus: { type: [string, 'null'], enum: [PENDING, RECEIVED, null] }
+        guardian:
+          description: Minors only, the guardian entered in the app
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                name: { type: [string, 'null'] }
+                relationship: { type: [string, 'null'] }
+                phone: { type: [string, 'null'] }
+                email: { type: [string, 'null'] }
         role: { $ref: '#/components/schemas/Role' }
         status: { type: string, enum: [INVITED, ACTIVE, INACTIVE, SUSPENDED] }
         institutionId: { type: string }

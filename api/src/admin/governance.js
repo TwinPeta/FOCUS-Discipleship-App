@@ -145,9 +145,33 @@ router.post('/moderation/sanctions/:id/reinstate', C.allow(SYS), (req, res, next
 });
 
 // ───────── privacy ─────────
+// What the minor entered in the app (screen 24, PUT /me/guardian) wins over the staff-entered record.
+function guardianConsentDto(g) {
+  const u = store.get('users', g.userId) || {};
+  const gu = u.guardian || {};
+  const contact = [gu.phone, gu.email].filter(Boolean).join(' · ') || g.guardianContact;
+  const received = g.status === 'RECEIVED' || u.minorStatus === 'minor_consented';
+  return {
+    id: g.id, userId: g.userId, studentName: userName(g.userId),
+    guardianName: gu.name || g.guardianName || '—', guardianRelationship: gu.relationship || null,
+    guardianPhone: gu.phone || null, guardianEmail: gu.email || null, guardianContact: contact || '—',
+    status: received ? 'RECEIVED' : 'PENDING', updatedAt: g.updatedAt,
+  };
+}
 router.get('/privacy/guardian-consents', C.allow(SYS), (_req, res) => {
   store.col('users').filter((u) => !u.deletedAt && C.isMinor(u.birthdate)).forEach((u) => { if (!store.first('guardianConsents', (g) => g.userId === u.id)) store.insert('guardianConsents', { userId: u.id, guardianName: '', guardianContact: '', status: 'PENDING', updatedAt: store.now() }); });
-  res.json(C.list(store.col('guardianConsents').map((g) => ({ id: g.id, studentName: userName(g.userId), guardianName: g.guardianName || '—', guardianContact: g.guardianContact || '—', status: g.status, updatedAt: g.updatedAt }))));
+  res.json(C.list(store.col('guardianConsents').map(guardianConsentDto)));
+});
+// Staff record that the guardian agreed: the minor's account is no longer restricted (the app shows "confirmed").
+router.post('/privacy/guardian-consents/:id/confirm', C.allow(SYS), (req, res, next) => {
+  try {
+    const g = C.must('guardianConsents', req.params.id, 'Guardian consent');
+    const u = store.get('users', g.userId);
+    g.status = 'RECEIVED'; g.updatedAt = store.now(); g.confirmedBy = req.user.id;
+    if (u) u.minorStatus = 'minor_consented';
+    C.audit(req, 'guardian_consent_confirmed', `Guardian consent confirmed for ${userName(g.userId)}`);
+    res.json(guardianConsentDto(g));
+  } catch (e) { next(e); }
 });
 router.post('/privacy/guardian-consents/:id/remind', C.allow(SYS), (req, res, next) => {
   try {

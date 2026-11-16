@@ -34,8 +34,9 @@ class LabeledDropdown<T> extends StatelessWidget {
       children: [
         Text(label, style: AppTextStyles.fieldLabel),
         const SizedBox(height: 6),
-        SizedBox(
-          height: 46,
+        // At least 46 tall; grows with large text instead of clipping.
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 46),
           child: DropdownButtonFormField<T>(
             initialValue: value,
             isExpanded: true,

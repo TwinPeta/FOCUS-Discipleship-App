@@ -37,6 +37,13 @@ export interface Member {
   birthdate?: string | null;
   isMinor: boolean;
   guardianConsentStatus?: GuardianConsentStatus | null;
+  /** Minors: the guardian the student entered in the app (screen 24). */
+  guardian?: {
+    name: string | null;
+    relationship: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null;
   role: Role;
   status: MemberStatus;
   institutionId: string;

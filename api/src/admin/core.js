@@ -58,10 +58,13 @@ function memberDto(u) {
   const c = ms && store.get('communities', ms.communityId);
   const minor = isMinor(u.birthdate);
   const gc = minor && store.first('guardianConsents', (g) => g.userId === u.id);
+  const gu = (minor && u.guardian) || null;
   return {
     id: u.id, fullName: u.fullName, username: u.username, email: u.email, phone: u.phone || null,
     birthdate: u.birthdate || null, isMinor: minor,
-    guardianConsentStatus: minor ? (gc ? gc.status : 'PENDING') : null,
+    guardianConsentStatus: minor ? ((gc && gc.status === 'RECEIVED') || u.minorStatus === 'minor_consented' ? 'RECEIVED' : 'PENDING') : null,
+    // The guardian the minor entered in the app (screen 24).
+    guardian: gu ? { name: gu.name || null, relationship: gu.relationship || null, phone: gu.phone || null, email: gu.email || null } : null,
     role: roleOf(u), status: statusOf(u),
     institutionId: u.institutionId, institutionName: inst ? inst.name : '',
     communityId: c ? c.id : null, communityName: c ? c.name : null,

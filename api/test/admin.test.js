@@ -317,8 +317,19 @@ test('contract sweep: remaining staff operations return what the spec says', asy
   if (sanction) ok(await call('POST', `/moderation/sanctions/${sanction.id}/reinstate`, { ...S, body: { reason: 'Reviewed and reinstated' } }), 200);
 
   // privacy, audit, reports
-  const consent = store.first('guardianConsents', () => true);
-  if (consent) ok(await call('POST', `/privacy/guardian-consents/${consent.id}/remind`, S), 200, 204);
+  // A minor's guardian as entered in the app shows in the back office; staff confirm consent.
+  const minor = store.insert('users', { fullName: 'Young Sweep', username: 'youngsweep', email: 'young-sweep@fcu.test', passwordHash: 'x', birthdate: '2012-02-02', country: 'UG', institutionId: ctx.growth.institutionId, emailVerified: true, phoneVerified: false, verifiedMentor: false, platformRole: 'student', minorStatus: 'pending_guardian_consent', guardian: { name: 'Mary Sweep', relationship: 'Mother', phone: '+256700123456', email: 'mary@fcu.test' } });
+  const consents = await call('GET', '/privacy/guardian-consents', S);
+  const row = consents.body.items.find((g) => g.userId === minor.id);
+  assert.equal(row.guardianName, 'Mary Sweep');
+  assert.equal(row.guardianRelationship, 'Mother');
+  assert.equal(row.guardianEmail, 'mary@fcu.test');
+  assert.equal(row.status, 'PENDING');
+  ok(await call('POST', `/privacy/guardian-consents/${row.id}/remind`, S), 200, 204);
+  const confirmed = await call('POST', `/privacy/guardian-consents/${row.id}/confirm`, S);
+  ok(confirmed, 200);
+  assert.equal(confirmed.body.status, 'RECEIVED');
+  assert.equal(store.get('users', minor.id).minorStatus, 'minor_consented');
   ok(await call('POST', '/audit-log/export', { ...S, body: {} }), 200);
   ok(await call('POST', '/reports/export', { ...S, body: { reportType: 'community_health', format: 'csv' } }), 200, 501);
   ok(await call('GET', '/reports/schedules', S), 200);
