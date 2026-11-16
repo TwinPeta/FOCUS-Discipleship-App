@@ -344,6 +344,9 @@ test('media upload slot rejects bad type and oversize', async () => {
   const token = await login('student@fcu.test');
   assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'application/pdf', size_bytes: 10 } })).status, 422);
   assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/png', size_bytes: 99999999 } })).status, 422);
+  // Photos are capped at 2 MB (the app compresses to WebP first).
+  assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/webp', size_bytes: 2 * 1024 * 1024 + 1 } })).status, 422);
+  assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/webp', size_bytes: 2 * 1024 * 1024 } })).status, 201);
   // Story videos: at most 2 minutes, and the length must be given.
   const video = (seconds) => call('POST', '/v1/media', { token, body: { purpose: 'testimony_video', content_type: 'video/mp4', size_bytes: 1000, duration_seconds: seconds } });
   assert.equal((await video(150)).status, 422);

@@ -25,7 +25,7 @@ info:
     | Pagination | Cursor based. `?limit=` (default 20, max 100) and `?cursor=`. Responses carry `next_cursor`, `null` on the last page. |
     | Caching | `GET` responses carry a weak `ETag`; send `If-None-Match` to get `304 Not Modified` on slow connections. |
     | Idempotency | Send an `Idempotency-Key` header (any unique string, e.g. a UUID) on `POST`s that create content: posts, prayer requests, messages and reports. A retry with the same key and the same user returns the original response (header `Idempotent-Replay: true`) instead of creating a duplicate. Keys are remembered for 24 hours. |
-    | Uploads | `POST /media` returns a signed `upload_url`; `PUT` the file bytes to it with the returned `upload_headers`; attach the `media_id` to a post, testimony, report or profile. Photos only (JPEG, PNG, WebP, HEIC), 10 MB at most; the app compresses to about 2 MB first. |
+    | Uploads | `POST /media` returns a signed `upload_url`; `PUT` the file bytes to it with the returned `upload_headers`; attach the `media_id` to a post, testimony, report or profile. Photos only (JPEG, PNG, WebP, HEIC), 2 MB at most; the app converts them to WebP under 2 MB first. |
     | Realtime | Optional WebSocket at `/v1/realtime`. Everything it pushes is also available by polling the REST endpoints. |
 
     ## Errors
@@ -1677,7 +1677,7 @@ paths:
       description: |
         Returns a pre-signed `upload_url` (PUT the bytes there with the given headers) and a `media_id` to
         reference in other requests. Media is attached to content only after it passes malware/size checks.
-        Limits: images ≤ 10 MB, video ≤ 200 MB.
+        Limits: images ≤ 2 MB (the app sends WebP), video ≤ 200 MB.
       requestBody:
         required: true
         content:

@@ -6,12 +6,13 @@ import 'package:material_ui/material_ui.dart';
 import '../permissions/app_permissions.dart';
 import '../permissions/permission_prompt.dart';
 import '../widgets/error_snack.dart';
+import 'photo_compressor.dart';
 import 'upload_policy.dart';
 
-/// Picks one photo, compressed to [UploadPolicy.photoQuality] and resized to
-/// [UploadPolicy.photoMaxDimension], then checked against [UploadPolicy]
-/// (format and 2 MB). Returns null when cancelled or refused; a refusal
-/// shows the reason. Every photo upload in the app goes through here.
+/// Picks one photo (resized to [UploadPolicy.photoMaxDimension]), checks its
+/// format, then converts it to WebP under 2 MB with [PhotoCompressor].
+/// Returns null when cancelled or refused; a refusal shows the reason.
+/// Every photo upload in the app goes through here.
 ///
 /// First asks for the camera or photos permission (with a reason sheet, see
 /// [ensurePermission]); the web has no runtime permissions, so it skips that.
@@ -38,13 +39,22 @@ Future<XFile?> pickPhoto(
     imageQuality: UploadPolicy.photoQuality,
   );
   if (picked == null) return null;
-  final problem = UploadPolicy.checkPhoto(
-    name: picked.name,
-    bytes: await picked.length(),
-  );
-  if (problem != null) {
-    if (context.mounted) showErrorSnack(context, problem);
+  final format = UploadPolicy.checkPhotoFormat(picked.name);
+  if (format != null) {
+    if (context.mounted) showErrorSnack(context, format);
     return null;
   }
-  return picked;
+  // WebP, at most 2 MB: big photos are shrunk, not refused.
+  final compressed = await ref.read(photoCompressorProvider).toWebp(picked);
+  if (compressed == null) {
+    if (context.mounted) {
+      showErrorSnack(
+        context,
+        'That photo is too large even after compressing. '
+        'Please choose another one.',
+      );
+    }
+    return null;
+  }
+  return compressed;
 }

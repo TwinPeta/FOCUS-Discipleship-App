@@ -1947,7 +1947,7 @@ Reviewed by the FCU moderation team; community leaders get first-level visibilit
 
 Returns a pre-signed `upload_url` (PUT the bytes there with the given headers) and a `media_id` to
 reference in other requests. Media is attached to content only after it passes malware/size checks.
-Limits: images ≤ 10 MB, video ≤ 200 MB.
+Limits: images ≤ 2 MB (the app sends WebP), video ≤ 200 MB.
 
 - **Auth:** bearerAuth
 - **Operation id:** `createUpload`

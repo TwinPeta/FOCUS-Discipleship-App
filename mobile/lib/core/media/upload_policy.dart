@@ -6,7 +6,8 @@ class UploadPolicy {
   /// Common photo formats. Others (GIF, video, documents) are refused.
   static const photoExtensions = {'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'};
 
-  /// Hard limit per photo after compression.
+  /// Hard limit per photo after compression to WebP (the server checks it
+  /// too).
   static const maxPhotoBytes = 2 * 1024 * 1024;
 
   /// JPEG quality used when picking (80%).
@@ -45,11 +46,16 @@ class UploadPolicy {
     return dot == -1 ? '' : name.substring(dot + 1).toLowerCase();
   }
 
+  /// Null when the file is a photo we accept, otherwise the message.
+  static String? checkPhotoFormat(String name) =>
+      photoExtensions.contains(extensionOf(name))
+      ? null
+      : 'Please choose a photo (JPG, PNG, WebP or HEIC).';
+
   /// Null when the photo is acceptable, otherwise the message to show.
   static String? checkPhoto({required String name, required int bytes}) {
-    if (!photoExtensions.contains(extensionOf(name))) {
-      return 'Please choose a photo (JPG, PNG, WebP or HEIC).';
-    }
+    final format = checkPhotoFormat(name);
+    if (format != null) return format;
     if (bytes > maxPhotoBytes) {
       return 'That photo is too large. Please choose one under 2 MB.';
     }

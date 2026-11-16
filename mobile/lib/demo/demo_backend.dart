@@ -8,6 +8,9 @@ import '../features/auth/presentation/providers/auth_providers.dart';
 import '../features/learning/domain/playback_controller.dart';
 import 'fakes.dart';
 
+import 'package:focus_1/core/media/photo_compressor.dart';
+import 'package:focus_1/demo/fakes/photo_compressor.dart';
+
 /// Replaces the whole API-backed data layer with the in-memory doubles in
 /// `lib/demo/fakes/`. The normal app never uses this (it always talks to the
 /// real API); the tests start from here, and so does the web demo build
@@ -100,6 +103,7 @@ List<Override> fakeBackend() => [
     ),
   ),
   privacyRepositoryProvider.overrideWith((ref) => FakePrivacyRepository()),
+  photoCompressorProvider.overrideWithValue(const FakePhotoCompressor()),
   // Scripted playback: the position advances on a timer, nothing is downloaded.
   playbackFactoryProvider.overrideWith(
     (ref) =>

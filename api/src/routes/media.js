@@ -52,7 +52,8 @@ router.post('/', async (req, res, next) => {
     });
     const video = b.purpose === 'testimony_video';
     const okType = video ? VIDEO.test(b.content_type) : IMAGE.test(b.content_type);
-    const max = video ? 200 * MB : 10 * MB;
+    // Photos: the app sends WebP of at most 2 MB; anything bigger is refused.
+    const max = video ? 200 * MB : 2 * MB;
     const errs = [];
     if (!okType) errs.push({ field: 'content_type', message: video ? 'must be mp4, quicktime or webm' : 'must be jpeg, png, webp or heic' });
     if (b.size_bytes <= 0 || b.size_bytes > max) errs.push({ field: 'size_bytes', message: `must be between 1 byte and ${max / MB} MB` });
