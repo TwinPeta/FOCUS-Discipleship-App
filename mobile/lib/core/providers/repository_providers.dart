@@ -170,6 +170,7 @@ final testimonyRepositoryProvider = Provider<TestimonyRepository>(
     ref.watch(apiClientProvider),
     ref.watch(peopleDirectoryProvider),
     isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+    uploader: ref.watch(mediaUploaderProvider),
   ),
 );
 

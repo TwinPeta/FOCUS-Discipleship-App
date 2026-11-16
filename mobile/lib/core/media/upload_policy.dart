@@ -1,5 +1,5 @@
-/// What members can upload, in one place (storage is a small S3 bucket).
-/// For now: text, emojis and photos. No videos or documents.
+/// What members can upload, in one place (storage is a small S3 bucket):
+/// text, emojis, photos, and one short video on a story. No documents.
 class UploadPolicy {
   UploadPolicy._();
 
@@ -14,6 +14,27 @@ class UploadPolicy {
 
   /// Longest side after resizing, which keeps most photos far under 2 MB.
   static const photoMaxDimension = 1600.0;
+
+  /// Story videos: at most 2 minutes (the server checks it too) and 100 MB.
+  static const maxVideoDuration = Duration(minutes: 2);
+  static const maxVideoBytes = 100 * 1024 * 1024;
+
+  /// Null when the video is acceptable, otherwise the message to show.
+  /// [length] is null when it could not be measured.
+  static String? checkVideo({required int bytes, required Duration? length}) {
+    if (length == null) {
+      return 'We could not read that video. Please choose another one.';
+    }
+    if (length > maxVideoDuration) {
+      final s = length.inSeconds;
+      return 'Videos can be at most 2 minutes. This one is '
+          '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}.';
+    }
+    if (bytes > maxVideoBytes) {
+      return 'That video is too large. Please choose one under 100 MB.';
+    }
+    return null;
+  }
 
   /// Text limits (emojis included).
   static const maxPostChars = 2000;

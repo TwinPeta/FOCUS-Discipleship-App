@@ -179,7 +179,7 @@ class _VideoTestimonyCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          '[${testimony.duration}]',
+                          testimony.duration!,
                           style: AppTextStyles.chip,
                         ),
                       ),

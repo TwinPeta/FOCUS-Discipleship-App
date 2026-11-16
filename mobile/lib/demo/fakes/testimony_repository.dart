@@ -31,7 +31,7 @@ class FakeTestimonyRepository implements TestimonyRepository {
         authorId: 'student-2',
         authorName: 'Patience Achieng',
         institution: 'Makerere University',
-        duration: '2:10',
+        duration: '1:50',
         status: TestimonyStatus.reviewed,
         createdAt: now.subtract(const Duration(days: 3)),
       ),
@@ -71,7 +71,10 @@ class FakeTestimonyRepository implements TestimonyRepository {
   }
 
   @override
-  Future<Testimony> submitStory(Testimony testimony) async {
+  Future<Testimony> submitStory(
+    Testimony testimony, {
+    StoryAttachments attachments = StoryAttachments.none,
+  }) async {
     await Future.delayed(latency);
     final list = _byCommunity.putIfAbsent(
       testimony.communityId,

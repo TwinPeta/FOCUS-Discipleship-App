@@ -1664,6 +1664,7 @@ paths:
                 purpose: { type: string, enum: [profile_photo, post_photo, testimony_photo, testimony_video, report_evidence] }
                 content_type: { type: string, example: image/jpeg }
                 size_bytes: { type: integer }
+                duration_seconds: { type: number, maximum: 120, description: 'Required for testimony_video: story videos are at most 2 minutes' }
       responses:
         '201':
           description: OK

@@ -1994,8 +1994,10 @@ components:
         authorName: { type: string }
         communityId: { type: string }
         communityName: { type: string }
+        title: { type: string }
         story: { type: string }
-        videoUrl: {}
+        photoUrls: { type: array, items: { type: string } }
+        videoUrl: { type: [string, 'null'] }
         studentAgreement: { type: boolean }
         notes: {}
         status: { type: string }

@@ -68,8 +68,18 @@ router.post('/moderation/reports/:id/action', C.allow(SYS, SM), (req, res, next)
 
 // ───────── moderation: testimonies ─────────
 const TEST_STATUS = { pending_review: 'PENDING', published: 'APPROVED', changes_requested: 'CHANGES_REQUESTED', rejected: 'REJECTED' };
+// What reviewers see: the title, the story and what is attached (photos, video).
+function testMedia(t) {
+  const { mediaUrl } = require('../utils/serialize');
+  const items = (t.mediaIds || []).map((id) => store.get('media', id)).filter(Boolean);
+  return {
+    photoUrls: items.filter((m) => m.contentType.startsWith('image')).map(mediaUrl),
+    videoUrl: items.filter((m) => m.contentType.startsWith('video')).map(mediaUrl)[0] || null,
+  };
+}
 const testDto = (t) => ({
-  id: t.id, authorName: userName(t.authorId), communityId: t.communityId, communityName: comm(t.communityId)?.name || '', story: t.body, videoUrl: null,
+  id: t.id, authorName: userName(t.authorId), communityId: t.communityId, communityName: comm(t.communityId)?.name || '',
+  title: t.title || '', story: t.body, ...testMedia(t),
   studentAgreement: true, notes: t.reviewNotes || null, status: TEST_STATUS[t.status] || 'PENDING', createdAt: t.createdAt,
 });
 router.get('/moderation/testimonies', C.allow(SYS, SM), (req, res) => {
@@ -91,7 +101,7 @@ router.post('/moderation/testimonies/:id/review', C.allow(SYS, SM), (req, res, n
     // The student hears the outcome: published (staff-editable wording), or what to change and why.
     const { notify } = require('../utils/notify');
     if (b.action === 'APPROVE') {
-      notify(t.authorId, 'announcement', { title: 'Your story is live', targetRoute: '/notifications', rule: 'testimony_published', vars: { community_name: comm(t.communityId)?.name, item_title: t.title } });
+      notify(t.authorId, 'announcement', { title: 'Your story is live', targetRoute: `/testimony/${t.id}`, rule: 'testimony_published', vars: { community_name: comm(t.communityId)?.name, item_title: t.title } });
     } else {
       notify(t.authorId, 'announcement', { title: b.action === 'REJECT' ? 'About your story' : 'Your story needs a change', body: b.notes, targetRoute: '/notifications' });
     }

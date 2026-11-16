@@ -29,6 +29,8 @@ import '../../prayer/presentation/providers/prayer_providers.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../../testimony/domain/testimony.dart';
 import '../../testimony/presentation/providers/testimony_providers.dart';
+import '../../../core/media/video_picker.dart';
+import '../../testimony/data/testimony_repository.dart';
 
 /// What can be created from the + button (screen 66 and the Create screens).
 enum CreateType {
@@ -49,8 +51,11 @@ enum CreateType {
   /// the name: they are testimonies, published with their author.
   bool get canBeAnonymous => this != story;
 
-  /// Photos go with posts only.
-  bool get canHavePhoto => this == post;
+  /// A photo with posts and stories.
+  bool get canHavePhoto => this == post || this == story;
+
+  /// A short video (at most 2 minutes) with stories.
+  bool get canHaveVideo => this == story;
 
   static CreateType parse(String? value) => CreateType.values.firstWhere(
     (t) => t.name == value,
@@ -88,6 +93,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   bool _anonymous = false;
   bool _consent = false;
   String? _photo;
+  PickedVideo? _video;
   bool _sending = false;
 
   @override
@@ -121,7 +127,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   bool get _hasContent =>
       _text.text.trim().isNotEmpty ||
       _title.text.trim().isNotEmpty ||
-      _photo != null;
+      _photo != null ||
+      _video != null;
 
   bool get _ready {
     if (_sending) return false;
@@ -231,6 +238,11 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
           await ref
               .read(testimoniesProvider(communityId).notifier)
               .submitStory(
+                attachments: StoryAttachments(
+                  photoPath: _photo,
+                  videoPath: _video?.path,
+                  videoLength: _video?.duration,
+                ),
                 Testimony(
                   id: 'testimony-${now.microsecondsSinceEpoch}',
                   communityId: communityId,
@@ -383,6 +395,19 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                           }
                         },
                         onRemove: () => setState(() => _photo = null),
+                      ),
+                    ],
+                    if (_type.canHaveVideo) ...[
+                      const SizedBox(height: 10),
+                      _VideoRow(
+                        video: _video,
+                        onPick: () async {
+                          final picked = await pickVideo(context, ref);
+                          if (picked != null && mounted) {
+                            setState(() => _video = picked);
+                          }
+                        },
+                        onRemove: () => setState(() => _video = null),
                       ),
                     ],
                     if (_type.canBeAnonymous) ...[
@@ -786,4 +811,66 @@ class _Note extends StatelessWidget {
       color: AppColors.inkDeemphasized80,
     ),
   );
+}
+
+/// "Add a video (up to 2 minutes)", or the chosen video's length with a
+/// remove button.
+class _VideoRow extends StatelessWidget {
+  const _VideoRow({
+    required this.video,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final PickedVideo? video;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = video;
+    if (v == null) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.ink,
+            side: BorderSide(color: AppColors.inputBorder, width: 1.5),
+            minimumSize: const Size(44, 44),
+            shape: const StadiumBorder(),
+          ),
+          onPressed: onPick,
+          icon: const Icon(Icons.videocam_outlined),
+          label: const Text('Add a video (up to 2 minutes)'),
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.play_circle_outline_rounded, color: AppColors.ink),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Video · ${v.lengthLabel}',
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          RoundIconButton(
+            icon: Icons.close_rounded,
+            semanticLabel: 'Remove video',
+            size: 40,
+            onPressed: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
 }
