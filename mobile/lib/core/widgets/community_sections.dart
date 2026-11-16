@@ -31,8 +31,10 @@ const communitySections = [
 List<CommunitySection> get communityTabSections =>
     communitySections.where((s) => s.tab).toList();
 
-/// The "⋯" menu: General, then (when the student has a specific community)
-/// each of its sections. [activePath] is 'general', a section path, or null.
+/// The "⋯" menu: the General community (feed, prayer wall, testimonies,
+/// Learn), then (when the student has a specific community) each of its
+/// sections. [activePath] is 'general', 'general/prayer', ..., or a
+/// community section path.
 /// [goTab] switches a shell tab in place when given; otherwise sections are
 /// opened by route.
 List<SectionMenuItem> communityMenuItems(
@@ -48,6 +50,24 @@ List<SectionMenuItem> communityMenuItems(
       icon: Icons.public_rounded,
       active: activePath == 'general',
       onSelected: () => context.go('/general-feed'),
+    ),
+    SectionMenuItem(
+      label: 'General prayer wall',
+      icon: Icons.volunteer_activism_outlined,
+      active: activePath == 'general/prayer',
+      onSelected: () => context.go('/general-feed/prayer'),
+    ),
+    SectionMenuItem(
+      label: 'General testimonies',
+      icon: Icons.auto_awesome_outlined,
+      active: activePath == 'general/testimonies',
+      onSelected: () => context.go('/general-feed/testimonies'),
+    ),
+    SectionMenuItem(
+      label: 'Learn',
+      icon: Icons.school_outlined,
+      active: activePath == 'general/resources',
+      onSelected: () => context.push('/general-feed/resources'),
     ),
     if (communityId == null)
       SectionMenuItem(

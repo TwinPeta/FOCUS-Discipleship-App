@@ -28,9 +28,21 @@ import 'providers/prayer_providers.dart';
 
 /// Screen 14: Prayer wall tab inside [CommunityShell].
 class PrayerWallScreen extends ConsumerWidget {
-  const PrayerWallScreen({super.key, required this.communityId});
+  const PrayerWallScreen({
+    super.key,
+    required this.communityId,
+    this.createTarget,
+    this.backRoute,
+  });
 
   final String communityId;
+
+  /// Where "Share a request" posts: 'general' or a community id (default
+  /// [communityId]).
+  final String? createTarget;
+
+  /// Where a report flow returns (default the community's prayer tab).
+  final String? backRoute;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,7 +59,8 @@ class PrayerWallScreen extends ConsumerWidget {
     final requests = requestsAsync.valueOrNull ?? const <PrayerRequest>[];
     // Offline: sharing and "I prayed" are disabled, not hidden (screen 56).
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
-    void newRequest() => context.push('/community/$communityId/prayer/new');
+    void newRequest() =>
+        context.push('/create?type=prayer&to=${createTarget ?? communityId}');
 
     Future<void> onPrayed(PrayerRequest request) async {
       try {
@@ -118,7 +131,7 @@ class PrayerWallScreen extends ConsumerWidget {
                             : request.authorName,
                         communityId: communityId,
                         preview: request.body,
-                        back: '/community/$communityId/prayer',
+                        back: backRoute ?? '/community/$communityId/prayer',
                       ),
                     ),
             ),

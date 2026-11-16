@@ -29,7 +29,11 @@ class PostCard extends StatelessWidget {
     this.photo,
     this.onOpen,
     this.onMore,
+    this.kindLabel,
   });
+
+  /// "Question" chip above the text (null for a normal post).
+  final String? kindLabel;
 
   final String authorName;
   final String authorInitials;
@@ -108,6 +112,31 @@ class PostCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (kindLabel != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.honey,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.help_outline_rounded,
+                    size: 16,
+                    color: AppColors.ink,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    kindLabel!,
+                    style: AppTextStyles.chip.copyWith(color: AppColors.ink),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (photo != null) ...[
             const SizedBox(height: 10),
             Semantics(

@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_secondary_button.dart';
-import '../../../core/widgets/filter_chips.dart';
 import '../../../core/widgets/general_shell.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/states/skeleton.dart';
@@ -39,7 +38,7 @@ class GeneralFeedScreen extends ConsumerWidget {
         final hasApprovedSpecific =
             membership.status == MembershipStatus.approved &&
             membership.communityId != null;
-        void compose() => context.push('/general-feed/compose');
+        void compose() => context.push('/create?type=post&to=general');
 
         return GeneralShell(
           floatingActionButton: ComposeFab(onPressed: compose),
@@ -52,56 +51,10 @@ class GeneralFeedScreen extends ConsumerWidget {
                 photoPath: profile?.photoPath,
                 onTap: compose,
               ),
-              _QuickLinks(
-                circleId: hasApprovedSpecific ? membership.communityId : null,
-              ),
               if (!hasApprovedSpecific) const _FindCommunityPromo(),
             ],
           ),
         );
-      },
-    );
-  }
-}
-
-/// Home quick links: General · your circle · Prayer wall · Testimonies ·
-/// Learn. The circle, Prayer wall and Testimonies links need an approved
-/// specific community ([circleId]); Learn (General resources) does not.
-class _QuickLinks extends ConsumerWidget {
-  const _QuickLinks({required this.circleId});
-
-  final String? circleId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final circle = circleId;
-    final circleName = circle == null
-        ? null
-        : ref.watch(communityByIdProvider(circle)).valueOrNull?.name;
-    final links = <(String, String?)>[
-      ('General', null),
-      if (circle != null) ...[
-        (circleName ?? 'My circle', '/community/$circle/feed'),
-        ('Prayer wall', '/community/$circle/prayer'),
-        ('Testimonies', '/community/$circle/testimonies'),
-      ],
-      ('Learn', '/general-feed/resources'),
-    ];
-    return FilterChips<String?>(
-      options: [
-        for (final (label, route) in links)
-          FilterChipOption(label: label, value: route),
-      ],
-      // "General" (this screen) is the selected link.
-      value: null,
-      onChanged: (route) {
-        if (route == null) return;
-        // Scope switches replace the screen; Learn sits on top of it.
-        if (route.startsWith('/general-feed/')) {
-          context.push(route);
-        } else {
-          context.go(route);
-        }
       },
     );
   }

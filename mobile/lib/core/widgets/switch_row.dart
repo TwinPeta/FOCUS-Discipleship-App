@@ -53,9 +53,13 @@ class SwitchRow extends StatelessWidget {
                 Switch(
                   value: value,
                   onChanged: onChanged,
-                  activeThumbColor: AppColors.white,
+                  // A white knob on gold reads as "on" in both themes; off
+                  // is a muted knob on a plain track.
+                  activeThumbColor: const Color(0xFFFFFFFF),
                   activeTrackColor: AppColors.amber,
-                  inactiveThumbColor: AppColors.white,
+                  inactiveThumbColor: AppColors.isDark
+                      ? AppColors.placeholder
+                      : AppColors.white,
                   inactiveTrackColor: AppColors.skeletonBlock,
                   trackOutlineColor: WidgetStatePropertyAll(
                     AppColors.inputBorder,

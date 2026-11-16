@@ -104,6 +104,8 @@ class RemotePostRepository implements PostRepository {
         body: {
           'text': post.body,
           if (mediaIds.isNotEmpty) 'media_ids': mediaIds,
+          if (post.kind == PostKind.question) 'kind': 'question',
+          if (post.anonymous) 'anonymous': true,
         },
       ),
     );

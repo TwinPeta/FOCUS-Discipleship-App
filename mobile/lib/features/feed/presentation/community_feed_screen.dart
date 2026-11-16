@@ -17,7 +17,7 @@ class CommunityFeedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
-    void compose() => context.push('/community/$communityId/compose');
+    void compose() => context.push('/create?type=post&to=$communityId');
 
     return Stack(
       children: [

@@ -28,6 +28,9 @@ class PostPhoto {
   final bool isArt;
 }
 
+/// A post, or a question the community answers in the comments.
+enum PostKind { post, question }
+
 class Post {
   const Post({
     required this.id,
@@ -42,6 +45,9 @@ class Post {
     this.likeCount = 0,
     this.likedByMe = false,
     this.commentCount = 0,
+    this.kind = PostKind.post,
+    this.anonymous = false,
+    this.isMine = false,
   });
 
   final String id;
@@ -59,6 +65,17 @@ class Post {
   final int likeCount;
   final bool likedByMe;
   final int commentCount;
+  final PostKind kind;
+
+  /// Shown as "Anonymous" to everyone (moderators can still see who).
+  final bool anonymous;
+
+  /// Written by the signed-in student (also when anonymous).
+  final bool isMine;
+
+  /// The name to show: "Anonymous" for anonymous posts.
+  String get displayName => anonymous ? 'Anonymous' : author.name;
+  String get displayInitials => anonymous ? '?' : author.initials;
 
   Post copyWith({
     String? id,
@@ -73,6 +90,9 @@ class Post {
     int? likeCount,
     bool? likedByMe,
     int? commentCount,
+    PostKind? kind,
+    bool? anonymous,
+    bool? isMine,
   }) {
     return Post(
       id: id ?? this.id,
@@ -87,6 +107,9 @@ class Post {
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
       commentCount: commentCount ?? this.commentCount,
+      kind: kind ?? this.kind,
+      anonymous: anonymous ?? this.anonymous,
+      isMine: isMine ?? this.isMine,
     );
   }
 }

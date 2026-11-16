@@ -38,7 +38,7 @@ const _legs = <(String, String)>[
   ('/profile', '/profile/edit'),
   ('/profile', '/settings'),
   ('/profile', '/settings/profile'),
-  (_feed, '/community/growth-circle/compose'),
+  (_feed, '/create?type=post&to=growth-circle'),
   (_feed, '/post/growth-circle-post-1'),
   (_feed, '/messages'),
   ('/post/growth-circle-post-1', '/members/sm-1'),
@@ -46,11 +46,11 @@ const _legs = <(String, String)>[
     '/post/growth-circle-post-1',
     '/report/post/growth-circle-post-1?name=Grace%20Namuli&back=%2Fcommunity%2Fgrowth-circle%2Ffeed',
   ),
-  ('/community/growth-circle/prayer', '/community/growth-circle/prayer/new'),
+  ('/community/growth-circle/prayer', '/create?type=prayer&to=growth-circle'),
   ('/community/growth-circle/prayer', '/prayer/growth-circle-prayer-1'),
   (
     '/community/growth-circle/testimonies',
-    '/community/growth-circle/testimonies/new',
+    '/create?type=story&to=growth-circle',
   ),
   (
     '/community/growth-circle/testimonies',
@@ -69,7 +69,9 @@ const _legs = <(String, String)>[
   ('/community/growth-circle/resources', '/document/resource-4'),
   ('/community/growth-circle/info', '/community/growth-circle/meetings'),
   ('/community/growth-circle/info', '/members/m-1'),
-  ('/general-feed', '/general-feed/compose'),
+  ('/general-feed', '/create?type=post&to=general'),
+  ('/general-feed', '/general-feed/prayer'),
+  ('/general-feed', '/general-feed/testimonies'),
   ('/messages', '/messages/new'),
   ('/messages', '/messages/thread-sm-1'),
   ('/messages/thread-sm-1', '/messages/thread-sm-1/report'),
@@ -107,14 +109,9 @@ const _noBackExpected = {
 /// Deep links whose Back must reach a specific parent, not just "somewhere
 /// that works". Screens not listed fall back to the hub.
 const _deepBackParent = {
-  '/community/growth-circle/compose': _feed,
-  '/general-feed/compose': '/general-feed',
   '/post/growth-circle-post-1': _feed,
   '/report/post/growth-circle-post-1': _feed,
   '/report/user/m-1': '/members/m-1',
-  '/community/growth-circle/prayer/new': '/community/growth-circle/prayer',
-  '/community/growth-circle/testimonies/new':
-      '/community/growth-circle/testimonies',
   '/community/growth-circle/pathways/pathway-1':
       '/community/growth-circle/pathways',
   '/activity': '/profile',
@@ -138,7 +135,8 @@ String _path(String location) => Uri.parse(location).path;
 
 Finder get _back => find.byWidgetPredicate(
   (w) =>
-      (w is RoundIconButton && w.semanticLabel == 'Back') ||
+      (w is RoundIconButton &&
+          (w.semanticLabel == 'Back' || w.semanticLabel == 'Close')) ||
       (w is IconButton && (w.tooltip == 'Back' || w.tooltip == 'Close')),
 );
 

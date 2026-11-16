@@ -56,7 +56,12 @@ class AppTextArea extends StatelessWidget {
       ),
       decoration: InputDecoration(
         isCollapsed: true,
+        // The box is drawn around the field; the theme's (dark) input
+        // fill and outline must not draw a second one inside it.
         border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        filled: false,
         hintText: placeholder,
         hintStyle: AppTextStyles.body.copyWith(
           fontSize: fontSize,

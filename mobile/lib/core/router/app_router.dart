@@ -21,9 +21,10 @@ import '../../features/community/presentation/join_requests_screen.dart';
 import '../../features/community/presentation/manage_community_screen.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/community/presentation/request_result_screens.dart';
-import '../../features/feed/domain/post.dart';
 import '../../features/feed/presentation/community_feed_screen.dart';
-import '../../features/feed/presentation/composer_screen.dart';
+import '../../features/create/presentation/create_screen.dart';
+import '../../features/create/presentation/questions_screen.dart';
+import '../../features/feed/presentation/general_section_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
 import '../../features/feed/presentation/post_detail_screen.dart';
 import '../../features/landing/presentation/landing_screen.dart';
@@ -52,7 +53,6 @@ import '../../features/notifications/presentation/notification_settings_screen.d
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
-import '../../features/prayer/presentation/new_prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
@@ -66,7 +66,6 @@ import '../../features/search/presentation/search_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
-import '../../features/testimony/presentation/share_testimony_screen.dart';
 import '../../features/testimony/presentation/testimonies_screen.dart';
 import '../../features/testimony/presentation/testimony_screen.dart';
 import '../theme/app_colors.dart';
@@ -276,19 +275,31 @@ final List<RouteBase> appRoutes = [
     path: '/community/:id/manage/reports',
     builder: (context, state) => ReportsToReviewScreen(communityId: _id(state)),
   ),
+  // Older "new ..." links open the one Create screen.
   GoRoute(
     path: '/community/:id/compose',
-    builder: (context, state) =>
-        ComposerScreen(communityId: _id(state), scope: PostScope.specific),
+    redirect: (context, state) => '/create?type=post&to=${_id(state)}',
   ),
   GoRoute(
     path: '/community/:id/prayer/new',
-    builder: (context, state) =>
-        NewPrayerRequestScreen(communityId: _id(state)),
+    redirect: (context, state) => '/create?type=prayer&to=${_id(state)}',
   ),
   GoRoute(
     path: '/community/:id/testimonies/new',
-    builder: (context, state) => ShareTestimonyScreen(communityId: _id(state)),
+    redirect: (context, state) => '/create?type=story&to=${_id(state)}',
+  ),
+  // Create anything (the + button): ?type=post|question|prayer|story and
+  // ?to=general|<communityId>.
+  GoRoute(
+    path: '/create',
+    builder: (context, state) => CreateScreen(
+      type: CreateType.parse(state.uri.queryParameters['type']),
+      target: state.uri.queryParameters['to'],
+    ),
+  ),
+  GoRoute(
+    path: '/questions',
+    builder: (context, state) => const QuestionsScreen(),
   ),
   GoRoute(
     path: '/community/:id/pathways/:pathwayId',
@@ -329,8 +340,17 @@ final List<RouteBase> appRoutes = [
     routes: [
       GoRoute(
         path: 'compose',
+        redirect: (context, state) => '/create?type=post&to=general',
+      ),
+      GoRoute(
+        path: 'prayer',
         builder: (context, state) =>
-            const ComposerScreen(scope: PostScope.general),
+            const GeneralSectionScreen(section: GeneralSection.prayer),
+      ),
+      GoRoute(
+        path: 'testimonies',
+        builder: (context, state) =>
+            const GeneralSectionScreen(section: GeneralSection.testimonies),
       ),
       // "Learn": General community resources (no membership needed).
       GoRoute(

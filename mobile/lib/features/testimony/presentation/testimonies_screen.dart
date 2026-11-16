@@ -24,9 +24,17 @@ import '../../../core/theme/app_gradients.dart';
 
 /// Screen 16: Testimonies tab inside [CommunityShell].
 class TestimoniesScreen extends ConsumerWidget {
-  const TestimoniesScreen({super.key, required this.communityId});
+  const TestimoniesScreen({
+    super.key,
+    required this.communityId,
+    this.createTarget,
+  });
 
   final String communityId;
+
+  /// Where "Share your story" goes: 'general' or a community id (default
+  /// [communityId]).
+  final String? createTarget;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,7 +52,8 @@ class TestimoniesScreen extends ConsumerWidget {
     final hasPendingMine = testimonies.any(
       (t) => t.isAuthoredBy(viewerId) && t.status == TestimonyStatus.pending,
     );
-    void share() => context.push('/community/$communityId/testimonies/new');
+    void share() =>
+        context.push('/create?type=story&to=${createTarget ?? communityId}');
 
     final header = <Widget>[
       TabSectionHeader(

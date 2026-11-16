@@ -70,7 +70,7 @@ class _PostOptionsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(currentProfileProvider)?.id;
-    final isAuthor = me != null && me == post.author.id;
+    final isAuthor = post.isMine || (me != null && me == post.author.id);
     final actions = ref.read(postActionsProvider);
     final router = GoRouter.of(hostContext);
     final messenger = ScaffoldMessenger.of(hostContext);
@@ -143,7 +143,7 @@ class _PostOptionsSheet extends ConsumerWidget {
               );
               if (!confirmed) return;
               try {
-                await actions.delete(post, byUserId: me);
+                await actions.delete(post, byUserId: me ?? post.author.id);
               } catch (_) {
                 if (hostContext.mounted) {
                   showErrorSnack(hostContext, 'Could not delete this post.');

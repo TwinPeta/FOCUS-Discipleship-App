@@ -19,10 +19,18 @@ class GeneralShell extends ConsumerWidget {
     super.key,
     required this.body,
     this.floatingActionButton,
+    this.sectionLabel = 'Campus feed',
+    this.activePath = 'general',
   });
 
   final Widget body;
   final Widget? floatingActionButton;
+
+  /// Under the name in the header ("Campus feed", "Prayer wall", ...).
+  final String sectionLabel;
+
+  /// The "⋯" menu entry to mark as current.
+  final String activePath;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,13 +50,13 @@ class GeneralShell extends ConsumerWidget {
           children: [
             CommunityHeaderChrome(
               title: 'General community',
-              sectionLabel: 'Campus feed',
+              sectionLabel: sectionLabel,
               menuItems: communityMenuItems(
                 context,
                 communityId: hasApprovedSpecific
                     ? membership.communityId
                     : null,
-                activePath: 'general',
+                activePath: activePath,
               ),
             ),
             const OfflineBanner(),
