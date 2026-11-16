@@ -75,9 +75,7 @@ class ComposerRow extends ConsumerWidget {
                   ),
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    online
-                        ? 'Share something…'
-                        : 'Posting is paused offline',
+                    online ? 'Share something…' : 'Posting is paused offline',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.placeholder,
                     ),
