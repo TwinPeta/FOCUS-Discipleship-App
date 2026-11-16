@@ -171,6 +171,22 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    await Future.delayed(latency);
+    final key = _key(email);
+    final account = _accounts[key];
+    if (account == null || code != fakeCode || !resetRequests.contains(key)) {
+      throw const InvalidResetCode();
+    }
+    _accounts[key] = (id: account.id, digest: fakePasswordDigest(password));
+    resetRequests.remove(key);
+  }
+
+  @override
   Future<GuardianRequest?> guardianRequest(String accountId) async {
     await Future.delayed(latency);
     return _guardians[accountId];

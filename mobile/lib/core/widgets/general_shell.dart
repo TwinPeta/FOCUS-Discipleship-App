@@ -51,6 +51,7 @@ class GeneralShell extends ConsumerWidget {
             CommunityHeaderChrome(
               title: 'General community',
               sectionLabel: sectionLabel,
+              showBack: false,
               menuItems: communityMenuItems(
                 context,
                 communityId: hasApprovedSpecific

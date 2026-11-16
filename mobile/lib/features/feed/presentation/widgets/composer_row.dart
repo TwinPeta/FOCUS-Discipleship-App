@@ -8,8 +8,8 @@ import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 
-/// Top of a feed: "What do you want to share?" (a post) and shortcuts for a
-/// photo post, a question and a prayer request. All open the Create screen
+/// Top of a feed: "Share something…" (a post, with an optional photo) and
+/// shortcuts for a question and a prayer request. All open the Create screen
 /// for [target] ('general' or a community id). Paused while offline.
 class ComposerRow extends ConsumerWidget {
   const ComposerRow({
@@ -87,7 +87,6 @@ class ComposerRow extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 4),
-          shortcut(Icons.add_photo_alternate_outlined, 'Photo post', 'post'),
           shortcut(Icons.help_outline_rounded, 'Ask a question', 'question'),
           shortcut(
             Icons.volunteer_activism_outlined,

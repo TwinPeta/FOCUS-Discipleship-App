@@ -570,6 +570,17 @@ test('contract sweep: remaining operations return what the spec says', async () 
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
   ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
 
+  // Forgot password: the emailed code sets a new password; a wrong code does not.
+  const mail = require('../src/services/mailer');
+  ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'david@fcu.test', purpose: 'password_reset' } }), 202);
+  const resetMail = [...mail.outbox].reverse().find((m) => m.to === 'david@fcu.test' && m.template === 'otp');
+  const code = String(resetMail.text).match(/\b\d{6}\b/)[0];
+  ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'david@fcu.test', code: code === '000000' ? '111111' : '000000', password: 'N3w-passphrase' } }), 400);
+  ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'david@fcu.test', code, password: 'N3w-passphrase' } }), 204);
+  ok(await call('POST', '/v1/auth/login', { body: { identifier: 'david@fcu.test', password: 'N3w-passphrase' } }), 200);
+  ok(await call('POST', '/v1/auth/login', { body: { identifier: 'david@fcu.test', password: DEMO_PASSWORD } }), 401);
+  require('../src/db/store').first('users', (u) => u.email === 'david@fcu.test').passwordHash = require('bcryptjs').hashSync(DEMO_PASSWORD, 4);
+
   const session = await call('POST', '/v1/auth/login', { body: { identifier: 'david@fcu.test', password: DEMO_PASSWORD } });
   const refreshed = await call('POST', '/v1/auth/refresh', { body: { refresh_token: session.body.refresh_token } });
   ok(refreshed, 200);

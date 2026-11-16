@@ -101,6 +101,9 @@ const _superMentorLegs = <(String, String)>[
 /// expected (they move on with their own buttons).
 const _noBackExpected = {
   '/communities',
+  // The General community's sections are top level (bottom bar + "⋯").
+  '/general-feed/prayer',
+  '/general-feed/testimonies',
   '/badge/first-steps/earned',
   '/report/post/growth-circle-post-1/sent',
   '/messages/thread-sm-1/report/sent',

@@ -260,6 +260,31 @@ paths:
               schema: { $ref: '#/components/schemas/AuthSession' }
         '204': { description: Verified }
         '400': { $ref: '#/components/responses/ValidationError' }
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Set a new password with the emailed code (Forgot password)
+      description: >-
+        First `POST /auth/otp/request` with `purpose=password_reset`, then send the 6-digit code here with the
+        new password. Signs the account out everywhere else. A wrong code, an expired code and an unknown
+        email all give the same 400 (no account enumeration).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, code, password]
+              properties:
+                destination: { type: string, description: The email (or phone) the code was sent to }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+                password: { type: string, format: password, minLength: 8 }
+      responses:
+        '204': { description: Password changed }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /auth/refresh:
     post:
       tags: [Auth]

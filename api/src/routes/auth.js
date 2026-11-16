@@ -172,6 +172,29 @@ router.post('/otp/verify', rateLimit({ windowMs: 600000, max: 20 }), (req, res, 
   } catch (e) { next(e); }
 });
 
+// Forgot password: the emailed 6-digit code (purpose password_reset) and a new password. Signs the account out
+// everywhere else. The same reply for an unknown email or a wrong code (no account enumeration).
+router.post('/password/reset', rateLimit({ windowMs: 600000, max: 10 }), (req, res, next) => {
+  try {
+    const b = check(req.body, {
+      destination: { required: true, type: 'string' },
+      code: { required: true, type: 'string', pattern: /^[0-9]{6}$/ },
+      password: { required: true, type: 'string', min: 8, max: 128 },
+    });
+    const dests = [normPhone(b.destination), normEmail(b.destination)];
+    const otp = store.first('otps', (o) => dests.includes(o.destination) && o.purpose === 'password_reset');
+    const fail = () => badRequest('otp_invalid', 'Invalid code', 'The code is invalid or expired');
+    if (!otp || otp.expiresAt < Date.now() || otp.attempts >= 5) throw fail();
+    if (otp.hash !== sha(b.code)) { otp.attempts += 1; throw fail(); }
+    const user = store.first('users', (u) => !u.deletedAt && (u.phone === otp.destination || u.email === otp.destination));
+    if (!user) throw fail();
+    store.remove('otps', (o) => o.id === otp.id);
+    user.passwordHash = bcrypt.hashSync(b.password, 10);
+    store.remove('refreshTokens', (t) => t.userId === user.id);
+    res.status(204).end();
+  } catch (e) { next(e); }
+});
+
 router.post('/refresh', (req, res, next) => {
   try {
     const b = check(req.body, { refresh_token: { required: true, type: 'string' } });

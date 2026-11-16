@@ -70,13 +70,14 @@ void main() {
     expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Posting is paused offline'), findsOneWidget);
     // The composer's shortcuts are disabled, not hidden.
-    for (final tip in ['Photo post', 'Ask a question', 'Prayer request']) {
+    for (final tip in ['Ask a question', 'Prayer request']) {
       final button = tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, switch (tip) {
-          'Photo post' => Icons.add_photo_alternate_outlined,
-          'Ask a question' => Icons.help_outline_rounded,
-          _ => Icons.volunteer_activism_outlined,
-        }),
+        find.widgetWithIcon(
+          IconButton,
+          tip == 'Ask a question'
+              ? Icons.help_outline_rounded
+              : Icons.volunteer_activism_outlined,
+        ),
       );
       expect(button.onPressed, isNull, reason: tip);
     }

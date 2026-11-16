@@ -40,7 +40,12 @@ class CommunityHeaderChrome extends StatelessWidget {
     required this.menuItems,
     this.onBack,
     this.extraAction,
+    this.showBack = true,
   });
+
+  /// False on top-level pages (the General community, reached from the
+  /// bottom bar and the "⋯" menu): no Back button, as in the design.
+  final bool showBack;
 
   final String title;
 
@@ -84,16 +89,18 @@ class CommunityHeaderChrome extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Row(
             children: [
-              RoundIconButton(
-                icon: Icons.arrow_back_rounded,
-                semanticLabel: 'Back',
-                onPressed:
-                    onBack ??
-                    () => context.canPop()
-                        ? context.pop()
-                        : context.go('/communities'),
-              ),
-              const SizedBox(width: 10),
+              if (showBack) ...[
+                RoundIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  semanticLabel: 'Back',
+                  onPressed:
+                      onBack ??
+                      () => context.canPop()
+                          ? context.pop()
+                          : context.go('/communities'),
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Semantics(
                   header: true,

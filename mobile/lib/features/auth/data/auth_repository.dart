@@ -25,6 +25,12 @@ class SignUpIncomplete implements Exception {
   String toString() => 'SignUpIncomplete($reason)';
 }
 
+/// The reset code is wrong, expired or used up (or the email has no
+/// account: the same answer, so nobody can probe for accounts).
+class InvalidResetCode implements Exception {
+  const InvalidResetCode();
+}
+
 class GuardianEmailInvalid implements Exception {
   const GuardianEmailInvalid(this.message);
   final String message;
@@ -57,8 +63,17 @@ abstract class AuthRepository {
     required Consent consent,
   });
 
-  /// Always completes the same way, whether or not [email] has an account.
+  /// Emails a 6-digit reset code. Always completes the same way, whether
+  /// or not [email] has an account. Throws [ResendTooSoon] when asked again
+  /// too soon.
   Future<void> requestPasswordReset(String email);
+
+  /// Sets [password] with the emailed [code]; throws [InvalidResetCode].
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  });
 
   Future<GuardianRequest?> guardianRequest(String accountId);
   Future<GuardianRequest> submitGuardianRequest(
