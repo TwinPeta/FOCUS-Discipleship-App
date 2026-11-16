@@ -57,6 +57,19 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
     context.go('/communities');
   }
 
+  /// Where this student stands with *this* community.
+  _JoinStatus _statusFor(Membership m) {
+    final here = m.communityId == widget.communityId;
+    return switch (m.status) {
+      MembershipStatus.approved when here => _JoinStatus.member,
+      MembershipStatus.pending when here => _JoinStatus.pending,
+      MembershipStatus.approved ||
+      MembershipStatus.pending => _JoinStatus.elsewhere,
+      MembershipStatus.rejected when here => _JoinStatus.declined,
+      _ => _JoinStatus.none,
+    };
+  }
+
   Future<void> _cancelRequest() async {
     if (_isRequesting) return;
     setState(() => _isRequesting = true);
@@ -135,15 +148,30 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
                               const SizedBox(height: 10),
                               _InfoRow(
                                 icon: Icons.calendar_today_outlined,
-                                label:
-                                    '${community.meetingDay ?? "[Meeting day]"} · ${community.meetingTime ?? "[Time]"}',
+                                label: community.meetingDay == null
+                                    ? 'Day and time to be announced'
+                                    : [
+                                        community.meetingDay!,
+                                        ?community.meetingTime,
+                                      ].join(' · '),
                               ),
+                              if (nextMeetingDate(
+                                    community.meetingDay,
+                                    community.meetingTime,
+                                    DateTime.now(),
+                                  )
+                                  case final next?) ...[
+                                const SizedBox(height: 10),
+                                _InfoRow(
+                                  icon: Icons.event_available_outlined,
+                                  label: 'Next meeting: ${dayMonthLabel(next)}',
+                                ),
+                              ],
                               const SizedBox(height: 10),
                               _InfoRow(
                                 icon: Icons.place_outlined,
                                 label:
-                                    community.room ??
-                                    '[Meeting room, building]',
+                                    community.room ?? 'Place to be announced',
                               ),
                               const SizedBox(height: 24),
                               Text(
@@ -157,12 +185,22 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
                                     community.superMentor ??
                                     const Person(
                                       id: '',
-                                      name: '[Super-mentor name]',
+                                      name: 'To be announced',
                                       role: PersonRole.superMentor,
                                     ),
                                 roleLabel: 'Super-mentor',
                                 color: AppColors.amber,
                               ),
+                              if (community.mentors.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    'Mentors will be added soon.',
+                                    style: AppTextStyles.body.copyWith(
+                                      color: AppColors.inkDeemphasized80,
+                                    ),
+                                  ),
+                                ),
                               for (final mentor in community.mentors)
                                 LeadershipRow(
                                   person: mentor,
@@ -176,14 +214,28 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
                     ),
                   ),
                 ),
-                _RequestBar(
+                _JoinStatusBar(
+                  status: _statusFor(membership),
                   autoApprove: ref.watch(joinAutoApproveProvider),
                   isLoading: _isRequesting,
-                  disabled: alreadyHasMembership,
-                  onPressed: alreadyHasMembership ? null : _requestToJoin,
+                  otherCommunityName:
+                      alreadyHasMembership &&
+                          membership.communityId != widget.communityId &&
+                          membership.communityId != null
+                      ? ref
+                            .watch(
+                              communityByIdProvider(membership.communityId!),
+                            )
+                            .valueOrNull
+                            ?.name
+                      : null,
+                  declineNote: membership.message,
+                  onJoin: _requestToJoin,
                   onCancel: pendingHere && !_isRequesting
                       ? _cancelRequest
                       : null,
+                  onOpen: () =>
+                      context.go('/community/${widget.communityId}/feed'),
                 ),
               ],
             ),
@@ -224,62 +276,233 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _RequestBar extends StatelessWidget {
-  const _RequestBar({
+enum _JoinStatus { none, pending, member, elsewhere, declined }
+
+/// Bottom of screen 4: the student's join status for this community and
+/// what they can do. Not joined: "Join community" (auto-approval on) or
+/// "Request to join". Pending here: status + Cancel request. Member here:
+/// "Go to community". In another community: why joining is off. Declined
+/// here: the note and a way to ask again.
+class _JoinStatusBar extends StatelessWidget {
+  const _JoinStatusBar({
+    required this.status,
+    required this.autoApprove,
     required this.isLoading,
-    required this.disabled,
-    required this.onPressed,
+    required this.onJoin,
+    required this.onOpen,
     this.onCancel,
-    this.autoApprove = false,
+    this.otherCommunityName,
+    this.declineNote,
   });
 
-  /// Joining is instant (back office auto-approval): "Join community".
+  final _JoinStatus status;
   final bool autoApprove;
-
   final bool isLoading;
-  final bool disabled;
-  final VoidCallback? onPressed;
-
-  /// Shown while the caller's pending request is for this community.
+  final VoidCallback onJoin;
+  final VoidCallback onOpen;
   final VoidCallback? onCancel;
+  final String? otherCommunityName;
+  final String? declineNote;
 
   @override
   Widget build(BuildContext context) {
+    final (IconData? icon, String? title, String note) = switch (status) {
+      _JoinStatus.none => (
+        null,
+        null,
+        autoApprove
+            ? 'You can join only one specific community. You join straight '
+                  'away.'
+            : 'You can join only one specific community. Your request goes '
+                  'to the super-mentor for approval, and you will be '
+                  'notified.',
+      ),
+      _JoinStatus.pending => (
+        Icons.hourglass_top_rounded,
+        'Request pending',
+        'Waiting for the super-mentor. You will be notified when they '
+            'decide.',
+      ),
+      _JoinStatus.member => (
+        Icons.check_circle_rounded,
+        "You're a member",
+        'This is your specific community.',
+      ),
+      _JoinStatus.elsewhere => (
+        Icons.info_outline_rounded,
+        otherCommunityName == null
+            ? 'You already have a community'
+            : "You're already in $otherCommunityName",
+        'A student can be in only one specific community.',
+      ),
+      _JoinStatus.declined => (
+        Icons.do_not_disturb_on_outlined,
+        'Not accepted this time',
+        (declineNote?.trim().isNotEmpty ?? false)
+            ? '"${declineNote!.trim()}"'
+            : 'You can ask again or pick another community.',
+      ),
+    };
+
+    final button = switch (status) {
+      _JoinStatus.none || _JoinStatus.declined => AppPrimaryButton(
+        label: status == _JoinStatus.declined
+            ? (autoApprove ? 'Join again' : 'Request again')
+            : (autoApprove ? 'Join community' : 'Request to join'),
+        isLoading: isLoading,
+        onPressed: onJoin,
+      ),
+      _JoinStatus.member => AppPrimaryButton(
+        label: 'Go to community',
+        onPressed: onOpen,
+      ),
+      _JoinStatus.pending || _JoinStatus.elsewhere => null,
+    };
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
       decoration: BoxDecoration(
         color: AppColors.white,
         border: Border(top: BorderSide(color: AppColors.cream, width: 1)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppPrimaryButton(
-            label: autoApprove ? 'Join community' : 'Request to join',
-            isLoading: isLoading,
-            onPressed: onPressed,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            disabled
-                ? 'You already have a pending request or have joined a specific community.'
-                : autoApprove
-                ? 'You can join only one specific community. You join straight '
-                      'away.'
-                : 'You can join only one specific community. Your request goes to the '
-                      'super-mentor for approval, and you will be notified.',
-            style: AppTextStyles.fieldLabel.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.inkDeemphasized80,
+          if (title != null)
+            Semantics(
+              liveRegion: true,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: status == _JoinStatus.member
+                      ? AppColors.honey
+                      : AppColors.cream,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon, size: 22, color: AppColors.ink),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: AppTextStyles.cardTitle),
+                          const SizedBox(height: 2),
+                          Text(
+                            note,
+                            style: AppTextStyles.body.copyWith(
+                              fontSize: 14,
+                              color: AppColors.inkDeemphasized85,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
+          if (button != null) ...[
+            if (title != null) const SizedBox(height: 12),
+            button,
+          ],
+          if (title == null) ...[
+            const SizedBox(height: 10),
+            Text(
+              note,
+              style: AppTextStyles.fieldLabel.copyWith(
+                fontWeight: FontWeight.w500,
+                color: AppColors.inkDeemphasized80,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
           if (onCancel != null)
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.ink,
+                minimumSize: const Size(44, 44),
+              ),
               onPressed: onCancel,
-              child: const Text('Cancel request'),
+              child: const Text(
+                'Cancel request',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
         ],
       ),
     );
   }
 }
+
+const _weekdayNames = {
+  'monday': DateTime.monday,
+  'tuesday': DateTime.tuesday,
+  'wednesday': DateTime.wednesday,
+  'thursday': DateTime.thursday,
+  'friday': DateTime.friday,
+  'saturday': DateTime.saturday,
+  'sunday': DateTime.sunday,
+};
+
+/// The next meeting from "Every Tuesday" / "Tuesday" and "5:00 PM": today
+/// if it has not started yet, otherwise the next such weekday. Null when
+/// the day is unknown.
+DateTime? nextMeetingDate(String? day, String? time, DateTime now) {
+  if (day == null) return null;
+  final lower = day.toLowerCase();
+  int? weekday;
+  for (final e in _weekdayNames.entries) {
+    if (lower.contains(e.key)) weekday = e.value;
+  }
+  if (weekday == null) return null;
+  var minutes = 24 * 60; // unknown time: today still counts
+  final m = RegExp(
+    r'(\d{1,2}):(\d{2})\s*([AP]M)?',
+    caseSensitive: false,
+  ).firstMatch(time ?? '');
+  if (m != null) {
+    var h = int.parse(m.group(1)!);
+    final pm = m.group(3)?.toUpperCase() == 'PM';
+    if (m.group(3) != null) h = h % 12 + (pm ? 12 : 0);
+    minutes = h * 60 + int.parse(m.group(2)!);
+  }
+  final today = DateTime(now.year, now.month, now.day);
+  var ahead = (weekday - now.weekday) % 7;
+  if (ahead == 0 && now.hour * 60 + now.minute >= minutes) ahead = 7;
+  return today.add(Duration(days: ahead));
+}
+
+const _monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const _dayNames = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
+/// "Tuesday 18 November".
+String dayMonthLabel(DateTime d) =>
+    '${_dayNames[d.weekday - 1]} ${d.day} ${_monthNames[d.month - 1]}';

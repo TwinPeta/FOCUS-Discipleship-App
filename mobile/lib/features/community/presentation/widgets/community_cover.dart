@@ -73,6 +73,7 @@ class CommunityCover extends StatelessWidget {
                   child: Text(
                     community.initials,
                     style: AppTextStyles.cardTitle,
+                    textScaler: TextScaler.noScaling,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -81,10 +82,15 @@ class CommunityCover extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        community.name,
-                        style: AppTextStyles.detailTitle,
-                        overflow: TextOverflow.ellipsis,
+                      // Whole name on one line: shrinks with large text.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          community.name,
+                          style: AppTextStyles.detailTitle,
+                          maxLines: 1,
+                        ),
                       ),
                       Text(
                         '$institutionName · Specific community',
