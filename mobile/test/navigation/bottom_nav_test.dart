@@ -37,8 +37,9 @@ void main() {
     expect(navText('Home'), findsOneWidget);
     expect(navText('Messages'), findsNothing);
 
+    // Communities opens the hub for everyone, as in the design.
     await _tapTab(tester, Icons.groups_outlined);
-    expect(path(), '/community/growth-circle/feed');
+    expect(path(), '/communities');
     expect(find.byType(AppBottomNav), findsOneWidget);
 
     await _tapTab(tester, Icons.chat_bubble_outline_rounded);
