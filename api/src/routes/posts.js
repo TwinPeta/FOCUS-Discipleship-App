@@ -28,7 +28,8 @@ function loadPost(req, _res, next) {
 
 router.get('/communities/:communityId/posts', requireMember, (req, res) => {
   const hidden = (p) => p.hidden;
-  const items = store.where('posts', (p) => p.communityId === req.community.id && !hidden(p))
+  const kind = req.query.kind; // 'question': the questions only (Answer a question)
+  const items = store.where('posts', (p) => p.communityId === req.community.id && !hidden(p) && (!kind || (p.kind || 'post') === kind))
     .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || byNewest(a, b));
   const page = paginate(items, req.query);
   res.json({ items: page.items.map((p) => S.post(p, req.user.id)), next_cursor: page.next_cursor });
@@ -36,9 +37,18 @@ router.get('/communities/:communityId/posts', requireMember, (req, res) => {
 
 router.post('/communities/:communityId/posts', requireMember, idempotency, (req, res, next) => {
   try {
-    const b = check(req.body, { text: { required: true, type: 'string', min: 1, max: 5000 }, media_ids: { type: 'array', maxItems: 4 } });
+    const b = check(req.body, {
+      text: { required: true, type: 'string', min: 1, max: 5000 }, media_ids: { type: 'array', maxItems: 4 },
+      // A question is a post the community answers in its comments.
+      kind: { type: 'string', enum: ['post', 'question'] },
+      // Name hidden from other students; authorId is kept so moderators can act on abuse.
+      anonymous: { type: 'boolean' },
+    });
     ownedMedia(b.media_ids, req.user.id);
-    const p = store.insert('posts', { communityId: req.community.id, authorId: req.user.id, text: b.text.trim(), mediaIds: b.media_ids || [], pinned: false });
+    const p = store.insert('posts', {
+      communityId: req.community.id, authorId: req.user.id, text: b.text.trim(), mediaIds: b.media_ids || [], pinned: false,
+      kind: b.kind || 'post', anonymous: !!b.anonymous,
+    });
     logEvent(req.user.id, 'post_created', 'Shared a post');
     res.status(201).json(S.post(p, req.user.id));
   } catch (e) { next(e); }

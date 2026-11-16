@@ -930,6 +930,7 @@ paths:
       summary: Community feed
       description: Screens *Community feed* and *General community feed*. Pinned announcements first, then newest.
       parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [post, question] }, description: 'Only this kind (questions for "Answer a question")' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
@@ -961,6 +962,8 @@ paths:
               required: [text]
               properties:
                 text: { type: string, maxLength: 5000 }
+                kind: { type: string, enum: [post, question], default: post }
+                anonymous: { type: boolean, default: false, description: 'Name hidden from students; moderators can still see who posted' }
                 media_ids:
                   type: array
                   maxItems: 4
@@ -2100,7 +2103,12 @@ components:
       properties:
         id: { type: string }
         community_id: { type: string }
-        author: { $ref: '#/components/schemas/UserRef' }
+        kind: { type: string, enum: [post, question], description: 'A question is answered in its comments' }
+        anonymous: { type: boolean }
+        author:
+          description: Null when the post is anonymous (moderators see the author in the back office)
+          oneOf: [{ $ref: '#/components/schemas/UserRef' }, { type: 'null' }]
+        is_mine: { type: boolean, description: The viewer wrote it (also for anonymous posts) }
         text: { type: string }
         media:
           type: array

@@ -106,7 +106,11 @@ function post(p, viewerId) {
   return {
     id: p.id,
     community_id: p.communityId,
-    author: userRef(store.get('users', p.authorId), p.communityId),
+    kind: p.kind || 'post',
+    anonymous: !!p.anonymous,
+    // Anonymous: no author for anyone (moderators see it in the back office); is_mine tells the author it is theirs.
+    author: p.anonymous ? null : userRef(store.get('users', p.authorId), p.communityId),
+    is_mine: p.authorId === viewerId,
     text: p.text,
     media: mediaList(p.mediaIds),
     pinned: !!p.pinned,

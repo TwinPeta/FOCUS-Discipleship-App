@@ -212,6 +212,32 @@ test('feed, like, comment, idempotent post creation', async () => {
   assert.equal(c.status, 201);
 });
 
+test('posts: questions and anonymous posts (author hidden, still the owner's)', async () => {
+  const token = await login('mentor@fcu.test');
+  const other = await login('student@fcu.test');
+  const q = await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'How do you keep a quiet time?', kind: 'question', anonymous: true } });
+  assert.equal(q.status, 201);
+  assert.equal(q.body.kind, 'question');
+  assert.equal(q.body.anonymous, true);
+  assert.equal(q.body.author, null);
+  assert.equal(q.body.is_mine, true);
+  const seen = await call('GET', `/v1/posts/${q.body.id}`, { token: other });
+  assert.equal(seen.body.author, null);
+  assert.equal(seen.body.is_mine, false);
+  // Moderators can still act: the author is kept on the record.
+  assert.ok(store.get('posts', q.body.id).authorId);
+
+  const plain = await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'Just a post' } });
+  assert.equal(plain.body.kind, 'post');
+  assert.equal(plain.body.anonymous, false);
+  assert.ok(plain.body.author);
+
+  const questions = await call('GET', `/v1/communities/${ctx.growth.id}/posts?kind=question`, { token: other });
+  assert.ok(questions.body.items.length >= 1);
+  assert.ok(questions.body.items.every((p) => p.kind === 'question'));
+  assert.equal((await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'x', kind: 'poll' } })).status, 422);
+});
+
 test('prayer: anonymous hides author, "I prayed" is idempotent', async () => {
   const token = await login('mentor@fcu.test');
   const r = await call('POST', `/v1/communities/${ctx.growth.id}/prayer-requests`, { token, body: { text: 'Pray for me', anonymous: true } });
