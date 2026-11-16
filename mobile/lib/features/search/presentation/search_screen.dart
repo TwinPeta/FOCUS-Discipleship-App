@@ -96,56 +96,64 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  /// Before typing: recent searches, then suggestions (the campus's
+  /// communities and the leaders of your own community), as designed.
   Widget _recent() {
     final recent = ref.watch(recentSearchesProvider);
-    if (recent.isEmpty) {
+    final suggestions = ref.watch(searchSuggestionsProvider).valueOrNull;
+    if (recent.isEmpty && (suggestions == null || suggestions.isEmpty)) {
       return const EmptyState(
         icon: Icons.search_rounded,
         title: 'Search FCU',
         body: 'Find communities and people by name or username.',
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text('Recent', style: AppTextStyles.sectionHeading),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(_minTarget, _minTarget),
+    return _ResultList(
+      results: suggestions ?? SearchResults.empty,
+      onCommunity: _openCommunity,
+      onPerson: _openPerson,
+      header: [
+        if (recent.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text('Recent', style: AppTextStyles.sectionHeading),
               ),
-              onPressed: () =>
-                  ref.read(recentSearchesProvider.notifier).clear(),
-              child: Semantics(
-                label: 'Clear recent searches',
-                excludeSemantics: true,
-                child: const Text('Clear'),
+              TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(_minTarget, _minTarget),
+                ),
+                onPressed: () =>
+                    ref.read(recentSearchesProvider.notifier).clear(),
+                child: Semantics(
+                  label: 'Clear recent searches',
+                  excludeSemantics: true,
+                  child: const Text('Clear'),
+                ),
               ),
-            ),
-          ],
-        ),
-        for (final q in recent)
-          Semantics(
-            button: true,
-            label: 'Search again for $q',
-            excludeSemantics: true,
-            child: InkWell(
-              onTap: () => _useRecent(q),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: _minTarget),
-                child: Row(
-                  children: [
-                    Icon(Icons.history_rounded, color: AppColors.placeholder),
-                    const SizedBox(width: _gap),
-                    Expanded(child: Text(q, style: AppTextStyles.bodyMedium)),
-                  ],
+            ],
+          ),
+          for (final q in recent)
+            Semantics(
+              button: true,
+              label: 'Search again for $q',
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: () => _useRecent(q),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: _minTarget),
+                  child: Row(
+                    children: [
+                      Icon(Icons.history_rounded, color: AppColors.placeholder),
+                      const SizedBox(width: _gap),
+                      Expanded(child: Text(q, style: AppTextStyles.bodyMedium)),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
@@ -179,9 +187,13 @@ class _ResultList extends StatelessWidget {
     required this.results,
     required this.onCommunity,
     required this.onPerson,
+    this.header = const [],
   });
 
   static const _gap = 10.0;
+
+  /// Shown above the results (the recent searches, before typing).
+  final List<Widget> header;
 
   final SearchResults results;
   final ValueChanged<Community> onCommunity;
@@ -196,6 +208,7 @@ class _ResultList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        ...header,
         if (results.communities.isNotEmpty) ...[
           heading('Communities'),
           for (final c in results.communities)

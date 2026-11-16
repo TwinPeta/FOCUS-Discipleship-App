@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/repository_providers.dart';
+import '../../community/domain/member_profile.dart';
 import '../../community/domain/membership.dart';
+import '../../community/domain/person.dart';
+import '../../community/presentation/providers/member_providers.dart';
 import '../../community/presentation/providers/community_providers.dart';
 import '../../community/presentation/providers/membership_provider.dart';
 import '../../profile/presentation/profile_providers.dart';
@@ -67,3 +70,24 @@ class RecentSearches extends Notifier<List<String>> {
 final recentSearchesProvider = NotifierProvider<RecentSearches, List<String>>(
   RecentSearches.new,
 );
+
+/// Screen 62 before typing: a few of the campus's communities and the
+/// mentors of the member's own community.
+final searchSuggestionsProvider = FutureProvider.autoDispose<SearchResults>((
+  ref,
+) async {
+  final communities = await ref.watch(specificCommunitiesProvider.future);
+  final membership = await ref.watch(membershipProvider.future);
+  final mine = membership.status == MembershipStatus.approved
+      ? membership.communityId
+      : null;
+  final leaders = mine == null
+      ? const <MemberProfile>[]
+      : (await ref.watch(communityMemberProfilesProvider(mine).future))
+            .where((m) => m.person.role != PersonRole.member)
+            .toList();
+  return SearchResults(
+    communities: communities.take(3).toList(),
+    people: leaders.take(3).toList(),
+  );
+});
