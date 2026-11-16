@@ -182,6 +182,7 @@ void main() {
 
     await tester.tap(find.text('Back to community'));
     await settle(tester);
-    expect(find.text('Prayer wall'), findsOneWidget);
+    // Back on the wall: its title (and the header's section name).
+    expect(find.text('Prayer wall'), findsWidgets);
   });
 }
