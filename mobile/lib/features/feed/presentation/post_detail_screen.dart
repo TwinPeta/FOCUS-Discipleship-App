@@ -28,6 +28,7 @@ import '../domain/comment.dart';
 import '../domain/post.dart';
 import 'providers/feed_providers.dart';
 import 'providers/post_detail_providers.dart';
+import 'question_screens.dart';
 import 'widgets/post_options_sheet.dart';
 import 'widgets/post_photo_view.dart';
 
@@ -77,10 +78,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final postAsync = ref.watch(postDetailProvider(widget.postId));
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     final post = postAsync.valueOrNull;
+    final question = post?.kind == PostKind.question;
 
     return AmberHeaderScaffold(
       backFallback: post == null ? '/communities' : feedRouteFor(post),
-      title: 'Post',
+      title: question ? 'Question' : 'Post',
       headerAction: post == null
           ? null
           : RoundIconButton(
@@ -102,10 +104,13 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           title: 'Post not available',
           body: 'This post was removed or is no longer visible to you.',
         ),
+        _ when question => QuestionBody(question: post),
         _ => _PostBody(post: post, online: online, onLike: _toggleLike),
       },
       bottomBar: post == null
           ? null
+          : question
+          ? WriteAnswerBar(questionId: post.id)
           : MessageInputBar(
               controller: _commentController,
               onSend: _sendComment,

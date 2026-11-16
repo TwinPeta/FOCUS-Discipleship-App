@@ -27,6 +27,7 @@ import '../../features/create/presentation/questions_screen.dart';
 import '../../features/feed/presentation/general_section_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
 import '../../features/feed/presentation/post_detail_screen.dart';
+import '../../features/feed/presentation/question_screens.dart';
 import '../../features/landing/presentation/landing_screen.dart';
 import '../../features/landing/presentation/video_player_screen.dart';
 import '../../features/learning/presentation/badge_earned_screen.dart';
@@ -392,6 +393,11 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/post/:id',
     builder: (context, state) => PostDetailScreen(postId: _id(state)),
+  ),
+  // Screen 65: answer a question, full screen.
+  GoRoute(
+    path: '/post/:id/answer',
+    builder: (context, state) => WriteAnswerScreen(questionId: _id(state)),
   ),
   // Content reports (41/42): post, comment, prayer request, testimony.
   GoRoute(
