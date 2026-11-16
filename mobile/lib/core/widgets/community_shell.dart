@@ -6,16 +6,16 @@ import '../../features/community/domain/user_role.dart';
 import '../../features/community/presentation/providers/community_providers.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../theme/app_colors.dart';
-import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
-import 'community_tab_bar.dart';
+import 'community_sections.dart';
 import 'round_icon_button.dart';
 import 'states/offline_banner.dart';
 import 'states/error_view.dart';
 import 'states/skeleton.dart';
 import 'app_bottom_nav.dart';
 
-/// The amber header + 6-tab shell wrapping every `/community/:id/*` screen.
+/// The amber header (name, section, Search, "⋯" sections menu) wrapping
+/// every `/community/:id/*` tab screen.
 /// Pass a [StatefulNavigationShell] so switching tabs keeps this header
 /// mounted and preserves each tab's own navigation stack.
 class CommunityShell extends ConsumerWidget {
@@ -49,11 +49,18 @@ class CommunityShell extends ConsumerWidget {
               children: [
                 CommunityHeaderChrome(
                   title: community.name,
-                  onlineCount: estimateOnlineCount(community.id),
-                  generalSelected: false,
-                  specificLabel: community.name,
-                  onSelectGeneral: () => context.go('/general-feed'),
-                  onSelectSpecific: () {},
+                  sectionLabel:
+                      communityTabSections[navigationShell.currentIndex].label,
+                  menuItems: communityMenuItems(
+                    context,
+                    communityId: communityId,
+                    activePath:
+                        communityTabSections[navigationShell.currentIndex].path,
+                    goTab: (index) => navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    ),
+                  ),
                   extraAction: isSuperMentor
                       ? RoundIconButton(
                           icon: Icons.tune_rounded,
@@ -62,13 +69,6 @@ class CommunityShell extends ConsumerWidget {
                               context.push('/community/$communityId/manage'),
                         )
                       : null,
-                  tabBar: CommunityTabBar(
-                    selectedIndex: navigationShell.currentIndex,
-                    onTap: (index) => navigationShell.goBranch(
-                      index,
-                      initialLocation: index == navigationShell.currentIndex,
-                    ),
-                  ),
                 ),
                 const OfflineBanner(),
                 Expanded(child: navigationShell),

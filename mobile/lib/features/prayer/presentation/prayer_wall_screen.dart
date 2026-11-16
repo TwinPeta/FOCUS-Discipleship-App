@@ -11,7 +11,7 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/initials.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
 import '../../../core/widgets/error_snack.dart';
-import '../../../core/widgets/pill_button.dart';
+import '../../../core/widgets/post_card.dart' show PostActionButton;
 import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/states/saved_content_note.dart';
@@ -196,22 +196,113 @@ class _PrayerCard extends StatelessWidget {
           Text(request.body, style: AppTextStyles.body.copyWith(height: 1.4)),
           const SizedBox(height: 8),
           Wrap(
-            spacing: 10,
+            spacing: 14,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              PillButton(
-                label: request.prayedCount > 0
-                    ? '${request.prayedCount} prayed'
-                    : 'I prayed',
-                semanticLabel: request.prayedByMe
-                    ? 'You prayed. ${request.prayedCount} prayed in total'
-                    : 'I prayed. ${request.prayedCount} prayed so far',
-                filled: request.prayedByMe,
+              PrayedButton(
+                prayed: request.prayedByMe,
+                count: request.prayedCount,
                 onTap: onPrayedTap,
               ),
-              PillButton(label: 'Respond', onTap: onRespondTap),
+              // Like the comment count under a post.
+              PostActionButton(
+                icon: Icons.mode_comment_outlined,
+                count: request.responseCount,
+                semanticLabel:
+                    'Respond, ${PostActionButton.countLabel(request.responseCount, 'response')}',
+                onTap: onRespondTap,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "I prayed" and its count as one pill: praying hands, the words and the
+/// number. Gold once you prayed ("Prayed"); tap again to undo. Disabled
+/// (but visible) while offline.
+class PrayedButton extends StatelessWidget {
+  const PrayedButton({
+    super.key,
+    required this.prayed,
+    required this.count,
+    this.onTap,
+  });
+
+  final bool prayed;
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final radius = BorderRadius.circular(999);
+    return Semantics(
+      button: true,
+      toggled: prayed,
+      enabled: enabled,
+      label: prayed
+          ? 'You prayed. ${PostActionButton.countLabel(count, 'person')} prayed'
+          : 'I prayed. ${PostActionButton.countLabel(count, 'person')} prayed so far',
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.5,
+        child: Material(
+          color: prayed ? AppColors.honey : AppColors.cream,
+          borderRadius: radius,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 40),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      prayed
+                          ? Icons.volunteer_activism
+                          : Icons.volunteer_activism_outlined,
+                      size: 18,
+                      color: AppColors.ink,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      prayed ? 'Prayed' : 'I prayed',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 28),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: prayed ? AppColors.amberDark : AppColors.white,
+                        borderRadius: radius,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$count',
+                        style: AppTextStyles.chip.copyWith(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

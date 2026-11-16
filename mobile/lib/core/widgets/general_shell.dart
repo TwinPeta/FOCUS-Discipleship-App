@@ -1,12 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../features/community/domain/membership.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../theme/app_colors.dart';
-import '../utils/online_count.dart';
 import 'community_header_chrome.dart';
+import 'community_sections.dart';
 import 'states/offline_banner.dart';
 import 'update_banner.dart';
 import 'app_bottom_nav.dart';
@@ -43,18 +42,14 @@ class GeneralShell extends ConsumerWidget {
           children: [
             CommunityHeaderChrome(
               title: 'General community',
-              onlineCount: estimateOnlineCount('general-community'),
-              generalSelected: true,
-              specificLabel: 'Specific community',
-              onSelectGeneral: () {},
-              onSelectSpecific: () {
-                // `go`, not `push`: switching scope must not grow the stack.
-                if (hasApprovedSpecific) {
-                  context.go('/community/${membership.communityId}/feed');
-                } else {
-                  context.go('/communities');
-                }
-              },
+              sectionLabel: 'Campus feed',
+              menuItems: communityMenuItems(
+                context,
+                communityId: hasApprovedSpecific
+                    ? membership.communityId
+                    : null,
+                activePath: 'general',
+              ),
             ),
             const OfflineBanner(),
             const UpdateBanner(),

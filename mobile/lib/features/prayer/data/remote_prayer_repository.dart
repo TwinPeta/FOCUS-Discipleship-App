@@ -36,6 +36,7 @@ class RemotePrayerRepository implements PrayerRepository {
           DateTime.now(),
       prayedCount: (j['prayed_count'] as int?) ?? 0,
       prayedByMe: j['prayed_by_me'] == true,
+      responseCount: (j['response_count'] as int?) ?? 0,
     );
     _seen[request.id] = request;
     return request;

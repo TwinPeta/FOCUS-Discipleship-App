@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:focus_1/core/connectivity/connectivity_service.dart';
 import 'package:focus_1/core/connectivity/offline_cache.dart';
-import 'package:focus_1/core/widgets/pill_button.dart';
 import 'package:focus_1/core/widgets/tab_section_header.dart';
 import 'package:focus_1/features/feed/presentation/widgets/compose_fab.dart';
+import 'package:focus_1/features/prayer/presentation/prayer_wall_screen.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
@@ -91,9 +91,7 @@ void main() {
     net.setOnline(false);
     await settle(tester);
 
-    final pills = tester
-        .widgetList<PillButton>(find.byType(PillButton))
-        .where((p) => p.label.contains('prayed'));
+    final pills = tester.widgetList<PrayedButton>(find.byType(PrayedButton));
     expect(pills, isNotEmpty);
     expect(pills.every((p) => p.onTap == null), isTrue);
     expect(find.text('Saved'), findsOneWidget);

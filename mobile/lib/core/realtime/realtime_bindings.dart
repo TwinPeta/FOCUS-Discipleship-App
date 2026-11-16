@@ -15,8 +15,8 @@ import '../router/app_router.dart';
 import 'realtime_client.dart';
 
 /// Live "online now" counts by community id, from `presence.updated`. No
-/// screen reads it yet: the community header still shows the placeholder
-/// from `estimateOnlineCount` (the shells belong to the other agent).
+/// screen shows it: the community header has no online count (screen 14
+/// review).
 final liveOnlineCountsProvider = StateProvider<Map<String, int>>(
   (ref) => const {},
 );
