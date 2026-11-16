@@ -9,7 +9,7 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/avatar_with_presence.dart';
-import '../../../core/widgets/filter_chips.dart';
+import '../../../core/widgets/community_header_chrome.dart';
 import '../../../core/widgets/role_badge.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/round_icon_button.dart';
@@ -22,7 +22,18 @@ import '../domain/thread.dart';
 import 'providers/messaging_providers.dart';
 import '../../../core/theme/app_gradients.dart';
 
-enum _RoleFilter { all, mentors, members }
+/// What the inbox shows, picked from the "⋯" menu.
+enum _RoleFilter {
+  all('All conversations', Icons.forum_outlined),
+  unread('Unread', Icons.mark_chat_unread_outlined),
+  mentors('Mentors', Icons.school_outlined),
+  members('Members', Icons.groups_outlined);
+
+  const _RoleFilter(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}
 
 /// Screen 9: Messages inbox.
 class MessagesInboxScreen extends ConsumerStatefulWidget {
@@ -52,10 +63,30 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
       bottomNavigationBar: const AppBottomNav(current: AppTab.messages),
       body: AmberHeaderScaffold(
         title: 'Messages',
-        headerAction: RoundIconButton(
-          icon: Icons.edit_outlined,
-          semanticLabel: 'New message',
-          onPressed: () => context.push('/messages/new'),
+        subtitle: _roleFilter.label,
+        headerAction: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RoundIconButton(
+              icon: Icons.edit_outlined,
+              semanticLabel: 'New message',
+              onPressed: () => context.push('/messages/new'),
+            ),
+            const SizedBox(width: 8),
+            RoundIconButton(
+              icon: Icons.more_horiz_rounded,
+              semanticLabel: 'Show',
+              onPressed: () => showSectionMenu(context, 'Messages', [
+                for (final f in _RoleFilter.values)
+                  SectionMenuItem(
+                    label: f.label,
+                    icon: f.icon,
+                    active: f == _roleFilter,
+                    onSelected: () => setState(() => _roleFilter = f),
+                  ),
+              ]),
+            ),
+          ],
         ),
         headerExtra: SearchField(
           controller: _searchController,
@@ -68,7 +99,9 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
               ErrorView(onRetry: () => ref.invalidate(threadsProvider)),
           data: (threads) {
             var filtered = threads;
-            if (_roleFilter == _RoleFilter.mentors) {
+            if (_roleFilter == _RoleFilter.unread) {
+              filtered = filtered.where((t) => t.unread > 0).toList();
+            } else if (_roleFilter == _RoleFilter.mentors) {
               filtered = filtered
                   .where((t) => t.participant.role != PersonRole.member)
                   .toList();
@@ -101,22 +134,6 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
             final header = <Widget>[
               const OfflineBanner(),
               const SizedBox(height: 4),
-              FilterChips<_RoleFilter>(
-                options: const [
-                  FilterChipOption(label: 'All', value: _RoleFilter.all),
-                  FilterChipOption(
-                    label: 'Mentors',
-                    value: _RoleFilter.mentors,
-                  ),
-                  FilterChipOption(
-                    label: 'Members',
-                    value: _RoleFilter.members,
-                  ),
-                ],
-                value: _roleFilter,
-                onChanged: (value) => setState(() => _roleFilter = value),
-              ),
-              const SizedBox(height: 16),
             ];
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -125,10 +142,12 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
               itemBuilder: (context, index) {
                 if (index < header.length) return header[index];
                 if (filtered.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.search_off_rounded,
                     title: 'No matches',
-                    body: 'No messages match your search.',
+                    body: _query.trim().isNotEmpty
+                        ? 'No messages match your search.'
+                        : 'Nothing here. Pick "All conversations" from ⋯.',
                   );
                 }
                 final thread = filtered[index - header.length];
