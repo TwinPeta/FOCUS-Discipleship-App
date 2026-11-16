@@ -103,12 +103,12 @@ void main() {
 
     await tester.tap(find.text('Hide this post'));
     await settle(tester);
-    expect(find.textContaining('Room 204'), findsNothing);
+    expect(find.textContaining('meeting in Room 204'), findsNothing);
     expect(find.text('Undo'), findsOneWidget);
 
     await tester.tap(find.text('Undo'));
     await settle(tester);
-    expect(find.textContaining('Room 204'), findsOneWidget);
+    expect(find.textContaining('meeting in Room 204'), findsOneWidget);
   });
 
   testWidgets('authors can delete their own post after confirming', (
