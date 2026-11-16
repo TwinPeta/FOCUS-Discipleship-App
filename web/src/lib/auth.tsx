@@ -10,7 +10,11 @@ type State = {
   user: Profile | null;
   signIn: (identifier: string, password: string) => Promise<void>;
   register: (body: Record<string, unknown>) => Promise<void>;
+  /** Forgot password: sets a new password with the 6-digit code the API emailed, and signs in. */
+  resetPassword: (destination: string, code: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Replaces the cached profile after the student edits it. */
+  setUser: (u: Profile) => void;
 };
 
 const Ctx = createContext<State | null>(null);
@@ -68,6 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       signIn: async (identifier, password) => accept(await post<Session>("/auth/login", { identifier, password }, false)),
       register: async (body) => accept(await post<Session>("/auth/register", body, false)),
+      resetPassword: async (destination, code, newPassword) =>
+        accept(await post<Session>("/auth/password/reset", { destination, code, new_password: newPassword }, false)),
+      setUser,
       signOut: async () => {
         const t = readTokens();
         try {

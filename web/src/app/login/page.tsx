@@ -55,7 +55,8 @@ export default function LoginPage() {
               {busy ? "Logging in…" : "Log in"}
             </button>
           </form>
-          <p className="alt">New here? <Link href="/signup">Create an account</Link></p>
+          <p className="alt"><Link href="/forgot-password">Forgot your password?</Link></p>
+          <p className="alt" style={{ marginTop: 8 }}>New here? <Link href="/signup">Create an account</Link></p>
         </div>
       </main>
     </>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from "@/lib/auth";
+import "boxicons/css/boxicons.min.css";
 import "./globals.css";
 
 // The same typeface the mobile app ships (mobile/assets/fonts).

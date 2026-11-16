@@ -1,10 +1,11 @@
 import { HeroActions } from "@/components/HeroActions";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Stories } from "@/components/Stories";
 
 const FEATURES = [
-  { icon: "🤝", title: "Connect", text: "Meet students on your campus who share your values." },
-  { icon: "📚", title: "Learn", text: "Videos, guides and quizzes to grow, in class and beyond." },
-  { icon: "🌱", title: "Succeed", text: "Mentors who cheer you on toward your goals." },
+  { icon: "bx-conversation", title: "Connect", text: "Meet students on your campus who share your values." },
+  { icon: "bx-book-reader", title: "Learn", text: "Videos, guides and quizzes to grow, in class and beyond." },
+  { icon: "bx-trending-up", title: "Succeed", text: "Mentors who cheer you on toward your goals." },
 ];
 
 const MARQUEE = "CONNECT   •   LEARN   •   GROW   •   SUCCEED   •   ".repeat(6);
@@ -54,7 +55,7 @@ export default function Landing() {
             <div className="grid-3">
               {FEATURES.map((f) => (
                 <article className="card" key={f.title}>
-                  <div className="icon" aria-hidden="true">{f.icon}</div>
+                  <div className="icon"><i className={`bx ${f.icon}`} aria-hidden="true" /></div>
                   <h3>{f.title}</h3>
                   <p>{f.text}</p>
                 </article>
@@ -85,6 +86,8 @@ export default function Landing() {
             </div>
           </div>
         </section>
+
+        <Stories />
 
         <section className="section" id="download">
           <div className="wrap split">
@@ -117,7 +120,7 @@ export default function Landing() {
       <footer className="site-footer">
         <div className="wrap">
           <span>© {new Date().getFullYear()} Fellowship of Christian Unions</span>
-          <span>FCU Student Community</span>
+          <span><a href="/help">Help</a> · <a href="/charter">Community charter</a></span>
         </div>
       </footer>
     </>

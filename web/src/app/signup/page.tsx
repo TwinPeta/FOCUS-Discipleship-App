@@ -187,7 +187,7 @@ export default function SignupPage() {
             <label className="check">
               <input type="checkbox" id="accepted_code_of_conduct" checked={f.accepted_code_of_conduct}
                 onChange={(e) => set("accepted_code_of_conduct", e.target.checked)} />
-              <span>I will follow the community code of conduct.<br /><Err k="accepted_code_of_conduct" /></span>
+              <span>I will follow the <Link href="/charter" target="_blank">community charter</Link>.<br /><Err k="accepted_code_of_conduct" /></span>
             </label>
             <span className="hint">If you are under 18, a parent or guardian will need to give consent before you can use everything.</span>
             <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
