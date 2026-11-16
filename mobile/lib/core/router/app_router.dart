@@ -56,6 +56,7 @@ import '../../features/prayer/presentation/new_prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
+import '../../features/profile/presentation/join_start_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
@@ -153,6 +154,10 @@ final List<RouteBase> appRoutes = [
     path: '/join',
     builder: (context, state) => const JoinFormScreen(),
     routes: [
+      GoRoute(
+        path: 'start',
+        builder: (context, state) => const JoinStartScreen(),
+      ),
       GoRoute(
         path: 'password',
         builder: (context, state) => const SecurePasswordScreen(),

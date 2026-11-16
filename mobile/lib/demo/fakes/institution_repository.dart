@@ -23,6 +23,24 @@ class FakeInstitutionRepository implements InstitutionRepository {
     ],
   };
 
+  static const Map<String, List<String>> institutes = {
+    'Uganda': [
+      'Kampala Institute of Business and Technology',
+      'Uganda Institute of Information and Communications Technology',
+      'Nsamizi Training Institute of Social Development',
+    ],
+    'Kenya': [
+      'Kenya Institute of Management',
+      'Kenya Medical Training College',
+      'Nairobi Technical Training Institute',
+    ],
+    'Rwanda': [
+      'IPRC Kigali',
+      'Rwanda Institute of Cooperatives',
+      'Kigali Institute of Management',
+    ],
+  };
+
   static const Map<String, List<String>> highSchools = {
     'Uganda': [
       'Gayaza High School',
@@ -49,9 +67,11 @@ class FakeInstitutionRepository implements InstitutionRepository {
     required String country,
     required InstitutionType type,
   }) async {
-    final byCountry = type == InstitutionType.university
-        ? universities
-        : highSchools;
+    final byCountry = switch (type) {
+      InstitutionType.university => universities,
+      InstitutionType.institute => institutes,
+      InstitutionType.highSchool => highSchools,
+    };
     return byCountry[country] ?? const [];
   }
 }

@@ -324,7 +324,7 @@ paths:
       summary: Universities / high schools ("Select your university")
       security: []
       parameters:
-        - { name: type, in: query, schema: { type: string, enum: [university, high_school] } }
+        - { name: type, in: query, schema: { type: string, enum: [university, institute, high_school] } }
         - { name: country, in: query, schema: { type: string, example: UG } }
         - { name: q, in: query, schema: { type: string } }
         - { $ref: '#/components/parameters/Limit' }
@@ -371,6 +371,14 @@ paths:
                 phone: { type: string }
                 email: { type: string, format: email }
                 institution_id: { type: string }
+                year_of_study: { type: integer, minimum: 1, maximum: 7 }
+                home_church:
+                  type: object
+                  required: [name, location, pastor]
+                  properties:
+                    name: { type: string }
+                    location: { type: string }
+                    pastor: { type: string }
       responses:
         '200':
           description: OK
@@ -1825,9 +1833,17 @@ components:
           institution_type: university
           institution_id: 'b1f0c6e2-3c5a-4d0e-9a1e-2f6f3c1d8a77'
           password: 'a long passphrase'
+          year_of_study: 2
+          home_church: { name: Watoto Church, location: Kampala, pastor: Pastor John }
           accepted_terms: true
           accepted_code_of_conduct: true
-      required: [full_name, username, birthdate, country, institution_type, institution_id, password, accepted_terms, accepted_code_of_conduct]
+          accepted_national_activities: true
+      required: [full_name, username, birthdate, country, institution_type, password, accepted_terms, accepted_code_of_conduct, accepted_national_activities, home_church]
+      description: >-
+        Send `institution_id` from `GET /institutions`. Only for `institution_type: institute`, when the
+        institute is not listed, send `institution_name` instead: the institute is added (hidden from the
+        list until staff review it) or reused if one with that name exists in the country.
+        `high_school` is accepted only for older app versions.
       anyOf:
         - required: [email]
         - required: [phone]
@@ -1839,8 +1855,19 @@ components:
         country: { type: string, example: UG, description: 'ISO 3166-1 alpha-2 (UG, KE, RW)' }
         email: { type: string, format: email }
         phone: { type: string, example: '+256700000000', description: E.164 }
-        institution_type: { type: string, enum: [university, high_school] }
+        institution_type: { type: string, enum: [university, institute, high_school] }
         institution_id: { type: string }
+        institution_name: { type: string, minLength: 2, maxLength: 120, description: 'Institutes only: a name typed because it is not listed' }
+        year_of_study: { type: integer, minimum: 1, maximum: 7, description: Required for university students }
+        home_church:
+          type: object
+          description: The student's home church. All three are required at sign-up.
+          required: [name, location, pastor]
+          properties:
+            name: { type: string, maxLength: 120, example: Watoto Church }
+            location: { type: string, maxLength: 120, example: Kampala }
+            pastor: { type: string, maxLength: 120, example: Pastor John }
+        accepted_national_activities: { type: boolean, description: 'Agrees to take part in FOCUS national activities (must be true)' }
         password: { type: string, format: password, minLength: 8 }
         accepted_terms: { type: boolean }
         accepted_code_of_conduct: { type: boolean, description: Community guidelines shown at sign-up (BRD §8.2) }
@@ -1928,7 +1955,7 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        type: { type: string, enum: [university, high_school] }
+        type: { type: string, enum: [university, institute, high_school] }
         country: { type: string }
     UserRef:
       type: object
@@ -1953,6 +1980,16 @@ components:
         birthdate: { type: string, format: date }
         country: { type: string }
         institution: { $ref: '#/components/schemas/Institution' }
+        year_of_study: { type: [integer, 'null'], minimum: 1, maximum: 7 }
+        home_church:
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                name: { type: string }
+                location: { type: string }
+                pastor: { type: string }
+        accepted_national_activities: { type: boolean }
         minor_status:
           type: string
           enum: [adult, pending_guardian_consent, minor_consented]
@@ -2238,7 +2275,7 @@ components:
         quote: { type: string }
         student_name: { type: string }
         institution_name: { type: string }
-        institution_type: { type: string, enum: [university, high_school] }
+        institution_type: { type: string, enum: [university, institute, high_school] }
         duration_seconds: { type: integer }
         thumbnail_url: { type: string, format: uri }
         video_url: { type: string, format: uri }

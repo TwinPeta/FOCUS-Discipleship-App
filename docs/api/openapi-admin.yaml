@@ -2416,7 +2416,7 @@ components:
     OptReasonBody: { type: object, properties: { reason: { type: string } } }
     IdsBody: { type: object, required: [ids], properties: { ids: { type: array, items: { type: string } } } }
     BulkResult: { type: object, properties: { approved: { type: array, items: { type: string } }, skipped: { type: array, items: { type: object, properties: { id: { type: string }, reason: { type: string } } } } } }
-    InstitutionBody: { type: object, required: [name, type, city], properties: { name: { type: string }, type: { type: string, enum: [UNIVERSITY, HIGH_SCHOOL] }, country: { type: string, enum: [Uganda, Kenya, Rwanda] }, city: { type: string }, generalCoverUrl: { type: string }, shownInSignup: { type: boolean } } }
+    InstitutionBody: { type: object, required: [name, type, city], properties: { name: { type: string }, type: { type: string, enum: [UNIVERSITY, INSTITUTE, HIGH_SCHOOL] }, country: { type: string, enum: [Uganda, Kenya, Rwanda] }, city: { type: string }, generalCoverUrl: { type: string }, shownInSignup: { type: boolean } } }
     CommunityBody:
       type: object
       required: [institutionId, name]

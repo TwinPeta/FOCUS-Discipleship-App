@@ -12,12 +12,32 @@ String countryNameOf(String code) {
   return code;
 }
 
-String institutionTypeToApi(InstitutionType t) =>
-    t == InstitutionType.university ? 'university' : 'high_school';
+String institutionTypeToApi(InstitutionType t) => switch (t) {
+  InstitutionType.university => 'university',
+  InstitutionType.institute => 'institute',
+  InstitutionType.highSchool => 'high_school',
+};
 
-InstitutionType institutionTypeFromApi(String? t) => t == 'high_school'
-    ? InstitutionType.highSchool
-    : InstitutionType.university;
+InstitutionType institutionTypeFromApi(String? t) => switch (t) {
+  'high_school' => InstitutionType.highSchool,
+  'institute' => InstitutionType.institute,
+  _ => InstitutionType.university,
+};
+
+Map<String, String> homeChurchToApi(HomeChurch c) => {
+  'name': c.name.trim(),
+  'location': c.location.trim(),
+  'pastor': c.pastor.trim(),
+};
+
+HomeChurch? homeChurchFromApi(Object? j) {
+  if (j is! Map<String, dynamic>) return null;
+  return HomeChurch(
+    name: (j['name'] as String?) ?? '',
+    location: (j['location'] as String?) ?? '',
+    pastor: (j['pastor'] as String?) ?? '',
+  );
+}
 
 String dateOnly(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-'
@@ -39,6 +59,8 @@ UserProfile profileFromApi(Map<String, dynamic> j) {
     phone: (j['phone'] as String?) ?? '',
     institutionType: institutionTypeFromApi(inst['type'] as String?),
     institutionName: (inst['name'] as String?) ?? '',
+    yearOfStudy: (j['year_of_study'] as num?)?.toInt(),
+    homeChurch: homeChurchFromApi(j['home_church']),
   );
 }
 
@@ -52,4 +74,10 @@ const apiFieldToForm = {
   'phone': 'phone',
   'institution_id': 'institutionName',
   'institution_type': 'institutionName',
+  'institution_name': 'institutionName',
+  'year_of_study': 'yearOfStudy',
+  'home_church': 'churchName',
+  'home_church.name': 'churchName',
+  'home_church.location': 'churchLocation',
+  'home_church.pastor': 'churchPastor',
 };

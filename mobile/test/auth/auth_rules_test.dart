@@ -17,9 +17,14 @@ import '../support/pump_utils.dart';
 import '../support/fakes.dart';
 import '../support/fake_backend.dart';
 
-Consent _consent({bool charter = true, bool participation = true}) => Consent(
+Consent _consent({
+  bool charter = true,
+  bool participation = true,
+  bool national = true,
+}) => Consent(
   charterAccepted: charter,
   participationAccepted: participation,
+  nationalActivitiesAccepted: national,
   mentorContactAllowed: false,
   acceptedAt: DateTime(2026),
 );
@@ -141,6 +146,7 @@ void main() {
         for (final consent in [
           _consent(charter: false),
           _consent(participation: false),
+          _consent(national: false),
         ]) {
           expect(consent.isValid, isFalse);
           expect(

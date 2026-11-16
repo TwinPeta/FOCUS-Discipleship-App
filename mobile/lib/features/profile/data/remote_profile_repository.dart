@@ -46,8 +46,10 @@ class RemoteProfileRepository implements ProfileRepository {
     }
   }
 
-  /// The API stores institutions by id; the app picks them by name.
-  Future<String> _institutionId(UserProfile p) async {
+  /// The API stores institutions by id; the app picks them by name. An
+  /// institute the student typed because it is not listed has no id yet:
+  /// null, and sign-up sends its name instead.
+  Future<String?> _institutionId(UserProfile p) async {
     final json = await _api.get(
       '/lookups/institutions',
       query: {
@@ -63,6 +65,7 @@ class RemoteProfileRepository implements ProfileRepository {
         return item['id'] as String;
       }
     }
+    if (p.institutionType == InstitutionType.institute) return null;
     throw const ProfileValidationError({
       'institutionName': 'We could not find this school yet. Pick another.',
     });
@@ -85,7 +88,10 @@ class RemoteProfileRepository implements ProfileRepository {
   }
 
   Future<UserProfile> _create(UserProfile profile) async {
-    final errors = validateProfile(profile);
+    final errors = {
+      ...validateProfile(profile),
+      ...validateSignUpDetails(profile),
+    };
     if (errors.isNotEmpty) throw ProfileValidationError(errors);
     try {
       final institutionId = await _institutionId(profile);
@@ -124,7 +130,13 @@ class RemoteProfileRepository implements ProfileRepository {
           'country': countryCodeOf(profile.country),
           'email': profile.email.trim(),
           if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
-          'institution_id': institutionId,
+          // An unlisted institute keeps the institution it was added as.
+          'institution_id': ?institutionId,
+          if (profile.institutionType == InstitutionType.university &&
+              profile.yearOfStudy != null)
+            'year_of_study': profile.yearOfStudy,
+          if (profile.homeChurch != null)
+            'home_church': homeChurchToApi(profile.homeChurch!),
         },
       ) as Map<String, dynamic>;
       return _cached = profileFromApi(json);

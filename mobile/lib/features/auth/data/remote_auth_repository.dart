@@ -188,7 +188,7 @@ class RemoteAuthRepository implements AuthRepository {
   /// in, and returns the profile the server stored.
   Future<UserProfile> register(
     UserProfile profile,
-    String institutionId,
+    String? institutionId,
   ) async {
     final pending = _pending;
     if (pending == null) throw const SignUpIncomplete('password');
@@ -203,10 +203,20 @@ class RemoteAuthRepository implements AuthRepository {
         'email': pending.email,
         if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
         'institution_type': institutionTypeToApi(profile.institutionType),
-        'institution_id': institutionId,
+        if (institutionId != null)
+          'institution_id': institutionId
+        else
+          // An institute that is not listed yet: the server adds it.
+          'institution_name': profile.institutionName.trim(),
+        if (profile.institutionType == InstitutionType.university)
+          'year_of_study': profile.yearOfStudy,
+        if (profile.homeChurch != null)
+          'home_church': homeChurchToApi(profile.homeChurch!),
         'password': pending.password,
         'accepted_terms': pending.consent.participationAccepted,
         'accepted_code_of_conduct': pending.consent.charterAccepted,
+        'accepted_national_activities':
+            pending.consent.nationalActivitiesAccepted,
       },
     ) as Map<String, dynamic>;
     _storeTokens(json);

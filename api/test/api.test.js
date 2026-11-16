@@ -8,6 +8,14 @@ const { seed, DEMO_PASSWORD } = require('./helpers/seed');
 const store = require('../src/db/store');
 const contract = require('./helpers/contract');
 
+// Sign-up fields added with the complete-profile form (home church, year of
+// study, national activities); every registration sends them.
+const SIGNUP_EXTRAS = {
+  year_of_study: 2,
+  home_church: { name: 'Watoto Church', location: 'Kampala', pastor: 'Pastor John' },
+  accepted_national_activities: true,
+};
+
 let server;
 let base;
 let ctx;
@@ -59,7 +67,7 @@ test('register: validation, minor guardian rule, auto General membership', async
   const base_ = {
     full_name: 'New Student', username: 'newstudent', birthdate: '2004-01-01', country: 'UG',
     email: 'new@fcu.test', institution_type: 'university', institution_id: inst.id,
-    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true,
+    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS,
   };
   const noConduct = await call('POST', '/v1/auth/register', { body: { ...base_, accepted_code_of_conduct: false } });
   assert.equal(noConduct.status, 422);
@@ -89,6 +97,65 @@ test('register: validation, minor guardian rule, auto General membership', async
 
   const dup = await call('POST', '/v1/auth/register', { body: base_ });
   assert.equal(dup.status, 409);
+});
+
+test('register: home church, year of study, national activities, institutes', async () => {
+  const uni = store.first('institutions', (i) => i.name === 'Makerere University');
+  const base_ = {
+    full_name: 'Profile Student', username: 'profilestudent', birthdate: '2003-03-03', country: 'UG',
+    email: 'profile@fcu.test', institution_type: 'university', institution_id: uni.id,
+    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS,
+  };
+  const fields = (r) => r.body.errors.map((e) => e.field);
+
+  const noChurch = await call('POST', '/v1/auth/register', { body: { ...base_, home_church: undefined } });
+  assert.equal(noChurch.status, 422);
+  assert.ok(fields(noChurch).includes('home_church'));
+  const noPastor = await call('POST', '/v1/auth/register', { body: { ...base_, home_church: { name: 'Watoto', location: 'Kampala', pastor: ' ' } } });
+  assert.equal(noPastor.status, 422);
+  assert.ok(fields(noPastor).includes('home_church.pastor'));
+
+  const noYear = await call('POST', '/v1/auth/register', { body: { ...base_, year_of_study: undefined } });
+  assert.ok(fields(noYear).includes('year_of_study'));
+  const badYear = await call('POST', '/v1/auth/register', { body: { ...base_, year_of_study: 1.5 } });
+  assert.ok(fields(badYear).includes('year_of_study'));
+
+  const noNational = await call('POST', '/v1/auth/register', { body: { ...base_, accepted_national_activities: false } });
+  assert.equal(noNational.status, 422);
+  assert.ok(fields(noNational).includes('accepted_national_activities'));
+
+  const ok = await call('POST', '/v1/auth/register', { body: base_ });
+  assert.equal(ok.status, 201);
+  assert.equal(ok.body.user.year_of_study, 2);
+  assert.deepEqual(ok.body.user.home_church, SIGNUP_EXTRAS.home_church);
+  assert.equal(ok.body.user.accepted_national_activities, true);
+
+  // The profile can be updated later.
+  const tk = ok.body.access_token;
+  const upd = await call('PATCH', '/v1/me', { token: tk, body: { year_of_study: 3, home_church: { name: 'New Life', location: 'Gulu', pastor: 'Rev. Okello' } } });
+  assert.equal(upd.status, 200);
+  assert.equal(upd.body.year_of_study, 3);
+  assert.equal(upd.body.home_church.location, 'Gulu');
+  assert.equal((await call('PATCH', '/v1/me', { token: tk, body: { home_church: { name: 'X' } } })).status, 422);
+
+  // An institute that is not listed: typed in, added hidden with its General community, reused by the next student.
+  const inst = { ...base_, institution_type: 'institute', institution_id: undefined, institution_name: 'Kampala  Technical Institute', year_of_study: undefined };
+  const a = await call('POST', '/v1/auth/register', { body: { ...inst, username: 'institutea', email: 'ia@fcu.test' } });
+  assert.equal(a.status, 201);
+  assert.equal(a.body.user.institution.name, 'Kampala Technical Institute');
+  assert.equal(a.body.user.year_of_study, null);
+  const mine = await call('GET', '/v1/me/communities', { token: a.body.access_token });
+  assert.equal(mine.body.general.membership_status, 'member');
+  const b = await call('POST', '/v1/auth/register', { body: { ...inst, username: 'instituteb', email: 'ib@fcu.test', institution_name: 'kampala technical institute' } });
+  assert.equal(b.status, 201);
+  assert.equal(b.body.user.institution.id, a.body.user.institution.id);
+  const listed = await call('GET', '/v1/institutions?type=institute&country=UG');
+  assert.ok(!listed.body.items.some((i) => i.id === a.body.user.institution.id), 'hidden until staff review');
+
+  // A typed name is only for institutes; universities pick from the list.
+  const uniTyped = await call('POST', '/v1/auth/register', { body: { ...base_, username: 'unityped', email: 'ut@fcu.test', institution_id: undefined, institution_name: 'Some University' } });
+  assert.equal(uniTyped.status, 422);
+  assert.ok(fields(uniTyped).includes('institution_id'));
 });
 
 test('join flow: one specific community, super-mentor approval, locking', async () => {
@@ -232,7 +299,7 @@ test('minor awaiting consent cannot message unverified adults', async () => {
     body: {
       full_name: 'Young One', username: 'youngone', birthdate: '2012-05-05', country: 'UG', email: 'young@fcu.test',
       institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!',
-      accepted_terms: true, accepted_code_of_conduct: true, guardian: { name: 'Parent', phone: '+256700111222' },
+      accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS, guardian: { name: 'Parent', phone: '+256700111222' },
     },
   });
   assert.equal(reg.status, 201);
@@ -269,7 +336,7 @@ test('leave a specific community; note is returned on a declined request', async
   const inst = store.first('institutions', (i) => i.name === 'Makerere University');
   const reg = await call('POST', '/v1/auth/register', {
     body: { full_name: 'Leaver One', username: 'leaverone', birthdate: '2001-01-01', country: 'UG', email: 'leaver@fcu.test',
-      institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true },
+      institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS },
   });
   const tk = reg.body.access_token;
   const spec = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
@@ -515,7 +582,7 @@ test('contract sweep: remaining operations return what the spec says', async () 
   // join request: a fresh student asks, then cancels
   const inst = store.get('institutions', ctx.student.institutionId);
   const fresh = await call('POST', '/v1/auth/register', { body: { full_name: 'Sweep Student', username: 'sweepstudent', birthdate: '2002-02-02', country: 'UG', email: 'sweep@fcu.test',
-    institution_type: inst.type, institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true } });
+    institution_type: inst.type, institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS } });
   ok(fresh, 201);
   const other = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
   const jr = await call('POST', `/v1/communities/${other.id}/join-requests`, { token: fresh.body.access_token });

@@ -40,7 +40,7 @@ class FinalCtaSection extends StatelessWidget {
           LandingPillButton(
             label: 'Explore communities',
             expand: true,
-            onPressed: () => context.push('/join'),
+            onPressed: () => context.push('/join/start'),
           ),
           const SizedBox(height: 8),
           Center(

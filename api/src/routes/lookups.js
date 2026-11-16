@@ -15,7 +15,10 @@ router.get('/countries', (_req, res) => {
 
 router.get('/institutions', (req, res) => {
   const { type, country, q } = req.query;
+  // Institutions hidden from sign-up (e.g. an institute a student typed in,
+  // waiting for staff review) are not listed.
   let items = store.col('institutions').filter((i) =>
+    i.shownInSignup !== false &&
     (!type || i.type === type) &&
     (!country || i.country === country) &&
     (!q || i.name.toLowerCase().includes(String(q).toLowerCase()))

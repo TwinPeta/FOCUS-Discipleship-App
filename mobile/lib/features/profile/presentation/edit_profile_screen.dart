@@ -47,6 +47,16 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   late final _name = TextEditingController(text: widget.profile.fullName);
   late final _username = TextEditingController(text: widget.profile.username);
   late final _phone = TextEditingController(text: widget.profile.phone);
+  late final _churchName = TextEditingController(
+    text: widget.profile.homeChurch?.name ?? '',
+  );
+  late final _churchLocation = TextEditingController(
+    text: widget.profile.homeChurch?.location ?? '',
+  );
+  late final _churchPastor = TextEditingController(
+    text: widget.profile.homeChurch?.pastor ?? '',
+  );
+  late int? _year = widget.profile.yearOfStudy;
   late var _type = widget.profile.institutionType;
   late String? _institution = widget.profile.institutionName;
   late String? _photo = widget.profile.photoPath;
@@ -56,7 +66,14 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
   @override
   void initState() {
     super.initState();
-    for (final c in [_name, _username, _phone]) {
+    for (final c in [
+      _name,
+      _username,
+      _phone,
+      _churchName,
+      _churchLocation,
+      _churchPastor,
+    ]) {
       c.addListener(() => setState(() {}));
     }
   }
@@ -66,7 +83,21 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     _name.dispose();
     _username.dispose();
     _phone.dispose();
+    _churchName.dispose();
+    _churchLocation.dispose();
+    _churchPastor.dispose();
     super.dispose();
+  }
+
+  /// Null while every church field is empty (accounts made before the
+  /// home church was asked for).
+  HomeChurch? get _church {
+    final c = HomeChurch(
+      name: _churchName.text.trim(),
+      location: _churchLocation.text.trim(),
+      pastor: _churchPastor.text.trim(),
+    );
+    return c.name.isEmpty && c.location.isEmpty && c.pastor.isEmpty ? null : c;
   }
 
   UserProfile get _draft => widget.profile.copyWith(
@@ -76,16 +107,28 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
     institutionType: _type,
     institutionName: _institution ?? '',
     photoPath: _photo,
+    yearOfStudy: _year,
+    clearYearOfStudy: _type != InstitutionType.university,
+    homeChurch: _church,
   );
 
   Map<String, String?> get _errors => {
     'fullName': Validators.required(_name.text, 'Full name'),
     'username': Validators.username(_username.text) ?? _usernameError,
     'phone': Validators.phone(_phone.text),
-    'institution': Validators.required(
-      _institution,
-      _type == InstitutionType.university ? 'University' : 'High school',
-    ),
+    'institution': Validators.required(_institution, _type.label),
+    'yearOfStudy': _type == InstitutionType.university && _year == null
+        ? 'Year of study is required'
+        : null,
+    // Home church: all three once any is filled in (or already saved).
+    if (_church != null || widget.profile.homeChurch != null) ...{
+      'churchName': Validators.required(_churchName.text, 'Church name'),
+      'churchLocation': Validators.required(
+        _churchLocation.text,
+        'Church location',
+      ),
+      'churchPastor': Validators.required(_churchPastor.text, "Pastor's name"),
+    },
   };
 
   bool get _changed {
@@ -96,7 +139,9 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
         d.phone != p.phone ||
         d.institutionType != p.institutionType ||
         d.institutionName != p.institutionName ||
-        d.photoPath != p.photoPath;
+        d.photoPath != p.photoPath ||
+        d.yearOfStudy != p.yearOfStudy ||
+        d.homeChurch != p.homeChurch;
   }
 
   bool get _valid => _errors.values.every((e) => e == null);
@@ -193,6 +238,38 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
               _institution = null;
             }),
             onNameChanged: (n) => setState(() => _institution = n),
+            yearOfStudy: _year,
+            yearErrorText: errors['yearOfStudy'],
+            onYearChanged: (y) => setState(() => _year = y),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Home church',
+            style: AppTextStyles.cardTitle.copyWith(fontSize: 18),
+          ),
+          const SizedBox(height: 12),
+          AppTextField(
+            label: 'Church name',
+            controller: _churchName,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            errorText: errors['churchName'],
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            label: 'Location',
+            controller: _churchLocation,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            errorText: errors['churchLocation'],
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            label: "Pastor's name",
+            controller: _churchPastor,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            errorText: errors['churchPastor'],
           ),
           const SizedBox(height: 16),
           Text(

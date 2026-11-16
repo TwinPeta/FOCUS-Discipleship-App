@@ -60,7 +60,7 @@ class LandingHeroSection extends StatelessWidget {
           LandingPillButton(
             label: 'Explore communities',
             trailingArrow: true,
-            onPressed: () => context.push('/join'),
+            onPressed: () => context.push('/join/start'),
           ),
           const SizedBox(height: 12),
           _WatchStoriesLink(onTap: onWatchStories),

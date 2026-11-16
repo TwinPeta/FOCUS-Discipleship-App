@@ -10,7 +10,7 @@
 "use client";
 
 import { useState } from "react";
-import { InstitutionType, type Institution, type InstitutionInput } from "@/features/institutions/schemas";
+import { institutionTypeLabel, type Institution, type InstitutionInput } from "@/features/institutions/schemas";
 import { updateInstitution } from "@/features/institutions/queries";
 import { InstitutionForm } from "./InstitutionForm";
 import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
@@ -75,7 +75,7 @@ export function InstitutionTable({ initialItems }: InstitutionTableProps) {
                   <tr key={inst.id} className="hover:bg-surface/60">
                     <td className="px-4 py-3 font-medium text-foreground">{inst.name}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {inst.type === InstitutionType.University ? "University" : "High school"}
+                      {institutionTypeLabel(inst.type)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {inst.city}, {inst.country}

@@ -26,10 +26,12 @@ class ConsentScreen extends ConsumerStatefulWidget {
 class _ConsentScreenState extends ConsumerState<ConsentScreen> {
   bool _charter = false;
   bool _participation = false;
+  bool _nationalActivities = false;
   bool _mentorContact = false;
   bool _joining = false;
 
-  bool get _canJoin => _charter && _participation && !_joining;
+  bool get _canJoin =>
+      _charter && _participation && _nationalActivities && !_joining;
 
   Future<void> _join() async {
     if (!_canJoin) return;
@@ -41,6 +43,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
             Consent(
               charterAccepted: _charter,
               participationAccepted: _participation,
+              nationalActivitiesAccepted: _nationalActivities,
               mentorContactAllowed: _mentorContact,
               acceptedAt: DateTime.now(),
             ),
@@ -119,6 +122,13 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
             label: 'I agree to take part in community spaces (required)',
             value: _participation,
             onChanged: (v) => setState(() => _participation = v),
+          ),
+          const SizedBox(height: 10),
+          CheckRow(
+            label:
+                'I agree to take part in FOCUS national activities (required)',
+            value: _nationalActivities,
+            onChanged: (v) => setState(() => _nationalActivities = v),
           ),
           const SizedBox(height: 10),
           CheckRow(

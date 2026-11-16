@@ -15,22 +15,27 @@ class Account {
   final String email;
 }
 
-/// The charter consent given on "Before you join". Both required boxes must
+/// The charter consent given on "Before you join". Every required box must
 /// be ticked explicitly; nothing is pre-ticked.
 class Consent {
   const Consent({
     required this.charterAccepted,
     required this.participationAccepted,
+    required this.nationalActivitiesAccepted,
     required this.mentorContactAllowed,
     required this.acceptedAt,
   });
 
   final bool charterAccepted;
   final bool participationAccepted;
+
+  /// Agrees to take part in FOCUS national activities (required).
+  final bool nationalActivitiesAccepted;
   final bool mentorContactAllowed;
   final DateTime acceptedAt;
 
-  bool get isValid => charterAccepted && participationAccepted;
+  bool get isValid =>
+      charterAccepted && participationAccepted && nationalActivitiesAccepted;
 }
 
 /// Everything collected across the sign-up steps. Holds a password

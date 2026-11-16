@@ -21,4 +21,10 @@ final testProfile = UserProfile(
   phone: '+256700000000',
   institutionType: InstitutionType.university,
   institutionName: 'Makerere University',
+  yearOfStudy: 2,
+  homeChurch: const HomeChurch(
+    name: 'Watoto Church',
+    location: 'Kampala',
+    pastor: 'Pastor John',
+  ),
 );

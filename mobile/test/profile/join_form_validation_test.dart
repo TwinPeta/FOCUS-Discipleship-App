@@ -47,6 +47,10 @@ void main() {
     expect(find.text('Birthdate is required'), findsOneWidget);
     expect(find.text('Email is required'), findsOneWidget);
     expect(find.text('Phone number is required'), findsOneWidget);
+    expect(find.text('Year of study is required'), findsOneWidget);
+    expect(find.text('Church name is required'), findsOneWidget);
+    expect(find.text('Church location is required'), findsOneWidget);
+    expect(find.text("Pastor's name is required"), findsOneWidget);
     // Still on the Join form, not navigated away.
     expect(find.text('PASSWORD STEP'), findsNothing);
   });
@@ -110,10 +114,62 @@ void main() {
     await tester.tap(find.text('Makerere University').last);
     await settle(tester);
 
+    await _pick(tester, 'Select your year', 'Year 2');
+    await _fillChurch(tester);
+
     await tester.tap(find.text('Continue'));
     await settle(tester);
 
     // Sign-up continues to the password step; nothing is created yet.
     expect(find.text('PASSWORD STEP'), findsOneWidget);
   });
+
+  testWidgets('no high school; an unlisted institute can be typed in, '
+      'and institutes need no year of study', (tester) async {
+    await tester.pumpWidget(_wrap());
+    await settle(tester);
+
+    expect(find.text('High school'), findsNothing);
+    await tester.ensureVisible(find.text('Institute'));
+    await tester.tap(find.text('Institute'));
+    await settle(tester);
+    expect(find.text('Year of study'), findsNothing);
+
+    await _pick(tester, 'Select your institute', "My institute isn't listed");
+    final typed = find.widgetWithText(
+      TextField,
+      'e.g. Kampala Institute of Business',
+    );
+    await tester.ensureVisible(typed);
+    await tester.enterText(typed, 'Gulu Bible Institute');
+    await settle(tester);
+
+    await tester.tap(find.text('Continue'));
+    await settle(tester);
+    expect(find.text('Institute is required'), findsNothing);
+    expect(find.text('Year of study is required'), findsNothing);
+  });
+}
+
+Future<void> _pick(WidgetTester tester, String hint, String option) async {
+  final dropdown = find.text(hint);
+  await tester.ensureVisible(dropdown);
+  await settle(tester);
+  await tester.tap(dropdown);
+  await settle(tester);
+  await tester.tap(find.text(option).last);
+  await settle(tester);
+}
+
+Future<void> _fillChurch(WidgetTester tester) async {
+  for (final (hint, value) in [
+    ('e.g. Watoto Church', 'Watoto Church'),
+    ('e.g. Kampala, Central', 'Kampala'),
+    ('e.g. Pastor John Mukasa', 'Pastor John'),
+  ]) {
+    final field = find.widgetWithText(TextField, hint);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, value);
+  }
+  await settle(tester);
 }

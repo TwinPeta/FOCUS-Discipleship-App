@@ -97,7 +97,7 @@ function communityDto(c) {
 function institutionDto(i) {
   const comms = store.where('communities', (c) => c.institutionId === i.id);
   return {
-    id: i.id, name: i.name, type: i.type === 'high_school' ? 'HIGH_SCHOOL' : 'UNIVERSITY',
+    id: i.id, name: i.name, type: { high_school: 'HIGH_SCHOOL', institute: 'INSTITUTE' }[i.type] || 'UNIVERSITY',
     country: COUNTRY_NAMES[i.country] || i.country, city: i.city || '', generalCoverUrl: i.generalCoverUrl || '',
     shownInSignup: i.shownInSignup !== false,
     communityCount: comms.length,

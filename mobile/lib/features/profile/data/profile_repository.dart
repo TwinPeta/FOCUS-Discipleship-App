@@ -44,6 +44,26 @@ abstract class ProfileRepository {
 }
 
 /// Shared by every [ProfileRepository]: the same rules the form shows inline.
+/// The complete-profile details asked at sign-up: home church (all three
+/// fields) and, for university students, the year of study. Accounts made
+/// before these existed can still save other changes without them.
+Map<String, String> validateSignUpDetails(UserProfile p) {
+  final church = p.homeChurch;
+  final errors = <String, String?>{
+    'churchName': Validators.required(church?.name, 'Church name'),
+    'churchLocation': Validators.required(church?.location, 'Church location'),
+    'churchPastor': Validators.required(church?.pastor, "Pastor's name"),
+    'yearOfStudy':
+        p.institutionType == InstitutionType.university && p.yearOfStudy == null
+        ? 'Year of study is required'
+        : null,
+  };
+  return {
+    for (final e in errors.entries)
+      if (e.value != null) e.key: e.value!,
+  };
+}
+
 Map<String, String> validateProfile(UserProfile p) {
   final errors = <String, String?>{
     'fullName': Validators.required(p.fullName, 'Full name'),

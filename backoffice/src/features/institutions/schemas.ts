@@ -11,13 +11,17 @@ import { z } from "zod";
 
 export const InstitutionType = {
   University: "UNIVERSITY",
+  Institute: "INSTITUTE",
   HighSchool: "HIGH_SCHOOL",
 } as const;
+export type InstitutionTypeLabel = "University" | "Institute" | "High school";
+export const institutionTypeLabel = (t: string): InstitutionTypeLabel =>
+  t === InstitutionType.Institute ? "Institute" : t === InstitutionType.HighSchool ? "High school" : "University";
 export type InstitutionType = (typeof InstitutionType)[keyof typeof InstitutionType];
 
 export const institutionSchema = z.object({
   name: z.string().trim().min(2, "Institution name is required"),
-  type: z.enum([InstitutionType.University, InstitutionType.HighSchool]),
+  type: z.enum([InstitutionType.University, InstitutionType.Institute, InstitutionType.HighSchool]),
   country: z.string().trim().min(2, "Country is required").default("Uganda"),
   city: z.string().trim().min(2, "City is required"),
   generalCoverUrl: z.string().trim().optional().or(z.literal("")),

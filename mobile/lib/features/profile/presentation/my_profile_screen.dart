@@ -190,12 +190,14 @@ class _DetailsCard extends StatelessWidget {
       ('Email', profile.email),
       ('Phone', profile.phone),
       ('Country', profile.country),
-      (
-        profile.institutionType == InstitutionType.university
-            ? 'University'
-            : 'High school',
-        profile.institutionName,
-      ),
+      (profile.institutionType.label, profile.institutionName),
+      if (profile.yearOfStudy != null)
+        ('Year of study', 'Year ${profile.yearOfStudy}'),
+      if (profile.homeChurch case final church?) ...[
+        ('Home church', church.name),
+        ('Church location', church.location),
+        ('Pastor', church.pastor),
+      ],
     ];
 
     return Container(

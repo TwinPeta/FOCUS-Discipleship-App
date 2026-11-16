@@ -148,7 +148,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     foregroundColor: AppColors.ink,
                     minimumSize: const Size(44, 44),
                   ),
-                  onPressed: () => context.go('/join'),
+                  onPressed: () => context.go('/join/start'),
                   child: const Text(
                     'Explore communities',
                     style: TextStyle(
