@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart' show XFile;
 
 import 'api_client.dart';
 
@@ -31,7 +30,9 @@ class MediaUploader {
   /// [purpose]: `post_photo`, `testimony_photo`, `profile_photo` or
   /// `report_evidence`. Throws [ApiException] on any failure.
   Future<String> uploadPhoto(String path, {required String purpose}) async {
-    final bytes = await File(path).readAsBytes();
+    // XFile reads a device file and, on the web, the picked photo's
+    // `blob:` link alike.
+    final bytes = await XFile(path).readAsBytes();
     final type = contentTypeOf(path);
     final slot = objectOf(
       await _api.post(

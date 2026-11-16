@@ -44,8 +44,8 @@ String dateOnly(DateTime d) =>
     '${d.month.toString().padLeft(2, '0')}-'
     '${d.day.toString().padLeft(2, '0')}';
 
-/// API `MyProfile` -> the app's [UserProfile]. The photo stays null for now:
-/// the app model holds a local file path, not a URL.
+/// API `MyProfile` -> the app's [UserProfile]. The photo is the server's
+/// `photo_url` (the app shows both URLs and local files).
 UserProfile profileFromApi(Map<String, dynamic> j) {
   final institution = j['institution'];
   final inst = institution is Map<String, dynamic> ? institution : const {};
@@ -59,6 +59,7 @@ UserProfile profileFromApi(Map<String, dynamic> j) {
     phone: (j['phone'] as String?) ?? '',
     institutionType: institutionTypeFromApi(inst['type'] as String?),
     institutionName: (inst['name'] as String?) ?? '',
+    photoPath: j['photo_url'] as String?,
     yearOfStudy: (j['year_of_study'] as num?)?.toInt(),
     homeChurch: homeChurchFromApi(j['home_church']),
   );

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../features/community/domain/membership.dart';
-import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/create/presentation/create_menu_sheet.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
@@ -25,8 +24,8 @@ String? approvedCommunityId(Membership m) =>
     m.status == MembershipStatus.approved ? m.communityId : null;
 
 /// Bottom navigation on the top-level screens (roadmap A1.1):
-/// Home (General campus feed) | Communities (your specific community's feed,
-/// or the hub to find one) | Messages | Profile, with a centre Create button
+/// Home (General campus feed) | Communities (the hub, as in the design) |
+/// Messages | Profile, with a centre Create button
 /// that opens the Create menu. The label shows on the selected tab only.
 /// Uses `go`, so switching tabs never grows the back stack.
 class AppBottomNav extends ConsumerWidget {
@@ -34,20 +33,13 @@ class AppBottomNav extends ConsumerWidget {
 
   final AppTab current;
 
-  static String communityRoute(Membership m) {
-    final id = approvedCommunityId(m);
-    return id != null ? '/community/$id/feed' : '/communities';
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final membership =
-        ref.watch(membershipProvider).valueOrNull ?? Membership.empty;
     void select(AppTab tab) {
       if (tab == current) return;
       context.go(switch (tab) {
         AppTab.home => '/general-feed',
-        AppTab.communities => communityRoute(membership),
+        AppTab.communities => '/communities',
         AppTab.messages => '/messages',
         AppTab.profile => '/profile',
       });

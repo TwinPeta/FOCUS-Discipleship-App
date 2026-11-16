@@ -6,7 +6,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/dashed_rrect_painter.dart';
 import '../../../core/widgets/initials_avatar.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/round_icon_button.dart';
+import 'widgets/join_photo_picker.dart';
 import '../../community/domain/membership.dart';
 import '../../community/presentation/providers/community_providers.dart';
 import '../../community/presentation/providers/membership_provider.dart';
@@ -122,15 +124,15 @@ class _Header extends StatelessWidget {
                 ),
               ),
               RoundIconButton(
-                icon: Icons.edit_outlined,
-                semanticLabel: 'Edit profile',
-                onPressed: () => context.push('/settings/profile'),
-              ),
-              const SizedBox(width: 8),
-              RoundIconButton(
                 icon: Icons.settings_outlined,
                 semanticLabel: 'Settings',
                 onPressed: () => context.push('/settings'),
+              ),
+              const SizedBox(width: 8),
+              RoundIconButton(
+                icon: Icons.edit_outlined,
+                semanticLabel: 'Edit profile',
+                onPressed: () => context.push('/settings/profile'),
               ),
             ],
           ),
@@ -149,14 +151,7 @@ class _Header extends StatelessWidget {
               Positioned(
                 bottom: -4,
                 right: -4,
-                child: RoundIconButton(
-                  icon: Icons.photo_camera_outlined,
-                  semanticLabel: 'Change profile photo',
-                  size: 44,
-                  borderColor: AppColors.ink,
-                  borderWidth: 2,
-                  onPressed: () => context.push('/settings/profile'),
-                ),
+                child: _ChangePhotoButton(profile: profile),
               ),
             ],
           ),
@@ -418,6 +413,70 @@ class _ActivityRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The camera on the avatar: pick a photo, upload it and show it.
+class _ChangePhotoButton extends ConsumerStatefulWidget {
+  const _ChangePhotoButton({required this.profile});
+
+  final UserProfile profile;
+
+  @override
+  ConsumerState<_ChangePhotoButton> createState() => _ChangePhotoButtonState();
+}
+
+class _ChangePhotoButtonState extends ConsumerState<_ChangePhotoButton> {
+  var _saving = false;
+
+  Future<void> _change() async {
+    if (_saving) return;
+    final path = await choosePhoto(context, ref);
+    if (path == null || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(profileControllerProvider.notifier)
+          .save(widget.profile.copyWith(photoPath: path));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Photo updated')));
+    } catch (_) {
+      if (mounted) {
+        showErrorSnack(context, 'Could not upload the photo. Try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_saving) {
+      return Container(
+        width: 44,
+        height: 44,
+        padding: const EdgeInsets.all(11),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.ink, width: 2),
+        ),
+        child: const CircularProgressIndicator(
+          strokeWidth: 2.5,
+          color: AppColors.ink,
+        ),
+      );
+    }
+    return RoundIconButton(
+      icon: Icons.photo_camera_outlined,
+      semanticLabel: 'Change profile photo',
+      size: 44,
+      borderColor: AppColors.ink,
+      borderWidth: 2,
+      onPressed: _change,
     );
   }
 }

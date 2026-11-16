@@ -81,7 +81,11 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   if (auth is! RemoteAuthRepository) {
     throw StateError('The profile needs the API-backed sign-in');
   }
-  return RemoteProfileRepository(ref.watch(apiClientProvider), auth);
+  return RemoteProfileRepository(
+    ref.watch(apiClientProvider),
+    auth,
+    ref.watch(mediaUploaderProvider),
+  );
 });
 
 /// People met through the API, so a tapped name can open a profile.
