@@ -531,6 +531,9 @@ test('contract sweep: remaining operations return what the spec says', async () 
   ok(await call('GET', '/v1/health'), 200);
   ok(await call('GET', '/v1/public/landing'), 200);
   ok(await call('GET', '/v1/lookups/countries'), 200);
+  const appConfig = await call('GET', '/v1/lookups/app-config');
+  ok(appConfig, 200);
+  assert.equal(typeof appConfig.body.join_requests.auto_approve, 'boolean');
   ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
