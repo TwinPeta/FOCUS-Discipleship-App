@@ -104,7 +104,7 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
       minorStatus: isMinor ? 'pending_guardian_consent' : 'adult',
       guardian: isMinor ? (b.guardian || null) : null,
       consents: { terms: store.now(), codeOfConduct: store.now(), nationalActivities: store.now() },
-      homeChurch, yearOfStudy,
+      homeChurch: homeChurch || null, yearOfStudy,
     });
 
     // Every student is automatically in the General community of their institution.

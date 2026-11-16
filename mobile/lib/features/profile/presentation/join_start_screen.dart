@@ -21,7 +21,11 @@ const joinRequirements = <(IconData, String, String?)>[
     'School',
     'University (and your year of study) or institute',
   ),
-  (Icons.church_outlined, 'Home church', 'Its name, location and pastor'),
+  (
+    Icons.church_outlined,
+    'Home church (optional)',
+    'Its name, location and pastor. You can add it later.',
+  ),
 ];
 
 /// Before the join form (`/join/start`): lists the details sign-up asks

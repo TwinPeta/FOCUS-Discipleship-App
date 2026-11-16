@@ -108,9 +108,10 @@ test('register: home church, year of study, national activities, institutes', as
   };
   const fields = (r) => r.body.errors.map((e) => e.field);
 
-  const noChurch = await call('POST', '/v1/auth/register', { body: { ...base_, home_church: undefined } });
-  assert.equal(noChurch.status, 422);
-  assert.ok(fields(noChurch).includes('home_church'));
+  // The home church may be added later, but when sent it must be complete.
+  const later = await call('POST', '/v1/auth/register', { body: { ...base_, username: 'churchlater', email: 'later@fcu.test', home_church: undefined } });
+  assert.equal(later.status, 201);
+  assert.equal(later.body.user.home_church, null);
   const noPastor = await call('POST', '/v1/auth/register', { body: { ...base_, home_church: { name: 'Watoto', location: 'Kampala', pastor: ' ' } } });
   assert.equal(noPastor.status, 422);
   assert.ok(fields(noPastor).includes('home_church.pastor'));

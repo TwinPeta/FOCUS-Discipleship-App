@@ -155,11 +155,15 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
     }
   }
 
-  HomeChurch get _homeChurch => HomeChurch(
-    name: _churchNameController.text.trim(),
-    location: _churchLocationController.text.trim(),
-    pastor: _churchPastorController.text.trim(),
-  );
+  /// Null while every church field is empty: it can be added later.
+  HomeChurch? get _homeChurch {
+    final c = HomeChurch(
+      name: _churchNameController.text.trim(),
+      location: _churchLocationController.text.trim(),
+      pastor: _churchPastorController.text.trim(),
+    );
+    return c.name.isEmpty && c.location.isEmpty && c.pastor.isEmpty ? null : c;
+  }
 
   Map<String, String?> _validateAll() {
     return {
@@ -177,18 +181,25 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
           _institutionType == InstitutionType.university && _yearOfStudy == null
           ? 'Year of study is required'
           : null,
-      'churchName': Validators.required(
-        _churchNameController.text,
-        'Church name',
-      ),
-      'churchLocation': Validators.required(
-        _churchLocationController.text,
-        'Church location',
-      ),
-      'churchPastor': Validators.required(
-        _churchPastorController.text,
-        "Pastor's name",
-      ),
+      // Optional, but complete once started.
+      if (_homeChurch != null) ...{
+        'churchName': Validators.required(
+          _churchNameController.text,
+          'Church name',
+        ),
+        'churchLocation': Validators.required(
+          _churchLocationController.text,
+          'Church location',
+        ),
+        'churchPastor': Validators.required(
+          _churchPastorController.text,
+          "Pastor's name",
+        ),
+      } else ...{
+        'churchName': null,
+        'churchLocation': null,
+        'churchPastor': null,
+      },
     };
   }
 
@@ -480,6 +491,16 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                       ),
                       const SizedBox(height: 28),
                       const _SectionTitle('Your home church'),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Optional. You can add it now or later from your '
+                          'profile.',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.inkDeemphasized80,
+                          ),
+                        ),
+                      ),
                       AppTextField(
                         label: 'Church name',
                         controller: _churchNameController,

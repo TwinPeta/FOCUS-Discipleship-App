@@ -48,9 +48,8 @@ void main() {
     expect(find.text('Email is required'), findsOneWidget);
     expect(find.text('Phone number is required'), findsOneWidget);
     expect(find.text('Year of study is required'), findsOneWidget);
-    expect(find.text('Church name is required'), findsOneWidget);
-    expect(find.text('Church location is required'), findsOneWidget);
-    expect(find.text("Pastor's name is required"), findsOneWidget);
+    // The home church is optional: no errors while it is empty.
+    expect(find.text('Church name is required'), findsNothing);
     // Still on the Join form, not navigated away.
     expect(find.text('PASSWORD STEP'), findsNothing);
   });
@@ -152,6 +151,7 @@ void main() {
 }
 
 Future<void> _pick(WidgetTester tester, String hint, String option) async {
+  // (shared by the tests above)
   final dropdown = find.text(hint);
   await tester.ensureVisible(dropdown);
   await settle(tester);

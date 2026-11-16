@@ -12,10 +12,14 @@ const SIGNUP_TYPES = ['university', 'institute'];
 const MAX_YEAR = 7;
 const CHURCH_FIELDS = ['name', 'location', 'pastor'];
 
-/** Validates `home_church` ({ name, location, pastor }, all required). */
+/**
+ * Validates `home_church` ({ name, location, pastor }). Optional (students
+ * may add it later), but when sent all three are required.
+ */
 function homeChurchInput(v, errs, field = 'home_church') {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) {
-    errs.push({ field, message: 'is required' });
+  if (v === undefined || v === null) return null;
+  if (typeof v !== 'object' || Array.isArray(v)) {
+    errs.push({ field, message: 'must be an object with name, location and pastor' });
     return null;
   }
   const out = {};

@@ -1838,7 +1838,7 @@ components:
           accepted_terms: true
           accepted_code_of_conduct: true
           accepted_national_activities: true
-      required: [full_name, username, birthdate, country, institution_type, password, accepted_terms, accepted_code_of_conduct, accepted_national_activities, home_church]
+      required: [full_name, username, birthdate, country, institution_type, password, accepted_terms, accepted_code_of_conduct, accepted_national_activities]
       description: >-
         Send `institution_id` from `GET /institutions`. Only for `institution_type: institute`, when the
         institute is not listed, send `institution_name` instead: the institute is added (hidden from the
@@ -1861,7 +1861,7 @@ components:
         year_of_study: { type: integer, minimum: 1, maximum: 7, description: Required for university students }
         home_church:
           type: object
-          description: The student's home church. All three are required at sign-up.
+          description: Optional at sign-up (can be added later with `PATCH /me`); when sent, all three are required.
           required: [name, location, pastor]
           properties:
             name: { type: string, maxLength: 120, example: Watoto Church }
