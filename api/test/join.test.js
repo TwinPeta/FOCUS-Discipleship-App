@@ -190,3 +190,37 @@ test('a pending membership carries its request id, and super-mentors get a live 
   const after = await (await get('/v1/me/communities', bearer(token))).json();
   assert.equal(after.specific.join_request_id, null, 'null once a member');
 });
+
+test('auto-approval (the default) makes the student a member at once and tells them; staff can switch it off', async () => {
+  const setting = store.first('settings', (x) => x.key === 'joinRequests');
+  const saved = setting.value;
+  try {
+    store.remove('settings', (x) => x.key === 'joinRequests'); // no setting: the default, on
+    const fresh = store.first('communities', (c) => c.name === 'Life & Faith Circle') || growth();
+    const email = 'auto@fcu.test';
+    // A new student, so earlier tests' memberships do not interfere.
+    const reg = await post('/v1/auth/register', {}, {
+      full_name: 'Auto Student', username: 'autostudent', birthdate: '2003-03-03', country: 'UG', email,
+      institution_type: 'university', institution_id: fresh.institutionId, year_of_study: 1,
+      password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, accepted_national_activities: true,
+    });
+    assert.equal(reg.status, 201, await reg.clone().text());
+    const token = (await reg.json()).access_token;
+    const res = await post(`/v1/communities/${fresh.id}/join-requests`, { ...bearer(token), 'Idempotency-Key': 'auto-1' });
+    assert.equal(res.status, 201);
+    assert.equal((await res.json()).status, 'approved');
+    const { specific, notifications } = await outcome(token);
+    assert.equal(specific.membership_status, 'member');
+    assert.ok(notifications.some((n) => n.type === 'request_approved'));
+
+    // Switched off in the back office: requests wait again.
+    const admin = await staffToken('admin@fcu.test');
+    const off = await fetch(base + '/v1/admin/settings/joinRequests', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...bearer(admin) }, body: JSON.stringify({ autoApprove: false }) });
+    assert.equal(off.status, 200);
+    assert.equal((await off.json()).autoApprove, false);
+  } finally {
+    store.remove('settings', (x) => x.key === 'joinRequests');
+    store.insert('settings', { key: 'joinRequests', value: saved });
+  }
+});
+

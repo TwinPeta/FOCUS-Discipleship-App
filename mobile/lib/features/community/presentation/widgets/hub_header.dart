@@ -3,12 +3,16 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/count_badge.dart';
 import '../../../../core/widgets/initials_avatar.dart';
 import '../../../notifications/presentation/notification_providers.dart';
 import '../../../profile/domain/user_profile.dart';
-import '../../../../core/theme/app_gradients.dart';
 
+/// Communities hub header (screen 3): "Welcome, Grace" (first name) with the
+/// notification bell (unread count) and the profile picture (initials when
+/// there is no photo), then the full description on its own line.
 class HubHeader extends StatelessWidget {
   const HubHeader({super.key, required this.profile});
 
@@ -23,23 +27,36 @@ class HubHeader extends StatelessWidget {
         gradient: AppGradients.brand,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'WELCOME, ${firstName.toUpperCase()}',
-                  style: AppTextStyles.eyebrow,
+                child: Semantics(
+                  header: true,
+                  // One line, shrinking rather than breaking a word.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Welcome, $firstName',
+                      style: AppTextStyles.hubUniversityTitle.copyWith(
+                        fontSize: 28,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
               const _NotificationBell(),
               const SizedBox(width: 10),
               Semantics(
                 button: true,
                 label: 'Open my profile',
+                excludeSemantics: true,
                 child: GestureDetector(
                   onTap: () => context.push('/profile'),
                   child: InitialsAvatar(
@@ -47,20 +64,18 @@ class HubHeader extends StatelessWidget {
                     photoPath: profile.photoPath,
                     size: 48,
                     backgroundColor: AppColors.white,
+                    borderColor: AppColors.white,
+                    borderWidth: 2,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
-            profile.institutionName,
-            style: AppTextStyles.hubUniversityTitle,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Two ways to belong: the whole campus, and a smaller group with mentors.',
-            style: AppTextStyles.body,
+            'Two ways to belong: the whole campus, and a smaller group with '
+            'mentors.',
+            style: AppTextStyles.body.copyWith(fontSize: 16, height: 1.4),
           ),
         ],
       ),
@@ -68,8 +83,8 @@ class HubHeader extends StatelessWidget {
   }
 }
 
-/// 48px white bell; an ink dot (plus the count in its label) when there
-/// are unread notifications. Opens Notifications (screen 44).
+/// 48px bell; a count badge when there are unread notifications. Opens
+/// Notifications (screen 44).
 class _NotificationBell extends ConsumerWidget {
   const _NotificationBell();
 
@@ -80,36 +95,33 @@ class _NotificationBell extends ConsumerWidget {
       button: true,
       label: unread == 0 ? 'Notifications' : 'Notifications, $unread unread',
       excludeSemantics: true,
-      child: Material(
-        color: AppColors.white,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () => context.push('/notifications'),
-          child: SizedBox(
-            width: 48,
-            height: 48,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(Icons.notifications_none_rounded, color: AppColors.ink),
-                if (unread > 0)
-                  Positioned(
-                    top: 11,
-                    right: 12,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.ink,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.white, width: 2),
-                      ),
-                    ),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Material(
+              color: AppColors.white,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => context.push('/notifications'),
+                child: Center(
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: AppColors.ink,
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
+            if (unread > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: IgnorePointer(child: CountBadge(count: unread)),
+              ),
+          ],
         ),
       ),
     );

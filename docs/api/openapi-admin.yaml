@@ -1055,7 +1055,7 @@ paths:
     get:
       tags: [Settings]
       operationId: getSettingsSection
-      summary: "section = charter | consents | minors | retention"
+      summary: "section = charter | consents | minors | retention | joinRequests"
       description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
       parameters:
         - { name: section, in: path, required: true, schema: { type: string } }
@@ -2339,8 +2339,8 @@ components:
         days: { type: integer, minimum: 1, maximum: 365 }
       required: [days]
     SettingsSection:
-      description: "The fields depend on {section}: charter, consents, minors or retention"
-      anyOf: [{ type: object, title: charter, properties: { version: { type: string }, effectiveDate: { type: string, format: date }, text: { type: string }, requireAcceptance: { type: boolean }, repromptOnChange: { type: boolean } } }, { type: object, title: consents, properties: { accountCreationText: { type: string }, communitySpacesText: { type: string }, mentorContactText: { type: string } } }, { type: object, title: minors, properties: { ageThreshold: { type: integer, minimum: 13, maximum: 21 }, requireGuardianConsent: { type: boolean }, limitAdultDirectMessages: { type: boolean }, requireVerifiedMentors: { type: boolean } } }, { type: object, title: retention, properties: { inactiveRetentionMonths: { type: integer, minimum: 1, maximum: 120 }, deletionDeadlineDays: { type: integer, minimum: 1, maximum: 90 } } }]
+      description: "The fields depend on {section}: charter, consents, minors, retention or joinRequests (autoApprove: a request to join a specific community is approved at once; default true)"
+      anyOf: [{ type: object, title: charter, properties: { version: { type: string }, effectiveDate: { type: string, format: date }, text: { type: string }, requireAcceptance: { type: boolean }, repromptOnChange: { type: boolean } } }, { type: object, title: consents, properties: { accountCreationText: { type: string }, communitySpacesText: { type: string }, mentorContactText: { type: string } } }, { type: object, title: minors, properties: { ageThreshold: { type: integer, minimum: 13, maximum: 21 }, requireGuardianConsent: { type: boolean }, limitAdultDirectMessages: { type: boolean }, requireVerifiedMentors: { type: boolean } } }, { type: object, title: retention, properties: { inactiveRetentionMonths: { type: integer, minimum: 1, maximum: 120 }, deletionDeadlineDays: { type: integer, minimum: 1, maximum: 90 } } }, { type: object, title: joinRequests, properties: { autoApprove: { type: boolean } } }]
     Problem:
       type: object
       properties:

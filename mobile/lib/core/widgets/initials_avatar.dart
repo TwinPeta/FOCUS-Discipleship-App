@@ -59,6 +59,7 @@ class InitialsAvatar extends StatelessWidget {
           ? null
           : Text(
               initials,
+              textScaler: TextScaler.noScaling,
               style: AppTextStyles.cardTitle.copyWith(
                 fontSize: size * 0.36,
                 fontWeight: FontWeight.w800,

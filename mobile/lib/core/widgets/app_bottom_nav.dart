@@ -6,9 +6,11 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../features/community/domain/membership.dart';
 import '../../features/create/presentation/create_menu_sheet.dart';
+import '../../features/messaging/presentation/providers/messaging_providers.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
+import 'count_badge.dart';
 
 /// The four top-level destinations.
 enum AppTab { home, communities, messages, profile }
@@ -52,6 +54,7 @@ class AppBottomNav extends ConsumerWidget {
       String label,
       String tooltip, {
       bool showLabel = true,
+      int badge = 0,
     }) => Expanded(
       child: _NavTab(
         icon: icon,
@@ -59,10 +62,12 @@ class AppBottomNav extends ConsumerWidget {
         label: label,
         tooltip: tooltip,
         showLabel: showLabel,
+        badge: badge,
         selected: t == current,
         onTap: () => select(t),
       ),
     );
+    final unreadMessages = ref.watch(unreadMessageCountProvider);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -98,6 +103,7 @@ class AppBottomNav extends ConsumerWidget {
                 Icons.chat_bubble_rounded,
                 'Messages',
                 'Messages',
+                badge: unreadMessages,
               ),
               tab(
                 AppTab.profile,
@@ -123,6 +129,7 @@ class _NavTab extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.showLabel = true,
+    this.badge = 0,
   });
 
   final IconData icon;
@@ -135,12 +142,15 @@ class _NavTab extends StatelessWidget {
   /// When false the tab never shows its text, only the icon.
   final bool showLabel;
 
+  /// Unread count shown on the icon (0: none).
+  final int badge;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: badge > 0 ? '$label, $badge unread' : label,
       excludeSemantics: true,
       child: Tooltip(
         message: tooltip,
@@ -160,7 +170,21 @@ class _NavTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(selected ? selectedIcon : icon, color: AppColors.ink),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        selected ? selectedIcon : icon,
+                        color: AppColors.ink,
+                      ),
+                      if (badge > 0)
+                        Positioned(
+                          top: -8,
+                          right: -12,
+                          child: CountBadge(count: badge),
+                        ),
+                    ],
+                  ),
                   if (selected && showLabel)
                     Text(
                       label,
