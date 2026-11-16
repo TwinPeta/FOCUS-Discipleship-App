@@ -51,7 +51,7 @@ class JoinStepsSection extends StatelessWidget {
           for (final step in _steps)
             _StepRow(data: step, last: step == _steps.last),
           const SizedBox(height: 16),
-          const IntrinsicHeight(
+          IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -63,7 +63,7 @@ class JoinStepsSection extends StatelessWidget {
                     color: AppColors.honey,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _MiniCard(
                     icon: Icons.groups_rounded,
@@ -98,7 +98,7 @@ class _StepRow extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: AppGradients.brand,
                   shape: BoxShape.circle,
                 ),

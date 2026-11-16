@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_1/core/theme/app_colors.dart';
 
 /// Tests use the bundled Bricolage Grotesque (assets/fonts/) exactly like
 /// the app. flutter_test does not load pubspec fonts by itself, so every
@@ -15,6 +16,9 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     await _loadBricolage();
     await _loadMaterialIcons();
   });
+  // The palette is app-wide: a test that switches to dark must not leave
+  // the next test dark.
+  setUp(() => AppColors.usePalette(dark: false));
   await testMain();
 }
 

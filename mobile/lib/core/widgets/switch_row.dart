@@ -57,7 +57,7 @@ class SwitchRow extends StatelessWidget {
                   activeTrackColor: AppColors.amber,
                   inactiveThumbColor: AppColors.white,
                   inactiveTrackColor: AppColors.skeletonBlock,
-                  trackOutlineColor: const WidgetStatePropertyAll(
+                  trackOutlineColor: WidgetStatePropertyAll(
                     AppColors.inputBorder,
                   ),
                 ),

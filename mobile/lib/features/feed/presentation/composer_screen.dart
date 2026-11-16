@@ -295,7 +295,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                           ),
                         ),
                         child: _isPosting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 16,
                                 width: 16,
                                 child: CircularProgressIndicator(
@@ -363,7 +363,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                         textCapitalization: TextCapitalization.sentences,
                         onChanged: (_) => setState(() {}),
                         style: const TextStyle(fontSize: 20, height: 1.35),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           isCollapsed: true,
                           border: InputBorder.none,
                           hintText: "What's on your mind?",
@@ -396,7 +396,7 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
               ),
               Container(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: AppColors.cream)),
                 ),
                 child: Row(
@@ -493,7 +493,7 @@ class _MediaPreview extends StatelessWidget {
                 height: 170,
                 fit: BoxFit.cover,
               ),
-              _MediaKind.video => const Icon(
+              _MediaKind.video => Icon(
                 Icons.play_circle_outline_rounded,
                 size: 40,
                 color: AppColors.placeholder,
@@ -503,7 +503,7 @@ class _MediaPreview extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.description_outlined,
                       size: 32,
                       color: AppColors.placeholder,
@@ -540,7 +540,7 @@ class _MediaPreview extends StatelessWidget {
                   border: Border.all(color: AppColors.ink, width: 2),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.close, size: 18, color: AppColors.ink),
+                child: Icon(Icons.close, size: 18, color: AppColors.ink),
               ),
             ),
           ),

@@ -65,7 +65,7 @@ class AppBottomNav extends ConsumerWidget {
     );
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
         border: Border(top: BorderSide(color: AppColors.cream)),
       ),
@@ -206,7 +206,7 @@ class _CreateButton extends StatelessWidget {
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => unawaited(showCreateMenu(context)),
-              child: const SizedBox(
+              child: SizedBox(
                 width: _createSize,
                 height: _createSize,
                 child: Icon(Icons.add_rounded, size: 30, color: AppColors.ink),

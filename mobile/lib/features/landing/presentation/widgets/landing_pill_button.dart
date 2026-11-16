@@ -79,7 +79,7 @@ class LandingPillButton extends StatelessWidget {
                   ),
                   if (trailingArrow) ...[
                     const SizedBox(width: 10),
-                    const Icon(
+                    Icon(
                       Icons.arrow_forward_rounded,
                       size: 22,
                       color: AppColors.ink,

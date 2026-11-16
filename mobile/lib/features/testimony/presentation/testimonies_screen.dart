@@ -153,9 +153,7 @@ class _VideoTestimonyCard extends StatelessWidget {
                   Container(
                     height: 130,
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: AppGradients.brand,
-                    ),
+                    decoration: BoxDecoration(gradient: AppGradients.brand),
                   ),
                   const Positioned.fill(child: Center(child: _PlayButton())),
                   if (testimony.duration != null)
@@ -224,11 +222,7 @@ class _PlayButton extends StatelessWidget {
         border: Border.all(color: AppColors.ink, width: 2.5),
       ),
       alignment: Alignment.center,
-      child: const Icon(
-        Icons.play_arrow_rounded,
-        color: AppColors.ink,
-        size: 30,
-      ),
+      child: Icon(Icons.play_arrow_rounded, color: AppColors.ink, size: 30),
     );
   }
 }

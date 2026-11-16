@@ -68,19 +68,19 @@ class ComposerRow extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Icon(
+              Icon(
                 Icons.videocam_outlined,
                 size: 20,
                 color: AppColors.placeholder,
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.emoji_emotions_outlined,
                 size: 20,
                 color: AppColors.placeholder,
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.favorite_border_rounded,
                 size: 20,
                 color: AppColors.placeholder,

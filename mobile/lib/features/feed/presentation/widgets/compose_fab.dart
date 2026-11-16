@@ -37,7 +37,7 @@ class ComposeFab extends ConsumerWidget {
                 boxShadow: AppShadows.hard(offset: const Offset(3, 3)),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.add, color: AppColors.ink, size: 28),
+              child: Icon(Icons.add, color: AppColors.ink, size: 28),
             ),
           ),
         ),

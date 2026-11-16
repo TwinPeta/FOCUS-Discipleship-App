@@ -28,7 +28,7 @@ class EditProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
     if (profile == null) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
     return _EditProfileForm(key: ValueKey(profile.id), profile: profile);
   }

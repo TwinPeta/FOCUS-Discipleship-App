@@ -416,7 +416,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                               onTap: _pickBirthdate,
                               controller: _birthdateController,
                               placeholder: 'DD / MM / YYYY',
-                              suffixIcon: const Icon(
+                              suffixIcon: Icon(
                                 Icons.calendar_today_outlined,
                                 size: 18,
                                 color: AppColors.placeholder,
@@ -534,7 +534,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.white,
                 border: Border(
                   top: BorderSide(color: AppColors.cream, width: 1),

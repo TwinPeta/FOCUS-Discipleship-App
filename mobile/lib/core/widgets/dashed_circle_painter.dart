@@ -5,19 +5,22 @@ import '../theme/app_colors.dart';
 /// Dashed circle outline, used for "add a photo" and locked-badge rings.
 class DashedCirclePainter extends CustomPainter {
   const DashedCirclePainter({
-    this.color = AppColors.ink,
+    this.color,
     this.strokeWidth = 2,
     this.dashCount = 28,
   });
 
-  final Color color;
+  final Color? color;
+
+  /// [color], or the theme's ink.
+  Color get _color => color ?? AppColors.ink;
   final double strokeWidth;
   final int dashCount;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color
+      ..color = _color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     final radius = size.width / 2;
@@ -41,7 +44,7 @@ class DashedCirclePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant DashedCirclePainter oldDelegate) {
-    return oldDelegate.color != color ||
+    return oldDelegate.color != _color ||
         oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.dashCount != dashCount;
   }

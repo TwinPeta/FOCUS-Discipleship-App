@@ -57,7 +57,7 @@ class _ModeratorWarningScreenState
     final warnings = ref.watch(myWarningsProvider);
     return warnings.when(
       loading: () =>
-          const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+          Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
       error: (_, _) =>
           ErrorScreen(onRetry: () => ref.invalidate(myWarningsProvider)),
       data: (all) {

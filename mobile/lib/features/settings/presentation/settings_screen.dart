@@ -113,7 +113,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right_rounded,
                               color: AppColors.ink,
                             ),
@@ -289,7 +289,7 @@ class SettingsRow extends StatelessWidget {
       onTap: onTap,
       trailing: onTap == null
           ? null
-          : const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+          : Icon(Icons.chevron_right_rounded, color: AppColors.ink),
     );
   }
 }

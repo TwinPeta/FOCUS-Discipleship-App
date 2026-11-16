@@ -31,7 +31,7 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
         .watch(documentContentProvider(widget.id))
         .when(
           loading: () =>
-              const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+              Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
           error: (e, s) => ErrorScreen(
             onRetry: () => ref.invalidate(documentContentProvider(widget.id)),
           ),
@@ -58,7 +58,7 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.description_outlined,
                         size: 48,
                         color: AppColors.placeholder,

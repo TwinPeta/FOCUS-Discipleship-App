@@ -219,7 +219,7 @@ class _ThreadRow extends StatelessWidget {
                 Container(
                   width: 24,
                   height: 24,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: AppGradients.brand,
                     shape: BoxShape.circle,
                   ),

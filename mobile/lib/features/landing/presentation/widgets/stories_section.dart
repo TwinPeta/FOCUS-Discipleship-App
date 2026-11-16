@@ -9,7 +9,7 @@ import '../providers/stories_provider.dart';
 import '../../../../core/theme/app_shadows.dart';
 import 'student_face_painter.dart';
 
-const List<Color> _artBackgrounds = [
+final List<Color> _artBackgrounds = [
   AppColors.amber,
   AppColors.honey,
   AppColors.cream,
@@ -48,7 +48,7 @@ class StoriesSection extends ConsumerWidget {
             // text part grows with text scale.
             height: 230 + 28 + 28 + MediaQuery.textScalerOf(context).scale(80),
             child: storiesAsync.when(
-              loading: () => const Center(
+              loading: () => Center(
                 child: CircularProgressIndicator(color: AppColors.ink),
               ),
               error: (error, stackTrace) => Center(
@@ -123,11 +123,11 @@ class _StoryCard extends StatelessWidget {
                     Container(color: artBackground),
                     // The drawn art stays underneath: it shows while the
                     // real thumbnail loads, and offline.
-                    const Padding(
-                      padding: EdgeInsets.all(20),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
                       child: RepaintBoundary(
                         child: CustomPaint(
-                          size: Size(190, 190),
+                          size: const Size(190, 190),
                           painter: StudentFacePainter(
                             fillColor: AppColors.white,
                           ),
@@ -159,7 +159,7 @@ class _StoryCard extends StatelessWidget {
                         ],
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: Icon(
                         Icons.play_arrow_rounded,
                         color: AppColors.ink,
                         size: 28,

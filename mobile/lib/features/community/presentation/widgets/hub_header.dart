@@ -19,9 +19,9 @@ class HubHeader extends StatelessWidget {
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppGradients.brand,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
       child: Column(
@@ -92,10 +92,7 @@ class _NotificationBell extends ConsumerWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.ink,
-                ),
+                Icon(Icons.notifications_none_rounded, color: AppColors.ink),
                 if (unread > 0)
                   Positioned(
                     top: 11,

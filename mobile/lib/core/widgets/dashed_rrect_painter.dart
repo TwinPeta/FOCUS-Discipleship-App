@@ -8,18 +8,21 @@ import '../theme/app_colors.dart';
 class DashedRRectPainter extends CustomPainter {
   const DashedRRectPainter({
     required this.radius,
-    this.color = AppColors.ink,
+    this.color,
     this.strokeWidth = 2,
   });
 
   final double radius;
-  final Color color;
+  final Color? color;
+
+  /// [color], or the theme's ink.
+  Color get _color => color ?? AppColors.ink;
   final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color
+      ..color = _color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     final rrect = RRect.fromRectAndRadius(
@@ -44,7 +47,7 @@ class DashedRRectPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant DashedRRectPainter oldDelegate) {
     return oldDelegate.radius != radius ||
-        oldDelegate.color != color ||
+        oldDelegate.color != _color ||
         oldDelegate.strokeWidth != strokeWidth;
   }
 }

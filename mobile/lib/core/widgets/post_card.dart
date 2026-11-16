@@ -104,10 +104,7 @@ class PostCard extends StatelessWidget {
                     minWidth: 44,
                     minHeight: 44,
                   ),
-                  icon: const Icon(
-                    Icons.more_horiz_rounded,
-                    color: AppColors.ink,
-                  ),
+                  icon: Icon(Icons.more_horiz_rounded, color: AppColors.ink),
                 ),
             ],
           ),
@@ -144,7 +141,7 @@ class PostCard extends StatelessWidget {
                 width: double.infinity,
                 color: AppColors.cream,
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.image_outlined,
                   size: 32,
                   color: AppColors.placeholder,

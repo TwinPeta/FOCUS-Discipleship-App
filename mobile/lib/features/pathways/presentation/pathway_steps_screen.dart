@@ -34,7 +34,7 @@ class PathwayStepsScreen extends ConsumerWidget {
 
     if ((pathwaysAsync.isLoading && !pathwaysAsync.hasValue) ||
         (stepsAsync.isLoading && !stepsAsync.hasValue)) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
 
     final pathway = pathwaysAsync.valueOrNull

@@ -260,7 +260,7 @@ class _VerifiedPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.verified_outlined, size: 16, color: AppColors.ink),
+          Icon(Icons.verified_outlined, size: 16, color: AppColors.ink),
           const SizedBox(width: 4),
           Text('Verified', style: AppTextStyles.chip),
         ],

@@ -34,7 +34,7 @@ class GeneralCommunityCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.public_rounded,
                   color: AppColors.ink,
                   size: 22,

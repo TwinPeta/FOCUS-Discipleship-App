@@ -73,7 +73,7 @@ class MessagePersonButton extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.lock_clock_outlined,
               color: AppColors.placeholder,
               size: 20,
@@ -96,7 +96,7 @@ class MessagePersonButton extends ConsumerWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,
-          child: const Icon(
+          child: Icon(
             Icons.mail_outline_rounded,
             color: AppColors.ink,
             size: 20,

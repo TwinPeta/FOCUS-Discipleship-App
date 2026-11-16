@@ -4,14 +4,23 @@ import 'app_colors.dart';
 
 /// Shared gradients (roadmap v2). Use [brand] for headers, cards, buttons
 /// and selected states; use [AppColors.amberDark] alone for emphasis.
+/// Follows the current theme like [AppColors].
 class AppGradients {
   AppGradients._();
 
-  static const brand = LinearGradient(
+  static const _light = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [AppColors.amberLight, AppColors.amberDark],
+    colors: [Color(0xFFF5CE3E), Color(0xFFE5A90A)],
   );
+
+  static const _dark = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF9A7608), Color(0xFF6E5403)],
+  );
+
+  static LinearGradient get brand => AppColors.isDark ? _dark : _light;
 
   /// [brand] when [on] (e.g. a selected chip), otherwise none, so the
   /// decoration's `color` shows instead.

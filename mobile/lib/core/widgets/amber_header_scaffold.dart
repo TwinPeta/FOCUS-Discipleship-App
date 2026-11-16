@@ -52,9 +52,9 @@ class AmberHeaderScaffold extends StatelessWidget {
       body: Column(
         children: [
           DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: AppGradients.brand,
-              borderRadius: BorderRadius.vertical(
+              borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(AppRadii.headerBottom),
               ),
             ),
@@ -113,7 +113,7 @@ class AmberHeaderScaffold extends StatelessWidget {
           if (bottomBar != null)
             Container(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.white,
                 border: Border(
                   top: BorderSide(color: AppColors.cream, width: 1),

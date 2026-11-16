@@ -89,8 +89,8 @@ class JoinPhotoPicker extends ConsumerWidget {
                     ),
                     child: hasPhoto
                         ? null
-                        : const CustomPaint(
-                            painter: DashedCirclePainter(),
+                        : CustomPaint(
+                            painter: const DashedCirclePainter(),
                             child: Center(
                               child: Icon(
                                 Icons.person_outline_rounded,
@@ -112,11 +112,7 @@ class JoinPhotoPicker extends ConsumerWidget {
                         border: Border.all(color: AppColors.white, width: 2),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: AppColors.ink,
-                      ),
+                      child: Icon(Icons.add, size: 16, color: AppColors.ink),
                     ),
                   ),
                 ],

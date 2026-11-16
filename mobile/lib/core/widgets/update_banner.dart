@@ -28,7 +28,7 @@ class UpdateBanner extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.system_update_rounded, color: AppColors.ink),
+            Icon(Icons.system_update_rounded, color: AppColors.ink),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

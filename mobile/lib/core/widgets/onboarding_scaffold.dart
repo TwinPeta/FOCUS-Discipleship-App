@@ -99,7 +99,7 @@ class OnboardingScaffold extends StatelessWidget {
             if (bottom != null)
               Container(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.white,
                   border: Border(top: BorderSide(color: AppColors.cream)),
                 ),

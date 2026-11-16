@@ -98,7 +98,7 @@ class _NoneSlot extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.diversity_3_rounded,
                 color: AppColors.ink,
                 size: 22,

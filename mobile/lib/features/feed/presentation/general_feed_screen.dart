@@ -29,7 +29,7 @@ class GeneralFeedScreen extends ConsumerWidget {
 
     return communityAsync.when(
       loading: () =>
-          const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+          Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
       error: (error, stackTrace) =>
           ErrorScreen(onRetry: () => ref.invalidate(generalCommunityProvider)),
       data: (community) {

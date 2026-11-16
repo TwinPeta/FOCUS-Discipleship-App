@@ -240,7 +240,7 @@ class _RequestBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
         border: Border(top: BorderSide(color: AppColors.cream, width: 1)),
       ),
@@ -264,7 +264,10 @@ class _RequestBar extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           if (onCancel != null)
-            TextButton(onPressed: onCancel, child: const Text('Cancel request')),
+            TextButton(
+              onPressed: onCancel,
+              child: const Text('Cancel request'),
+            ),
         ],
       ),
     );

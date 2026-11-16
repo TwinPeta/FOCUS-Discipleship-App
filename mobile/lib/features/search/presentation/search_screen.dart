@@ -138,10 +138,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 constraints: const BoxConstraints(minHeight: _minTarget),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.history_rounded,
-                      color: AppColors.placeholder,
-                    ),
+                    Icon(Icons.history_rounded, color: AppColors.placeholder),
                     const SizedBox(width: _gap),
                     Expanded(child: Text(q, style: AppTextStyles.bodyMedium)),
                   ],

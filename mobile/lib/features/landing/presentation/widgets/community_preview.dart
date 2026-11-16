@@ -42,9 +42,11 @@ class CommunityPreview extends StatelessWidget {
                 ],
               ),
               child: DecoratedBox(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.page,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(26),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),

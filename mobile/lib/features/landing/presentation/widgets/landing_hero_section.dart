@@ -18,9 +18,9 @@ class LandingHeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppGradients.brand,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
       ),
       clipBehavior: Clip.antiAlias,
       padding: EdgeInsets.fromLTRB(
@@ -149,11 +149,7 @@ class _WatchStoriesLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.play_arrow_rounded,
-                size: 20,
-                color: AppColors.ink,
-              ),
+              Icon(Icons.play_arrow_rounded, size: 20, color: AppColors.ink),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(

@@ -51,7 +51,7 @@ class TabSectionHeader extends StatelessWidget {
                   child: InkWell(
                     onTap: onAction,
                     borderRadius: BorderRadius.circular(AppRadii.md),
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 44,
                       height: 44,
                       child: Icon(Icons.add, color: AppColors.ink),

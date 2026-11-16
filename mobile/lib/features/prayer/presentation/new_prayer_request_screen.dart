@@ -98,7 +98,7 @@ class _NewPrayerRequestScreenState
               onChanged: (value) => setState(() => _anonymous = value),
             ),
             const SizedBox(height: 14),
-            const Row(
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
@@ -106,7 +106,7 @@ class _NewPrayerRequestScreenState
                   size: 16,
                   color: AppColors.placeholder,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Requests are visible to members of your specific community.',

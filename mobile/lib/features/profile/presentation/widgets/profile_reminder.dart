@@ -94,8 +94,8 @@ class CompleteProfileDialog extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
                       child: Icon(
                         Icons.radio_button_unchecked_rounded,
                         size: 18,

@@ -85,16 +85,16 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
     final profile = ref.watch(currentProfileProvider);
 
     if (profile == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.page,
-        body: SafeArea(child: Center(child: Text('No profile yet.'))),
+        body: const SafeArea(child: Center(child: Text('No profile yet.'))),
       );
     }
 
     final membershipAsync = ref.watch(membershipProvider);
 
     if (membershipAsync.isLoading && !membershipAsync.hasValue) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
 
     final membership = membershipAsync.valueOrNull ?? Membership.empty;

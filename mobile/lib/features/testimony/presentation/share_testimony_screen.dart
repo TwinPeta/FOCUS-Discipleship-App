@@ -132,7 +132,7 @@ class _ShareTestimonyScreenState extends ConsumerState<ShareTestimonyScreen> {
               onChanged: (value) => setState(() => _consent = value),
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Moderators review every story before it is published.',
               style: TextStyle(
                 fontSize: 12.5,

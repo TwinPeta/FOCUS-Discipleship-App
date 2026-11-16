@@ -199,7 +199,7 @@ class _NotificationRow extends StatelessWidget {
                       margin: const EdgeInsets.only(left: 8, top: 4),
                       width: _dotSize,
                       height: _dotSize,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.ink,
                         shape: BoxShape.circle,
                       ),

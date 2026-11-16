@@ -204,10 +204,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                             ),
                           ),
                         )
-                      : const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.ink,
-                        ),
+                      : Icon(Icons.chevron_right_rounded, color: AppColors.ink),
                 ),
                 if (i != filtered.length - 1) const SizedBox(height: 10),
               ],

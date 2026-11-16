@@ -207,7 +207,7 @@ class _ManageCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (count != null) AppChip(label: '$count'),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+            Icon(Icons.chevron_right_rounded, color: AppColors.ink),
           ],
         ),
       ),

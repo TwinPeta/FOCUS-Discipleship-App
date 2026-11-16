@@ -39,7 +39,7 @@ class QuizScreen extends ConsumerWidget {
         ? ref.watch(lastQuizAttemptProvider(id))
         : const AsyncData<QuizAttempt?>(null);
     if (quizAsync.isLoading || attempt.isLoading) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
     final quiz = quizAsync.valueOrNull;
     if (quiz == null) {
@@ -171,9 +171,9 @@ class _QuizViewState extends ConsumerState<_QuizView> {
           child: Column(
             children: [
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: AppGradients.brand,
-                  borderRadius: BorderRadius.vertical(
+                  borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(AppRadii.headerBottom),
                   ),
                 ),
@@ -310,8 +310,8 @@ class _OptionRow extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.tile),
             side: highlighted
-                ? const BorderSide(color: AppColors.ink, width: 2)
-                : const BorderSide(color: AppColors.inputBorder, width: 1.5),
+                ? BorderSide(color: AppColors.ink, width: 2)
+                : BorderSide(color: AppColors.inputBorder, width: 1.5),
           ),
           child: InkWell(
             onTap: onTap,

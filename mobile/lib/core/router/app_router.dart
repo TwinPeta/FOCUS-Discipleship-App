@@ -148,7 +148,7 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/loading',
     builder: (context, state) =>
-        const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+        Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
   ),
   GoRoute(
     path: '/join',

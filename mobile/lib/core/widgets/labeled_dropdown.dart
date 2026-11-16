@@ -39,10 +39,7 @@ class LabeledDropdown<T> extends StatelessWidget {
           child: DropdownButtonFormField<T>(
             initialValue: value,
             isExpanded: true,
-            icon: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: AppColors.ink,
-            ),
+            icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.ink),
             style: AppTextStyles.bodyMedium,
             hint: hint == null
                 ? null

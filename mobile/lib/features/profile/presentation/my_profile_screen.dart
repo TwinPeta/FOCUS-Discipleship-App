@@ -96,9 +96,9 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppGradients.brand,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       child: Column(
@@ -229,7 +229,7 @@ class _DetailsCard extends StatelessWidget {
               ),
             ),
             if (i != rows.length - 1)
-              const Divider(height: 1, color: AppColors.cream),
+              Divider(height: 1, color: AppColors.cream),
           ],
         ],
       ),
@@ -263,7 +263,7 @@ class _GeneralCommunityRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.groups_rounded, color: AppColors.ink),
+              child: Icon(Icons.groups_rounded, color: AppColors.ink),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -278,7 +278,7 @@ class _GeneralCommunityRow extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+            Icon(Icons.chevron_right_rounded, color: AppColors.ink),
           ],
         ),
       ),
@@ -340,7 +340,7 @@ class _SpecificCommunitySlot extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+                Icon(Icons.chevron_right_rounded, color: AppColors.ink),
               ],
             ),
           ),
@@ -372,7 +372,7 @@ class _PickCommunityRow extends StatelessWidget {
                   style: AppTextStyles.cardTitle,
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+              Icon(Icons.chevron_right_rounded, color: AppColors.ink),
             ],
           ),
         ),
@@ -409,7 +409,7 @@ class _ActivityRow extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+            Icon(Icons.chevron_right_rounded, color: AppColors.ink),
           ],
         ),
       ),
@@ -464,7 +464,7 @@ class _ChangePhotoButtonState extends ConsumerState<_ChangePhotoButton> {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.ink, width: 2),
         ),
-        child: const CircularProgressIndicator(
+        child: CircularProgressIndicator(
           strokeWidth: 2.5,
           color: AppColors.ink,
         ),

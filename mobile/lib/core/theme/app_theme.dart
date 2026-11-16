@@ -21,15 +21,15 @@ class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.amberLight,
-        primary: AppColors.amberLight,
-        onPrimary: AppColors.ink,
-        secondary: AppColors.amberDark,
-        onSecondary: AppColors.ink,
-        surface: AppColors.page,
-        onSurface: AppColors.ink,
+        seedColor: AppPalette.light.amberLight,
+        primary: AppPalette.light.amberLight,
+        onPrimary: AppPalette.light.ink,
+        secondary: AppPalette.light.amberDark,
+        onSecondary: AppPalette.light.ink,
+        surface: AppPalette.light.page,
+        onSurface: AppPalette.light.ink,
       ),
-      scaffoldBackgroundColor: AppColors.page,
+      scaffoldBackgroundColor: AppPalette.light.page,
       fontFamily: AppFonts.family,
       splashFactory: InkRipple.splashFactory,
     );
@@ -37,11 +37,11 @@ class AppTheme {
     // every style null, so text fields had no colour and typed text showed
     // white on white on some phones.
     return base.copyWith(
-      textTheme: _textTheme(base.textTheme, AppColors.ink),
-      textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: AppColors.ink,
-        selectionColor: AppColors.honey,
-        selectionHandleColor: AppColors.amberLight,
+      textTheme: _textTheme(base.textTheme, AppPalette.light.ink),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppPalette.light.ink,
+        selectionColor: AppPalette.light.honey,
+        selectionHandleColor: AppPalette.light.amberLight,
       ),
     );
   }
@@ -49,13 +49,13 @@ class AppTheme {
   static ThemeData dark() {
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: AppColors.amberLight,
+          seedColor: AppPalette.dark.amberLight,
           brightness: Brightness.dark,
         ).copyWith(
-          primary: AppColors.amberLight,
-          onPrimary: AppColors.ink,
-          secondary: AppColors.amberDark,
-          onSecondary: AppColors.ink,
+          primary: AppPalette.dark.amberLight,
+          onPrimary: AppPalette.dark.ink,
+          secondary: AppPalette.dark.amberDark,
+          onSecondary: AppPalette.dark.ink,
           surface: _Dark.surface,
           onSurface: _Dark.text,
           onSurfaceVariant: _Dark.textMuted,
@@ -87,9 +87,9 @@ class AppTheme {
       textTheme: _textTheme(base.textTheme, _Dark.text),
       iconTheme: const IconThemeData(color: _Dark.text),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppColors.amberLight,
-        selectionColor: AppColors.amberDark.withValues(alpha: 0.4),
-        selectionHandleColor: AppColors.amberLight,
+        cursorColor: AppPalette.dark.amberLight,
+        selectionColor: AppPalette.dark.amberDark.withValues(alpha: 0.4),
+        selectionHandleColor: AppPalette.dark.amberLight,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: _Dark.page,
@@ -106,7 +106,7 @@ class AppTheme {
         border: border,
         enabledBorder: border,
         focusedBorder: border.copyWith(
-          borderSide: const BorderSide(color: AppColors.amberLight, width: 2),
+          borderSide: BorderSide(color: AppPalette.dark.amberLight, width: 2),
         ),
       ),
       dialogTheme: const DialogThemeData(
@@ -138,11 +138,11 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: _Dark.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.amberDark,
+        indicatorColor: AppPalette.dark.amberDark,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? AppColors.ink
+                ? AppPalette.dark.ink
                 : _Dark.textMuted,
           ),
         ),
@@ -154,14 +154,14 @@ class AppTheme {
                 ? FontWeight.w700
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
-                ? AppColors.amberLight
+                ? AppPalette.dark.amberLight
                 : _Dark.textMuted,
           ),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: _Dark.surface,
-        selectedItemColor: AppColors.amberLight,
+        selectedItemColor: AppPalette.dark.amberLight,
         unselectedItemColor: _Dark.textMuted,
       ),
     );
