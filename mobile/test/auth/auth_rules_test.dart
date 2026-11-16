@@ -123,6 +123,39 @@ void main() {
     );
 
     test(
+      'the emailed code sets a new password, once, and only with the right code',
+      () async {
+        final r = repo();
+        const email = FakeAuthRepository.demoEmail;
+        const fresh = 'BrandNewPass99';
+        await r.requestPasswordReset(email);
+
+        await expectLater(
+          r.resetPassword(email, '000000', fresh),
+          throwsA(isA<InvalidResetCode>()),
+        );
+        await r.signIn(email, FakeAuthRepository.demoPassword); // unchanged
+
+        await r.resetPassword(email, FakeAuthRepository.resetCode, fresh);
+        await expectLater(
+          r.signIn(email, FakeAuthRepository.demoPassword),
+          throwsA(isA<InvalidCredentials>()),
+        );
+        expect((await r.signIn(email, fresh)).email, email);
+
+        await expectLater(
+          r.resetPassword(email, FakeAuthRepository.resetCode, 'AnotherPass77'),
+          throwsA(isA<InvalidResetCode>()),
+          reason: 'a code works once',
+        );
+        await expectLater(
+          r.resetPassword('nobody@fcu.test', FakeAuthRepository.resetCode, fresh),
+          throwsA(isA<InvalidResetCode>()),
+        );
+      },
+    );
+
+    test(
       'an account needs a verified email and both required consents',
       () async {
         final r = repo();

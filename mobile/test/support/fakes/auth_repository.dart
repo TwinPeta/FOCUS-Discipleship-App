@@ -163,11 +163,30 @@ class FakeAuthRepository implements AuthRepository {
     return _session = AuthSession(accountId: id, email: key);
   }
 
+  /// The code the fake "emails" for every password reset.
+  static const resetCode = '246810';
+
   @override
   Future<void> requestPasswordReset(String email) async {
     await Future.delayed(latency);
-    // Only known emails actually get a link; the caller can't tell.
+    // Only known emails actually get a code; the caller can't tell.
     if (_accounts.containsKey(_key(email))) resetRequests.add(_key(email));
+  }
+
+  @override
+  Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    await Future.delayed(latency);
+    final key = _key(email);
+    final account = _accounts[key];
+    // A code works once, and only for the email it was sent to.
+    if (account == null || code != resetCode || !resetRequests.remove(key)) {
+      throw const InvalidResetCode();
+    }
+    _accounts[key] = (id: account.id, digest: fakePasswordDigest(newPassword));
   }
 
   @override

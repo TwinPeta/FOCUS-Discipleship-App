@@ -260,6 +260,36 @@ paths:
               schema: { $ref: '#/components/schemas/AuthSession' }
         '204': { description: Verified }
         '400': { $ref: '#/components/responses/ValidationError' }
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Set a new password with an emailed code
+      description: >-
+        Forgot password. First call `POST /auth/otp/request` with `purpose=password_reset`, then send the code here
+        together with the new password. Do not send the code to `/auth/otp/verify` first: a code works once.
+        Every existing session of the account is signed out and a new session is returned.
+        The same error is returned for a wrong code, an expired code, and an address with no account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, code, new_password]
+              properties:
+                destination: { type: string, description: The email or phone the code was sent to }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+                new_password: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        '200':
+          description: Password changed; signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /auth/refresh:
     post:
       tags: [Auth]

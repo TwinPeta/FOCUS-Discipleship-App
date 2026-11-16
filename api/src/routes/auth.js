@@ -130,6 +130,19 @@ router.post('/otp/request', rateLimit({ windowMs: 600000, max: 5, key: (r) => r.
   } catch (e) { next(e); }
 });
 
+const otpFail = () => badRequest('otp_invalid', 'Invalid code', 'The code is invalid or expired');
+
+/** Checks a one-time code and uses it up. Returns the stored code record; throws the same error for every failure. */
+function consumeOtp(destination, code, purpose) {
+  const dests = [normPhone(destination), normEmail(destination)];
+  const otp = store.first('otps', (o) => dests.includes(o.destination) && o.purpose === purpose);
+  if (!otp || otp.expiresAt < Date.now() || otp.attempts >= 5) throw otpFail();
+  if (otp.hash !== sha(code)) { otp.attempts += 1; throw otpFail(); }
+  store.remove('otps', (o) => o.id === otp.id);
+  return otp;
+}
+const userOfOtp = (otp) => store.first('users', (u) => !u.deletedAt && (u.phone === otp.destination || u.email === otp.destination));
+
 router.post('/otp/verify', rateLimit({ windowMs: 600000, max: 20 }), (req, res, next) => {
   try {
     const b = check(req.body, {
@@ -137,22 +150,34 @@ router.post('/otp/verify', rateLimit({ windowMs: 600000, max: 20 }), (req, res, 
       code: { required: true, type: 'string', pattern: /^[0-9]{6}$/ },
       purpose: { required: true, type: 'string', enum: ['login', 'verify_contact', 'password_reset'] },
     });
-    const dests = [normPhone(b.destination), normEmail(b.destination)];
-    const otp = store.first('otps', (o) => dests.includes(o.destination) && o.purpose === b.purpose);
-    const fail = () => badRequest('otp_invalid', 'Invalid code', 'The code is invalid or expired');
-    if (!otp || otp.expiresAt < Date.now() || otp.attempts >= 5) throw fail();
-    if (otp.hash !== sha(b.code)) { otp.attempts += 1; throw fail(); }
-    store.remove('otps', (o) => o.id === otp.id);
-
-    const user = store.first('users', (u) => !u.deletedAt && (u.phone === otp.destination || u.email === otp.destination));
+    const otp = consumeOtp(b.destination, b.code, b.purpose);
+    const user = userOfOtp(otp);
     if (b.purpose === 'login') {
-      if (!user) throw fail();
+      if (!user) throw otpFail();
       return res.json(session(user));
     }
     if (b.purpose === 'verify_contact' && user) {
       if (user.phone === otp.destination) user.phoneVerified = true; else user.emailVerified = true;
     }
     res.status(204).end();
+  } catch (e) { next(e); }
+});
+
+// Forgot password: the code from POST /auth/otp/request (purpose=password_reset) plus the new password, in one call.
+// Do not send the code to /otp/verify first: a code works once. Every other device is signed out; this one gets a session.
+router.post('/password/reset', rateLimit({ windowMs: 600000, max: 20 }), (req, res, next) => {
+  try {
+    const b = check(req.body, {
+      destination: { required: true, type: 'string' },
+      code: { required: true, type: 'string', pattern: /^[0-9]{6}$/ },
+      new_password: { required: true, type: 'string', min: 8, max: 128 },
+    });
+    const user = userOfOtp(consumeOtp(b.destination, b.code, 'password_reset'));
+    if (!user) throw otpFail(); // a code asked for an address with no account never reveals that
+    user.passwordHash = bcrypt.hashSync(b.new_password, 10);
+    store.remove('refreshTokens', (t) => t.userId === user.id);
+    require('../utils/sanctions').activeSuspension(user); // lifts a suspension that has ended, as login does
+    res.json(session(user));
   } catch (e) { next(e); }
 });
 

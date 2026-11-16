@@ -216,8 +216,7 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   /// Always completes the same way, whether or not [email] has an account.
-  /// The API emails a code; there is not yet an endpoint to set a new
-  /// password with it.
+  /// The API emails a 6-digit code for [resetPassword].
   @override
   Future<void> requestPasswordReset(String email) async {
     try {
@@ -232,6 +231,30 @@ class RemoteAuthRepository implements AuthRepository {
       );
     } on ApiException {
       // Same outcome for the user either way (no account enumeration).
+    }
+  }
+
+  @override
+  Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    try {
+      // The API also returns a session; it is not kept, so signing in stays
+      // in one place (the caller signs in with the new password).
+      await _api.post(
+        '/auth/password/reset',
+        auth: false,
+        body: {
+          'destination': _key(email),
+          'code': code,
+          'new_password': newPassword,
+        },
+      );
+    } on ApiException catch (e) {
+      if (e.status == 400) throw const InvalidResetCode();
+      rethrow;
     }
   }
 

@@ -4,7 +4,7 @@
 
 **Servers:** `https://apis.focusuganda.org/v1` (Production), `http://localhost:4000/v1` (Local development)
 
-**85 operations** in 16 groups. The "App" column says whether the Flutter app's code calls the path today.
+**86 operations** in 16 groups. The "App" column says whether the Flutter app's code calls the path today.
 
 ## Index
 
@@ -19,6 +19,7 @@ Registration, login, OTP, tokens (Landing, Join form)
 | `POST` | [`/auth/login`](#post-auth-login) | Password login | none (public) | yes |
 | `POST` | [`/auth/otp/request`](#post-auth-otp-request) | Send a one-time SMS/email code | none (public) | yes |
 | `POST` | [`/auth/otp/verify`](#post-auth-otp-verify) | Verify a code | none (public) | yes |
+| `POST` | [`/auth/password/reset`](#post-auth-password-reset) | Set a new password with an emailed code | none (public) | — |
 | `POST` | [`/auth/refresh`](#post-auth-refresh) | Rotate tokens | none (public) | yes |
 | `POST` | [`/auth/logout`](#post-auth-logout) | Revoke refresh token | bearerAuth | yes |
 
@@ -352,6 +353,33 @@ For `purpose=login` returns a session; otherwise returns 204.
 | `200` | Session (login only) | [AuthSession](#schema-authsession) |
 | `204` | Verified | — |
 | `400` | Validation failed | [Problem](#schema-problem) |
+
+<a id="post-auth-password-reset"></a>
+### `POST /auth/password/reset`
+
+**Set a new password with an emailed code**
+
+Forgot password. First call `POST /auth/otp/request` with `purpose=password_reset`, then send the code here together with the new password. Do not send the code to `/auth/otp/verify` first: a code works once. Every existing session of the account is signed out and a new session is returned. The same error is returned for a wrong code, an expired code, and an address with no account.
+
+- **Auth:** none (public)
+- **Operation id:** `resetPassword`
+- **Called by the app:** —
+
+**Request body** (`application/json`, required)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `destination` | string | yes | The email or phone the code was sent to |
+| `code` | string | yes | pattern `^[0-9]{6}$` |
+| `new_password` | string | yes | min 8 chars, max 128 chars |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | Password changed; signed in | [AuthSession](#schema-authsession) |
+| `400` | Validation failed | [Problem](#schema-problem) |
+| `422` | Validation failed | [Problem](#schema-problem) |
 
 <a id="post-auth-refresh"></a>
 ### `POST /auth/refresh`

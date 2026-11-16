@@ -9,6 +9,15 @@ class InvalidCredentials implements Exception {
   String toString() => 'InvalidCredentials';
 }
 
+/// Thrown when a password reset is refused: the code is wrong, expired or
+/// already used, or the email has no account. Deliberately one error for
+/// all of them.
+class InvalidResetCode implements Exception {
+  const InvalidResetCode();
+  @override
+  String toString() => 'InvalidResetCode';
+}
+
 class EmailTakenError implements Exception {
   const EmailTakenError();
 }
@@ -57,8 +66,14 @@ abstract class AuthRepository {
     required Consent consent,
   });
 
-  /// Always completes the same way, whether or not [email] has an account.
+  /// Emails a 6-digit reset code. Always completes the same way, whether
+  /// or not [email] has an account.
   Future<void> requestPasswordReset(String email);
+
+  /// Sets [newPassword] using the [code] from [requestPasswordReset].
+  /// Throws [InvalidResetCode] when the code is refused. Does not sign in:
+  /// the caller signs in with the new password. Passwords are never logged.
+  Future<void> resetPassword(String email, String code, String newPassword);
 
   Future<GuardianRequest?> guardianRequest(String accountId);
   Future<GuardianRequest> submitGuardianRequest(

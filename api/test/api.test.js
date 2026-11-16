@@ -467,6 +467,7 @@ test('contract sweep: remaining operations return what the spec says', async () 
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
   ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
+  ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'x@fcu.test', code: '000000', new_password: 'A-brand-new-pass-1' } }), 400); // success: password-reset.test.js
 
   const session = await call('POST', '/v1/auth/login', { body: { identifier: 'david@fcu.test', password: DEMO_PASSWORD } });
   const refreshed = await call('POST', '/v1/auth/refresh', { body: { refresh_token: session.body.refresh_token } });
