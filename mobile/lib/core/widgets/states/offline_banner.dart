@@ -15,18 +15,21 @@ class OfflineBanner extends ConsumerWidget {
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     if (online) return const SizedBox.shrink();
 
+    final fg = AppColors.isDark ? AppColors.ink : AppColors.white;
     return Semantics(
       liveRegion: true,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
         padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
         decoration: BoxDecoration(
-          color: AppColors.ink,
+          // Dark card in light mode; a warm honey card in dark mode (the
+          // inverted cream card glared there).
+          color: AppColors.isDark ? AppColors.honey : AppColors.ink,
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),
         child: Row(
           children: [
-            Icon(Icons.wifi_off_rounded, color: AppColors.white, size: 20),
+            Icon(Icons.wifi_off_rounded, color: fg, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -35,14 +38,14 @@ class OfflineBanner extends ConsumerWidget {
                   Text(
                     'You are offline',
                     style: AppTextStyles.cardTitle.copyWith(
-                      color: AppColors.white,
+                      color: fg,
                       fontSize: 14,
                     ),
                   ),
                   Text(
                     'Showing saved content. Posting is paused.',
                     style: AppTextStyles.body.copyWith(
-                      color: AppColors.white,
+                      color: fg,
                       fontSize: 12.5,
                     ),
                   ),
@@ -51,7 +54,7 @@ class OfflineBanner extends ConsumerWidget {
                     'Tip: turn on Data saver to use less data on slow '
                     'connections.',
                     style: AppTextStyles.body.copyWith(
-                      color: AppColors.white,
+                      color: fg,
                       fontSize: 12.5,
                     ),
                   ),

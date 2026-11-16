@@ -249,10 +249,8 @@ class _CaseCardState extends ConsumerState<_CaseCard> {
               Expanded(child: secondary('Keep', ModerationOutcome.kept)),
               const SizedBox(width: _actionGap),
               Expanded(
-                child: secondary(
-                  'Escalate to admin',
-                  ModerationOutcome.escalated,
-                ),
+                // "Escalate to admin" does not fit a half-width button.
+                child: secondary('Escalate', ModerationOutcome.escalated),
               ),
             ],
           ),

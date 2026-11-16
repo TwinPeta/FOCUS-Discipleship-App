@@ -9,8 +9,6 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/initials.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
-import '../../../core/widgets/app_primary_button.dart';
-import '../../../core/widgets/app_secondary_button.dart';
 import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/initials_avatar.dart';
 import '../../../core/widgets/message_input_bar.dart';
@@ -24,6 +22,7 @@ import '../../learning/presentation/widgets/viewer_parts.dart';
 import '../domain/prayer_request.dart';
 import '../domain/prayer_response.dart';
 import 'providers/prayer_detail_providers.dart';
+import 'prayer_wall_screen.dart' show PrayedButton;
 import 'providers/prayer_providers.dart';
 
 const _avatarSize = 40.0;
@@ -218,26 +217,22 @@ class _Body extends ConsumerWidget {
                 style: AppTextStyles.body.copyWith(height: 1.5),
               ),
               const SizedBox(height: 14),
-              Semantics(
-                toggled: request.prayedByMe,
-                child: request.prayedByMe
-                    ? AppPrimaryButton(
-                        label: 'I prayed',
-                        height: 48,
-                        isLoading: praying,
-                        onPressed: online && !praying ? onPray : null,
-                      )
-                    : AppSecondaryButton(
-                        label: 'I prayed',
-                        height: 48,
-                        isLoading: praying,
-                        onPressed: online && !praying ? onPray : null,
-                      ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                prayedLabel(request.prayedCount),
-                style: AppTextStyles.bodyMedium,
+              // The same "I prayed · n" pill as the prayer wall (screen 14).
+              Row(
+                children: [
+                  PrayedButton(
+                    prayed: request.prayedByMe,
+                    count: request.prayedCount,
+                    onTap: online && !praying ? onPray : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      prayedLabel(request.prayedCount),
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

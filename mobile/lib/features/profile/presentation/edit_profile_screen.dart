@@ -195,8 +195,6 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
               onPhotoPicked: (path) => setState(() => _photo = path),
             ),
           ),
-          const SizedBox(height: 4),
-          Center(child: Text('Change photo', style: AppTextStyles.fieldLabel)),
           const SizedBox(height: 20),
           AppTextField(
             label: 'Full name',

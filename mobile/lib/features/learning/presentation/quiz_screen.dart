@@ -171,6 +171,7 @@ class _QuizViewState extends ConsumerState<_QuizView> {
           child: Column(
             children: [
               Container(
+                width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: AppGradients.brand,
                   borderRadius: const BorderRadius.vertical(

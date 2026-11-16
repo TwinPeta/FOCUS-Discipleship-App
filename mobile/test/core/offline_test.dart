@@ -68,7 +68,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Saved'), findsOneWidget);
-    expect(find.text('Posting is paused offline'), findsOneWidget);
+    expect(find.text('Posting paused'), findsOneWidget);
     // The composer's shortcuts are disabled, not hidden.
     for (final tip in ['Ask a question', 'Prayer request']) {
       final button = tester.widget<IconButton>(

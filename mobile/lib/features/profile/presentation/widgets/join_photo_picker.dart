@@ -122,7 +122,7 @@ class JoinPhotoPicker extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Add photo',
+          hasPhoto ? 'Change photo' : 'Add photo',
           style: AppTextStyles.fieldLabel.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
