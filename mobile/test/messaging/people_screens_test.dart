@@ -40,6 +40,8 @@ void main() {
       container.read(moderationRepositoryProvider).isBlocked('m-1'),
       isFalse,
     );
+    // The Messages badge reloads the conversation list after (un)blocking.
+    await settle(tester, steps: 6);
   });
 
   testWidgets('43: your own profile has no Message, Report or Block', (

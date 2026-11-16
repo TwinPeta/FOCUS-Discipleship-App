@@ -94,7 +94,13 @@ void main() {
       await settle(tester);
 
       // Still visible (at reduced opacity) but tapping must not navigate away.
-      await tester.tap(find.text('Life & Faith Circle'));
+      // Scroll it clear of the bottom bar, so the tap lands on the card.
+      await tester.ensureVisible(find.text('Life & Faith Circle'));
+      await settle(tester);
+      await tester.tap(
+        find.text('Life & Faith Circle'),
+        warnIfMissed: false, // locked: the card ignores taps
+      );
       await settle(tester);
 
       expect(find.textContaining('DETAIL:'), findsNothing);
