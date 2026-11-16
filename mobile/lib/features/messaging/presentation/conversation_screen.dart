@@ -185,7 +185,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   child: MessageInputBar(
                     controller: _textController,
                     onSend: _send,
-                    hintText: online ? 'Type a message…' : 'You are offline',
+                    hintText: online ? 'Write a message' : 'You are offline',
                     enabled: online,
                   ),
                 ),

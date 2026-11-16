@@ -118,7 +118,7 @@ class _ReportFlowState extends State<ReportFlow> {
             AppTextArea(
               label: 'Add details (optional)',
               controller: _detailsController,
-              placeholder: 'Anything else that would help us review this',
+              placeholder: 'Tell us what happened',
               minHeight: 72,
             ),
             if (widget.extra != null) ...[
