@@ -28,6 +28,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   String? _error;
   DateTime? _lockedUntil;
   int _cooldown = 0;
+
+  /// Length of the current wait, for the countdown ring.
+  int _cooldownTotal = 1;
   bool _verifying = false;
   Timer? _ticker;
 
@@ -47,7 +50,11 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
 
   void _startCooldown(Duration wait) {
     _ticker?.cancel();
-    setState(() => _cooldown = wait.inSeconds.clamp(1, 999));
+    final seconds = wait.inSeconds.clamp(1, 3600);
+    setState(() {
+      _cooldown = seconds;
+      _cooldownTotal = seconds;
+    });
     _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return timer.cancel();
       setState(() {
@@ -156,28 +163,12 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 18),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('Did not get it?', style: AppTextStyles.body),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.ink,
-                  minimumSize: const Size(44, 44),
-                ),
-                onPressed: _cooldown > 0 || locked ? null : _send,
-                child: Text(
-                  _cooldown > 0 && !locked
-                      ? 'Send a new code in ${_cooldown}s'
-                      : 'Send a new code',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: 22),
+          ResendCodeRow(
+            secondsLeft: _cooldown,
+            totalSeconds: _cooldownTotal,
+            locked: locked,
+            onResend: _send,
           ),
         ],
       ),
@@ -185,6 +176,104 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
         label: 'Verify email',
         isLoading: _verifying,
         onPressed: _code.length == 6 && !locked ? _verify : null,
+      ),
+    );
+  }
+}
+
+/// "Did not get it?" with a countdown before a new code can be sent: a
+/// ring that empties and the time left (m:ss), then a "Send a new code"
+/// button. While [locked] (too many wrong codes) it counts down the lock.
+class ResendCodeRow extends StatelessWidget {
+  const ResendCodeRow({
+    super.key,
+    required this.secondsLeft,
+    required this.totalSeconds,
+    required this.locked,
+    required this.onResend,
+  });
+
+  final int secondsLeft;
+  final int totalSeconds;
+  final bool locked;
+  final VoidCallback onResend;
+
+  static String clock(int seconds) {
+    final s = seconds < 0 ? 0 : seconds;
+    return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final waiting = secondsLeft > 0;
+    final label = locked
+        ? 'Try again in ${clock(secondsLeft)}'
+        : 'You can send a new code in ${clock(secondsLeft)}';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      // Wraps onto two lines with large text instead of overflowing.
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 10,
+        runSpacing: 8,
+        children: [
+          Text(
+            locked ? 'Too many tries.' : 'Did not get it?',
+            style: AppTextStyles.body,
+          ),
+          if (waiting)
+            Semantics(
+              liveRegion: false,
+              label: label,
+              excludeSemantics: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      value:
+                          secondsLeft / (totalSeconds < 1 ? 1 : totalSeconds),
+                      strokeWidth: 3,
+                      color: AppColors.amberDark,
+                      backgroundColor: AppColors.inputBorder,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    locked
+                        ? 'Try again in ${clock(secondsLeft)}'
+                        : 'New code in ${clock(secondsLeft)}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.ink,
+                side: BorderSide(color: AppColors.ink, width: 1.5),
+                minimumSize: const Size(44, 44),
+                shape: const StadiumBorder(),
+              ),
+              onPressed: locked ? null : onResend,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text(
+                'Send a new code',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+        ],
       ),
     );
   }

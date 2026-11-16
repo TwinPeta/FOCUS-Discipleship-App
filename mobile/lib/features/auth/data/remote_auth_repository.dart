@@ -123,7 +123,10 @@ class RemoteAuthRepository implements AuthRepository {
         },
       );
     } on ApiException catch (e) {
-      if (e.status == 429) throw const ResendTooSoon(Duration(seconds: 60));
+      if (e.status == 429) {
+        // Wait as long as the server says (60s if it does not say).
+        throw ResendTooSoon(e.retryAfter ?? const Duration(seconds: 60));
+      }
       rethrow;
     }
   }

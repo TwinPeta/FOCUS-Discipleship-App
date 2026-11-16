@@ -11,9 +11,13 @@ class ApiException implements Exception {
     this.code,
     this.message,
     this.fieldErrors = const {},
+    this.retryAfter,
   });
 
   final int status;
+
+  /// How long the server asks us to wait (`Retry-After`, on a 429).
+  final Duration? retryAfter;
 
   /// The API's machine-readable `code` (for example `username_taken`).
   final String? code;
@@ -227,11 +231,13 @@ class ApiClient {
         }
       }
     }
+    final retry = int.tryParse(response.headers['retry-after'] ?? '');
     throw ApiException(
       response.statusCode,
       code: code,
       message: message,
       fieldErrors: fields,
+      retryAfter: retry == null ? null : Duration(seconds: retry),
     );
   }
 
