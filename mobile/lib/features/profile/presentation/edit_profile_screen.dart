@@ -227,6 +227,11 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
             textInputAction: TextInputAction.done,
             errorText: shown('phone', _phone),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Email: ${widget.profile.email} · cannot be changed here.',
+            style: AppTextStyles.body.copyWith(color: AppColors.placeholder),
+          ),
           const SizedBox(height: 16),
           InstitutionPicker(
             country: widget.profile.country,
@@ -270,11 +275,6 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             errorText: errors['churchPastor'],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Email: ${widget.profile.email} · cannot be changed here.',
-            style: AppTextStyles.body.copyWith(color: AppColors.placeholder),
           ),
         ],
       ),

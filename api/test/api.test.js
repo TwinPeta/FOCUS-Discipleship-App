@@ -149,7 +149,7 @@ test('register: home church, year of study, national activities, institutes', as
   const b = await call('POST', '/v1/auth/register', { body: { ...inst, username: 'instituteb', email: 'ib@fcu.test', institution_name: 'kampala technical institute' } });
   assert.equal(b.status, 201);
   assert.equal(b.body.user.institution.id, a.body.user.institution.id);
-  const listed = await call('GET', '/v1/institutions?type=institute&country=UG');
+  const listed = await call('GET', '/v1/lookups/institutions?type=institute&country=UG');
   assert.ok(!listed.body.items.some((i) => i.id === a.body.user.institution.id), 'hidden until staff review');
 
   // A typed name is only for institutes; universities pick from the list.
