@@ -3,18 +3,15 @@ import '../domain/learning_models.dart';
 import 'learning_repository.dart';
 
 /// [LearningRepository] backed by the FCU API: content comes from
-/// `/resources`, progress from `/resources/{id}/progress`, and quizzes are
-/// scored by the server (correct answers never reach the app).
-///
-/// Private reflections have no API yet, so they are kept for this session
-/// only.
+/// `/resources`, progress from `/resources/{id}/progress`, private
+/// reflections from `/resources/{id}/reflection`, and quizzes are scored by
+/// the server (correct answers never reach the app). The last attempt
+/// (score and the member's own choices) comes back with the quiz.
 class RemoteLearningRepository implements LearningRepository {
   RemoteLearningRepository(this._api);
 
   final ApiClient _api;
 
-  final Map<String, Reflection> _reflections = {};
-  final Map<String, QuizAttempt> _attempts = {};
   final Map<String, List<List<String>>> _optionIds =
       {}; // quiz -> question -> option ids
   final Map<String, List<String>> _questionIds = {};
@@ -89,13 +86,16 @@ class RemoteLearningRepository implements LearningRepository {
   @override
   Future<DocumentContent> getDocument(String id) async {
     final j = await _resource(id);
-    final url = (j['document_url'] as String?) ?? '';
-    final dot = url.lastIndexOf('.');
+    final url = (j['document_url'] as String?)?.trim();
+    // The type from the file name (a signed link carries a query string).
+    final path = Uri.tryParse(url ?? '')?.path ?? '';
+    final name = path.substring(path.lastIndexOf('/') + 1);
+    final dot = name.lastIndexOf('.');
     return DocumentContent(
       item: _item(j, LearningKind.document),
-      format: dot == -1 ? 'PDF' : url.substring(dot + 1).toUpperCase(),
+      format: dot <= 0 ? 'Document' : name.substring(dot + 1).toUpperCase(),
       sizeLabel: _size(j['file_size_bytes'] as int?),
-      pageCount: 0,
+      url: (url == null || url.isEmpty) ? null : url,
     );
   }
 
@@ -127,6 +127,7 @@ class RemoteLearningRepository implements LearningRepository {
     }
     _optionIds[id] = optionIds;
     _questionIds[id] = questionIds;
+    _lastAttempts[id] = _attemptFrom(id, objectOf(j['my_last_attempt']));
     final pass = (j['pass_mark_percent'] as num?)?.toDouble();
     return Quiz(
       item: LearningItem(
@@ -140,17 +141,59 @@ class RemoteLearningRepository implements LearningRepository {
     );
   }
 
-  @override
-  Future<Reflection?> getReflection(String contentId) async =>
-      _reflections[contentId];
+  /// The last attempt read with each quiz (null when there is none).
+  final Map<String, QuizAttempt?> _lastAttempts = {};
+
+  /// Turns the server's `my_last_attempt` into option indexes per question
+  /// (-1 where a question was left out).
+  QuizAttempt? _attemptFrom(String quizId, Map<String, dynamic>? j) {
+    if (j == null) return null;
+    final chosen = <String, String>{
+      for (final a in (j['answers'] as List?) ?? const [])
+        if (a is Map<String, dynamic>)
+          (a['question_id'] as String?) ?? '':
+              (a['option_id'] as String?) ?? '',
+    };
+    final questions = _questionIds[quizId] ?? const <String>[];
+    final options = _optionIds[quizId] ?? const <List<String>>[];
+    return QuizAttempt(
+      quizId: quizId,
+      answers: List.unmodifiable([
+        for (var i = 0; i < questions.length; i++)
+          options[i].indexOf(chosen[questions[i]] ?? ''),
+      ]),
+      correct: (j['score'] as int?) ?? 0,
+      total: (j['total'] as int?) ?? questions.length,
+      passed: j['passed'] == true,
+    );
+  }
+
+  Reflection? _reflectionFrom(String contentId, Map<String, dynamic>? j) {
+    final text = (j?['text'] as String?) ?? '';
+    if (text.isEmpty) return null;
+    return Reflection(
+      contentId: contentId,
+      text: text,
+      updatedAt:
+          DateTime.tryParse((j?['updated_at'] as String?) ?? '')?.toLocal() ??
+          DateTime.now(),
+    );
+  }
 
   @override
-  Future<Reflection> saveReflection(String contentId, String text) async =>
-      _reflections[contentId] = Reflection(
-        contentId: contentId,
-        text: text,
-        updatedAt: DateTime.now(),
-      );
+  Future<Reflection?> getReflection(String contentId) async => _reflectionFrom(
+    contentId,
+    objectOf(await _api.get('/resources/$contentId/reflection')),
+  );
+
+  @override
+  Future<Reflection> saveReflection(String contentId, String text) async {
+    final json = objectOf(
+      await _api.put('/resources/$contentId/reflection', body: {'text': text}),
+    );
+    return _reflectionFrom(contentId, json) ??
+        Reflection(contentId: contentId, text: text, updatedAt: DateTime.now());
+  }
 
   @override
   Future<Duration> getResumePosition(String videoId) async {
@@ -192,11 +235,15 @@ class RemoteLearningRepository implements LearningRepository {
       total: (json?['total'] as int?) ?? questions.length,
       passed: json?['passed'] == true,
     );
-    return _attempts[quizId] = attempt;
+    return _lastAttempts[quizId] = attempt;
   }
 
   @override
-  Future<QuizAttempt?> lastAttempt(String quizId) async => _attempts[quizId];
+  Future<QuizAttempt?> lastAttempt(String quizId) async {
+    // Read with the quiz; fetch it when this quiz was not opened yet.
+    if (!_lastAttempts.containsKey(quizId)) await getQuiz(quizId);
+    return _lastAttempts[quizId];
+  }
 
   @override
   Future<void> markComplete(String contentId) async {

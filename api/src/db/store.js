@@ -7,9 +7,9 @@ const crypto = require('crypto');
  */
 const names = [
   'users', 'institutions', 'communities', 'memberships', 'joinRequests',
-  'posts', 'likes', 'comments', 'questionFollows', 'answerVotes',
+  'posts', 'likes', 'comments', 'questionFollows', 'answerVotes', 'postMarks',
   'prayerRequests', 'prayed', 'prayerResponses',
-  'testimonies',
+  'testimonies', 'testimonyEncouragements',
   'pathways', 'pathwayProgress',
   'resources', 'resourceProgress', 'quizzes', 'quizAttempts',
   'badges', 'userBadges', 'events',

@@ -7,8 +7,8 @@ import 'testimony_repository.dart';
 import '../../../core/network/media_uploader.dart';
 
 /// [TestimonyRepository] backed by the FCU API. Stories always go to review
-/// first (the server enforces it). The API has no "Encouraged" reaction yet,
-/// so it is remembered on the device for this session only.
+/// first (the server enforces it). "Encouraged" reactions are kept on the
+/// server (one per member, published stories only).
 class RemoteTestimonyRepository implements TestimonyRepository {
   RemoteTestimonyRepository(
     this._api,
@@ -25,14 +25,12 @@ class RemoteTestimonyRepository implements TestimonyRepository {
   final bool Function(String testimonyId) _isHidden;
   static bool _never(String _) => false;
 
-  final Set<String> _encouraged = {};
   final Map<String, String> _communityOf = {};
 
   Testimony _map(Map<String, dynamic> j, String communityId) {
     final author = objectOf(j['author']);
     if (author != null) memberFromApi(author, remember: _directory);
     final id = j['id'] as String;
-    final mine = _encouraged.contains(id);
     final media = [
       for (final m in (j['media'] as List?) ?? const [])
         if (m is Map<String, dynamic> && m['url'] is String) m,
@@ -55,8 +53,8 @@ class RemoteTestimonyRepository implements TestimonyRepository {
             ((j['created_at'] ?? j['published_at']) as String?) ?? '',
           ) ??
           DateTime.now(),
-      encouragedByMe: mine,
-      encouragedCount: mine ? 1 : 0,
+      encouragedByMe: j['encouraged_by_me'] == true,
+      encouragedCount: (j['encouraged_count'] as int?) ?? 0,
       videoUrl: media
           .where((m) => m['kind'] == 'video')
           .map((m) => m['url'] as String)
@@ -145,11 +143,9 @@ class RemoteTestimonyRepository implements TestimonyRepository {
 
   @override
   Future<Testimony> setEncouraged(String id, {required bool encouraged}) async {
-    if (encouraged) {
-      _encouraged.add(id);
-    } else {
-      _encouraged.remove(id);
-    }
+    encouraged
+        ? await _api.put('/testimonies/$id/encourage')
+        : await _api.delete('/testimonies/$id/encourage');
     final t = await getTestimony(id, viewerId: null);
     if (t == null) throw const ApiException(404, code: 'not_found');
     return t;

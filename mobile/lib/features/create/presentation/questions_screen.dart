@@ -2,16 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/theme_mode_provider.dart'
-    show sharedPreferencesProvider;
 import '../../../core/utils/date_utils.dart';
 import '../../../core/widgets/amber_header_scaffold.dart';
 import '../../../core/widgets/app_bottom_nav.dart' show approvedCommunityId;
 import '../../../core/widgets/community_header_chrome.dart';
+import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/states/empty_state.dart';
 import '../../../core/widgets/states/skeleton.dart';
@@ -22,29 +22,30 @@ import '../../feed/domain/post.dart';
 import '../../feed/presentation/providers/feed_providers.dart';
 import '../../feed/presentation/question_screens.dart';
 
-const _passedKey = 'questions.passed';
+/// "Pass" choices made in this session, by question id (true = passed,
+/// false = undone). The server keeps them ([Post.passedByMe]); this only
+/// makes a tap take effect before the feed reloads.
+final passedQuestionsProvider =
+    NotifierProvider<PassedQuestions, Map<String, bool>>(PassedQuestions.new);
 
-/// Questions this member chose to "Pass" on; kept on the device so they
-/// stay out of the list next time.
-final passedQuestionsProvider = NotifierProvider<PassedQuestions, Set<String>>(
-  PassedQuestions.new,
-);
-
-class PassedQuestions extends Notifier<Set<String>> {
+class PassedQuestions extends Notifier<Map<String, bool>> {
   @override
-  Set<String> build() =>
-      (ref.watch(sharedPreferencesProvider)?.getStringList(_passedKey) ??
-              const [])
-          .toSet();
+  Map<String, bool> build() => const {};
 
-  void pass(String id) {
-    state = {...state, id};
-    ref.read(sharedPreferencesProvider)?.setStringList(_passedKey, [...state]);
-  }
+  /// Whether [question] is passed, counting choices not yet reloaded.
+  bool isPassed(Post question) => state[question.id] ?? question.passedByMe;
 
-  void undo(String id) {
-    state = {...state}..remove(id);
-    ref.read(sharedPreferencesProvider)?.setStringList(_passedKey, [...state]);
+  /// Passes on [id] (or undoes it with [passed] false) on the server. The
+  /// choice shows at once and is reverted if the server refuses it.
+  Future<void> set(String id, {required bool passed}) async {
+    final before = state;
+    state = {...state, id: passed};
+    try {
+      await ref.read(postRepositoryProvider).setPassed(id, passed: passed);
+    } catch (_) {
+      state = before;
+      rethrow;
+    }
   }
 }
 
@@ -79,7 +80,8 @@ class _QuestionsScreenState extends ConsumerState<QuestionsScreen> {
         (communityId: mine, scope: PostScope.specific),
     ];
     final feeds = [for (final k in keys) ref.watch(feedPostsProvider(k))];
-    final passed = ref.watch(passedQuestionsProvider);
+    ref.watch(passedQuestionsProvider);
+    final passed = ref.read(passedQuestionsProvider.notifier);
     final loading =
         (keys.isEmpty && _where == _Where.all) ||
         feeds.any((f) => f.isLoading && !f.hasValue);
@@ -87,7 +89,7 @@ class _QuestionsScreenState extends ConsumerState<QuestionsScreen> {
         [
           for (final f in feeds)
             ...?f.valueOrNull?.where(
-              (p) => p.kind == PostKind.question && !passed.contains(p.id),
+              (p) => p.kind == PostKind.question && !passed.isPassed(p),
             ),
         ]..sort((a, b) {
           // Unanswered first, then newest.
@@ -152,17 +154,22 @@ class _QuestionsScreenState extends ConsumerState<QuestionsScreen> {
                       ? 'General community'
                       : (mineName ?? 'Your community'),
                   onPass: () {
-                    ref.read(passedQuestionsProvider.notifier).pass(q.id);
-                    ScaffoldMessenger.of(context)
+                    final messenger = ScaffoldMessenger.of(context);
+                    Future<void> choose({required bool passed}) => ref
+                        .read(passedQuestionsProvider.notifier)
+                        .set(q.id, passed: passed)
+                        .catchError((Object _) {
+                          if (context.mounted) showErrorSnack(context);
+                        });
+                    choose(passed: true);
+                    messenger
                       ..hideCurrentSnackBar()
                       ..showSnackBar(
                         SnackBar(
                           content: const Text('Question hidden'),
                           action: SnackBarAction(
                             label: 'Undo',
-                            onPressed: () => ref
-                                .read(passedQuestionsProvider.notifier)
-                                .undo(q.id),
+                            onPressed: () => choose(passed: false),
                           ),
                         ),
                       );

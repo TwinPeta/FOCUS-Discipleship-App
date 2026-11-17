@@ -167,11 +167,11 @@ Full detail for each: [`mobile-api-reference.md`](./mobile-api-reference.md). Ap
 | Profile (`/me`) | profile get/update/delete, export, guardian, communities, notifications + read, preferences, warnings + acknowledge, suspension, activity | profile, privacy, notification, warning, suspension, activity repositories |
 | Communities | list, detail, members, meetings, going, check-in, join request, leave, cancel request, my join requests | community, membership, member, meeting repositories |
 | Mentor tools | moderation cases + action, members last-active, join requests + decision | join-request, moderation-queue, activity repositories |
-| Feed | posts list/create/get/edit/delete, like/unlike, comments list/create | `remote_post_repository` |
+| Feed | posts list/create/get/edit/delete, like/unlike, comments list/create, follow a question, helpful votes, hide a post for me, pass on a question, search posts | `remote_post_repository` |
 | Prayer | requests list/create/get, prayed/unprayed, responses list/create | `remote_prayer_repository` |
-| Testimonies | list/create/get | `remote_testimony_repository` |
+| Testimonies | list/create/get, encourage/unencourage | `remote_testimony_repository` |
 | Pathways | list/get, enrollment, complete step | `remote_pathway_repository` |
-| Resources | list/get, progress, quiz get, quiz attempt | resource, learning repositories |
+| Resources | list/get, progress, private reflection get/save, quiz get (with my last attempt), quiz attempt | resource, learning repositories |
 | Messages | conversations list/create, messages list/send, read, realtime | `remote_messaging_repository` |
 | Safety | reports, my blocks, block/unblock | report, moderation repositories |
 | Media | create slot, complete, direct upload | `media_uploader` |

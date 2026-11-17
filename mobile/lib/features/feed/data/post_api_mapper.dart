@@ -54,6 +54,7 @@ Post postFromApi(
     pinned: j['pinned'] == true,
     following: j['following'] == true,
     followerCount: (j['follower_count'] as int?) ?? 0,
+    passedByMe: j['passed_by_me'] == true,
   );
 }
 

@@ -155,6 +155,10 @@ class FakeTestimonyRepository implements TestimonyRepository {
     final found = _locate(id);
     if (found == null) throw ArgumentError.value(id, 'id', 'unknown');
     final (list, i) = found;
+    // Like the server: only published stories take "Encouraged".
+    if (list[i].status != TestimonyStatus.reviewed) {
+      throw ArgumentError.value(id, 'id', 'not published');
+    }
     return list[i] = list[i].withEncouraged(encouraged);
   }
 }

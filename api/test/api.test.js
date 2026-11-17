@@ -625,6 +625,101 @@ test('suspension: read-only while active, lifted when it ends', async () => {
 });
 
 // Calls the remaining operations once so their responses are checked against the documented schemas too.
+test('personal marks: hide a post from my feed, pass on a question', async () => {
+  const me = await login('mentor@fcu.test');
+  const other = await login('super@fcu.test');
+  const author = await login('david@fcu.test');
+  const feed = async (token) => (await call('GET', `/v1/communities/${ctx.growth.id}/posts?limit=100`, { token })).body.items.map((p) => p.id);
+  const post = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: author, body: { text: 'A post someone will hide xyzzy' } })).body;
+
+  // Hidden only for the person who hid it (idempotent), in the feed and in search; undone by DELETE.
+  assert.equal((await call('PUT', `/v1/posts/${post.id}/hide`, { token: me })).status, 204);
+  assert.equal((await call('PUT', `/v1/posts/${post.id}/hide`, { token: me })).status, 204);
+  assert.ok(!(await feed(me)).includes(post.id), 'gone from my feed');
+  assert.ok((await feed(other)).includes(post.id), 'still in everyone else\'s');
+  assert.equal((await call('GET', '/v1/search/posts?q=xyzzy', { token: me })).body.items.length, 0);
+  assert.equal((await call('GET', '/v1/search/posts?q=xyzzy', { token: other })).body.items.length, 1);
+  assert.equal(store.where('postMarks', (m) => m.postId === post.id).length, 1);
+  assert.equal((await call('DELETE', `/v1/posts/${post.id}/hide`, { token: me })).status, 204);
+  assert.ok((await feed(me)).includes(post.id), 'back after unhide');
+
+  // Pass: questions only; the question stays in the feed and carries passed_by_me for that person only.
+  const q = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: author, body: { text: 'Who can I talk to about my course?', kind: 'question' } })).body;
+  assert.equal(q.passed_by_me, false);
+  assert.equal((await call('PUT', `/v1/posts/${post.id}/pass`, { token: me })).status, 422, 'only questions');
+  assert.equal((await call('PUT', `/v1/posts/${q.id}/pass`, { token: me })).status, 204);
+  assert.equal((await call('GET', `/v1/posts/${q.id}`, { token: me })).body.passed_by_me, true);
+  assert.equal((await call('GET', `/v1/posts/${q.id}`, { token: other })).body.passed_by_me, false);
+  assert.ok((await feed(me)).includes(q.id), 'a passed question stays in the feed');
+  assert.equal((await call('DELETE', `/v1/posts/${q.id}/pass`, { token: me })).status, 204);
+  assert.equal((await call('GET', `/v1/posts/${q.id}`, { token: me })).body.passed_by_me, false);
+
+  // Non-members cannot mark; deleting the post removes its marks.
+  const outsider = await login('student@fcu.test');
+  const studentId = store.first('users', (u) => u.email === 'student@fcu.test').id;
+  if (!store.first('memberships', (m) => m.userId === studentId && m.communityId === ctx.growth.id && m.status === 'member')) {
+    assert.equal((await call('PUT', `/v1/posts/${post.id}/hide`, { token: outsider })).status, 404);
+  }
+  await call('PUT', `/v1/posts/${q.id}/pass`, { token: me });
+  assert.equal((await call('DELETE', `/v1/posts/${q.id}`, { token: author })).status, 204);
+  assert.equal(store.where('postMarks', (m) => m.postId === q.id).length, 0);
+});
+
+test('testimonies: "Encouraged" is one per member, on published stories only', async () => {
+  const me = await login('mentor@fcu.test');
+  const other = await login('super@fcu.test');
+  const published = store.first('testimonies', (t) => t.communityId === ctx.growth.id && t.status === 'published');
+  assert.ok(published, 'the fixture has a published story');
+  const before = (await call('GET', `/v1/testimonies/${published.id}`, { token: me })).body;
+  assert.equal(before.encouraged_by_me, false);
+  let r = await call('PUT', `/v1/testimonies/${published.id}/encourage`, { token: me });
+  assert.equal(r.status, 200);
+  r = await call('PUT', `/v1/testimonies/${published.id}/encourage`, { token: me });
+  assert.deepEqual(r.body, { encouraged_count: before.encouraged_count + 1, encouraged_by_me: true });
+  const seen = (await call('GET', `/v1/communities/${ctx.growth.id}/testimonies`, { token: other })).body.items.find((t) => t.id === published.id);
+  assert.equal(seen.encouraged_count, before.encouraged_count + 1);
+  assert.equal(seen.encouraged_by_me, false, 'per viewer');
+  r = await call('DELETE', `/v1/testimonies/${published.id}/encourage`, { token: me });
+  assert.deepEqual(r.body, { encouraged_count: before.encouraged_count, encouraged_by_me: false });
+
+  const pending = (await call('POST', `/v1/communities/${ctx.growth.id}/testimonies`, { token: me, body: { title: 'Not yet', body: 'Waiting', consent: true } })).body;
+  assert.equal((await call('PUT', `/v1/testimonies/${pending.id}/encourage`, { token: me })).status, 422);
+  assert.equal((await call('PUT', `/v1/testimonies/${pending.id}/encourage`, { token: other })).status, 404, 'others cannot see it');
+});
+
+test('resources: a private reflection, and the last quiz attempt with my own answers', async () => {
+  const me = await login('mentor@fcu.test');
+  const other = await login('super@fcu.test');
+  const devotional = store.first('resources', (r) => r.communityId === ctx.growth.id && r.type === 'devotional' && r.status === 'published');
+  const empty = await call('GET', `/v1/resources/${devotional.id}/reflection`, { token: me });
+  assert.deepEqual(empty.body, { text: '', updated_at: null });
+  const saved = await call('PUT', `/v1/resources/${devotional.id}/reflection`, { token: me, body: { text: 'Remain in him.' } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.text, 'Remain in him.');
+  assert.equal((await call('GET', `/v1/resources/${devotional.id}/reflection`, { token: me })).body.text, 'Remain in him.');
+  assert.equal((await call('GET', `/v1/resources/${devotional.id}/reflection`, { token: other })).body.text, '', 'private to its author');
+  assert.equal((await call('PUT', `/v1/resources/${devotional.id}/reflection`, { token: me, body: { text: 'x'.repeat(5001) } })).status, 422);
+  assert.equal((await call('PUT', `/v1/resources/${devotional.id}/reflection`, { token: me, body: {} })).status, 422);
+  const cleared = await call('PUT', `/v1/resources/${devotional.id}/reflection`, { token: me, body: { text: '' } });
+  assert.equal(cleared.status, 200, 'clearing is allowed');
+  assert.equal((await call('GET', `/v1/resources/${devotional.id}/reflection`, { token: me })).body.text, '');
+  await call('PUT', `/v1/resources/${devotional.id}/reflection`, { token: me, body: { text: 'Remain in him.' } });
+  // Saving a reflection does not mark the devotional done.
+  assert.equal(store.first('resourceProgress', (p) => p.resourceId === devotional.id && p.userId === store.first('users', (u) => u.email === 'mentor@fcu.test').id).completed, false);
+
+  const quizRes = store.first('resources', (r) => r.communityId === ctx.growth.id && r.type === 'quiz' && r.status === 'published');
+  const fresh = await call('GET', `/v1/quizzes/${quizRes.id}`, { token: other });
+  assert.equal(fresh.body.my_last_attempt, null);
+  const answers = fresh.body.questions.map((q, i) => ({ question_id: q.id, option_id: q.options[i % q.options.length].id }));
+  const scored = (await call('POST', `/v1/quizzes/${quizRes.id}/attempts`, { token: other, body: { answers } })).body;
+  const last = (await call('GET', `/v1/quizzes/${quizRes.id}`, { token: other })).body.my_last_attempt;
+  assert.equal(last.score, scored.score);
+  assert.equal(last.passed, scored.passed);
+  assert.deepEqual(last.answers, answers, 'my own choices, as given');
+  assert.equal(last.answers[0].correct, undefined, 'never the correct answers');
+  assert.equal((await call('GET', `/v1/quizzes/${quizRes.id}`, { token: me })).body.my_last_attempt, null, 'per member');
+});
+
 test('contract sweep: remaining operations return what the spec says', async () => {
   const ok = (r, ...codes) => assert.ok(codes.includes(r.status), `expected ${codes} got ${r.status} ${JSON.stringify(r.body)}`);
   const token = await login('student@fcu.test');

@@ -65,12 +65,24 @@ function loadQuiz(req, _res, next) {
   next();
 }
 
+/** The caller's most recent attempt (their own choices and score; the correct answers are never sent). */
+function lastAttempt(quizId, userId) {
+  const a = store.where('quizAttempts', (x) => x.quizId === quizId && x.userId === userId)
+    .sort((x, y) => String(y.createdAt).localeCompare(String(x.createdAt)))[0];
+  if (!a) return null;
+  return {
+    score: a.score, total: a.total, passed: !!a.passed, created_at: a.createdAt,
+    answers: (a.answers || []).map((x) => ({ question_id: x.questionId, option_id: x.optionId })),
+  };
+}
+
 router.get('/quizzes/:quizId', loadQuiz, (req, res) => {
   res.json({
     id: req.quiz.id,
     title: req.quiz.title,
     pass_mark_percent: req.quiz.passMarkPercent,
     questions: req.quiz.questions.map((q) => ({ id: q.id, text: q.text, options: q.options })), // answers withheld
+    my_last_attempt: lastAttempt(req.quiz.id, req.user.id),
   });
 });
 
@@ -89,7 +101,10 @@ router.post('/quizzes/:quizId/attempts', loadQuiz, (req, res, next) => {
     const total = req.quiz.questions.length;
     const score = req.quiz.questions.filter((q) => given.get(q.id) === q.correct).length;
     const passed = (score / total) * 100 >= req.quiz.passMarkPercent;
-    store.insert('quizAttempts', { quizId: req.quiz.id, userId: req.user.id, score, total, passed });
+    store.insert('quizAttempts', {
+      quizId: req.quiz.id, userId: req.user.id, score, total, passed,
+      answers: [...given].map(([questionId, optionId]) => ({ questionId, optionId })),
+    });
     const badges = [];
     if (passed) {
       logEvent(req.user.id, 'quiz_completed', `Completed ${req.quiz.title}`);
@@ -98,6 +113,28 @@ router.post('/quizzes/:quizId/attempts', loadQuiz, (req, res, next) => {
       badges.push(...onQuizPassed(req.user.id, req.quiz.id));
     }
     res.status(201).json({ score, total, passed, badges_awarded: badges });
+  } catch (e) { next(e); }
+});
+
+// ───── Private reflection on a devotional: only its author ever reads it ─────
+function progressOf(req) {
+  return store.first('resourceProgress', (p) => p.resourceId === req.resource.id && p.userId === req.user.id);
+}
+const reflectionDto = (p) => ({ text: (p && p.reflection) || '', updated_at: (p && p.reflectionAt) || null });
+
+router.get('/resources/:resourceId/reflection', loadResource, (req, res) => res.json(reflectionDto(progressOf(req))));
+
+router.put('/resources/:resourceId/reflection', loadResource, (req, res, next) => {
+  try {
+    // Empty text is allowed: it clears the reflection.
+    const text = req.body && req.body.text;
+    if (typeof text !== 'string') throw validation([{ field: 'text', message: 'is required' }]);
+    check({ text }, { text: { type: 'string', max: 5000 } });
+    let rec = progressOf(req);
+    if (!rec) rec = store.insert('resourceProgress', { resourceId: req.resource.id, userId: req.user.id, positionSeconds: 0, completed: false });
+    rec.reflection = text;
+    rec.reflectionAt = store.now();
+    res.json(reflectionDto(rec));
   } catch (e) { next(e); }
 });
 

@@ -306,6 +306,20 @@ class FakePostRepository implements PostRepository {
   String? myId;
 
   @override
+  Future<void> setPassed(String postId, {required bool passed}) async {
+    await Future.delayed(latency);
+    for (final posts in _byCommunity.values) {
+      final index = posts.indexWhere((p) => p.id == postId);
+      if (index == -1) continue;
+      if (posts[index].kind != PostKind.question) {
+        throw ArgumentError('Only questions can be passed: $postId');
+      }
+      posts[index] = posts[index].copyWith(passedByMe: passed);
+      return;
+    }
+  }
+
+  @override
   Future<Post> setFollowing(String postId, {required bool following}) async {
     await Future.delayed(latency);
     for (final posts in _byCommunity.values) {

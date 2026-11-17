@@ -51,6 +51,7 @@ class Post {
     this.pinned = false,
     this.following = false,
     this.followerCount = 0,
+    this.passedByMe = false,
   });
 
   final String id;
@@ -84,6 +85,10 @@ class Post {
   final bool following;
   final int followerCount;
 
+  /// Questions: the viewer chose "Pass" on answering it, so it stays out of
+  /// "Questions for you" (kept on the server, so on every device).
+  final bool passedByMe;
+
   /// The name to show: "Anonymous" for anonymous posts.
   String get displayName => anonymous ? 'Anonymous' : author.name;
   String get displayInitials => anonymous ? '?' : author.initials;
@@ -107,6 +112,7 @@ class Post {
     bool? pinned,
     bool? following,
     int? followerCount,
+    bool? passedByMe,
   }) {
     return Post(
       id: id ?? this.id,
@@ -127,6 +133,7 @@ class Post {
       pinned: pinned ?? this.pinned,
       following: following ?? this.following,
       followerCount: followerCount ?? this.followerCount,
+      passedByMe: passedByMe ?? this.passedByMe,
     );
   }
 }

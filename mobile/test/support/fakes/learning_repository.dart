@@ -140,7 +140,7 @@ class FakeLearningRepository implements LearningRepository {
       item: _item(id, LearningKind.document),
       format: 'PDF',
       sizeLabel: '2 MB',
-      pageCount: 12,
+      url: 'https://files.fcu.test/$id.pdf',
     );
   }
 

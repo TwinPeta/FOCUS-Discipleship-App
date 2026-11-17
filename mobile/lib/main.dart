@@ -13,7 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/palette_sync.dart';
 import 'core/theme/theme_mode_provider.dart';
-import 'demo/demo_mode.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,8 +22,6 @@ Future<void> main() async {
   await LocalPushPlatform.instance.init();
   // Remote push (only when this build has its Firebase identifiers; otherwise a no-op).
   await FirebasePush.init();
-  // Web demo build (DEMO_MODE): sample data, already in a community.
-  final overrides = kDemoMode ? await demoOverrides() : <Override>[];
   // Saved settings (theme). The app still runs if storage is unavailable.
   SharedPreferences? prefs;
   try {
@@ -32,10 +29,7 @@ Future<void> main() async {
   } catch (_) {}
   runApp(
     ProviderScope(
-      overrides: [
-        ...overrides,
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const FcuApp(),
     ),
   );
@@ -76,14 +70,7 @@ class FcuApp extends ConsumerWidget {
                       ? SystemUiOverlayStyle.light
                       : SystemUiOverlayStyle.dark)
                   .copyWith(statusBarColor: const Color(0x00000000)),
-          child: kDemoMode
-              ? Banner(
-                  message: 'DEMO',
-                  location: BannerLocation.topEnd,
-                  color: const Color(0xFF17140C),
-                  child: child!,
-                )
-              : child!,
+          child: child!,
         ),
       ),
     );

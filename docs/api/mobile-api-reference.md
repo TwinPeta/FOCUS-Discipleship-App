@@ -4,7 +4,7 @@
 
 **Servers:** `https://apis.focusuganda.org/v1` (Production), `http://localhost:4000/v1` (Local development)
 
-**86 operations** in 16 groups. The "App" column says whether the Flutter app's code calls the path today.
+**100 operations** in 16 groups. The "App" column says whether the Flutter app's code calls the path today.
 
 ## Index
 
@@ -19,7 +19,7 @@ Registration, login, OTP, tokens (Landing, Join form)
 | `POST` | [`/auth/login`](#post-auth-login) | Password login | none (public) | yes |
 | `POST` | [`/auth/otp/request`](#post-auth-otp-request) | Send a one-time SMS/email code | none (public) | yes |
 | `POST` | [`/auth/otp/verify`](#post-auth-otp-verify) | Verify a code | none (public) | yes |
-| `POST` | [`/auth/password/reset`](#post-auth-password-reset) | Set a new password with an emailed code | none (public) | — |
+| `POST` | [`/auth/password/reset`](#post-auth-password-reset) | Set a new password with an emailed code | none (public) | yes |
 | `POST` | [`/auth/refresh`](#post-auth-refresh) | Rotate tokens | none (public) | yes |
 | `POST` | [`/auth/logout`](#post-auth-logout) | Revoke refresh token | bearerAuth | yes |
 
@@ -29,6 +29,7 @@ Reference data for the Join form
 
 | Method | Path | Summary | Auth | App |
 |---|---|---|---|---|
+| `GET` | [`/lookups/app-config`](#get-lookups-app-config) | How the back office is set up, for the app | none (public) | yes |
 | `GET` | [`/lookups/countries`](#get-lookups-countries) | Countries (Uganda, Kenya, Rwanda) | none (public) | — |
 | `GET` | [`/lookups/institutions`](#get-lookups-institutions) | Universities / high schools ("Select your university") | none (public) | yes |
 
@@ -87,6 +88,15 @@ Posts, likes, comments (Community feed, New post)
 | `DELETE` | [`/posts/{postId}/like`](#delete-posts-postid-like) | Remove like | bearerAuth | yes |
 | `GET` | [`/posts/{postId}/comments`](#get-posts-postid-comments) | Comments on a post | bearerAuth | yes |
 | `POST` | [`/posts/{postId}/comments`](#post-posts-postid-comments) | Comment | bearerAuth | yes |
+| `PUT` | [`/posts/{postId}/follow`](#put-posts-postid-follow) | Follow a question (be told about new answers) | bearerAuth | yes |
+| `DELETE` | [`/posts/{postId}/follow`](#delete-posts-postid-follow) | Stop following a question | bearerAuth | yes |
+| `PUT` | [`/posts/{postId}/hide`](#put-posts-postid-hide) | Hide a post from my own feed | bearerAuth | yes |
+| `DELETE` | [`/posts/{postId}/hide`](#delete-posts-postid-hide) | Show a post I hid again | bearerAuth | yes |
+| `PUT` | [`/posts/{postId}/pass`](#put-posts-postid-pass) | Pass on answering a question | bearerAuth | yes |
+| `DELETE` | [`/posts/{postId}/pass`](#delete-posts-postid-pass) | Undo a pass | bearerAuth | yes |
+| `PUT` | [`/comments/{commentId}/vote`](#put-comments-commentid-vote) | Mark an answer as helpful | bearerAuth | yes |
+| `DELETE` | [`/comments/{commentId}/vote`](#delete-comments-commentid-vote) | Remove your helpful vote | bearerAuth | yes |
+| `GET` | [`/search/posts`](#get-search-posts) | Search posts and questions in your communities | bearerAuth | yes |
 
 ### Prayer
 
@@ -111,6 +121,8 @@ Testimonies and Share your story
 | `GET` | [`/communities/{communityId}/testimonies`](#get-communities-communityid-testimonies) | Testimonies list | bearerAuth | yes |
 | `POST` | [`/communities/{communityId}/testimonies`](#post-communities-communityid-testimonies) | Share your story | bearerAuth | yes |
 | `GET` | [`/testimonies/{testimonyId}`](#get-testimonies-testimonyid) | Read story | bearerAuth | yes |
+| `PUT` | [`/testimonies/{testimonyId}/encourage`](#put-testimonies-testimonyid-encourage) | Say "Encouraged" on a story | bearerAuth | yes |
+| `DELETE` | [`/testimonies/{testimonyId}/encourage`](#delete-testimonies-testimonyid-encourage) | Take back "Encouraged" | bearerAuth | yes |
 
 ### Pathways
 
@@ -132,6 +144,8 @@ Videos, devotionals, quizzes, documents
 | `GET` | [`/communities/{communityId}/resources`](#get-communities-communityid-resources) | Community resources library | bearerAuth | yes |
 | `GET` | [`/resources/{resourceId}`](#get-resources-resourceid) | Resource detail (stream URL, text body or document URL) | bearerAuth | yes |
 | `PUT` | [`/resources/{resourceId}/progress`](#put-resources-resourceid-progress) | Record watch/read progress or completion | bearerAuth | yes |
+| `GET` | [`/resources/{resourceId}/reflection`](#get-resources-resourceid-reflection) | My private reflection on a devotional | bearerAuth | yes |
+| `PUT` | [`/resources/{resourceId}/reflection`](#put-resources-resourceid-reflection) | Save my private reflection | bearerAuth | yes |
 | `GET` | [`/quizzes/{quizId}`](#get-quizzes-quizid) | Quiz questions (correct answers withheld) | bearerAuth | yes |
 | `POST` | [`/quizzes/{quizId}/attempts`](#post-quizzes-quizid-attempts) | Submit answers | bearerAuth | yes |
 
@@ -262,8 +276,12 @@ Photo is uploaded first via `POST /media` and referenced by `photo_media_id`.
 | `country` | string | yes | ISO 3166-1 alpha-2 (UG, KE, RW) |
 | `email` | string · email |  |  |
 | `phone` | string |  | E.164 |
-| `institution_type` | string (`university`, `high_school`) | yes |  |
-| `institution_id` | string | yes |  |
+| `institution_type` | string (`university`, `institute`, `high_school`) | yes |  |
+| `institution_id` | string |  |  |
+| `institution_name` | string |  | Institutes only: a name typed because it is not listed — min 2 chars, max 120 chars |
+| `year_of_study` | integer |  | Required for university students — ≥ 1, ≤ 7 |
+| `home_church` | object |  | Optional at sign-up (can be added later with `PATCH /me`); when sent, all three are required. |
+| `accepted_national_activities` | boolean | yes | Agrees to take part in FOCUS national activities (must be true) |
 | `password` | string · password | yes | min 8 chars |
 | `accepted_terms` | boolean | yes |  |
 | `accepted_code_of_conduct` | boolean | yes | Community guidelines shown at sign-up (BRD §8.2) |
@@ -363,7 +381,7 @@ Forgot password. First call `POST /auth/otp/request` with `purpose=password_rese
 
 - **Auth:** none (public)
 - **Operation id:** `resetPassword`
-- **Called by the app:** —
+- **Called by the app:** yes
 
 **Request body** (`application/json`, required)
 
@@ -426,6 +444,23 @@ Forgot password. First call `POST /auth/otp/request` with `purpose=password_rese
 
 ## Lookups
 
+<a id="get-lookups-app-config"></a>
+### `GET /lookups/app-config`
+
+**How the back office is set up, for the app**
+
+`join_requests.auto_approve`: a request to join a specific community is approved at once (back office Settings > Join requests; on by default). When false the app shows the "request pending" state.
+
+- **Auth:** none (public)
+- **Operation id:** `getAppConfig`
+- **Called by the app:** yes
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | object |
+
 <a id="get-lookups-countries"></a>
 ### `GET /lookups/countries`
 
@@ -454,7 +489,7 @@ Forgot password. First call `POST /auth/otp/request` with `purpose=password_rese
 
 | Name | In | Type | Required | Notes |
 |---|---|---|---|---|
-| `type` | query | string (`university`, `high_school`) |  |  |
+| `type` | query | string (`university`, `institute`, `high_school`) |  |  |
 | `country` | query | string |  |  |
 | `q` | query | string |  |  |
 | `limit` | query | integer |  | ≥ 1, ≤ 100, default `20` |
@@ -504,6 +539,8 @@ Screen *My profile*. Email/phone are only ever returned to the owner.
 | `phone` | string |  |  |
 | `email` | string · email |  |  |
 | `institution_id` | string |  |  |
+| `year_of_study` | integer |  | ≥ 1, ≤ 7 |
+| `home_church` | object |  |  |
 
 **Responses**
 
@@ -1042,6 +1079,7 @@ Screens *Community feed* and *General community feed*. Pinned announcements firs
 | Name | In | Type | Required | Notes |
 |---|---|---|---|---|
 | `communityId` | path | string | yes |  |
+| `kind` | query | string (`post`, `question`) |  | Only this kind (questions for "Answer a question") |
 | `limit` | query | integer |  | ≥ 1, ≤ 100, default `20` |
 | `cursor` | query | string |  |  |
 
@@ -1074,6 +1112,8 @@ Text plus optional photos (uploaded first via `/media`). Members of General and 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `text` | string | yes | max 5000 chars |
+| `kind` | string (`post`, `question`) |  | default `"post"` |
+| `anonymous` | boolean |  | Name hidden from students; moderators can still see who posted — default `false` |
 | `media_ids` | array of string |  | max 4 items |
 
 **Responses**
@@ -1244,6 +1284,215 @@ Text plus optional photos (uploaded first via `/media`). Members of General and 
 | Status | Meaning | Body |
 |---|---|---|
 | `201` | Created | [Comment](#schema-comment) |
+
+<a id="put-posts-postid-follow"></a>
+### `PUT /posts/{postId}/follow`
+
+**Follow a question (be told about new answers)**
+
+Questions only. Each new answer notifies followers (category replies), except its writer and the asker, who is told anyway.
+
+- **Auth:** bearerAuth
+- **Operation id:** `followQuestion`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [FollowState](#schema-followstate) |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
+<a id="delete-posts-postid-follow"></a>
+### `DELETE /posts/{postId}/follow`
+
+**Stop following a question**
+
+- **Auth:** bearerAuth
+- **Operation id:** `unfollowQuestion`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [FollowState](#schema-followstate) |
+
+<a id="put-posts-postid-hide"></a>
+### `PUT /posts/{postId}/hide`
+
+**Hide a post from my own feed**
+
+"Hide this post": it leaves the caller's community feed and post search; nobody else is affected. Not a report.
+
+- **Auth:** bearerAuth
+- **Operation id:** `hidePost`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `204` | Hidden for me | — |
+
+<a id="delete-posts-postid-hide"></a>
+### `DELETE /posts/{postId}/hide`
+
+**Show a post I hid again**
+
+- **Auth:** bearerAuth
+- **Operation id:** `unhidePost`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `204` | Shown again | — |
+
+<a id="put-posts-postid-pass"></a>
+### `PUT /posts/{postId}/pass`
+
+**Pass on answering a question**
+
+Questions only. Sets `passed_by_me` so the app leaves it out of "Questions to answer". The question stays in the feed.
+
+- **Auth:** bearerAuth
+- **Operation id:** `passQuestion`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `204` | Passed | — |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
+<a id="delete-posts-postid-pass"></a>
+### `DELETE /posts/{postId}/pass`
+
+**Undo a pass**
+
+- **Auth:** bearerAuth
+- **Operation id:** `unpassQuestion`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `postId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `204` | Undone | — |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
+<a id="put-comments-commentid-vote"></a>
+### `PUT /comments/{commentId}/vote`
+
+**Mark an answer as helpful**
+
+Answers to questions only; one vote per member; not on your own answer (403 own_answer).
+
+- **Auth:** bearerAuth
+- **Operation id:** `voteAnswer`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `commentId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [VoteState](#schema-votestate) |
+| `403` | Your own answer | — |
+| `404` | Not found or not a member | — |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
+<a id="delete-comments-commentid-vote"></a>
+### `DELETE /comments/{commentId}/vote`
+
+**Remove your helpful vote**
+
+- **Auth:** bearerAuth
+- **Operation id:** `unvoteAnswer`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `commentId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [VoteState](#schema-votestate) |
+
+<a id="get-search-posts"></a>
+### `GET /search/posts`
+
+**Search posts and questions in your communities**
+
+Matches the text (at least 2 characters) of visible posts in communities you are a member of, newest first; blocked people are left out.
+
+- **Auth:** bearerAuth
+- **Operation id:** `searchPosts`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `q` | query | string | yes | min 2 chars |
+| `kind` | query | string (`post`, `question`) |  |  |
+| `limit` | query | integer |  | ≥ 1, ≤ 100, default `20` |
+| `cursor` | query | string |  |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [Page](#schema-page) & object |
+| `422` | Validation failed | [Problem](#schema-problem) |
 
 ## Prayer
 
@@ -1499,6 +1748,52 @@ Always created as `pending_review`; moderators approve before publication. `cons
 |---|---|---|
 | `200` | OK | [Testimony](#schema-testimony) |
 
+<a id="put-testimonies-testimonyid-encourage"></a>
+### `PUT /testimonies/{testimonyId}/encourage`
+
+**Say "Encouraged" on a story**
+
+One per member, published stories only (422 otherwise).
+
+- **Auth:** bearerAuth
+- **Operation id:** `encourageTestimony`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `testimonyId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [EncouragedState](#schema-encouragedstate) |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
+<a id="delete-testimonies-testimonyid-encourage"></a>
+### `DELETE /testimonies/{testimonyId}/encourage`
+
+**Take back "Encouraged"**
+
+- **Auth:** bearerAuth
+- **Operation id:** `unencourageTestimony`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `testimonyId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [EncouragedState](#schema-encouragedstate) |
+| `422` | Validation failed | [Problem](#schema-problem) |
+
 ## Pathways
 
 <a id="get-pathways"></a>
@@ -1668,6 +1963,57 @@ Feeds *My activity* ("Watched …") and tracking (FR-02).
 | Status | Meaning | Body |
 |---|---|---|
 | `204` | Saved | — |
+
+<a id="get-resources-resourceid-reflection"></a>
+### `GET /resources/{resourceId}/reflection`
+
+**My private reflection on a devotional**
+
+Only its author ever reads it. Empty text when there is none.
+
+- **Auth:** bearerAuth
+- **Operation id:** `getReflection`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `resourceId` | path | string | yes |  |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | OK | [Reflection](#schema-reflection) |
+
+<a id="put-resources-resourceid-reflection"></a>
+### `PUT /resources/{resourceId}/reflection`
+
+**Save my private reflection**
+
+- **Auth:** bearerAuth
+- **Operation id:** `saveReflection`
+- **Called by the app:** yes
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+|---|---|---|---|---|
+| `resourceId` | path | string | yes |  |
+
+**Request body** (`application/json`, required)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `text` | string | yes | Empty text clears the reflection — max 5000 chars |
+
+**Responses**
+
+| Status | Meaning | Body |
+|---|---|---|
+| `200` | Saved | [Reflection](#schema-reflection) |
+| `422` | Validation failed | [Problem](#schema-problem) |
 
 <a id="get-quizzes-quizid"></a>
 ### `GET /quizzes/{quizId}`
@@ -1900,7 +2246,7 @@ Reviewed by the FCU moderation team; community leaders get first-level visibilit
 | `target_type` | string (`user`, `message`, `post`, `comment`, `testimony`, `prayer_request`) | yes |  |
 | `target_id` | string | yes |  |
 | `reason` | string (`harassment_bullying`, `offensive_content`, `breaks_community_rules`, `spam_or_fake_profile`, `other`) | yes |  |
-| `details` | string |  | max 2000 chars |
+| `details` | string |  | Required (not blank) when reason is other — max 2000 chars |
 | `evidence_media_id` | string \| null |  | Chat screenshot — nullable |
 
 **Responses**
@@ -1988,6 +2334,7 @@ Limits: images ≤ 2 MB (the app sends WebP), video ≤ 200 MB.
 | `purpose` | string (`profile_photo`, `post_photo`, `testimony_photo`, `testimony_video`, `report_evidence`) | yes |  |
 | `content_type` | string | yes |  |
 | `size_bytes` | integer | yes |  |
+| `duration_seconds` | number |  | Required for testimony_video: story videos are at most 2 minutes — ≤ 120 |
 
 **Responses**
 
@@ -2310,6 +2657,8 @@ Sends an in-app/push notification to the student.
 <a id="schema-registerrequest"></a>
 ### RegisterRequest
 
+Send `institution_id` from `GET /institutions`. Only for `institution_type: institute`, when the institute is not listed, send `institution_name` instead: the institute is added (hidden from the list until staff review it) or reused if one with that name exists in the country. `high_school` is accepted only for older app versions.
+
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `photo_media_id` | string |  |  |
@@ -2319,8 +2668,12 @@ Sends an in-app/push notification to the student.
 | `country` | string | yes | ISO 3166-1 alpha-2 (UG, KE, RW) |
 | `email` | string · email |  |  |
 | `phone` | string |  | E.164 |
-| `institution_type` | string (`university`, `high_school`) | yes |  |
-| `institution_id` | string | yes |  |
+| `institution_type` | string (`university`, `institute`, `high_school`) | yes |  |
+| `institution_id` | string |  |  |
+| `institution_name` | string |  | Institutes only: a name typed because it is not listed — min 2 chars, max 120 chars |
+| `year_of_study` | integer |  | Required for university students — ≥ 1, ≤ 7 |
+| `home_church` | object |  | Optional at sign-up (can be added later with `PATCH /me`); when sent, all three are required. |
+| `accepted_national_activities` | boolean | yes | Agrees to take part in FOCUS national activities (must be true) |
 | `password` | string · password | yes | min 8 chars |
 | `accepted_terms` | boolean | yes |  |
 | `accepted_code_of_conduct` | boolean | yes | Community guidelines shown at sign-up (BRD §8.2) |
@@ -2402,7 +2755,7 @@ Sends an in-app/push notification to the student.
 |---|---|---|---|
 | `id` | string |  |  |
 | `name` | string |  |  |
-| `type` | string (`university`, `high_school`) |  |  |
+| `type` | string (`university`, `institute`, `high_school`) |  |  |
 | `country` | string |  |  |
 
 <a id="schema-userref"></a>
@@ -2433,6 +2786,9 @@ Sends an in-app/push notification to the student.
 | `birthdate` | string · date |  |  |
 | `country` | string |  |  |
 | `institution` | [Institution](#schema-institution) |  |  |
+| `year_of_study` | integer \| null |  | ≥ 1, ≤ 7, nullable |
+| `home_church` | null \| object |  |  |
+| `accepted_national_activities` | boolean |  |  |
 | `minor_status` | string (`adult`, `pending_guardian_consent`, `minor_consented`) |  |  |
 | `platform_role` | string (`student`, `leader`, `associate`, `content_admin`, `system_admin`) |  |  |
 | `created_at` | string · date-time |  |  |
@@ -2543,13 +2899,19 @@ Type: string (`super_mentor`, `mentor`, `member`)
 |---|---|---|---|
 | `id` | string |  |  |
 | `community_id` | string |  |  |
-| `author` | [UserRef](#schema-userref) |  |  |
+| `kind` | string (`post`, `question`) |  | A question is answered in its comments |
+| `anonymous` | boolean |  |  |
+| `author` | [UserRef](#schema-userref) \| null |  | Null when the post is anonymous (moderators see the author in the back office) |
+| `is_mine` | boolean |  | The viewer wrote it (also for anonymous posts) |
 | `text` | string |  |  |
 | `media` | array of [MediaItem](#schema-mediaitem) |  |  |
 | `pinned` | boolean |  |  |
 | `like_count` | integer |  |  |
 | `comment_count` | integer |  |  |
 | `liked_by_me` | boolean |  |  |
+| `follower_count` | integer |  | Questions only |
+| `following` | boolean |  | Questions only; the viewer follows it |
+| `passed_by_me` | boolean |  | Questions only; the viewer chose "Pass" on answering it |
 | `created_at` | string · date-time |  |  |
 
 <a id="schema-comment"></a>
@@ -2560,6 +2922,8 @@ Type: string (`super_mentor`, `mentor`, `member`)
 | `id` | string |  |  |
 | `author` | [UserRef](#schema-userref) |  |  |
 | `text` | string |  |  |
+| `vote_count` | integer |  | Helpful votes (answers to questions) |
+| `voted_by_me` | boolean |  |  |
 | `created_at` | string · date-time |  |  |
 
 <a id="schema-prayerresponse"></a>
@@ -2572,6 +2936,38 @@ Type: string (`super_mentor`, `mentor`, `member`)
 | `anonymous` | boolean |  | True when the owner of an anonymous request replied on it |
 | `text` | string |  |  |
 | `created_at` | string · date-time |  |  |
+
+<a id="schema-followstate"></a>
+### FollowState
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `follower_count` | integer |  |  |
+| `following` | boolean |  |  |
+
+<a id="schema-votestate"></a>
+### VoteState
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `vote_count` | integer |  |  |
+| `voted_by_me` | boolean |  |  |
+
+<a id="schema-encouragedstate"></a>
+### EncouragedState
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `encouraged_count` | integer |  |  |
+| `encouraged_by_me` | boolean |  |  |
+
+<a id="schema-reflection"></a>
+### Reflection
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `text` | string |  | Empty when the member has not written one |
+| `updated_at` | string \| null · date-time |  | nullable |
 
 <a id="schema-reactionstate"></a>
 ### ReactionState
@@ -2613,6 +3009,8 @@ Type: string (`super_mentor`, `mentor`, `member`)
 | `reviewed` | boolean |  | Shows the "Reviewed" badge |
 | `approved_by` | string \| null |  | Approver name (traceability — nullable |
 | `published_at` | string \| null · date-time |  | nullable |
+| `encouraged_count` | integer |  | "Encouraged" reactions |
+| `encouraged_by_me` | boolean |  |  |
 | `created_at` | string · date-time |  |  |
 
 <a id="schema-pathwaysummary"></a>
@@ -2682,6 +3080,7 @@ Type: string (`video`, `devotional`, `quiz`, `document`)
 | `title` | string |  |  |
 | `pass_mark_percent` | integer |  |  |
 | `questions` | array of object |  |  |
+| `my_last_attempt` | null \| object |  | The caller's most recent attempt, or null. Only their own choices; the correct answers are never sent. |
 
 <a id="schema-badge"></a>
 ### Badge
@@ -2736,7 +3135,7 @@ Type: string (`video`, `devotional`, `quiz`, `document`)
 | `target_type` | string (`user`, `message`, `post`, `comment`, `testimony`, `prayer_request`) | yes |  |
 | `target_id` | string | yes |  |
 | `reason` | string (`harassment_bullying`, `offensive_content`, `breaks_community_rules`, `spam_or_fake_profile`, `other`) | yes |  |
-| `details` | string |  | max 2000 chars |
+| `details` | string |  | Required (not blank) when reason is other — max 2000 chars |
 | `evidence_media_id` | string \| null |  | Chat screenshot — nullable |
 
 <a id="schema-publicstory"></a>
@@ -2748,7 +3147,7 @@ Type: string (`video`, `devotional`, `quiz`, `document`)
 | `quote` | string |  |  |
 | `student_name` | string |  |  |
 | `institution_name` | string |  |  |
-| `institution_type` | string (`university`, `high_school`) |  |  |
+| `institution_type` | string (`university`, `institute`, `high_school`) |  |  |
 | `duration_seconds` | integer |  |  |
 | `thumbnail_url` | string · uri |  |  |
 | `video_url` | string · uri |  |  |

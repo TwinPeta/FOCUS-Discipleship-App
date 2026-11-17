@@ -26,8 +26,12 @@ function loadPost(req, _res, next) {
   next();
 }
 
+/** Posts this person hid from their own feed ("Hide this post"). */
+const hiddenByMe = (userId) => new Set(store.where('postMarks', (m) => m.userId === userId && m.kind === 'hidden').map((m) => m.postId));
+
 router.get('/communities/:communityId/posts', requireMember, (req, res) => {
-  const hidden = (p) => p.hidden;
+  const mine = hiddenByMe(req.user.id);
+  const hidden = (p) => p.hidden || mine.has(p.id);
   const kind = req.query.kind; // 'question': the questions only (Answer a question)
   const items = store.where('posts', (p) => p.communityId === req.community.id && !hidden(p) && (!kind || (p.kind || 'post') === kind))
     .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || byNewest(a, b));
@@ -74,6 +78,7 @@ router.delete('/posts/:postId', loadPost, (req, res, next) => {
       const commentIds = new Set(store.where('comments', (c) => c.postId === req.post.id).map((c) => c.id));
       store.remove('likes', (l) => l.postId === req.post.id);
       store.remove('questionFollows', (f) => f.postId === req.post.id);
+      store.remove('postMarks', (m) => m.postId === req.post.id);
       store.remove('answerVotes', (v) => commentIds.has(v.commentId));
       store.remove('comments', (c) => c.postId === req.post.id);
     } else {
@@ -146,6 +151,24 @@ router.delete('/posts/:postId/follow', loadPost, requireQuestion, (req, res) => 
   res.json(S.followState(req.post.id, req.user.id));
 });
 
+// ───── Personal marks: "Hide this post" (from my feed only) and "Pass" on a question ─────
+function setMark(kind, on) {
+  return (req, res) => {
+    const mine = (m) => m.postId === req.post.id && m.userId === req.user.id && m.kind === kind;
+    if (on && !store.first('postMarks', mine)) store.insert('postMarks', { postId: req.post.id, userId: req.user.id, kind });
+    if (!on) store.remove('postMarks', mine);
+    res.status(204).end();
+  };
+}
+function requireQuestionToPass(req, _res, next) {
+  if ((req.post.kind || 'post') !== 'question') return next(validation([{ field: 'postId', message: 'only questions can be passed' }]));
+  next();
+}
+router.put('/posts/:postId/hide', loadPost, setMark('hidden', true));
+router.delete('/posts/:postId/hide', loadPost, setMark('hidden', false));
+router.put('/posts/:postId/pass', loadPost, requireQuestionToPass, setMark('passed', true));
+router.delete('/posts/:postId/pass', loadPost, requireQuestionToPass, setMark('passed', false));
+
 // ───── Answers: "Helpful" votes ─────
 // Loads the answer; 404 unless the caller belongs to its community (like posts).
 function loadAnswer(req, _res, next) {
@@ -178,7 +201,8 @@ router.get('/search/posts', (req, res, next) => {
     const mine = new Set(store.where('memberships', (m) => m.userId === req.user.id && m.status === 'member').map((m) => m.communityId));
     const blocked = (a) => !!store.first('blocks', (x) => (x.blockerId === req.user.id && x.blockedId === a) || (x.blockerId === a && x.blockedId === req.user.id));
     const kind = req.query.kind;
-    const items = store.where('posts', (p) => mine.has(p.communityId) && !p.hidden && (!kind || (p.kind || 'post') === kind)
+    const hiddenForMe = hiddenByMe(req.user.id);
+    const items = store.where('posts', (p) => mine.has(p.communityId) && !p.hidden && !hiddenForMe.has(p.id) && (!kind || (p.kind || 'post') === kind)
       && (p.text || '').toLowerCase().includes(q) && !blocked(p.authorId)).sort(byNewest);
     const page = paginate(items, req.query);
     res.json({ items: page.items.map((p) => S.post(p, req.user.id)), next_cursor: page.next_cursor });

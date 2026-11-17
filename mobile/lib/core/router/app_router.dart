@@ -80,8 +80,7 @@ import 'route_guards.dart';
 /// The app router. Built inside Riverpod so the guard chain
 /// ([runGuards]) can read profile and membership state, and re-runs
 /// whenever either changes.
-/// Where the app opens; the landing page normally. The web demo build
-/// opens straight on its community feed.
+/// Where the app opens: the landing page. Tests may start elsewhere.
 final initialLocationProvider = Provider<String>((ref) => '/');
 
 final routerProvider = Provider<GoRouter>((ref) {

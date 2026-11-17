@@ -58,11 +58,18 @@ class _DevotionalViewState extends ConsumerState<_DevotionalView> {
   @override
   void initState() {
     super.initState();
-    _repo.getReflection(_id).then((r) {
-      if (!mounted || r == null) return;
-      _saved = r.text;
-      _reflection.text = r.text;
-    });
+    _repo
+        .getReflection(_id)
+        .then((r) {
+          // Never overwrite what the member started typing meanwhile.
+          if (!mounted || r == null || _reflection.text.isNotEmpty) return;
+          _saved = r.text;
+          _reflection.text = r.text;
+        })
+        .catchError((Object _) {
+          // Offline or not reachable: the note starts empty; typing still
+          // saves once the server answers.
+        });
   }
 
   @override
@@ -84,8 +91,12 @@ class _DevotionalViewState extends ConsumerState<_DevotionalView> {
   Future<void> _save() async {
     final text = _reflection.text;
     if (text == _saved) return;
-    await _repo.saveReflection(_id, text);
-    _saved = text;
+    try {
+      await _repo.saveReflection(_id, text);
+      _saved = text;
+    } catch (_) {
+      // Not saved (offline): the next change, or leaving the page, retries.
+    }
   }
 
   @override

@@ -130,30 +130,34 @@ class _Body extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        Semantics(
-          toggled: t.encouragedByMe,
-          child: t.encouragedByMe
-              ? AppPrimaryButton(
-                  label: 'Encouraged',
-                  height: 48,
-                  onPressed: online ? onEncourage : null,
-                )
-              : AppSecondaryButton(
-                  label: 'Encouraged',
-                  icon: Icons.favorite_border_rounded,
-                  height: 48,
-                  onPressed: online ? onEncourage : null,
-                ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          encouraged,
-          style: AppTextStyles.fieldLabel.copyWith(
-            color: AppColors.placeholder,
+        // Only published stories take "Encouraged" (the server refuses the
+        // author's own story while it waits for review).
+        if (t.status == TestimonyStatus.reviewed) ...[
+          const SizedBox(height: 16),
+          Semantics(
+            toggled: t.encouragedByMe,
+            child: t.encouragedByMe
+                ? AppPrimaryButton(
+                    label: 'Encouraged',
+                    height: 48,
+                    onPressed: online ? onEncourage : null,
+                  )
+                : AppSecondaryButton(
+                    label: 'Encouraged',
+                    icon: Icons.favorite_border_rounded,
+                    height: 48,
+                    onPressed: online ? onEncourage : null,
+                  ),
           ),
-          textAlign: TextAlign.center,
-        ),
+          const SizedBox(height: 6),
+          Text(
+            encouraged,
+            style: AppTextStyles.fieldLabel.copyWith(
+              color: AppColors.placeholder,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
         if (!mine) ...[
           const SizedBox(height: 16),
           AppSecondaryButton(
