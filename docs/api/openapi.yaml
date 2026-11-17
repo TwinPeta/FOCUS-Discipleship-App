@@ -1100,6 +1100,86 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Comment' }
+  /posts/{postId}/follow:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    put:
+      tags: [Feed]
+      operationId: followQuestion
+      summary: Follow a question (be told about new answers)
+      description: Questions only. Each new answer notifies followers (category replies), except its writer and the asker, who is told anyway.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowState' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Feed]
+      operationId: unfollowQuestion
+      summary: Stop following a question
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowState' }
+  /comments/{commentId}/vote:
+    parameters:
+      - name: commentId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Feed]
+      operationId: voteAnswer
+      summary: Mark an answer as helpful
+      description: Answers to questions only; one vote per member; not on your own answer (403 own_answer).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteState' }
+        '403': { description: Your own answer }
+        '404': { description: Not found or not a member }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Feed]
+      operationId: unvoteAnswer
+      summary: Remove your helpful vote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteState' }
+  /search/posts:
+    get:
+      tags: [Feed]
+      operationId: searchPosts
+      summary: Search posts and questions in your communities
+      description: Matches the text (at least 2 characters) of visible posts in communities you are a member of, newest first; blocked people are left out.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: kind, in: query, schema: { type: string, enum: [post, question] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Post' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   # ───────────────────────── Prayer ─────────────────────────
   /communities/{communityId}/prayer-requests:
     parameters:
@@ -2143,6 +2223,8 @@ components:
         like_count: { type: integer }
         comment_count: { type: integer }
         liked_by_me: { type: boolean }
+        follower_count: { type: integer, description: Questions only }
+        following: { type: boolean, description: Questions only; the viewer follows it }
         created_at: { type: string, format: date-time }
     Comment:
       type: object
@@ -2150,6 +2232,8 @@ components:
         id: { type: string }
         author: { $ref: '#/components/schemas/UserRef' }
         text: { type: string }
+        vote_count: { type: integer, description: Helpful votes (answers to questions) }
+        voted_by_me: { type: boolean }
         created_at: { type: string, format: date-time }
     PrayerResponse:
       type: object
@@ -2161,6 +2245,16 @@ components:
         anonymous: { type: boolean, description: True when the owner of an anonymous request replied on it }
         text: { type: string }
         created_at: { type: string, format: date-time }
+    FollowState:
+      type: object
+      properties:
+        follower_count: { type: integer }
+        following: { type: boolean }
+    VoteState:
+      type: object
+      properties:
+        vote_count: { type: integer }
+        voted_by_me: { type: boolean }
     ReactionState:
       type: object
       properties:

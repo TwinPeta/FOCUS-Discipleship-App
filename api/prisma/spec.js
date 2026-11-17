@@ -40,6 +40,10 @@ module.exports = {
   },
   likes: { cols: { postId: 's', userId: 's' }, fk: { postId: ['posts'], userId: ['users'] }, index: ['postId', 'userId'] },
   comments: { cols: { postId: 's', authorId: 's', text: 's' }, fk: { postId: ['posts'], authorId: ['users'] }, index: ['postId'] },
+  // People following a question (told when it gets an answer).
+  questionFollows: { cols: { postId: 's', userId: 's' }, fk: { postId: ['posts'], userId: ['users'] }, index: ['postId', 'userId'] },
+  // "Helpful" votes on an answer (a comment on a question).
+  answerVotes: { cols: { commentId: 's', userId: 's' }, fk: { commentId: ['comments'], userId: ['users'] }, index: ['commentId', 'userId'] },
   prayerRequests: {
     cols: { communityId: 's', authorId: 's', anonymous: 'b', text: 's' },
     fk: { communityId: ['communities'], authorId: ['users'] }, index: ['communityId'],

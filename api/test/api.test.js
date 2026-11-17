@@ -212,6 +212,65 @@ test('feed, like, comment, idempotent post creation', async () => {
   assert.equal(c.status, 201);
 });
 
+test('questions: follow, helpful votes on answers, post search', async () => {
+  const asker = await login('david@fcu.test');
+  const follower = await login('super@fcu.test');
+  const answerer = await login('mentor@fcu.test');
+  const outsider = await login('student@fcu.test'); // not in Growth Circle
+  const followerId = store.first('users', (u) => u.email === 'super@fcu.test').id;
+  const askerId = store.first('users', (u) => u.email === 'david@fcu.test').id;
+  const q = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: asker, body: { text: 'Where do you find quiet places to pray on campus?', kind: 'question' } })).body;
+  assert.equal(q.follower_count, 0);
+  assert.equal(q.following, false);
+
+  // Follow (idempotent), and only questions can be followed.
+  let f = await call('PUT', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.equal(f.status, 200);
+  f = await call('PUT', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.deepEqual(f.body, { follower_count: 1, following: true });
+  const plain = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: asker, body: { text: 'Just a plain post' } })).body;
+  assert.equal((await call('PUT', `/v1/posts/${plain.id}/follow`, { token: follower })).status, 422);
+  assert.equal(plain.following, undefined, 'plain posts carry no follow state');
+
+  // A new answer tells the follower and the asker.
+  const before = store.where('notifications', (n) => n.userId === followerId).length;
+  const answer = (await call('POST', `/v1/posts/${q.id}/comments`, { token: answerer, body: { text: 'The chapel garden is quiet before 8.' } })).body;
+  assert.equal(answer.vote_count, 0);
+  const told = store.where('notifications', (n) => n.userId === followerId);
+  assert.equal(told.length, before + 1);
+  assert.match(told[told.length - 1].title, /question you follow/);
+  assert.ok(store.where('notifications', (n) => n.userId === askerId).some((n) => /answered your question/.test(n.title)));
+
+  // Helpful votes: one per member, not on your own answer.
+  let v = await call('PUT', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.deepEqual(v.body, { vote_count: 1, voted_by_me: true });
+  v = await call('PUT', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.equal(v.body.vote_count, 1, 'idempotent');
+  assert.equal((await call('PUT', `/v1/comments/${answer.id}/vote`, { token: answerer })).status, 403);
+  assert.equal((await call('PUT', `/v1/comments/${answer.id}/vote`, { token: outsider })).status, 404);
+  const listed = (await call('GET', `/v1/posts/${q.id}/comments`, { token: follower })).body.items.find((c) => c.id === answer.id);
+  assert.equal(listed.vote_count, 1);
+  assert.equal(listed.voted_by_me, true);
+  v = await call('DELETE', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.deepEqual(v.body, { vote_count: 0, voted_by_me: false });
+  const onPlain = (await call('POST', `/v1/posts/${plain.id}/comments`, { token: answerer, body: { text: 'Nice' } })).body;
+  assert.equal((await call('PUT', `/v1/comments/${onPlain.id}/vote`, { token: follower })).status, 422);
+
+  // Unfollow.
+  f = await call('DELETE', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.deepEqual(f.body, { follower_count: 0, following: false });
+
+  // Search: members find it by its words; too short is refused; outsiders see nothing.
+  const found = await call('GET', '/v1/search/posts?q=QUIET%20places', { token: answerer });
+  assert.equal(found.status, 200);
+  assert.ok(found.body.items.some((x) => x.id === q.id));
+  const onlyQuestions = await call('GET', '/v1/search/posts?q=plain&kind=question', { token: answerer });
+  assert.ok(!onlyQuestions.body.items.some((x) => x.id === plain.id));
+  assert.equal((await call('GET', '/v1/search/posts?q=a', { token: answerer })).status, 422);
+  const outside = await call('GET', '/v1/search/posts?q=quiet%20places', { token: outsider });
+  assert.ok(!outside.body.items.some((x) => x.id === q.id));
+});
+
 test('posts: questions and anonymous posts (author hidden, still marked as mine)', async () => {
   const token = await login('mentor@fcu.test');
   const other = await login('student@fcu.test');

@@ -117,14 +117,28 @@ function post(p, viewerId) {
     like_count: likes.length,
     comment_count: store.where('comments', (c) => c.postId === p.id).length,
     liked_by_me: likes.some((l) => l.userId === viewerId),
+    // Questions only: who follows it to hear about new answers.
+    ...((p.kind || 'post') === 'question' ? followState(p.id, viewerId) : {}),
     created_at: p.createdAt,
   };
 }
 
-const comment = (c, communityId) => ({
+function followState(postId, viewerId) {
+  const f = store.where('questionFollows', (x) => x.postId === postId);
+  return { follower_count: f.length, following: f.some((x) => x.userId === viewerId) };
+}
+
+function voteState(commentId, viewerId) {
+  const v = store.where('answerVotes', (x) => x.commentId === commentId);
+  return { vote_count: v.length, voted_by_me: v.some((x) => x.userId === viewerId) };
+}
+
+const comment = (c, communityId, viewerId) => ({
   id: c.id,
   author: userRef(store.get('users', c.authorId), communityId),
   text: c.text,
+  // "Helpful" votes (shown on answers to questions).
+  ...voteState(c.id, viewerId),
   created_at: c.createdAt,
 });
 
@@ -202,5 +216,5 @@ const message = (m) => ({
 
 module.exports = {
   mediaUrl, institution, userRef, myProfile, communitySummary, community, media, mediaList,
-  post, comment, prayerRequest, testimony, resource, message, initials,
+  post, comment, followState, voteState, prayerRequest, testimony, resource, message, initials,
 };
