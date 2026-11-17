@@ -36,7 +36,7 @@ router.get('/prayer-requests/:prayerRequestId', loadRequest, (req, res) => res.j
 // An owner replying on their own anonymous request stays anonymous.
 const responseDto = (c, prayer) => {
   const anonymous = !!prayer.anonymous && c.authorId === prayer.authorId;
-  const dto = S.comment(c, prayer.communityId, req.user.id);
+  const dto = S.comment(c, prayer.communityId);
   return anonymous ? { ...dto, author: null, anonymous: true } : { ...dto, anonymous: false };
 };
 

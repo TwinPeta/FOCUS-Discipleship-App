@@ -216,7 +216,12 @@ test('questions: follow, helpful votes on answers, post search', async () => {
   const asker = await login('david@fcu.test');
   const follower = await login('super@fcu.test');
   const answerer = await login('mentor@fcu.test');
-  const outsider = await login('student@fcu.test'); // not in Growth Circle
+  // Someone outside Growth Circle (an earlier test may have let the student join it).
+  const outsider = await login('student@fcu.test');
+  const studentId = store.first('users', (u) => u.email === 'student@fcu.test').id;
+  const outsiderRows = store.where('memberships', (m) => m.userId === studentId && m.communityId === ctx.growth.id);
+  const keep = outsiderRows.map((m) => m.status);
+  outsiderRows.forEach((m) => { m.status = 'left'; });
   const followerId = store.first('users', (u) => u.email === 'super@fcu.test').id;
   const askerId = store.first('users', (u) => u.email === 'david@fcu.test').id;
   const q = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: asker, body: { text: 'Where do you find quiet places to pray on campus?', kind: 'question' } })).body;
@@ -269,6 +274,7 @@ test('questions: follow, helpful votes on answers, post search', async () => {
   assert.equal((await call('GET', '/v1/search/posts?q=a', { token: answerer })).status, 422);
   const outside = await call('GET', '/v1/search/posts?q=quiet%20places', { token: outsider });
   assert.ok(!outside.body.items.some((x) => x.id === q.id));
+  outsiderRows.forEach((m, i) => { m.status = keep[i]; });
 });
 
 test('posts: questions and anonymous posts (author hidden, still marked as mine)', async () => {
