@@ -32,7 +32,7 @@ class UpdateBanner extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'A new version of FCU is ready (build ${update.buildNumber}).',
+                'FCU ${update.version} is ready to install.',
                 style: AppTextStyles.bodyMedium,
               ),
             ),

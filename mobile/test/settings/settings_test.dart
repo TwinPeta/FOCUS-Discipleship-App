@@ -41,7 +41,7 @@ void main() {
     ]) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
-    expect(find.text('Version $appVersion'), findsOneWidget);
+    expect(find.text(appVersionLabel), findsOneWidget);
 
     await tester.tap(find.text('Sign out'));
     await settle(tester);

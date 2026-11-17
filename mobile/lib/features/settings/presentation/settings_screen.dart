@@ -151,7 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Version $appVersion',
+                  appVersionLabel,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.fieldLabel.copyWith(
                     color: AppColors.placeholder,

@@ -1,8 +1,15 @@
-# Builds a debug APK of the FCU mobile app (mobile/) for phone testing.
-# Debug, not release: the app runs on fake repositories, and testers need the
-# debug scenario screen (long-press "Version" on Settings) to approve join
-# requests, go offline, receive warnings, etc.
-name: Mobile debug APK
+# Builds the FCU Android app (mobile/) and, when asked, publishes it as a release testers install.
+#
+# Every release is one app VERSION, never a build number:
+#   - the version is `version:` in mobile/pubspec.yaml (e.g. 1.0.0-beta.2+1 -> 1.0.0-beta.2);
+#   - mobile/docs/release-notes/<version>.md must exist, or the workflow stops before building;
+#   - the release is tagged mobile-v<version>, titled "FCU app <version>", and its text is those notes;
+#   - a version is released once: to release again, raise the version and add its notes.
+# The app's "Update available" banner reads the latest release and compares versions.
+#
+# Pushes to main build and test only (the APK is kept as a run artifact). To release:
+#   Actions > "Mobile build" > Run workflow > tick "Publish".
+name: Mobile build
 
 on:
   push:
@@ -10,10 +17,11 @@ on:
     paths:
       - 'mobile/**'
       - '.github/workflows/mobile-apk.yml'
+      - '.github/scripts/mobile-version.sh'
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish as the latest GitHub Release (testers are offered it as an update). Off: download the APK from the run only.'
+        description: 'Publish this version as the latest release (testers are offered it as an update). Needs a version not released before.'
         type: boolean
         default: false
 
@@ -34,6 +42,25 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the Android version code is the commit count
+
+      # First, before anything is built: the version and its release notes.
+      - name: Version and release notes
+        id: v
+        working-directory: .
+        run: bash .github/scripts/mobile-version.sh
+
+      - name: Version not released yet
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.v.outputs.tag }}" --repo "${{ github.repository }}" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx 'fcu.apk'; then
+            echo "::error::${{ steps.v.outputs.version }} is already released. Raise 'version:' in mobile/pubspec.yaml and add its release notes."
+            exit 1
+          fi
 
       - uses: actions/setup-java@v4
         with:
@@ -59,10 +86,6 @@ jobs:
           dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
           flutter test $dirs test/widget_test.dart
 
-      # Phone push is on when the repository variables FCM_PROJECT_ID, FCM_SENDER_ID and the per-platform FCM_API_KEY_*/FCM_APP_ID_*
-      # are set (public Firebase identifiers); without them the app has local notifications only.
-      # The app always talks to the real API (production by default). Set the repository variable API_BASE_URL
-      # (e.g. a staging server) to build against a different one.
       # Fixed signing key (repository secrets) so each new APK installs over
       # the previous one. Without the secrets, the runner's throwaway debug
       # key is used and testers must uninstall before updating.
@@ -79,17 +102,20 @@ jobs:
           fi
 
       # The app always talks to the real API (production by default). Set the repository variable API_BASE_URL
-      # (e.g. a staging server) to build against a different one. The build number (run number) lets the
-      # app detect newer releases.
-      - name: Build debug APK
+      # (e.g. a staging server) to build against a different one. Phone push is on when the repository
+      # variables FCM_PROJECT_ID, FCM_SENDER_ID and the per-platform FCM_API_KEY_*/FCM_APP_ID_* are set
+      # (public Firebase identifiers); without them the app has local notifications only.
+      # APP_VERSION is what the app shows on Settings and compares for updates.
+      - name: Build APK
         env:
           FCU_KEYSTORE_PASSWORD: ${{ secrets.FCU_KEYSTORE_PASSWORD }}
           FCU_KEY_ALIAS: ${{ secrets.FCU_KEY_ALIAS }}
           FCU_KEY_PASSWORD: ${{ secrets.FCU_KEY_PASSWORD }}
         run: >-
           flutter build apk --debug
-          --build-number=${{ github.run_number }}
-          --dart-define=APP_BUILD_NUMBER=${{ github.run_number }}
+          --build-name=${{ steps.v.outputs.version }}
+          --build-number=${{ steps.v.outputs.version_code }}
+          --dart-define=APP_VERSION=${{ steps.v.outputs.version }}
           --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://apis.focusuganda.org/v1' }}
           --dart-define=FCM_PROJECT_ID=${{ vars.FCM_PROJECT_ID }}
           --dart-define=FCM_SENDER_ID=${{ vars.FCM_SENDER_ID }}
@@ -102,17 +128,29 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: fcu-debug-apk-${{ github.run_number }}
+          name: fcu-${{ steps.v.outputs.version }}-apk
           path: mobile/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
           if-no-files-found: error
 
-      # Public download for testers and the app's "Update available" banner.
-      # Tag: android-build-<run number>; asset: fcu.apk.
-      - name: Publish GitHub Release
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
+      # Public download for testers and the app's "Update available" banner:
+      # tag mobile-v<version>, asset fcu.apk, text = the version's release notes.
+      - name: Publish release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/fcu.apk"
-          gh release create "android-build-${{ github.run_number }}" "$RUNNER_TEMP/fcu.apk"             --repo "${{ github.repository }}"             --target "${{ github.sha }}"             --title "FCU Android test build ${{ github.run_number }}"             --notes "Debug build of ${{ github.sha }}. Install fcu.apk on Android; the app also offers updates from here."             --latest
+          cp mobile/build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/fcu.apk"
+          tag="${{ steps.v.outputs.tag }}"
+          title="FCU app ${{ steps.v.outputs.version }}"
+          if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            # Made earlier for this version without the APK (e.g. by "Mobile release"): add it.
+            gh release upload "$tag" "$RUNNER_TEMP/fcu.apk" --repo "${{ github.repository }}"
+            gh release edit "$tag" --repo "${{ github.repository }}" --title "$title" \
+              --notes-file "${{ steps.v.outputs.notes }}" --prerelease=false --latest
+          else
+            gh release create "$tag" "$RUNNER_TEMP/fcu.apk" --repo "${{ github.repository }}" \
+              --target "${{ github.sha }}" --title "$title" \
+              --notes-file "${{ steps.v.outputs.notes }}" --latest
+          fi

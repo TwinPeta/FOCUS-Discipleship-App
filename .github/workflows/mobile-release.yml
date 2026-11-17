@@ -3,10 +3,12 @@
 #   - an UNSIGNED iOS .ipa (Apple needs signing to install; testers sideload it with AltStore or Sideloadly,
 #     until a TestFlight pipeline with an Apple Developer account is added)
 #
-# Start it by pushing a tag, e.g.
-#     git tag mobile-v1.0.0-beta.1 && git push origin mobile-v1.0.0-beta.1
-# or from Actions > "Mobile release" > Run workflow (give the version, e.g. 1.0.0-beta.1).
-# The release text is mobile/docs/release-notes/<version>.md.
+# The version is `version:` in mobile/pubspec.yaml (never a build number), and
+# mobile/docs/release-notes/<version>.md must exist or nothing is built (.github/scripts/mobile-version.sh).
+# Start it from Actions > "Mobile release" > Run workflow, or by pushing the matching tag, e.g.
+#     git tag mobile-v1.0.0-beta.2 && git push origin mobile-v1.0.0-beta.2
+# (a tag that does not match pubspec.yaml is refused). The release is the same one "Mobile build" publishes
+# (tag mobile-v<version>, text = the release notes); this adds the release APK and the iOS file to it.
 #
 # Repository variable API_BASE_URL (Settings > Secrets and variables > Actions > Variables) sets the server the
 # build talks to. Default: https://apis.focusuganda.org/v1
@@ -16,10 +18,6 @@ on:
   push:
     tags: ['mobile-v*']
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version, e.g. 1.0.0-beta.1 (needs mobile/docs/release-notes/<version>.md)'
-        required: true
 
 permissions:
   contents: write
@@ -42,16 +40,21 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
+      version_code: ${{ steps.v.outputs.version_code }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the Android version code is the commit count
+      # Version from pubspec.yaml and its release notes, before anything is built.
       - id: v
-        env:
-          INPUT_VERSION: ${{ inputs.version }}
+        run: bash .github/scripts/mobile-version.sh
+      - name: Tag matches the version
+        if: github.event_name == 'push'
         run: |
-          v="${INPUT_VERSION:-${GITHUB_REF_NAME#mobile-v}}"
-          if ! [[ "$v" =~ ^[0-9A-Za-z.+-]+$ ]]; then echo "Bad version: $v"; exit 1; fi
-          if [ ! -f "mobile/docs/release-notes/$v.md" ]; then echo "Missing mobile/docs/release-notes/$v.md"; exit 1; fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_NAME" != "${{ steps.v.outputs.tag }}" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match mobile/pubspec.yaml (${{ steps.v.outputs.tag }})."
+            exit 1
+          fi
 
   android:
     needs: version
@@ -80,7 +83,12 @@ jobs:
           dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
           flutter test $dirs test/widget_test.dart
       - name: Build release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
+        run: >-
+          flutter build apk --release
+          --build-name=${{ needs.version.outputs.version }}
+          --build-number=${{ needs.version.outputs.version_code }}
+          --dart-define=APP_VERSION=${{ needs.version.outputs.version }}
+          --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
       - name: Name the file
         run: cp build/app/outputs/flutter-apk/app-release.apk "fcu-${{ needs.version.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
@@ -105,7 +113,12 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Build iOS (unsigned)
-        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
+        run: >-
+          flutter build ios --release --no-codesign
+          --build-name=${{ needs.version.outputs.version }}
+          --build-number=${{ needs.version.outputs.version_code }}
+          --dart-define=APP_VERSION=${{ needs.version.outputs.version }}
+          --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
       - name: Package the .ipa
         run: |
           rm -rf Payload && mkdir Payload
@@ -143,7 +156,8 @@ jobs:
         with:
           tag_name: mobile-v${{ needs.version.outputs.version }}
           target_commitish: ${{ github.sha }}
-          name: FCU app ${{ needs.version.outputs.version }} (testers)
+          name: FCU app ${{ needs.version.outputs.version }}
           body_path: RELEASE.md
-          prerelease: true
+          # One release per version, shared with "Mobile build" (which adds fcu.apk, the file the app updates from).
+          prerelease: false
           files: dist/*

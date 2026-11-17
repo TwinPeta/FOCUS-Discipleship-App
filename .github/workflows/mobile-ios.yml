@@ -11,6 +11,7 @@ on:
     paths:
       - 'mobile/**'
       - '.github/workflows/mobile-ios.yml'
+      - '.github/scripts/mobile-version.sh'
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +27,14 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the version code is the commit count
+
+      # Like every mobile build: the version from pubspec.yaml must have release notes.
+      - name: Version and release notes
+        id: v
+        working-directory: .
+        run: bash .github/scripts/mobile-version.sh
 
       - uses: subosito/flutter-action@v2
         with:
@@ -37,4 +46,8 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (unsigned)
-        run: flutter build ios --no-codesign
+        run: >-
+          flutter build ios --no-codesign
+          --build-name=${{ steps.v.outputs.version }}
+          --build-number=${{ steps.v.outputs.version_code }}
+          --dart-define=APP_VERSION=${{ steps.v.outputs.version }}

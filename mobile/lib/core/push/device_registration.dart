@@ -64,7 +64,8 @@ class DeviceRegistration {
         body: {
           'platform': platform,
           'push_token': token,
-          'app_version': appVersion,
+          // Empty in local builds (no version): left out.
+          if (appVersion.isNotEmpty) 'app_version': appVersion,
           'locale': locale,
         },
       );

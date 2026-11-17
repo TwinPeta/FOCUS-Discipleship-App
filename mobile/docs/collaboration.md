@@ -147,6 +147,7 @@ Already built, so reuse it instead of rebuilding:
 7. **Commit messages:** `feat(mobile): screen NN <name>`, `fix(mobile): ...`, `docs: ...`. One screen (or one batch) per commit, plus any shared-file edits it needs.
 8. **No force-pushes to `main`.** To undo, make a new commit (`git revert`, or `git restore --source=<rev> --staged <paths>`).
 9. If a pull brings conflicts in the other agent's files, **keep their version** and rebase your change on top. Ask the user if unsure.
+10. **Versions and release notes.** Releases are named by the `version:` in `pubspec.yaml`, never by a build number. Every mobile build workflow stops if `docs/release-notes/<version>.md` is missing, so never change `version:` without adding that file in the same commit. Steps: `docs/release-notes/README.md`.
 
 Tooling on this machine: Flutter is at `F:\Projects\Focus\flutter_windows_3.50.0-stable\flutter\bin\flutter.bat` (also on PATH as `flutter`). Set `PUB_CACHE=F:/.pub-cache` first, because the C: drive is full. The formatter is `dart format`, not `flutter format`.
 
