@@ -11,6 +11,11 @@ on:
       - 'mobile/**'
       - '.github/workflows/mobile-apk.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish as the latest GitHub Release (testers are offered it as an update). Off: download the APK from the run only.'
+        type: boolean
+        default: false
 
 concurrency:
   group: mobile-apk-${{ github.ref }}
@@ -105,7 +110,7 @@ jobs:
       # Public download for testers and the app's "Update available" banner.
       # Tag: android-build-<run number>; asset: fcu.apk.
       - name: Publish GitHub Release
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
