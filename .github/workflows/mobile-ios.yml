@@ -2,7 +2,7 @@
 # Unsigned (--no-codesign): this proves the iOS build works but produces
 # nothing installable. Installing on iPhones needs an Apple Developer
 # Program account, signing, and TestFlight (to be added later).
-# Tests run in the Android workflow (mobile-apk.yml); not repeated here.
+# Tests run in "Mobile build" (mobile-apk.yml), which also builds the iPhone file when publishing a release.
 name: Mobile iOS build check
 
 on:
