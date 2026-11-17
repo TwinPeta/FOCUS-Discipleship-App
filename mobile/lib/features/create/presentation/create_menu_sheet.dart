@@ -7,31 +7,23 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/bottom_sheet_scaffold.dart';
-import '../../community/domain/membership.dart';
-import '../../community/presentation/providers/membership_provider.dart';
 
 const _tileSize = 44.0;
-const _needsCommunity = 'Join a community first';
-const _comingSoon = 'Coming soon';
 
 /// Opens the Create menu (design screen 66) from the bottom bar's centre
 /// button.
 Future<void> showCreateMenu(BuildContext context) =>
     showAppBottomSheet<void>(context, builder: (_) => const CreateMenuSheet());
 
-/// The Create menu: ask or answer a question (Q&A, not built yet), write a
-/// post (General or your community), prayer request and share a story (both
-/// need an approved specific community).
+/// The Create menu: ask or answer a question, write a post, prayer request
+/// and share a story. Each opens the one Create screen (`/create`), where
+/// the student picks General or their community.
 class CreateMenuSheet extends ConsumerWidget {
   const CreateMenuSheet({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final membership =
-        ref.watch(membershipProvider).valueOrNull ?? Membership.empty;
-    final communityId = approvedCommunityId(membership);
     final router = GoRouter.of(context);
 
     void open(String route) {
@@ -42,45 +34,35 @@ class CreateMenuSheet extends ConsumerWidget {
     return BottomSheetScaffold(
       title: 'Create',
       children: [
-        const CreateMenuRow(
+        CreateMenuRow(
           icon: Icons.help_outline_rounded,
           title: 'Ask a question',
           subtitle: 'Get answers from the community',
-          disabledNote: _comingSoon,
+          onTap: () => open('/create?type=question'),
         ),
-        const CreateMenuRow(
+        CreateMenuRow(
           icon: Icons.question_answer_outlined,
           title: 'Answer a question',
           subtitle: 'Help someone in your community',
-          disabledNote: _comingSoon,
+          onTap: () => open('/questions'),
         ),
         CreateMenuRow(
           icon: Icons.edit_note_rounded,
           title: 'Write a post',
-          subtitle: 'Share text, photos or video',
-          onTap: () => open(
-            communityId == null
-                ? '/general-feed/compose'
-                : '/community/$communityId/compose',
-          ),
+          subtitle: 'Share text and a photo',
+          onTap: () => open('/create?type=post'),
         ),
         CreateMenuRow(
           icon: Icons.volunteer_activism_outlined,
           title: 'Prayer request',
           subtitle: 'Ask the community to pray',
-          disabledNote: communityId == null ? _needsCommunity : null,
-          onTap: communityId == null
-              ? null
-              : () => open('/community/$communityId/prayer/new'),
+          onTap: () => open('/create?type=prayer'),
         ),
         CreateMenuRow(
           icon: Icons.auto_stories_outlined,
           title: 'Share a story',
           subtitle: 'A testimony, reviewed before it is published',
-          disabledNote: communityId == null ? _needsCommunity : null,
-          onTap: communityId == null
-              ? null
-              : () => open('/community/$communityId/testimonies/new'),
+          onTap: () => open('/create?type=story'),
         ),
         const SizedBox(height: 8),
         TextButton(

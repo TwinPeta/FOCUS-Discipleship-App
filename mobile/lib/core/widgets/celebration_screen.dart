@@ -15,7 +15,7 @@ class CelebrationScreen extends StatelessWidget {
     required this.body,
     this.extra = const [],
     required this.actions,
-    this.iconBackground = AppColors.amber,
+    this.iconBackground,
   });
 
   final IconData icon;
@@ -25,7 +25,10 @@ class CelebrationScreen extends StatelessWidget {
   final Widget body;
   final List<Widget> extra;
   final List<Widget> actions;
-  final Color iconBackground;
+  final Color? iconBackground;
+
+  /// [iconBackground], or the theme's amber.
+  Color get _iconBackground => iconBackground ?? AppColors.amber;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +48,8 @@ class CelebrationScreen extends StatelessWidget {
                         width: 112,
                         height: 112,
                         decoration: BoxDecoration(
-                          color: iconBackground,
-                          gradient: iconBackground == AppColors.amber
+                          color: _iconBackground,
+                          gradient: _iconBackground == AppColors.amber
                               ? AppGradients.brand
                               : null,
                           shape: BoxShape.circle,

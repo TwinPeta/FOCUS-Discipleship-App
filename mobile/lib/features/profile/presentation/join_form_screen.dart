@@ -49,6 +49,15 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
   late final _birthdateController = TextEditingController(
     text: _formatBirthdate(_initial?.birthdate),
   );
+  late final _churchNameController = TextEditingController(
+    text: _initial?.homeChurch?.name ?? '',
+  );
+  late final _churchLocationController = TextEditingController(
+    text: _initial?.homeChurch?.location ?? '',
+  );
+  late final _churchPastorController = TextEditingController(
+    text: _initial?.homeChurch?.pastor ?? '',
+  );
 
   final _fullNameFocus = FocusNode();
   final _usernameFocus = FocusNode();
@@ -59,6 +68,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
   late String _country;
   late InstitutionType _institutionType;
   String? _institutionName;
+  int? _yearOfStudy;
   String? _photoPath;
   bool _isSubmitting = false;
 
@@ -86,6 +96,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
     _country = existing?.country ?? InstitutionData.countries.first;
     _institutionType = existing?.institutionType ?? InstitutionType.university;
     _institutionName = existing?.institutionName;
+    _yearOfStudy = existing?.yearOfStudy;
     _photoPath = existing?.photoPath;
 
     _fullNameFocus.addListener(
@@ -128,6 +139,9 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _birthdateController.dispose();
+    _churchNameController.dispose();
+    _churchLocationController.dispose();
+    _churchPastorController.dispose();
     _fullNameFocus.dispose();
     _usernameFocus.dispose();
     _emailFocus.dispose();
@@ -141,6 +155,16 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
     }
   }
 
+  /// Null while every church field is empty: it can be added later.
+  HomeChurch? get _homeChurch {
+    final c = HomeChurch(
+      name: _churchNameController.text.trim(),
+      location: _churchLocationController.text.trim(),
+      pastor: _churchPastorController.text.trim(),
+    );
+    return c.name.isEmpty && c.location.isEmpty && c.pastor.isEmpty ? null : c;
+  }
+
   Map<String, String?> _validateAll() {
     return {
       'fullName': Validators.required(_fullNameController.text, 'Full name'),
@@ -151,10 +175,31 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
       'phone': Validators.phone(_phoneController.text),
       'institutionName': Validators.required(
         _institutionName,
-        _institutionType == InstitutionType.university
-            ? 'University'
-            : 'High school',
+        _institutionType.label,
       ),
+      'yearOfStudy':
+          _institutionType == InstitutionType.university && _yearOfStudy == null
+          ? 'Year of study is required'
+          : null,
+      // Optional, but complete once started.
+      if (_homeChurch != null) ...{
+        'churchName': Validators.required(
+          _churchNameController.text,
+          'Church name',
+        ),
+        'churchLocation': Validators.required(
+          _churchLocationController.text,
+          'Church location',
+        ),
+        'churchPastor': Validators.required(
+          _churchPastorController.text,
+          "Pastor's name",
+        ),
+      } else ...{
+        'churchName': null,
+        'churchLocation': null,
+        'churchPastor': null,
+      },
     };
   }
 
@@ -212,6 +257,10 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
       institutionType: _institutionType,
       institutionName: _institutionName!,
       photoPath: _photoPath,
+      yearOfStudy: _institutionType == InstitutionType.university
+          ? _yearOfStudy
+          : null,
+      homeChurch: _homeChurch,
     );
 
     try {
@@ -222,7 +271,10 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
         // answers in the draft, and create the account after the charter.
         final profiles = ref.read(profileRepositoryProvider);
         final auth = ref.read(authRepositoryProvider);
-        final errors = validateProfile(profile);
+        final errors = {
+          ...validateProfile(profile),
+          ...validateSignUpDetails(profile),
+        };
         if (errors.isNotEmpty) throw ProfileValidationError(errors);
         if (!await profiles.isUsernameAvailable(profile.username)) {
           throw UsernameTakenError(profile.username);
@@ -329,6 +381,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                         ],
                       ),
                       const SizedBox(height: 28),
+                      const _SectionTitle('About you'),
                       AppTextField(
                         label: 'Full name',
                         controller: _fullNameController,
@@ -363,7 +416,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                               onTap: _pickBirthdate,
                               controller: _birthdateController,
                               placeholder: 'DD / MM / YYYY',
-                              suffixIcon: const Icon(
+                              suffixIcon: Icon(
                                 Icons.calendar_today_outlined,
                                 size: 18,
                                 color: AppColors.placeholder,
@@ -413,7 +466,8 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                         textInputAction: TextInputAction.done,
                         errorText: _errors['phone'],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 28),
+                      const _SectionTitle('Your school'),
                       InstitutionPicker(
                         country: _country,
                         type: _institutionType,
@@ -423,10 +477,55 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                           setState(() {
                             _institutionType = type;
                             _institutionName = null;
+                            _errors.remove('yearOfStudy');
                           });
                         },
                         onNameChanged: (name) =>
                             setState(() => _institutionName = name),
+                        yearOfStudy: _yearOfStudy,
+                        yearErrorText: _errors['yearOfStudy'],
+                        onYearChanged: (year) => setState(() {
+                          _yearOfStudy = year;
+                          _errors['yearOfStudy'] = null;
+                        }),
+                      ),
+                      const SizedBox(height: 28),
+                      const _SectionTitle('Your home church'),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Optional. You can add it now or later from your '
+                          'profile.',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.inkDeemphasized80,
+                          ),
+                        ),
+                      ),
+                      AppTextField(
+                        label: 'Church name',
+                        controller: _churchNameController,
+                        placeholder: 'e.g. Watoto Church',
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.next,
+                        errorText: _errors['churchName'],
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        label: 'Location',
+                        controller: _churchLocationController,
+                        placeholder: 'e.g. Kampala, Central',
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.next,
+                        errorText: _errors['churchLocation'],
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        label: "Pastor's name",
+                        controller: _churchPastorController,
+                        placeholder: 'e.g. Pastor John Mukasa',
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.done,
+                        errorText: _errors['churchPastor'],
                       ),
                     ],
                   ),
@@ -435,7 +534,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.white,
                 border: Border(
                   top: BorderSide(color: AppColors.cream, width: 1),
@@ -451,6 +550,30 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Heading over one group of the profile form.
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: AppTextStyles.cardTitle.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );

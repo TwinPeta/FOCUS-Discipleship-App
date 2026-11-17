@@ -49,7 +49,7 @@ class AppPrimaryButton extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: radius),
           ),
           child: isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   height: 22,
                   width: 22,
                   child: CircularProgressIndicator(

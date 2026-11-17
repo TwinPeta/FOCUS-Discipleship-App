@@ -17,9 +17,14 @@ import '../support/pump_utils.dart';
 import '../support/fakes.dart';
 import '../support/fake_backend.dart';
 
-Consent _consent({bool charter = true, bool participation = true}) => Consent(
+Consent _consent({
+  bool charter = true,
+  bool participation = true,
+  bool national = true,
+}) => Consent(
   charterAccepted: charter,
   participationAccepted: participation,
+  nationalActivitiesAccepted: national,
   mentorContactAllowed: false,
   acceptedAt: DateTime(2026),
 );
@@ -122,38 +127,35 @@ void main() {
       },
     );
 
-    test(
-      'the emailed code sets a new password, once, and only with the right code',
-      () async {
-        final r = repo();
-        const email = FakeAuthRepository.demoEmail;
-        const fresh = 'BrandNewPass99';
-        await r.requestPasswordReset(email);
+    test('the emailed code sets a new password, once, and only with the right code', () async {
+      final r = repo();
+      const email = FakeAuthRepository.demoEmail;
+      const fresh = 'BrandNewPass99';
+      await r.requestPasswordReset(email);
 
-        await expectLater(
-          r.resetPassword(email, '000000', fresh),
-          throwsA(isA<InvalidResetCode>()),
-        );
-        await r.signIn(email, FakeAuthRepository.demoPassword); // unchanged
+      await expectLater(
+        r.resetPassword(email, '000000', fresh),
+        throwsA(isA<InvalidResetCode>()),
+      );
+      await r.signIn(email, FakeAuthRepository.demoPassword); // unchanged
 
-        await r.resetPassword(email, FakeAuthRepository.resetCode, fresh);
-        await expectLater(
-          r.signIn(email, FakeAuthRepository.demoPassword),
-          throwsA(isA<InvalidCredentials>()),
-        );
-        expect((await r.signIn(email, fresh)).email, email);
+      await r.resetPassword(email, FakeAuthRepository.resetCode, fresh);
+      await expectLater(
+        r.signIn(email, FakeAuthRepository.demoPassword),
+        throwsA(isA<InvalidCredentials>()),
+      );
+      expect((await r.signIn(email, fresh)).email, email);
 
-        await expectLater(
-          r.resetPassword(email, FakeAuthRepository.resetCode, 'AnotherPass77'),
-          throwsA(isA<InvalidResetCode>()),
-          reason: 'a code works once',
-        );
-        await expectLater(
-          r.resetPassword('nobody@fcu.test', FakeAuthRepository.resetCode, fresh),
-          throwsA(isA<InvalidResetCode>()),
-        );
-      },
-    );
+      await expectLater(
+        r.resetPassword(email, FakeAuthRepository.resetCode, 'AnotherPass77'),
+        throwsA(isA<InvalidResetCode>()),
+        reason: 'a code works once',
+      );
+      await expectLater(
+        r.resetPassword('nobody@fcu.test', FakeAuthRepository.resetCode, fresh),
+        throwsA(isA<InvalidResetCode>()),
+      );
+    });
 
     test(
       'an account needs a verified email and both required consents',
@@ -174,6 +176,7 @@ void main() {
         for (final consent in [
           _consent(charter: false),
           _consent(participation: false),
+          _consent(national: false),
         ]) {
           expect(consent.isValid, isFalse);
           expect(

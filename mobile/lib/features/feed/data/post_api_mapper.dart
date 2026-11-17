@@ -41,12 +41,19 @@ Post postFromApi(
     body: (j['text'] as String?) ?? '',
     createdAt:
         DateTime.tryParse((j['created_at'] as String?) ?? '') ?? DateTime.now(),
-    roleLabel: roleLabelFor(author),
+    // No role badge on an anonymous post: it would hint at who wrote it.
+    roleLabel: j['anonymous'] == true ? null : roleLabelFor(author),
     photo: urls.isEmpty ? null : PostPhoto.network(urls.first),
     media: urls.length > 1 ? urls.sublist(1) : const [],
     likeCount: (j['like_count'] as int?) ?? 0,
     likedByMe: j['liked_by_me'] == true,
     commentCount: (j['comment_count'] as int?) ?? 0,
+    kind: j['kind'] == 'question' ? PostKind.question : PostKind.post,
+    anonymous: j['anonymous'] == true,
+    isMine: j['is_mine'] == true,
+    pinned: j['pinned'] == true,
+    following: j['following'] == true,
+    followerCount: (j['follower_count'] as int?) ?? 0,
   );
 }
 
@@ -61,4 +68,6 @@ Comment commentFromApi(
   text: (j['text'] as String?) ?? '',
   createdAt:
       DateTime.tryParse((j['created_at'] as String?) ?? '') ?? DateTime.now(),
+  voteCount: (j['vote_count'] as int?) ?? 0,
+  votedByMe: j['voted_by_me'] == true,
 );

@@ -12,7 +12,7 @@ class InitialsAvatar extends StatelessWidget {
     required this.initials,
     this.photoPath,
     this.size = 40,
-    this.backgroundColor = AppColors.cream,
+    this.backgroundColor,
     this.borderColor,
     this.borderWidth = 0,
     this.shape = BoxShape.circle,
@@ -21,7 +21,10 @@ class InitialsAvatar extends StatelessWidget {
   final String initials;
   final String? photoPath;
   final double size;
-  final Color backgroundColor;
+  final Color? backgroundColor;
+
+  /// [backgroundColor], or the theme's cream.
+  Color get _backgroundColor => backgroundColor ?? AppColors.cream;
   final Color? borderColor;
   final double borderWidth;
   final BoxShape shape;
@@ -33,7 +36,7 @@ class InitialsAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: _backgroundColor,
         shape: shape,
         borderRadius: shape == BoxShape.rectangle
             ? BorderRadius.circular(size * 0.28)
@@ -56,6 +59,7 @@ class InitialsAvatar extends StatelessWidget {
           ? null
           : Text(
               initials,
+              textScaler: TextScaler.noScaling,
               style: AppTextStyles.cardTitle.copyWith(
                 fontSize: size * 0.36,
                 fontWeight: FontWeight.w800,

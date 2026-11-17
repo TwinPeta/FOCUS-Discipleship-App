@@ -41,9 +41,9 @@ class _ReportUserScreenState extends ConsumerState<ReportUserScreen> {
     final thread = threadAsync.valueOrNull;
 
     if (threadAsync.isLoading && !threadAsync.hasValue) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.page,
-        body: SafeArea(child: Skeleton(cardCount: 1)),
+        body: const SafeArea(child: Skeleton(cardCount: 1)),
       );
     }
     if (thread == null) {

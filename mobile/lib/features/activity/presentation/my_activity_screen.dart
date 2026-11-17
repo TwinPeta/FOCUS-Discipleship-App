@@ -139,19 +139,19 @@ class _BadgeItem extends StatelessWidget {
                       border: Border.all(color: AppColors.ink, width: 2.5),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.star_rounded, color: AppColors.ink),
+                    child: Icon(Icons.star_rounded, color: AppColors.ink),
                   )
                 : CustomPaint(
                     painter: const DashedCirclePainter(),
                     child: Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.white,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_outline_rounded,
                         color: AppColors.placeholder,
                         size: 20,

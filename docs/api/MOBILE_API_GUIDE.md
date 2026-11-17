@@ -121,7 +121,7 @@ Errors are RFC 7807 `application/problem+json` with a stable **`code`**. Branch 
 4. attach media_id: post (media_ids, max 4), testimony, report, or profile photo
 ```
 - `purpose`: `profile_photo`, `post_photo`, `testimony_photo`, `testimony_video`, `report_evidence`.
-- Accepted: JPEG, PNG, WebP, HEIC, server limit **10 MB**. The app compresses to quality 80, ≤ 1600 px and refuses anything over **2 MB** first (`mobile/lib/core/media/upload_policy.dart`).
+- Accepted: JPEG, PNG, WebP, HEIC, server limit **2 MB**. The app converts every photo to WebP and steps down from 1600 px / 80% until it is under **2 MB** (`mobile/lib/core/media/photo_compressor.dart`).
 - `PUT /media/{mediaId}/upload` is the server's own upload target (what `upload_url` points to locally); the app always uses the returned `upload_url`.
 - In the app: `mobile/lib/core/network/media_uploader.dart`.
 

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -56,6 +57,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       await ref
           .read(authControllerProvider.notifier)
           .signIn(_email.text.trim(), _password.text);
+      // Signed in: let the phone save (or update) these details.
+      TextInput.finishAutofillContext();
       if (mounted) context.go('/communities');
     } on InvalidCredentials {
       if (mounted) setState(() => _error = SignInScreen.genericError);
@@ -82,7 +85,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               controller: _email,
               placeholder: 'you@example.com',
               keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
+              autofillHints: const [
+                AutofillHints.email,
+                AutofillHints.username,
+              ],
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _passwordFocus.requestFocus(),
               onChanged: (_) => setState(() {}),
@@ -148,7 +154,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     foregroundColor: AppColors.ink,
                     minimumSize: const Size(44, 44),
                   ),
-                  onPressed: () => context.go('/join'),
+                  onPressed: () => context.go('/join/start'),
                   child: const Text(
                     'Explore communities',
                     style: TextStyle(

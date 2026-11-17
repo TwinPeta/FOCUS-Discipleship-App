@@ -78,9 +78,9 @@ class _HeaderBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 120,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppGradients.brand,
-        borderRadius: BorderRadius.vertical(
+        borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(AppRadii.headerBottom),
         ),
       ),

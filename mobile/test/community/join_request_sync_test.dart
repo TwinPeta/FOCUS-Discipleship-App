@@ -50,16 +50,15 @@ Map<String, dynamic> _mine(String? communityId, String status) => {
 };
 
 /// A `JoinRequest` as `joinRequestDto` returns it.
-Map<String, dynamic> _request(String id, String communityId, String status) =>
-    {
-      'id': id,
-      'community': {'id': communityId},
-      'user': {'id': 'me'},
-      'status': status,
-      'created_at': '2026-11-15T08:00:00Z',
-      'decided_at': null,
-      'note': null,
-    };
+Map<String, dynamic> _request(String id, String communityId, String status) => {
+  'id': id,
+  'community': {'id': communityId},
+  'user': {'id': 'me'},
+  'status': status,
+  'created_at': '2026-11-15T08:00:00Z',
+  'decided_at': null,
+  'note': null,
+};
 
 class _CountingMembership extends FakeMembershipRepository {
   _CountingMembership() : super(latency: Duration.zero);
@@ -101,24 +100,27 @@ void main() {
       expect(api.seen, contains('DELETE /v1/join-requests/jr1'));
     });
 
-    test('cancelling a request decided meanwhile returns the decision', () async {
-      var status = 'pending';
-      final api = _Api({
-        'GET /v1/me/communities': (_) => _json(200, _mine('c1', status)),
-        'GET /v1/me/join-requests': (_) => _json(200, {
-          'items': [_request('jr1', 'c1', 'pending')],
-        }),
-        'DELETE /v1/join-requests/jr1': (_) {
-          status = 'member'; // the super-mentor approved first
-          return _json(409, {'code': 'not_pending'});
-        },
-      });
-      final repo = RemoteMembershipRepository(api.client);
-      await repo.getMembership();
-      final after = await repo.cancelRequest();
-      expect(after.status, MembershipStatus.approved);
-      expect(after.hasUnseenResult, isTrue);
-    });
+    test(
+      'cancelling a request decided meanwhile returns the decision',
+      () async {
+        var status = 'pending';
+        final api = _Api({
+          'GET /v1/me/communities': (_) => _json(200, _mine('c1', status)),
+          'GET /v1/me/join-requests': (_) => _json(200, {
+            'items': [_request('jr1', 'c1', 'pending')],
+          }),
+          'DELETE /v1/join-requests/jr1': (_) {
+            status = 'member'; // the super-mentor approved first
+            return _json(409, {'code': 'not_pending'});
+          },
+        });
+        final repo = RemoteMembershipRepository(api.client);
+        await repo.getMembership();
+        final after = await repo.cancelRequest();
+        expect(after.status, MembershipStatus.approved);
+        expect(after.hasUnseenResult, isTrue);
+      },
+    );
 
     test('cancelling with nothing pending throws', () async {
       final api = _Api({
@@ -171,7 +173,10 @@ void main() {
       addTearDown(c.dispose);
       await c.read(membershipProvider.future);
       await c.read(membershipProvider.notifier).requestToJoin('c1');
-      expect(c.read(membershipProvider).value?.status, MembershipStatus.pending);
+      expect(
+        c.read(membershipProvider).value?.status,
+        MembershipStatus.pending,
+      );
       await c.read(membershipProvider.notifier).cancelRequest();
       expect(c.read(membershipProvider).value?.status, MembershipStatus.none);
     });

@@ -34,7 +34,7 @@ class PathwayStepsScreen extends ConsumerWidget {
 
     if ((pathwaysAsync.isLoading && !pathwaysAsync.hasValue) ||
         (stepsAsync.isLoading && !stepsAsync.hasValue)) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
 
     final pathway = pathwaysAsync.valueOrNull
@@ -89,6 +89,7 @@ class PathwayStepsScreen extends ConsumerWidget {
         separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) => _StepRow(
           key: ValueKey(steps[index].id),
+          number: index + 1,
           step: steps[index],
           onContinue: () => onContinue(steps[index]),
         ),
@@ -98,8 +99,14 @@ class PathwayStepsScreen extends ConsumerWidget {
 }
 
 class _StepRow extends StatelessWidget {
-  const _StepRow({super.key, required this.step, required this.onContinue});
+  const _StepRow({
+    super.key,
+    required this.number,
+    required this.step,
+    required this.onContinue,
+  });
 
+  final int number;
   final PathwayStep step;
   final VoidCallback onContinue;
 
@@ -118,9 +125,14 @@ class _StepRow extends StatelessWidget {
             ? AppColors.honey
             : AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: step.status == PathwayStepStatus.locked
-            ? null
-            : Border.all(color: AppColors.ink, width: 2),
+        border: switch (step.status) {
+          PathwayStepStatus.locked => null,
+          PathwayStepStatus.done => Border.all(color: AppColors.inputBorder),
+          PathwayStepStatus.current => Border.all(
+            color: AppColors.ink,
+            width: 2,
+          ),
+        },
         boxShadow: step.status == PathwayStepStatus.locked
             ? null
             : AppShadows.soft,
@@ -164,7 +176,9 @@ class _StepRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  step.meta,
+                  step.meta.isEmpty
+                      ? 'Step $number'
+                      : 'Step $number · ${step.meta}',
                   style: AppTextStyles.body.copyWith(
                     fontSize: 12.5,
                     color: AppColors.inkDeemphasized80,

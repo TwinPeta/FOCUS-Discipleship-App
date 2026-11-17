@@ -12,6 +12,16 @@ final threadsProvider = FutureProvider<List<Thread>>((ref) async {
   return threads.where((t) => !blocked.contains(t.participant.id)).toList();
 });
 
+/// Unread messages across all conversations (the Messages tab badge).
+final unreadMessageCountProvider = Provider<int>(
+  (ref) =>
+      ref
+          .watch(threadsProvider)
+          .valueOrNull
+          ?.fold<int>(0, (sum, t) => sum + t.unread) ??
+      0,
+);
+
 /// Null for an unknown thread or one whose participant is blocked, so a
 /// deep link can't reopen a blocked conversation.
 final threadByIdProvider = FutureProvider.autoDispose.family<Thread?, String>((

@@ -8,12 +8,15 @@ class AppChip extends StatelessWidget {
   const AppChip({
     super.key,
     required this.label,
-    this.backgroundColor = AppColors.honey,
+    this.backgroundColor,
     this.icon,
   });
 
   final String label;
-  final Color backgroundColor;
+  final Color? backgroundColor;
+
+  /// [backgroundColor], or the theme's honey.
+  Color get _backgroundColor => backgroundColor ?? AppColors.honey;
   final IconData? icon;
 
   @override
@@ -21,7 +24,7 @@ class AppChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: _backgroundColor,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

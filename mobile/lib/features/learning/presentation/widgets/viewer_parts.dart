@@ -122,7 +122,7 @@ class ViewerScaffold extends StatelessWidget {
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.white,
                 border: Border(top: BorderSide(color: AppColors.cream)),
               ),
@@ -208,7 +208,7 @@ class NextInPathwayTile extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+                Icon(Icons.chevron_right_rounded, color: AppColors.ink),
               ],
             ),
           ),

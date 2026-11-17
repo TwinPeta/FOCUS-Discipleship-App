@@ -47,6 +47,29 @@ class PostDetailController
     }
   }
 
+  /// Questions: follow to be told about new answers (optimistic).
+  Future<void> toggleFollow() async {
+    final before = state.valueOrNull;
+    if (before == null || before.kind != PostKind.question) return;
+    final following = !before.following;
+    _set(
+      before.copyWith(
+        following: following,
+        followerCount: before.followerCount + (following ? 1 : -1),
+      ),
+    );
+    try {
+      _set(
+        await ref
+            .read(postRepositoryProvider)
+            .setFollowing(arg, following: following),
+      );
+    } catch (_) {
+      _set(before);
+      rethrow;
+    }
+  }
+
   /// Keeps the comments count in step with [PostCommentsController].
   void adjustCommentCount(int delta) {
     final post = state.valueOrNull;
@@ -99,6 +122,33 @@ class PostCommentsController
           if (c.id != comment.id) c,
       ]);
       post.adjustCommentCount(-1);
+      rethrow;
+    }
+  }
+
+  /// "Helpful" on an answer (optimistic; rolled back on failure).
+  Future<void> toggleVote(String commentId) async {
+    final before = state.valueOrNull;
+    final current = before?.where((c) => c.id == commentId).firstOrNull;
+    if (before == null || current == null) return;
+    final voted = !current.votedByMe;
+    void put(Comment c) => state = AsyncValue.data([
+      for (final x in state.valueOrNull ?? const <Comment>[])
+        x.id == commentId ? c : x,
+    ]);
+    put(
+      current.copyWith(
+        votedByMe: voted,
+        voteCount: current.voteCount + (voted ? 1 : -1),
+      ),
+    );
+    try {
+      final saved = await ref
+          .read(postRepositoryProvider)
+          .setVoted(commentId, voted: voted);
+      put(current.copyWith(votedByMe: saved.mine, voteCount: saved.count));
+    } catch (_) {
+      put(current);
       rethrow;
     }
   }

@@ -185,7 +185,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   child: MessageInputBar(
                     controller: _textController,
                     onSend: _send,
-                    hintText: online ? 'Type a message…' : 'You are offline',
+                    hintText: online ? 'Write a message' : 'You are offline',
                     enabled: online,
                   ),
                 ),
@@ -205,7 +205,7 @@ class _ConversationTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: AppGradients.brand),
+      decoration: BoxDecoration(gradient: AppGradients.brand),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
       child: Row(
         children: [
@@ -364,7 +364,7 @@ class _RestrictedBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.lock_clock_outlined, color: AppColors.ink),
+            Icon(Icons.lock_clock_outlined, color: AppColors.ink),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

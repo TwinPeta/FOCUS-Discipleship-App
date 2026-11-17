@@ -1,0 +1,65 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:focus_1/core/config/app_config.dart';
+import 'package:focus_1/features/community/domain/membership.dart';
+
+import '../support/app_harness.dart';
+
+void main() {
+  test('app config: auto-approval read from the server', () {
+    expect(
+      AppConfig.fromJson({
+        'join_requests': {'auto_approve': true},
+      }).autoApproveJoin,
+      isTrue,
+    );
+    expect(
+      AppConfig.fromJson({
+        'join_requests': {'auto_approve': false},
+      }).autoApproveJoin,
+      isFalse,
+    );
+    expect(AppConfig.fromJson(null).autoApproveJoin, isFalse);
+  });
+
+  testWidgets('4: auto-approval on: "Join community"; off: "Request to join"', (
+    tester,
+  ) async {
+    final auto = await pumpFcuApp(
+      tester,
+      membership: MembershipStatus.none,
+      overrides: [
+        appConfigProvider.overrideWith(
+          (ref) async => const AppConfig(autoApproveJoin: true),
+        ),
+      ],
+    );
+    await goTo(tester, auto, '/communities/life-faith-circle');
+    expect(find.text('Join community'), findsOneWidget);
+    expect(find.textContaining('You join straight away'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('4: manual approval keeps "Request to join" (3b pending flow)', (
+    tester,
+  ) async {
+    final manual = await pumpFcuApp(tester, membership: MembershipStatus.none);
+    await goTo(tester, manual, '/communities/life-faith-circle');
+    expect(find.text('Request to join'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('3: unread chats show on the header chat icon and the '
+      'Messages tab', (tester) async {
+    final app = await pumpFcuApp(tester, membership: MembershipStatus.none);
+    await goTo(tester, app, '/communities');
+    await tester.pump(const Duration(seconds: 1));
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Messages, \d+ unread$')),
+      findsNWidgets(2),
+    );
+    expect(find.byIcon(Icons.chat_outlined), findsNWidgets(2));
+    await tester.pump(const Duration(seconds: 2));
+  });
+}

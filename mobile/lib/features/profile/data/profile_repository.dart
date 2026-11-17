@@ -44,6 +44,28 @@ abstract class ProfileRepository {
 }
 
 /// Shared by every [ProfileRepository]: the same rules the form shows inline.
+/// Sign-up details beyond the basics: for university students the year of
+/// study; the home church is optional (added later is fine) but, once any
+/// part is given, needs all three fields.
+Map<String, String> validateSignUpDetails(UserProfile p) {
+  final church = p.homeChurch;
+  final errors = <String, String?>{
+    if (church != null) ...{
+      'churchName': Validators.required(church.name, 'Church name'),
+      'churchLocation': Validators.required(church.location, 'Church location'),
+      'churchPastor': Validators.required(church.pastor, "Pastor's name"),
+    },
+    'yearOfStudy':
+        p.institutionType == InstitutionType.university && p.yearOfStudy == null
+        ? 'Year of study is required'
+        : null,
+  };
+  return {
+    for (final e in errors.entries)
+      if (e.value != null) e.key: e.value!,
+  };
+}
+
 Map<String, String> validateProfile(UserProfile p) {
   final errors = <String, String?>{
     'fullName': Validators.required(p.fullName, 'Full name'),

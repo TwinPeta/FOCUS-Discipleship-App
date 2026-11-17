@@ -42,3 +42,6 @@ export const retentionSchema = z.object({
 });
 
 export type RetentionSettings = z.infer<typeof retentionSchema>;
+
+/** Requests to join a specific community: approved at once (default) or by a super-mentor. */
+export type JoinRequestSettings = { autoApprove: boolean };

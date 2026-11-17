@@ -68,4 +68,7 @@ function reconcile(userId = null) {
   return fixed;
 }
 
-module.exports = { decide, reconcile };
+/** Back office setting joinRequests.autoApprove (on unless staff switched it off). */
+const autoApproveOn = () => (store.first('settings', (s) => s.key === 'joinRequests')?.value || {}).autoApprove !== false;
+
+module.exports = { decide, reconcile, autoApproveOn };

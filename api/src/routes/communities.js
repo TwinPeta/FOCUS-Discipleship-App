@@ -91,10 +91,16 @@ router.post('/communities/:communityId/join-requests', (req, res, next) => {
     store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').forEach((m) => {
       try { realtime.emit(m.userId, 'join_request.created', { request_id: jr.id, community_id: c.id }); } catch { /* live updates are optional */ }
     });
-    require('../utils/notify').emailStaff(
-      store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.userId),
-      'join_request_received', { member_name: req.user.fullName, community_name: c.name },
-    );
+    // Auto-approval (back office setting joinRequests.autoApprove, on by default): approved straight away through the same
+    // path as a super-mentor's approval, so the student is told the same way. Off: the super-mentors are emailed as before.
+    if (require('../utils/joinRequests').autoApproveOn()) {
+      require('../utils/joinRequests').decide(jr, { approve: true, note: 'Approved automatically' });
+    } else {
+      require('../utils/notify').emailStaff(
+        store.where('memberships', (m) => m.communityId === c.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.userId),
+        'join_request_received', { member_name: req.user.fullName, community_name: c.name },
+      );
+    }
     res.status(201).json(joinRequestDto(jr, req.user.id));
   } catch (e) { next(e); }
 });

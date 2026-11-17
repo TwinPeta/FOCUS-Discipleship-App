@@ -21,11 +21,13 @@ import '../../features/community/presentation/join_requests_screen.dart';
 import '../../features/community/presentation/manage_community_screen.dart';
 import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/community/presentation/request_result_screens.dart';
-import '../../features/feed/domain/post.dart';
 import '../../features/feed/presentation/community_feed_screen.dart';
-import '../../features/feed/presentation/composer_screen.dart';
+import '../../features/create/presentation/create_screen.dart';
+import '../../features/create/presentation/questions_screen.dart';
+import '../../features/feed/presentation/general_section_screen.dart';
 import '../../features/feed/presentation/general_feed_screen.dart';
 import '../../features/feed/presentation/post_detail_screen.dart';
+import '../../features/feed/presentation/question_screens.dart';
 import '../../features/landing/presentation/landing_screen.dart';
 import '../../features/landing/presentation/video_player_screen.dart';
 import '../../features/learning/presentation/badge_earned_screen.dart';
@@ -52,10 +54,10 @@ import '../../features/notifications/presentation/notification_settings_screen.d
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
-import '../../features/prayer/presentation/new_prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
+import '../../features/profile/presentation/join_start_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/my_profile_screen.dart';
 import '../../features/profile/presentation/profile_providers.dart';
@@ -65,7 +67,6 @@ import '../../features/search/presentation/search_screen.dart';
 import '../../features/settings/presentation/help_screen.dart';
 import '../../features/settings/presentation/privacy_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
-import '../../features/testimony/presentation/share_testimony_screen.dart';
 import '../../features/testimony/presentation/testimonies_screen.dart';
 import '../../features/testimony/presentation/testimony_screen.dart';
 import '../theme/app_colors.dart';
@@ -79,6 +80,10 @@ import 'route_guards.dart';
 /// The app router. Built inside Riverpod so the guard chain
 /// ([runGuards]) can read profile and membership state, and re-runs
 /// whenever either changes.
+/// Where the app opens; the landing page normally. The web demo build
+/// opens straight on its community feed.
+final initialLocationProvider = Provider<String>((ref) => '/');
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(authControllerProvider, (_, _) => refresh.value++);
@@ -103,7 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: ref.read(initialLocationProvider),
     refreshListenable: refresh,
     redirect: (context, state) => runGuards(
       GuardContext(
@@ -143,12 +148,16 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/loading',
     builder: (context, state) =>
-        const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+        Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
   ),
   GoRoute(
     path: '/join',
     builder: (context, state) => const JoinFormScreen(),
     routes: [
+      GoRoute(
+        path: 'start',
+        builder: (context, state) => const JoinStartScreen(),
+      ),
       GoRoute(
         path: 'password',
         builder: (context, state) => const SecurePasswordScreen(),
@@ -267,19 +276,31 @@ final List<RouteBase> appRoutes = [
     path: '/community/:id/manage/reports',
     builder: (context, state) => ReportsToReviewScreen(communityId: _id(state)),
   ),
+  // Older "new ..." links open the one Create screen.
   GoRoute(
     path: '/community/:id/compose',
-    builder: (context, state) =>
-        ComposerScreen(communityId: _id(state), scope: PostScope.specific),
+    redirect: (context, state) => '/create?type=post&to=${_id(state)}',
   ),
   GoRoute(
     path: '/community/:id/prayer/new',
-    builder: (context, state) =>
-        NewPrayerRequestScreen(communityId: _id(state)),
+    redirect: (context, state) => '/create?type=prayer&to=${_id(state)}',
   ),
   GoRoute(
     path: '/community/:id/testimonies/new',
-    builder: (context, state) => ShareTestimonyScreen(communityId: _id(state)),
+    redirect: (context, state) => '/create?type=story&to=${_id(state)}',
+  ),
+  // Create anything (the + button): ?type=post|question|prayer|story and
+  // ?to=general|<communityId>.
+  GoRoute(
+    path: '/create',
+    builder: (context, state) => CreateScreen(
+      type: CreateType.parse(state.uri.queryParameters['type']),
+      target: state.uri.queryParameters['to'],
+    ),
+  ),
+  GoRoute(
+    path: '/questions',
+    builder: (context, state) => const QuestionsScreen(),
   ),
   GoRoute(
     path: '/community/:id/pathways/:pathwayId',
@@ -320,8 +341,17 @@ final List<RouteBase> appRoutes = [
     routes: [
       GoRoute(
         path: 'compose',
+        redirect: (context, state) => '/create?type=post&to=general',
+      ),
+      GoRoute(
+        path: 'prayer',
         builder: (context, state) =>
-            const ComposerScreen(scope: PostScope.general),
+            const GeneralSectionScreen(section: GeneralSection.prayer),
+      ),
+      GoRoute(
+        path: 'testimonies',
+        builder: (context, state) =>
+            const GeneralSectionScreen(section: GeneralSection.testimonies),
       ),
       // "Learn": General community resources (no membership needed).
       GoRoute(
@@ -363,6 +393,11 @@ final List<RouteBase> appRoutes = [
   GoRoute(
     path: '/post/:id',
     builder: (context, state) => PostDetailScreen(postId: _id(state)),
+  ),
+  // Screen 65: answer a question, full screen.
+  GoRoute(
+    path: '/post/:id/answer',
+    builder: (context, state) => WriteAnswerScreen(questionId: _id(state)),
   ),
   // Content reports (41/42): post, comment, prayer request, testimony.
   GoRoute(

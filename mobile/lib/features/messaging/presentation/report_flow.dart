@@ -64,6 +64,21 @@ class _ReportFlowState extends State<ReportFlow> {
   ReportReason? _reason;
   bool _isSubmitting = false;
 
+  /// "Something else" says nothing on its own: it needs a few words.
+  bool get _needsDetails => _reason == ReportReason.somethingElse;
+
+  /// Nothing empty is ever sent: a reason, and words for "Something else".
+  bool get _canSend =>
+      _reason != null &&
+      !_isSubmitting &&
+      (!_needsDetails || _detailsController.text.trim().isNotEmpty);
+
+  @override
+  void initState() {
+    super.initState();
+    _detailsController.addListener(() => setState(() {}));
+  }
+
   @override
   void dispose() {
     _detailsController.dispose();
@@ -72,7 +87,7 @@ class _ReportFlowState extends State<ReportFlow> {
 
   Future<void> _submit() async {
     final reason = _reason;
-    if (reason == null || _isSubmitting) return;
+    if (reason == null || !_canSend) return;
     setState(() => _isSubmitting = true);
     final details = _detailsController.text.trim();
     try {
@@ -116,9 +131,11 @@ class _ReportFlowState extends State<ReportFlow> {
             ],
             const SizedBox(height: 10),
             AppTextArea(
-              label: 'Add details (optional)',
+              label: _needsDetails
+                  ? 'Tell us what happened (required)'
+                  : 'Add details (optional)',
               controller: _detailsController,
-              placeholder: 'Anything else that would help us review this',
+              placeholder: 'Tell us what happened',
               minHeight: 72,
             ),
             if (widget.extra != null) ...[
@@ -133,7 +150,7 @@ class _ReportFlowState extends State<ReportFlow> {
           AppPrimaryButton(
             label: 'Send report',
             isLoading: _isSubmitting,
-            onPressed: _reason == null || _isSubmitting ? null : _submit,
+            onPressed: _canSend ? _submit : null,
           ),
           if (MediaQuery.viewInsetsOf(context).bottom == 0) ...[
             const SizedBox(height: 8),

@@ -20,7 +20,7 @@ class ReportIconButton extends StatelessWidget {
       onPressed: onPressed,
       tooltip: label,
       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      icon: const Icon(
+      icon: Icon(
         Icons.flag_outlined,
         size: 20,
         color: AppColors.inkDeemphasized80,

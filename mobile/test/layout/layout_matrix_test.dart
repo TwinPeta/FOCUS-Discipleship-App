@@ -60,6 +60,7 @@ const _approvedRoutes = [
 
 const _signedOutRoutes = [
   '/',
+  '/join/start',
   '/join',
   '/login',
   '/forgot-password',

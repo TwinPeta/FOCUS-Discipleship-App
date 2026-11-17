@@ -12,6 +12,7 @@ class PrayerRequest {
     required this.createdAt,
     this.prayedCount = 0,
     this.prayedByMe = false,
+    this.responseCount = 0,
   }) : authorId = anonymous ? null : authorId,
        authorName = anonymous ? null : authorName;
 
@@ -27,7 +28,14 @@ class PrayerRequest {
   final int prayedCount;
   final bool prayedByMe;
 
-  PrayerRequest copyWith({int? prayedCount, bool? prayedByMe}) {
+  /// Encouragements written under the request ("Respond").
+  final int responseCount;
+
+  PrayerRequest copyWith({
+    int? prayedCount,
+    bool? prayedByMe,
+    int? responseCount,
+  }) {
     return PrayerRequest(
       id: id,
       communityId: communityId,
@@ -38,6 +46,7 @@ class PrayerRequest {
       createdAt: createdAt,
       prayedCount: prayedCount ?? this.prayedCount,
       prayedByMe: prayedByMe ?? this.prayedByMe,
+      responseCount: responseCount ?? this.responseCount,
     );
   }
 

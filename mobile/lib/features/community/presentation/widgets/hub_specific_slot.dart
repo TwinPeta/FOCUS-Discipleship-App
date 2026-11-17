@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../../core/widgets/fitted_box_words.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/dashed_rrect_painter.dart';
@@ -98,14 +100,17 @@ class _NoneSlot extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.diversity_3_rounded,
                 color: AppColors.ink,
                 size: 22,
               ),
             ),
             const Spacer(),
-            Text('Specific community', style: AppTextStyles.cardTitle),
+            FittedBoxWords(
+              'Specific community',
+              style: AppTextStyles.cardTitle,
+            ),
             const SizedBox(height: 4),
             Text(
               'Only 1 allowed · Pick below',

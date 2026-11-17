@@ -54,7 +54,7 @@ class _AccountSuspendedScreenState
       canPop: false,
       child: suspension.when(
         loading: () =>
-            const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+            Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
         error: (_, _) =>
             ErrorScreen(onRetry: () => ref.invalidate(suspensionProvider)),
         data: (s) => CelebrationScreen(

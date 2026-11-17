@@ -96,8 +96,17 @@ class FeedList extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: PostCard(
               key: ValueKey(post.id),
-              authorName: post.author.name,
-              authorInitials: post.author.initials,
+              authorName: post.displayName,
+              authorInitials: post.displayInitials,
+              kindLabel: post.kind == PostKind.question
+                  ? 'Question'
+                  : post.pinned
+                  ? 'Announcement'
+                  : null,
+              kindIcon: post.kind == PostKind.question
+                  ? Icons.help_outline_rounded
+                  : Icons.campaign_outlined,
+              isQuestion: post.kind == PostKind.question,
               timestamp: formatRelativeTime(post.createdAt),
               body: post.body,
               roleBadgeLabel: post.roleLabel,

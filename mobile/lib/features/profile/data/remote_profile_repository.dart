@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/network/media_uploader.dart';
+import '../../../core/widgets/sized_file_image.dart' show isPhotoUrl;
 import '../../../core/utils/slug.dart';
 import '../../auth/data/remote_auth_repository.dart';
 import '../domain/user_profile.dart';
@@ -8,10 +10,22 @@ import 'profile_repository.dart';
 /// [ProfileRepository] backed by the FCU API. Signing up creates the profile
 /// and the account in one call, through [RemoteAuthRepository.register].
 class RemoteProfileRepository implements ProfileRepository {
-  RemoteProfileRepository(this._api, this._auth);
+  RemoteProfileRepository(this._api, this._auth, this._uploader);
 
   final ApiClient _api;
   final RemoteAuthRepository _auth;
+  final MediaUploader _uploader;
+
+  /// A photo picked on this device (not yet on the server) is uploaded and
+  /// its media id returned; a server photo, or none, needs nothing.
+  Future<String?> _uploadPhoto(String? path) async {
+    if (path == null ||
+        path.isEmpty ||
+        (isPhotoUrl(path) && !path.startsWith('blob:'))) {
+      return null;
+    }
+    return _uploader.uploadPhoto(path, purpose: 'profile_photo');
+  }
 
   UserProfile? _cached;
   Future<UserProfile>? _inFlightCreate;
@@ -46,8 +60,10 @@ class RemoteProfileRepository implements ProfileRepository {
     }
   }
 
-  /// The API stores institutions by id; the app picks them by name.
-  Future<String> _institutionId(UserProfile p) async {
+  /// The API stores institutions by id; the app picks them by name. An
+  /// institute the student typed because it is not listed has no id yet:
+  /// null, and sign-up sends its name instead.
+  Future<String?> _institutionId(UserProfile p) async {
     final json = await _api.get(
       '/lookups/institutions',
       query: {
@@ -63,6 +79,7 @@ class RemoteProfileRepository implements ProfileRepository {
         return item['id'] as String;
       }
     }
+    if (p.institutionType == InstitutionType.institute) return null;
     throw const ProfileValidationError({
       'institutionName': 'We could not find this school yet. Pick another.',
     });
@@ -85,11 +102,28 @@ class RemoteProfileRepository implements ProfileRepository {
   }
 
   Future<UserProfile> _create(UserProfile profile) async {
-    final errors = validateProfile(profile);
+    final errors = {
+      ...validateProfile(profile),
+      ...validateSignUpDetails(profile),
+    };
     if (errors.isNotEmpty) throw ProfileValidationError(errors);
     try {
       final institutionId = await _institutionId(profile);
-      return _cached = await _auth.register(profile, institutionId);
+      final created = await _auth.register(profile, institutionId);
+      _cached = created;
+      // The photo needs the new account's login to upload, so it follows
+      // the sign-up. A failed upload never fails the sign-up.
+      try {
+        final mediaId = await _uploadPhoto(profile.photoPath);
+        if (mediaId != null) {
+          final json = await _api.patch(
+            '/me',
+            body: {'photo_media_id': mediaId},
+          ) as Map<String, dynamic>;
+          _cached = profileFromApi(json);
+        }
+      } catch (_) {}
+      return _cached!;
     } on ApiException catch (e) {
       if (e.code == 'username_taken') {
         throw UsernameTakenError(profile.username);
@@ -117,14 +151,22 @@ class RemoteProfileRepository implements ProfileRepository {
     if (errors.isNotEmpty) throw ProfileValidationError(errors);
     try {
       final institutionId = await _institutionId(profile);
+      final photoMediaId = await _uploadPhoto(profile.photoPath);
       final json = await _api.patch(
         '/me',
         body: {
+          'photo_media_id': ?photoMediaId,
           'full_name': profile.fullName.trim(),
           'country': countryCodeOf(profile.country),
           'email': profile.email.trim(),
           if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
-          'institution_id': institutionId,
+          // An unlisted institute keeps the institution it was added as.
+          'institution_id': ?institutionId,
+          if (profile.institutionType == InstitutionType.university &&
+              profile.yearOfStudy != null)
+            'year_of_study': profile.yearOfStudy,
+          if (profile.homeChurch != null)
+            'home_church': homeChurchToApi(profile.homeChurch!),
         },
       ) as Map<String, dynamic>;
       return _cached = profileFromApi(json);

@@ -48,7 +48,7 @@ class MessageInputBar extends StatelessWidget {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: hintText,
-                hintStyle: const TextStyle(color: AppColors.placeholder),
+                hintStyle: TextStyle(color: AppColors.placeholder),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 12,
@@ -87,7 +87,7 @@ class MessageInputBar extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.send_rounded, color: AppColors.ink),
+                  child: Icon(Icons.send_rounded, color: AppColors.ink),
                 ),
               ),
             );

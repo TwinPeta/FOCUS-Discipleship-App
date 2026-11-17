@@ -5,6 +5,7 @@ const { conflict, validation } = require('../utils/errors');
 const { paginate, byNewest } = require('../utils/pagination');
 const { myBadges } = require('../utils/activity');
 const S = require('../utils/serialize');
+const SP = require('../utils/studentProfile');
 const { prefsOf, CATEGORY } = require('../utils/notify');
 const { activeSuspension, suspensionEnd } = require('../utils/sanctions');
 
@@ -19,8 +20,14 @@ router.patch('/', (req, res, next) => {
       phone: { type: 'string', pattern: /^\+?[0-9 -]{9,16}$/ },
       email: { type: 'string', email: true },
       institution_id: { type: 'string' },
+      year_of_study: { type: 'number' },
     });
     const u = req.user;
+    const errs = [];
+    const nextInst = b.institution_id ? store.get('institutions', b.institution_id) : store.get('institutions', u.institutionId);
+    const homeChurch = b.home_church !== undefined ? SP.homeChurchInput(b.home_church, errs) : undefined;
+    const year = b.year_of_study !== undefined ? SP.yearOfStudyInput(b.year_of_study, nextInst?.type, errs) : undefined;
+    if (errs.length) throw validation(errs);
     if (b.email) {
       const email = b.email.trim().toLowerCase();
       if (store.first('users', (x) => x.email === email && x.id !== u.id)) throw conflict('email_taken', 'Email is already registered');
@@ -42,6 +49,8 @@ router.patch('/', (req, res, next) => {
     }
     if (b.full_name) u.fullName = b.full_name.trim();
     if (b.country) u.country = b.country;
+    if (homeChurch) u.homeChurch = homeChurch;
+    if (year !== undefined && year !== null) u.yearOfStudy = year;
     res.json(S.myProfile(u));
   } catch (e) { next(e); }
 });

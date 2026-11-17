@@ -171,6 +171,7 @@ void main() {
         final consent = Consent(
           charterAccepted: true,
           participationAccepted: true,
+          nationalActivitiesAccepted: true,
           mentorContactAllowed: false,
           acceptedAt: DateTime(2026),
         );

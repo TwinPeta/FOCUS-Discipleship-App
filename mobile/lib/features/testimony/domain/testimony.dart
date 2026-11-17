@@ -1,3 +1,5 @@
+import '../../feed/domain/post.dart' show PostPhoto;
+
 enum TestimonyType { video, story }
 
 enum TestimonyStatus { pending, reviewed }
@@ -17,7 +19,15 @@ class Testimony {
     required this.createdAt,
     this.encouragedCount = 0,
     this.encouragedByMe = false,
+    this.videoUrl,
+    this.photos = const [],
   });
+
+  /// Where the story's video plays from (screen 16 allows one, ≤2 min).
+  final String? videoUrl;
+
+  /// The story's photos, shown under the text.
+  final List<PostPhoto> photos;
 
   final String id;
   final String communityId;
@@ -52,6 +62,8 @@ class Testimony {
     duration: duration,
     status: status,
     createdAt: createdAt,
+    videoUrl: videoUrl,
+    photos: photos,
     encouragedByMe: on,
     encouragedCount:
         encouragedCount + (on == encouragedByMe ? 0 : (on ? 1 : -1)),
@@ -69,6 +81,8 @@ class Testimony {
     duration: duration,
     status: status,
     createdAt: createdAt,
+    videoUrl: videoUrl,
+    photos: photos,
     encouragedCount: encouragedCount,
     encouragedByMe: encouragedByMe,
   );

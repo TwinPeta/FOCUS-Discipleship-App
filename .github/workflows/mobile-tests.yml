@@ -1,0 +1,65 @@
+# Analyze + tests for the FCU mobile app, no APK. Runs on work branches
+# (screens, screens/*, fix/*) and pull requests, so checking a change does not
+# need the local machine and does not publish an APK. Tests are split over
+# three runners for speed. Goldens are rendered on Windows and stay local.
+name: Mobile tests
+
+on:
+  push:
+    branches: ['screens', 'screens/**', 'fix/**']
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-tests.yml'
+  pull_request:
+    paths:
+      - 'mobile/**'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.0
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.0
+          cache: true
+      - run: flutter pub get
+      - name: Test shard ${{ matrix.shard }} of 3 (all but goldens)
+        run: |
+          dirs=$(find test -mindepth 1 -maxdepth 1 -type d ! -name golden ! -name support | sort)
+          flutter test $dirs test/widget_test.dart \
+            --total-shards 3 --shard-index ${{ matrix.shard }} \
+            --reporter expanded

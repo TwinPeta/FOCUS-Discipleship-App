@@ -29,7 +29,18 @@ class PostCard extends StatelessWidget {
     this.photo,
     this.onOpen,
     this.onMore,
+    this.kindLabel,
+    this.kindIcon = Icons.help_outline_rounded,
+    this.isQuestion = false,
   });
+
+  /// Chip above the text: "Question", "Announcement" (null: none).
+  final String? kindLabel;
+  final IconData kindIcon;
+
+  /// A question: the actions are "Answer" and the number of answers
+  /// (its comments) instead of like / comment.
+  final bool isQuestion;
 
   final String authorName;
   final String authorInitials;
@@ -104,13 +115,31 @@ class PostCard extends StatelessWidget {
                     minWidth: 44,
                     minHeight: 44,
                   ),
-                  icon: const Icon(
-                    Icons.more_horiz_rounded,
-                    color: AppColors.ink,
-                  ),
+                  icon: Icon(Icons.more_horiz_rounded, color: AppColors.ink),
                 ),
             ],
           ),
+          if (kindLabel != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.honey,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(kindIcon, size: 16, color: AppColors.ink),
+                  const SizedBox(width: 4),
+                  Text(
+                    kindLabel!,
+                    style: AppTextStyles.chip.copyWith(color: AppColors.ink),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (photo != null) ...[
             const SizedBox(height: 10),
             Semantics(
@@ -144,7 +173,7 @@ class PostCard extends StatelessWidget {
                 width: double.infinity,
                 color: AppColors.cream,
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.image_outlined,
                   size: 32,
                   color: AppColors.placeholder,
@@ -152,7 +181,37 @@ class PostCard extends StatelessWidget {
               ),
             ),
           ],
-          if (showActions) ...[
+          if (showActions && isQuestion) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 14,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    side: BorderSide(color: AppColors.inputBorder, width: 1.5),
+                    minimumSize: const Size(44, 40),
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: onCommentTap,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text(
+                    'Answer',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Text(
+                  PostActionButton.countLabel(commentCount, 'answer'),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.inkDeemphasized80,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ] else if (showActions) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 0,

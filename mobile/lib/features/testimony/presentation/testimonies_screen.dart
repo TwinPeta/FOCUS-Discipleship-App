@@ -24,9 +24,17 @@ import '../../../core/theme/app_gradients.dart';
 
 /// Screen 16: Testimonies tab inside [CommunityShell].
 class TestimoniesScreen extends ConsumerWidget {
-  const TestimoniesScreen({super.key, required this.communityId});
+  const TestimoniesScreen({
+    super.key,
+    required this.communityId,
+    this.createTarget,
+  });
 
   final String communityId;
+
+  /// Where "Share your story" goes: 'general' or a community id (default
+  /// [communityId]).
+  final String? createTarget;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,7 +52,8 @@ class TestimoniesScreen extends ConsumerWidget {
     final hasPendingMine = testimonies.any(
       (t) => t.isAuthoredBy(viewerId) && t.status == TestimonyStatus.pending,
     );
-    void share() => context.push('/community/$communityId/testimonies/new');
+    void share() =>
+        context.push('/create?type=story&to=${createTarget ?? communityId}');
 
     final header = <Widget>[
       TabSectionHeader(
@@ -153,9 +162,7 @@ class _VideoTestimonyCard extends StatelessWidget {
                   Container(
                     height: 130,
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: AppGradients.brand,
-                    ),
+                    decoration: BoxDecoration(gradient: AppGradients.brand),
                   ),
                   const Positioned.fill(child: Center(child: _PlayButton())),
                   if (testimony.duration != null)
@@ -172,7 +179,7 @@ class _VideoTestimonyCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          '[${testimony.duration}]',
+                          testimony.duration!,
                           style: AppTextStyles.chip,
                         ),
                       ),
@@ -224,11 +231,7 @@ class _PlayButton extends StatelessWidget {
         border: Border.all(color: AppColors.ink, width: 2.5),
       ),
       alignment: Alignment.center,
-      child: const Icon(
-        Icons.play_arrow_rounded,
-        color: AppColors.ink,
-        size: 30,
-      ),
+      child: Icon(Icons.play_arrow_rounded, color: AppColors.ink, size: 30),
     );
   }
 }

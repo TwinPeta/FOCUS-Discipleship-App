@@ -34,7 +34,6 @@ class ResourcesScreen extends ConsumerStatefulWidget {
 
 class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
   ResourceType? _typeFilter;
-  ResourceTopic? _topicFilter;
 
   String _typeLabel(ResourceType type) => switch (type) {
     ResourceType.video => 'VIDEO',
@@ -75,11 +74,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
         onRetry: () => ref.invalidate(resourcesProvider(widget.communityId)),
       ),
       data: (resources) {
-        final filtered = filterResources(
-          resources,
-          type: _typeFilter,
-          topic: _topicFilter,
-        );
+        final filtered = filterResources(resources, type: _typeFilter);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -100,43 +95,6 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
               ],
               value: _typeFilter,
               onChanged: (value) => setState(() => _typeFilter = value),
-            ),
-            const SizedBox(height: 16),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _TopicTile(
-                      icon: Icons.groups_rounded,
-                      title: 'Bible characters',
-                      subtitle: 'People of faith',
-                      color: AppColors.amber,
-                      selected: _topicFilter == ResourceTopic.characters,
-                      onTap: () => setState(() {
-                        _topicFilter = _topicFilter == ResourceTopic.characters
-                            ? null
-                            : ResourceTopic.characters;
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _TopicTile(
-                      icon: Icons.menu_book_rounded,
-                      title: 'Bible texts',
-                      subtitle: 'Key passages',
-                      color: AppColors.honey,
-                      selected: _topicFilter == ResourceTopic.texts,
-                      onTap: () => setState(() {
-                        _topicFilter = _topicFilter == ResourceTopic.texts
-                            ? null
-                            : ResourceTopic.texts;
-                      }),
-                    ),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -204,81 +162,13 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                             ),
                           ),
                         )
-                      : const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.ink,
-                        ),
+                      : Icon(Icons.chevron_right_rounded, color: AppColors.ink),
                 ),
                 if (i != filtered.length - 1) const SizedBox(height: 10),
               ],
           ],
         );
       },
-    );
-  }
-}
-
-class _TopicTile extends StatelessWidget {
-  const _TopicTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: title,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(20),
-            border: selected
-                ? Border.all(color: AppColors.ink, width: 2)
-                : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, color: AppColors.ink),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: AppTextStyles.cardTitle.copyWith(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(subtitle, style: AppTextStyles.body.copyWith(fontSize: 14)),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

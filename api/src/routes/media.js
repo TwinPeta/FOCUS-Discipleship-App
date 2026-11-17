@@ -14,6 +14,7 @@ const MB = 1024 * 1024;
 const PURPOSES = ['profile_photo', 'post_photo', 'testimony_photo', 'testimony_video', 'report_evidence'];
 const IMAGE = /^image\/(jpeg|png|webp|heic)$/;
 const VIDEO = /^video\/(mp4|quicktime|webm)$/;
+const MAX_VIDEO_SECONDS = 120;
 
 /**
  * With Cloudflare R2 the client uploads straight to a signed PUT URL, so the API learns the file
@@ -46,13 +47,18 @@ router.post('/', async (req, res, next) => {
       purpose: { required: true, type: 'string', enum: PURPOSES },
       content_type: { required: true, type: 'string' },
       size_bytes: { required: true, type: 'number' },
+      // Story videos are at most 2 minutes (the app measures the video).
+      duration_seconds: { type: 'number' },
     });
     const video = b.purpose === 'testimony_video';
     const okType = video ? VIDEO.test(b.content_type) : IMAGE.test(b.content_type);
-    const max = video ? 200 * MB : 10 * MB;
+    // Photos: the app sends WebP of at most 2 MB; anything bigger is refused.
+    const max = video ? 200 * MB : 2 * MB;
     const errs = [];
     if (!okType) errs.push({ field: 'content_type', message: video ? 'must be mp4, quicktime or webm' : 'must be jpeg, png, webp or heic' });
     if (b.size_bytes <= 0 || b.size_bytes > max) errs.push({ field: 'size_bytes', message: `must be between 1 byte and ${max / MB} MB` });
+    if (video && (typeof b.duration_seconds !== 'number' || b.duration_seconds <= 0)) errs.push({ field: 'duration_seconds', message: 'is required for a video' });
+    else if (video && b.duration_seconds > MAX_VIDEO_SECONDS) errs.push({ field: 'duration_seconds', message: `videos can be at most ${MAX_VIDEO_SECONDS / 60} minutes` });
     if (errs.length) throw require('../utils/errors').validation(errs);
 
     const m = store.insert('media', { ownerId: req.user.id, purpose: b.purpose, contentType: b.content_type, sizeBytes: b.size_bytes, status: 'pending' });

@@ -16,6 +16,11 @@ abstract final class PermissionReasons {
   static const photosPick =
       'FCU needs access to your photos so you can choose one for your post, '
       'profile or report.';
+  static const cameraVideo =
+      'FCU needs your camera to record a short video for your story.';
+  static const videoPick =
+      'FCU needs access to your videos so you can choose one for your '
+      'story.';
   static const notifications =
       'FCU needs to send you notifications about messages, prayer requests '
       'and meetings.';

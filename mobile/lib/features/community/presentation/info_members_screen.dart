@@ -19,6 +19,8 @@ import 'widgets/leave_community_sheet.dart';
 import 'providers/community_providers.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
+import '../../../core/realtime/realtime_bindings.dart';
+import '../../../core/widgets/search_field.dart';
 
 /// Screen 6: Info & members tab inside [CommunityShell].
 class InfoMembersScreen extends ConsumerWidget {
@@ -50,6 +52,11 @@ class InfoMembersScreen extends ConsumerWidget {
     }
 
     final onlineMembers = members.where((m) => m.online).toList();
+    // The live count from the server when known (it updates as people come
+    // and go), otherwise the members marked online.
+    final onlineCount =
+        ref.watch(liveOnlineCountsProvider)[communityId] ??
+        onlineMembers.length;
     final otherOnlineCount = (onlineMembers.length - 3).clamp(0, 999);
 
     return ListView(
@@ -112,7 +119,7 @@ class InfoMembersScreen extends ConsumerWidget {
               height: 44,
               width:
                   44 +
-                  30.0 *
+                  36.0 *
                       ((onlineMembers.length.clamp(0, 3) +
                                   (otherOnlineCount > 0 ? 1 : 0)) -
                               1)
@@ -121,7 +128,7 @@ class InfoMembersScreen extends ConsumerWidget {
                 children: [
                   for (var i = 0; i < onlineMembers.length && i < 3; i++)
                     Positioned(
-                      left: i * 30.0,
+                      left: i * 36.0,
                       child: AvatarWithPresence(
                         initials: onlineMembers[i].initials,
                         online: true,
@@ -135,7 +142,7 @@ class InfoMembersScreen extends ConsumerWidget {
                     ),
                   if (otherOnlineCount > 0)
                     Positioned(
-                      left: (onlineMembers.length.clamp(0, 3)) * 30.0,
+                      left: (onlineMembers.length.clamp(0, 3)) * 36.0,
                       child: Container(
                         width: 44,
                         height: 44,
@@ -159,31 +166,15 @@ class InfoMembersScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              '${onlineMembers.length} online',
-              style: AppTextStyles.bodyMedium,
+              onlineCount == 0 ? 'No one online' : '$onlineCount online',
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 20),
-        Text('Members', style: AppTextStyles.sectionHeading),
-        const SizedBox(height: 10),
-        for (var i = 0; i < members.length; i++) ...[
-          ListRowCard(
-            leading: Center(
-              child: AvatarWithPresence(
-                initials: members[i].initials,
-                size: 40,
-                online: members[i].online,
-              ),
-            ),
-            title: members[i].name,
-            subtitle: members[i].role.label,
-            trailing: members[i].id == profile?.id
-                ? null
-                : MessagePersonButton(person: members[i]),
-          ),
-          if (i != members.length - 1) const SizedBox(height: 10),
-        ],
+        _MembersSection(members: members, meId: profile?.id),
         if (!isSuperMentor) ...[
           const SizedBox(height: 24),
           _LeaveButton(
@@ -223,6 +214,102 @@ class _LeaveButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+const _searchFrom = 8;
+
+/// "Members · n": leaders first, then who is online, then by name. Tap a
+/// member for their profile; the chat button starts a direct message.
+/// A search box appears for longer lists.
+class _MembersSection extends StatefulWidget {
+  const _MembersSection({required this.members, required this.meId});
+
+  final List<Person> members;
+  final String? meId;
+
+  @override
+  State<_MembersSection> createState() => _MembersSectionState();
+}
+
+class _MembersSectionState extends State<_MembersSection> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  static int _rank(Person p) => switch (p.role) {
+    PersonRole.superMentor => 0,
+    PersonRole.mentor => 1,
+    _ => 2,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _query.trim().toLowerCase();
+    final list =
+        widget.members
+            .where((m) => q.isEmpty || m.name.toLowerCase().contains(q))
+            .toList()
+          ..sort((a, b) {
+            final byRole = _rank(a).compareTo(_rank(b));
+            if (byRole != 0) return byRole;
+            if (a.online != b.online) return a.online ? -1 : 1;
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Members · ${widget.members.length}',
+          style: AppTextStyles.sectionHeading,
+        ),
+        if (widget.members.length >= _searchFrom) ...[
+          const SizedBox(height: 10),
+          SearchField(
+            controller: _search,
+            hintText: 'Search members',
+            onChanged: (v) => setState(() => _query = v),
+          ),
+        ],
+        const SizedBox(height: 10),
+        if (list.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'No members match your search.',
+              style: AppTextStyles.body,
+            ),
+          ),
+        for (var i = 0; i < list.length; i++) ...[
+          ListRowCard(
+            onTap: () => context.push('/members/${list[i].id}'),
+            leading: Center(
+              child: AvatarWithPresence(
+                initials: list[i].initials,
+                size: 40,
+                online: list[i].online,
+              ),
+            ),
+            title: list[i].id == widget.meId
+                ? '${list[i].name} (you)'
+                : list[i].name,
+            subtitle: list[i].online
+                ? '${list[i].role.label} · Online'
+                : list[i].role.label,
+            trailing: list[i].id == widget.meId
+                ? null
+                : MessagePersonButton(person: list[i]),
+          ),
+          if (i != list.length - 1) const SizedBox(height: 10),
+        ],
+      ],
     );
   }
 }

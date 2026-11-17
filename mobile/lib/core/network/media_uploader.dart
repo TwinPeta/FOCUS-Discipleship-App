@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart' show XFile;
 
 import 'api_client.dart';
 
@@ -31,16 +30,43 @@ class MediaUploader {
   /// [purpose]: `post_photo`, `testimony_photo`, `profile_photo` or
   /// `report_evidence`. Throws [ApiException] on any failure.
   Future<String> uploadPhoto(String path, {required String purpose}) async {
-    final bytes = await File(path).readAsBytes();
-    final type = contentTypeOf(path);
+    // XFile reads a device file and, on the web, the picked photo's
+    // `blob:` link alike.
+    final bytes = await XFile(path).readAsBytes();
+    return _upload(bytes, contentTypeOf(path), {'purpose': purpose});
+  }
+
+  static String videoTypeOf(String path) {
+    final dot = path.lastIndexOf('.');
+    switch (dot == -1 ? '' : path.substring(dot + 1).toLowerCase()) {
+      case 'mov':
+        return 'video/quicktime';
+      case 'webm':
+        return 'video/webm';
+      default:
+        return 'video/mp4';
+    }
+  }
+
+  /// A story video (`testimony_video`): the server refuses anything over
+  /// 2 minutes, so its [duration] is sent with the request.
+  Future<String> uploadVideo(String path, {required Duration duration}) async {
+    final bytes = await XFile(path).readAsBytes();
+    return _upload(bytes, videoTypeOf(path), {
+      'purpose': 'testimony_video',
+      'duration_seconds': duration.inMilliseconds / 1000,
+    });
+  }
+
+  Future<String> _upload(
+    List<int> bytes,
+    String type,
+    Map<String, Object> fields,
+  ) async {
     final slot = objectOf(
       await _api.post(
         '/media',
-        body: {
-          'purpose': purpose,
-          'content_type': type,
-          'size_bytes': bytes.length,
-        },
+        body: {...fields, 'content_type': type, 'size_bytes': bytes.length},
       ),
     );
     final id = slot?['media_id'] as String?;

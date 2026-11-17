@@ -6,9 +6,11 @@ import 'package:focus_1/core/theme/app_text_styles.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
 
 /// Roadmap v2 brand rules: Bricolage Grotesque everywhere, headings 700+,
-/// amber primary in both themes.
+/// brand gold primary in both themes (deepened in dark mode so light text
+/// stays readable on it).
 void main() {
   final themes = {'light': AppTheme.light(), 'dark': AppTheme.dark()};
+  final palettes = {'light': AppPalette.light, 'dark': AppPalette.dark};
 
   for (final MapEntry(key: name, value: theme) in themes.entries) {
     test('$name theme uses Bricolage Grotesque', () {
@@ -22,8 +24,8 @@ void main() {
       ]) {
         expect(style?.fontFamily, AppFonts.family);
       }
-      expect(theme.colorScheme.primary, AppColors.amberLight);
-      expect(theme.colorScheme.onPrimary, AppColors.ink);
+      expect(theme.colorScheme.primary, palettes[name]!.amberLight);
+      expect(theme.colorScheme.onPrimary, palettes[name]!.ink);
     });
   }
 

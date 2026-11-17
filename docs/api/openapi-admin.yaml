@@ -1055,7 +1055,7 @@ paths:
     get:
       tags: [Settings]
       operationId: getSettingsSection
-      summary: "section = charter | consents | minors | retention"
+      summary: "section = charter | consents | minors | retention | joinRequests"
       description: "Roles: SYSTEM_ADMIN, CONTENT_ADMIN"
       parameters:
         - { name: section, in: path, required: true, schema: { type: string } }
@@ -1258,6 +1258,23 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+  /privacy/guardian-consents/{id}/confirm:
+    post:
+      tags: [Privacy]
+      operationId: postPrivacyGuardianconsentsIdConfirm
+      summary: "Record that the guardian agreed (lifts the minor's restrictions; audited)"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GuardianConsent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /privacy/data-requests:
     get:
       tags: [Privacy]
@@ -1977,8 +1994,10 @@ components:
         authorName: { type: string }
         communityId: { type: string }
         communityName: { type: string }
+        title: { type: string }
         story: { type: string }
-        videoUrl: {}
+        photoUrls: { type: array, items: { type: string } }
+        videoUrl: { type: [string, 'null'] }
         studentAgreement: { type: boolean }
         notes: {}
         status: { type: string }
@@ -2016,9 +2035,13 @@ components:
       properties:
         id: { type: string }
         studentName: { type: string }
+        userId: { type: string }
         guardianName: { type: string }
+        guardianRelationship: { type: [string, 'null'] }
+        guardianPhone: { type: [string, 'null'] }
+        guardianEmail: { type: [string, 'null'] }
         guardianContact: { type: string }
-        status: { type: string }
+        status: { type: string, enum: [PENDING, RECEIVED] }
         updatedAt: { type: string, format: date-time }
       required: [id]
     DataRequest:
@@ -2339,8 +2362,8 @@ components:
         days: { type: integer, minimum: 1, maximum: 365 }
       required: [days]
     SettingsSection:
-      description: "The fields depend on {section}: charter, consents, minors or retention"
-      anyOf: [{ type: object, title: charter, properties: { version: { type: string }, effectiveDate: { type: string, format: date }, text: { type: string }, requireAcceptance: { type: boolean }, repromptOnChange: { type: boolean } } }, { type: object, title: consents, properties: { accountCreationText: { type: string }, communitySpacesText: { type: string }, mentorContactText: { type: string } } }, { type: object, title: minors, properties: { ageThreshold: { type: integer, minimum: 13, maximum: 21 }, requireGuardianConsent: { type: boolean }, limitAdultDirectMessages: { type: boolean }, requireVerifiedMentors: { type: boolean } } }, { type: object, title: retention, properties: { inactiveRetentionMonths: { type: integer, minimum: 1, maximum: 120 }, deletionDeadlineDays: { type: integer, minimum: 1, maximum: 90 } } }]
+      description: "The fields depend on {section}: charter, consents, minors, retention or joinRequests (autoApprove: a request to join a specific community is approved at once; default true)"
+      anyOf: [{ type: object, title: charter, properties: { version: { type: string }, effectiveDate: { type: string, format: date }, text: { type: string }, requireAcceptance: { type: boolean }, repromptOnChange: { type: boolean } } }, { type: object, title: consents, properties: { accountCreationText: { type: string }, communitySpacesText: { type: string }, mentorContactText: { type: string } } }, { type: object, title: minors, properties: { ageThreshold: { type: integer, minimum: 13, maximum: 21 }, requireGuardianConsent: { type: boolean }, limitAdultDirectMessages: { type: boolean }, requireVerifiedMentors: { type: boolean } } }, { type: object, title: retention, properties: { inactiveRetentionMonths: { type: integer, minimum: 1, maximum: 120 }, deletionDeadlineDays: { type: integer, minimum: 1, maximum: 90 } } }, { type: object, title: joinRequests, properties: { autoApprove: { type: boolean } } }]
     Problem:
       type: object
       properties:
@@ -2386,6 +2409,16 @@ components:
         birthdate: { type: [string, 'null'] }
         isMinor: { type: boolean }
         guardianConsentStatus: { type: [string, 'null'], enum: [PENDING, RECEIVED, null] }
+        guardian:
+          description: Minors only, the guardian entered in the app
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                name: { type: [string, 'null'] }
+                relationship: { type: [string, 'null'] }
+                phone: { type: [string, 'null'] }
+                email: { type: [string, 'null'] }
         role: { $ref: '#/components/schemas/Role' }
         status: { type: string, enum: [INVITED, ACTIVE, INACTIVE, SUSPENDED] }
         institutionId: { type: string }
@@ -2416,7 +2449,7 @@ components:
     OptReasonBody: { type: object, properties: { reason: { type: string } } }
     IdsBody: { type: object, required: [ids], properties: { ids: { type: array, items: { type: string } } } }
     BulkResult: { type: object, properties: { approved: { type: array, items: { type: string } }, skipped: { type: array, items: { type: object, properties: { id: { type: string }, reason: { type: string } } } } } }
-    InstitutionBody: { type: object, required: [name, type, city], properties: { name: { type: string }, type: { type: string, enum: [UNIVERSITY, HIGH_SCHOOL] }, country: { type: string, enum: [Uganda, Kenya, Rwanda] }, city: { type: string }, generalCoverUrl: { type: string }, shownInSignup: { type: boolean } } }
+    InstitutionBody: { type: object, required: [name, type, city], properties: { name: { type: string }, type: { type: string, enum: [UNIVERSITY, INSTITUTE, HIGH_SCHOOL] }, country: { type: string, enum: [Uganda, Kenya, Rwanda] }, city: { type: string }, generalCoverUrl: { type: string }, shownInSignup: { type: boolean } } }
     CommunityBody:
       type: object
       required: [institutionId, name]

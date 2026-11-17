@@ -12,8 +12,18 @@ import 'package:focus_1/core/widgets/message_input_bar.dart';
 
 import '../support/fake_backend.dart';
 
+import 'package:focus_1/core/network/media_uploader.dart';
+import 'package:focus_1/core/media/photo_compressor.dart';
+
 /// Returns a fixed file instead of opening the gallery, and records the
 /// compression settings it was asked for.
+class _ToWebp extends PhotoCompressor {
+  const _ToWebp(this.out);
+  final XFile out;
+  @override
+  Future<XFile?> toWebp(XFile picked) async => out;
+}
+
 class _FakePicker extends ImagePicker {
   _FakePicker(this.file);
 
@@ -120,7 +130,47 @@ void main() {
   ) async {
     final big = _FakePicker(_file('big.jpg', UploadPolicy.maxPhotoBytes + 1));
     expect(await run(tester, big), isNull);
-    expect(find.textContaining('under 2 MB'), findsOneWidget);
+    expect(
+      find.textContaining('too large even after compressing'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('pickPhoto returns the compressed WebP, not the original', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+    late WidgetRef ref;
+    final webp = XFile.fromData(
+      Uint8List(1000),
+      name: 'small.webp',
+      path: 'small.webp',
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...fakeBackend(),
+          photoCompressorProvider.overrideWithValue(_ToWebp(webp)),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: Consumer(
+            builder: (c, r, _) {
+              ctx = c;
+              ref = r;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+    final result = await pickPhoto(
+      ctx,
+      ref,
+      picker: _FakePicker(_file('huge.jpg', 9 * 1024 * 1024)),
+    );
+    expect(result?.name, 'small.webp');
+    expect(MediaUploader.contentTypeOf(result!.path), 'image/webp');
   });
 
   testWidgets('chat input stops at the message limit', (tester) async {

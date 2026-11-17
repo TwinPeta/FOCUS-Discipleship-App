@@ -33,7 +33,7 @@ class VideoScreen extends ConsumerWidget {
         .watch(videoContentProvider(id))
         .when(
           loading: () =>
-              const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+              Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
           error: (e, s) => ErrorScreen(
             onRetry: () => ref.invalidate(videoContentProvider(id)),
           ),
@@ -223,7 +223,7 @@ class _Player extends StatelessWidget {
               excludeSemantics: true,
               child: Material(
                 color: AppColors.white,
-                shape: const CircleBorder(
+                shape: CircleBorder(
                   side: BorderSide(color: AppColors.ink, width: 2.5),
                 ),
                 child: InkWell(
@@ -279,7 +279,7 @@ class _Player extends StatelessWidget {
                           FractionallySizedBox(
                             widthFactor: progress.clamp(0, 1).toDouble(),
                             child: Container(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 gradient: AppGradients.brand,
                               ),
                             ),

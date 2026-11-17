@@ -69,8 +69,7 @@ class HelpScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     for (var i = 0; i < helpFaq.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, color: AppColors.cream),
+                      if (i > 0) Divider(height: 1, color: AppColors.cream),
                       ExpansionTile(
                         initiallyExpanded: i == 0,
                         iconColor: AppColors.ink,

@@ -25,7 +25,7 @@ class _SunrisePainter extends CustomPainter {
     canvas.drawRect(
       Offset.zero & size,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [AppColors.cream, AppColors.honey],

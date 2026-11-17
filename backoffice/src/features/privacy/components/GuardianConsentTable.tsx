@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import {
+  confirmGuardianConsent,
   sendGuardianReminder,
   type GuardianConsentRecord,
 } from "@/features/privacy/queries";
@@ -23,9 +24,23 @@ interface GuardianConsentTableProps {
 }
 
 export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsentTableProps) {
-  const [initialItems] = useRemoteItems<GuardianConsentRecord>(seedItems, fetchGuardianConsents);
+  const [loadedItems] = useRemoteItems<GuardianConsentRecord>(seedItems, fetchGuardianConsents);
+  const [confirmed, setConfirmed] = useState<Record<string, GuardianConsentRecord>>({});
+  const initialItems = loadedItems.map((item) => confirmed[item.id] ?? item);
   const [remindedId, setRemindedId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  async function handleConfirm(id: string) {
+    if (!window.confirm("Record that the guardian has given consent? The student's account will no longer be restricted.")) return;
+    setConfirmingId(id);
+    try {
+      const updated = await confirmGuardianConsent(id);
+      setConfirmed((prev) => ({ ...prev, [id]: updated }));
+    } finally {
+      setConfirmingId(null);
+    }
+  }
 
   async function handleRemind(id: string) {
     setSendingId(id);
@@ -73,9 +88,23 @@ export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsen
                   <td className="px-4 py-3 font-medium text-foreground">
                     {item.studentName}
                   </td>
-                  <td className="px-4 py-3 text-foreground">{item.guardianName}</td>
+                  <td className="px-4 py-3 text-foreground">
+                    {item.guardianName}
+                    {item.guardianRelationship && (
+                      <span className="block text-xs text-muted-foreground">
+                        {item.guardianRelationship}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {item.guardianContact}
+                    {item.guardianPhone || item.guardianEmail ? (
+                      <>
+                        {item.guardianPhone && <span className="block">{item.guardianPhone}</span>}
+                        {item.guardianEmail && <span className="block">{item.guardianEmail}</span>}
+                      </>
+                    ) : (
+                      item.guardianContact
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -93,14 +122,24 @@ export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsen
                   <td className="px-4 py-3 text-muted-foreground">{item.updatedAt}</td>
                   <td className="px-4 py-3 text-right">
                     {item.status === GuardianConsentStatus.Pending && (
-                      <button
-                        type="button"
-                        disabled={sendingId === item.id}
-                        onClick={() => handleRemind(item.id)}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface disabled:opacity-60"
-                      >
-                        {sendingId === item.id ? "Sending..." : "Send reminder"}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={sendingId === item.id}
+                          onClick={() => handleRemind(item.id)}
+                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface disabled:opacity-60"
+                        >
+                          {sendingId === item.id ? "Sending..." : "Send reminder"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={confirmingId === item.id}
+                          onClick={() => handleConfirm(item.id)}
+                          className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
+                        >
+                          {confirmingId === item.id ? "Saving..." : "Mark confirmed"}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

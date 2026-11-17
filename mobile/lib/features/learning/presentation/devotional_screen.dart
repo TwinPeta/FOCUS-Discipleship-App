@@ -28,7 +28,7 @@ class DevotionalScreen extends ConsumerWidget {
         .watch(devotionalContentProvider(id))
         .when(
           loading: () =>
-              const Scaffold(backgroundColor: AppColors.page, body: Skeleton()),
+              Scaffold(backgroundColor: AppColors.page, body: const Skeleton()),
           error: (e, s) => ErrorScreen(
             onRetry: () => ref.invalidate(devotionalContentProvider(id)),
           ),

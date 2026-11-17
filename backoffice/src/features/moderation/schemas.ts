@@ -44,7 +44,11 @@ export interface ModerationTestimony {
   authorName: string;
   communityId: string;
   communityName: string;
+  title?: string;
   story: string;
+  /** Photos attached by the student. */
+  photoUrls?: string[];
+  /** The story video (at most 2 minutes). */
   videoUrl?: string | null;
   studentAgreement: boolean;
   notes?: string | null;

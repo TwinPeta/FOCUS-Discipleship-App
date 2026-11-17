@@ -63,9 +63,45 @@ export function TestimonyReview({
         {testimony.studentAgreement ? "Confirmed" : "Missing"}
       </p>
 
+      {testimony.title && (
+        <h3 className="text-sm font-semibold text-foreground">{testimony.title}</h3>
+      )}
+
       <div className="rounded-md border border-border bg-surface p-3 text-sm leading-relaxed text-foreground">
         {testimony.story}
       </div>
+
+      {testimony.videoUrl && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Video (up to 2 minutes)</p>
+          <video
+            src={testimony.videoUrl}
+            controls
+            preload="metadata"
+            className="w-full rounded-md border border-border bg-black"
+          />
+        </div>
+      )}
+
+      {testimony.photoUrls && testimony.photoUrls.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">
+            {testimony.photoUrls.length === 1 ? "Photo" : `${testimony.photoUrls.length} photos`}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {testimony.photoUrls.map((url) => (
+              <a key={url} href={url} target="_blank" rel="noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt="Attached to the story"
+                  className="h-32 w-full rounded-md border border-border object-cover"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <label htmlFor="testimony-notes" className="block text-sm font-medium">

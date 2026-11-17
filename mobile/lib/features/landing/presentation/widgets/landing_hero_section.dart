@@ -1,18 +1,15 @@
-import 'dart:math' as math;
-
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radii.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/bold_button.dart';
-import 'bold_style.dart';
-import 'illustration_collage.dart';
-import '../../../../core/config/landing_videos.dart';
-import '../../../../core/utils/open_link.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import 'community_preview.dart';
+import 'landing_pill_button.dart';
 
+/// Landing hero (screen 1): brand gradient with rounded bottom corners,
+/// logo + Sign in, headline, the two calls to action and a phone preview
+/// of the General community.
 class LandingHeroSection extends StatelessWidget {
   const LandingHeroSection({super.key, required this.onWatchStories});
 
@@ -21,17 +18,34 @@ class LandingHeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppGradients.brand,
-        border: Border(bottom: BorderSide(color: AppColors.ink, width: 2.5)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.paddingOf(context).top + 18,
+        24,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _LogoRow(),
-          const SizedBox(height: 18),
-          _Headline(),
+          const _LogoRow(),
+          const SizedBox(height: 32),
+          // One line each, as designed: shrink to the width rather than
+          // breaking inside a word on small phones or with large text.
+          for (final line in const ['Find your people.', 'Grow. Succeed.'])
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                line,
+                style: AppTextStyles.landingHeroHeadline,
+                maxLines: 1,
+              ),
+            ),
           const SizedBox(height: 18),
           Text(
             'Connect with students on your campus who share your values, learn '
@@ -39,55 +53,19 @@ class LandingHeroSection extends StatelessWidget {
             style: AppTextStyles.body.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.w500,
-              height: 1.3,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 18),
-          Center(
-            child: IllustrationCollage(
-              onPlayTap: () => openVideo(
-                context,
-                LandingVideos.featured.url,
-                title: LandingVideos.featured.title,
-              ),
-            ),
+          const SizedBox(height: 22),
+          LandingPillButton(
+            label: 'Explore communities',
+            trailingArrow: true,
+            onPressed: () => context.push('/join/start'),
           ),
-          const SizedBox(height: 18),
-          BoldButton(
-            label: 'Explore communities ->',
-            height: 62,
-            onPressed: () => context.push('/join'),
-          ),
-          const SizedBox(height: 18),
-          Center(
-            child: Semantics(
-              button: true,
-              label: 'Watch student stories',
-              child: InkWell(
-                onTap: onWatchStories,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.play_circle_outline_rounded,
-                      size: 18,
-                      color: AppColors.ink,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Watch student stories',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 12),
+          _WatchStoriesLink(onTap: onWatchStories),
+          const SizedBox(height: 28),
+          const Center(child: CommunityPreview()),
         ],
       ),
     );
@@ -95,8 +73,20 @@ class LandingHeroSection extends StatelessWidget {
 }
 
 class _LogoRow extends StatelessWidget {
+  const _LogoRow();
+
   @override
   Widget build(BuildContext context) {
+    // Keep the logo row on its two designed lines with large text.
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3),
+      ),
+      child: _row(context),
+    );
+  }
+
+  Widget _row(BuildContext context) {
     return Row(
       children: [
         Container(
@@ -105,7 +95,6 @@ class _LogoRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.ink, width: 2),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -114,6 +103,7 @@ class _LogoRow extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w900,
             ),
+            textScaler: TextScaler.noScaling,
           ),
         ),
         const SizedBox(width: 10),
@@ -123,74 +113,55 @@ class _LogoRow extends StatelessWidget {
             style: AppTextStyles.cardTitle.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              height: 1.15,
+              height: 1.05,
             ),
           ),
         ),
         const SizedBox(width: 10),
-        const _SignInPill(),
-      ],
-    );
-  }
-}
-
-class _Headline extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Find your people.', style: AppTextStyles.landingHeroHeadline),
-        Text('Grow.', style: AppTextStyles.landingHeroHeadline),
-        Transform.rotate(
-          angle: -2 * math.pi / 180,
-          child: Container(
-            margin: const EdgeInsets.only(top: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.ink, width: 2),
-            ),
-            child: Text('Succeed.', style: AppTextStyles.landingHeroHeadline),
-          ),
+        LandingPillButton(
+          label: 'Sign in',
+          height: 44,
+          fontSize: 16,
+          shadow: false,
+          onPressed: () => context.push('/login'),
         ),
       ],
     );
   }
 }
 
-/// White bold-style pill opening sign in (built in prompt 2).
-class _SignInPill extends StatelessWidget {
-  const _SignInPill();
+class _WatchStoriesLink extends StatelessWidget {
+  const _WatchStoriesLink({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Sign in',
+      label: 'Watch student stories',
       excludeSemantics: true,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.push('/login'),
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            alignment: Alignment.center,
-            decoration: boldCardDecoration(
-              color: AppColors.white,
-              radius: AppRadii.pill,
-              shadowOffset: const Offset(2, 2),
-            ),
-            child: Text(
-              'Sign in',
-              style: AppTextStyles.cardTitle.copyWith(
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.play_arrow_rounded, size: 20, color: AppColors.ink),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Watch student stories',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

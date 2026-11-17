@@ -10,6 +10,7 @@
 import type {
   CharterSettings,
   ConsentTextsSettings,
+  JoinRequestSettings,
   MinorsSettings,
   RetentionSettings,
 } from "./schemas";
@@ -36,6 +37,9 @@ export const saveMinorsSettings = (payload: MinorsSettings) =>
 
 export const saveRetentionSettings = (payload: RetentionSettings) =>
   patchSettings("retention", payload);
+
+export const saveJoinRequestSettings = (payload: JoinRequestSettings) =>
+  patchSettings("joinRequests", payload);
 
 /** Loads a saved settings section; resolves null when the backend is unreachable so forms keep their defaults. */
 export async function fetchSettings<T>(section: string): Promise<T | null> {

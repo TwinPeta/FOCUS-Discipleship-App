@@ -28,6 +28,7 @@ import '../domain/comment.dart';
 import '../domain/post.dart';
 import 'providers/feed_providers.dart';
 import 'providers/post_detail_providers.dart';
+import 'question_screens.dart';
 import 'widgets/post_options_sheet.dart';
 import 'widgets/post_photo_view.dart';
 
@@ -77,10 +78,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final postAsync = ref.watch(postDetailProvider(widget.postId));
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     final post = postAsync.valueOrNull;
+    final question = post?.kind == PostKind.question;
 
     return AmberHeaderScaffold(
       backFallback: post == null ? '/communities' : feedRouteFor(post),
-      title: 'Post',
+      title: question ? 'Question' : 'Post',
       headerAction: post == null
           ? null
           : RoundIconButton(
@@ -102,10 +104,13 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           title: 'Post not available',
           body: 'This post was removed or is no longer visible to you.',
         ),
+        _ when question => QuestionBody(question: post),
         _ => _PostBody(post: post, online: online, onLike: _toggleLike),
       },
       bottomBar: post == null
           ? null
+          : question
+          ? WriteAnswerBar(questionId: post.id)
           : MessageInputBar(
               controller: _commentController,
               onSend: _sendComment,
@@ -248,18 +253,23 @@ class _AuthorRow extends StatelessWidget {
       children: [
         Expanded(
           child: Semantics(
-            button: true,
-            label: 'View ${post.author.name}\'s profile',
+            button: !post.anonymous,
+            label: post.anonymous
+                ? 'Posted anonymously'
+                : 'View ${post.author.name}\'s profile',
             excludeSemantics: true,
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadii.md),
-              onTap: () => _openMember(context, post.author.id),
+              // Anonymous: no profile to open.
+              onTap: post.anonymous
+                  ? null
+                  : () => _openMember(context, post.author.id),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 44),
                 child: Row(
                   children: [
                     AvatarWithPresence(
-                      initials: post.author.initials,
+                      initials: post.displayInitials,
                       size: 44,
                     ),
                     const SizedBox(width: 10),
@@ -268,7 +278,7 @@ class _AuthorRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            post.author.name,
+                            post.displayName,
                             style: AppTextStyles.cardTitle.copyWith(
                               fontSize: 15,
                             ),

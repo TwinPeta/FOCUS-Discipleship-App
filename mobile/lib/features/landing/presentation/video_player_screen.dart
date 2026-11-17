@@ -81,9 +81,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
             const Spacer(),
             if (controller == null)
-              const ColoredBox(
+              ColoredBox(
                 color: AppColors.page,
-                child: EmptyState(
+                child: const EmptyState(
                   icon: Icons.videocam_off_outlined,
                   title: 'Video not available',
                   body: 'This link is not a YouTube video.',

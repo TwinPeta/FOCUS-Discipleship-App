@@ -21,6 +21,7 @@ import '../../../core/widgets/states/skeleton.dart';
 import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/update_banner.dart';
+import '../../profile/presentation/widgets/profile_reminder.dart';
 
 /// Screen 3 of the brief: Communities hub, including the 3b "pending"
 /// variant of the specific-community slot.
@@ -77,20 +78,23 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ProfileReminderGate(child: _buildHub(context));
+
+  Widget _buildHub(BuildContext context) {
     final profile = ref.watch(currentProfileProvider);
 
     if (profile == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.page,
-        body: SafeArea(child: Center(child: Text('No profile yet.'))),
+        body: const SafeArea(child: Center(child: Text('No profile yet.'))),
       );
     }
 
     final membershipAsync = ref.watch(membershipProvider);
 
     if (membershipAsync.isLoading && !membershipAsync.hasValue) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
 
     final membership = membershipAsync.valueOrNull ?? Membership.empty;

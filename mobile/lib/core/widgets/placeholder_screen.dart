@@ -35,7 +35,7 @@ class PlaceholderScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.hourglass_top_rounded,
                         size: 40,
                         color: AppColors.placeholder,

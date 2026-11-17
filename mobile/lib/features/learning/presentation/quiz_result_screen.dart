@@ -25,7 +25,7 @@ class QuizResultScreen extends ConsumerWidget {
     final attemptAsync = ref.watch(lastQuizAttemptProvider(id));
     final quizAsync = ref.watch(quizProvider(id));
     if (attemptAsync.isLoading || quizAsync.isLoading) {
-      return const Scaffold(backgroundColor: AppColors.page, body: Skeleton());
+      return Scaffold(backgroundColor: AppColors.page, body: const Skeleton());
     }
     final attempt = attemptAsync.valueOrNull;
     final quiz = quizAsync.valueOrNull;
@@ -162,7 +162,7 @@ class _BadgeCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                const Icon(Icons.star_rounded, color: AppColors.ink),
+                Icon(Icons.star_rounded, color: AppColors.ink),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -170,7 +170,7 @@ class _BadgeCard extends StatelessWidget {
                     style: AppTextStyles.cardTitle,
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+                Icon(Icons.chevron_right_rounded, color: AppColors.ink),
               ],
             ),
           ),

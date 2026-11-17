@@ -3,6 +3,11 @@ const store = require('../db/store');
 const { paginate } = require('../utils/pagination');
 const S = require('../utils/serialize');
 
+// What the app needs to know about how the back office is set up (read at start, no sign-in needed).
+router.get('/app-config', (_req, res) => {
+  res.json({ join_requests: { auto_approve: require('../utils/joinRequests').autoApproveOn() } });
+});
+
 router.get('/countries', (_req, res) => {
   res.json({
     items: [
@@ -15,7 +20,10 @@ router.get('/countries', (_req, res) => {
 
 router.get('/institutions', (req, res) => {
   const { type, country, q } = req.query;
+  // Institutions hidden from sign-up (e.g. an institute a student typed in,
+  // waiting for staff review) are not listed.
   let items = store.col('institutions').filter((i) =>
+    i.shownInSignup !== false &&
     (!type || i.type === type) &&
     (!country || i.country === country) &&
     (!q || i.name.toLowerCase().includes(String(q).toLowerCase()))

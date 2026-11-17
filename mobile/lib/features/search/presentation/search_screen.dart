@@ -15,7 +15,9 @@ import '../../../core/widgets/states/error_view.dart';
 import '../../../core/widgets/states/offline_banner.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../community/domain/community.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../community/domain/member_profile.dart';
+import '../../feed/domain/post.dart';
 import '../domain/search_results.dart';
 import 'search_providers.dart';
 
@@ -77,13 +79,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     context.push('/members/${m.person.id}');
   }
 
+  void _openPost(Post p) {
+    _remember();
+    context.push('/post/${p.id}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return AmberHeaderScaffold(
       title: 'Search',
       headerExtra: SearchField(
         controller: _controller,
-        hintText: 'Search communities and people',
+        hintText: 'Search posts, people, communities',
         onChanged: _onChanged,
       ),
       body: Column(
@@ -96,59 +103,65 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  /// Before typing: recent searches, then suggestions (the campus's
+  /// communities and the leaders of your own community), as designed.
   Widget _recent() {
     final recent = ref.watch(recentSearchesProvider);
-    if (recent.isEmpty) {
+    final suggestions = ref.watch(searchSuggestionsProvider).valueOrNull;
+    if (recent.isEmpty && (suggestions == null || suggestions.isEmpty)) {
       return const EmptyState(
         icon: Icons.search_rounded,
         title: 'Search FCU',
         body: 'Find communities and people by name or username.',
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text('Recent', style: AppTextStyles.sectionHeading),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(_minTarget, _minTarget),
+    return _ResultList(
+      results: suggestions ?? SearchResults.empty,
+      onCommunity: _openCommunity,
+      onPerson: _openPerson,
+      onPost: _openPost,
+      header: [
+        if (recent.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text('Recent', style: AppTextStyles.sectionHeading),
               ),
-              onPressed: () =>
-                  ref.read(recentSearchesProvider.notifier).clear(),
-              child: Semantics(
-                label: 'Clear recent searches',
-                excludeSemantics: true,
-                child: const Text('Clear'),
+              TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(_minTarget, _minTarget),
+                ),
+                onPressed: () =>
+                    ref.read(recentSearchesProvider.notifier).clear(),
+                child: Semantics(
+                  label: 'Clear recent searches',
+                  excludeSemantics: true,
+                  child: const Text('Clear'),
+                ),
               ),
-            ),
-          ],
-        ),
-        for (final q in recent)
-          Semantics(
-            button: true,
-            label: 'Search again for $q',
-            excludeSemantics: true,
-            child: InkWell(
-              onTap: () => _useRecent(q),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: _minTarget),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.history_rounded,
-                      color: AppColors.placeholder,
-                    ),
-                    const SizedBox(width: _gap),
-                    Expanded(child: Text(q, style: AppTextStyles.bodyMedium)),
-                  ],
+            ],
+          ),
+          for (final q in recent)
+            Semantics(
+              button: true,
+              label: 'Search again for $q',
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: () => _useRecent(q),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: _minTarget),
+                  child: Row(
+                    children: [
+                      Icon(Icons.history_rounded, color: AppColors.placeholder),
+                      const SizedBox(width: _gap),
+                      Expanded(child: Text(q, style: AppTextStyles.bodyMedium)),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
@@ -172,6 +185,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               results: r,
               onCommunity: _openCommunity,
               onPerson: _openPerson,
+              onPost: _openPost,
             ),
     );
   }
@@ -182,13 +196,19 @@ class _ResultList extends StatelessWidget {
     required this.results,
     required this.onCommunity,
     required this.onPerson,
+    required this.onPost,
+    this.header = const [],
   });
 
   static const _gap = 10.0;
 
+  /// Shown above the results (the recent searches, before typing).
+  final List<Widget> header;
+
   final SearchResults results;
   final ValueChanged<Community> onCommunity;
   final ValueChanged<MemberProfile> onPerson;
+  final ValueChanged<Post> onPost;
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +219,7 @@ class _ResultList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        ...header,
         if (results.communities.isNotEmpty) ...[
           heading('Communities'),
           for (final c in results.communities)
@@ -214,6 +235,35 @@ class _ResultList extends StatelessWidget {
                       ? 'General community'
                       : c.meetingDay,
                   onTap: () => onCommunity(c),
+                ),
+              ),
+            ),
+        ],
+        if (results.posts.isNotEmpty) ...[
+          heading('Posts'),
+          for (final p in results.posts)
+            Padding(
+              padding: const EdgeInsets.only(bottom: _gap),
+              child: Semantics(
+                button: true,
+                label: p.kind == PostKind.question
+                    ? 'Open question: ${p.body}'
+                    : 'Open post by ${p.displayName}',
+                excludeSemantics: true,
+                child: ListRowCard(
+                  leading: InitialsAvatar(
+                    initials: p.kind == PostKind.question
+                        ? '?'
+                        : p.displayInitials,
+                    size: 48,
+                  ),
+                  title: p.body,
+                  subtitle: [
+                    if (p.kind == PostKind.question) 'Question' else 'Post',
+                    p.displayName,
+                    formatRelativeTime(p.createdAt),
+                  ].join(' · '),
+                  onTap: () => onPost(p),
                 ),
               ),
             ),

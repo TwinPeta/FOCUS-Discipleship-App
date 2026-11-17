@@ -33,6 +33,8 @@ function issueTokens(user) {
   return { access_token: access, refresh_token: refresh, expires_in: config.accessTtlSeconds };
 }
 
+const SP = require('../utils/studentProfile');
+
 const session = (user) => ({ ...issueTokens(user), user: S.myProfile(user) });
 
 router.get('/username-available', (req, res, next) => {
@@ -52,8 +54,12 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
       country: { required: true, type: 'string', enum: ['UG', 'KE', 'RW'] },
       email: { type: 'string', email: true },
       phone: { type: 'string', pattern: /^\+?[0-9 -]{9,16}$/ },
-      institution_type: { required: true, type: 'string', enum: ['university', 'high_school'] },
-      institution_id: { required: true, type: 'string' },
+      institution_type: { required: true, type: 'string', enum: SP.INSTITUTION_TYPES },
+      institution_id: { type: 'string' },
+      // An institute that is not in the list: its name (institute students only).
+      institution_name: { type: 'string', min: 2, max: 120 },
+      year_of_study: { type: 'number' },
+      accepted_national_activities: { required: true, type: 'boolean' },
       password: { required: true, type: 'string', min: 8, max: 128 },
       accepted_terms: { required: true, type: 'boolean' },
       accepted_code_of_conduct: { required: true, type: 'boolean' },
@@ -62,10 +68,18 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
     if (!b.email && !b.phone) errs.push({ field: 'email', message: 'email or phone is required' });
     if (b.accepted_terms !== true) errs.push({ field: 'accepted_terms', message: 'must be accepted' });
     if (b.accepted_code_of_conduct !== true) errs.push({ field: 'accepted_code_of_conduct', message: 'must be accepted' });
+    if (b.accepted_national_activities !== true) errs.push({ field: 'accepted_national_activities', message: 'must be accepted' });
+    const homeChurch = SP.homeChurchInput(b.home_church, errs);
+    const yearOfStudy = SP.yearOfStudyInput(b.year_of_study, b.institution_type, errs);
     if (Number.isNaN(new Date(b.birthdate).getTime()) || new Date(b.birthdate) > new Date())
       errs.push({ field: 'birthdate', message: 'is not a valid date' });
-    const inst = store.get('institutions', b.institution_id);
-    if (!inst || inst.type !== b.institution_type) errs.push({ field: 'institution_id', message: 'unknown institution' });
+    let inst = null;
+    if (b.institution_id) {
+      inst = store.get('institutions', b.institution_id);
+      if (!inst || inst.type !== b.institution_type) errs.push({ field: 'institution_id', message: 'unknown institution' });
+    } else if (!(b.institution_type === 'institute' && b.institution_name)) {
+      errs.push({ field: 'institution_id', message: 'is required' });
+    }
     const isMinor = !errs.length && ageOf(b.birthdate) < 18;
     // Guardian details may be sent now or later via PUT /me/guardian; until consent the account stays restricted.
     if (isMinor && b.guardian && !(b.guardian.name && (b.guardian.phone || b.guardian.email)))
@@ -80,6 +94,7 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
     if (store.first('users', (u) => u.username === username)) throw conflict('username_taken', 'Username is taken');
     if (email && store.first('users', (u) => u.email === email)) throw conflict('email_taken', 'Email is already registered');
     if (phone && store.first('users', (u) => u.phone === phone)) throw conflict('phone_taken', 'Phone is already registered');
+    if (!inst) inst = SP.findOrAddInstitute(b.institution_name, b.country);
 
     const user = store.insert('users', {
       fullName: b.full_name.trim(), username, email, phone, birthdate: b.birthdate, country: b.country,
@@ -88,7 +103,8 @@ router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, n
       emailVerified: false, phoneVerified: false, verifiedMentor: false,
       minorStatus: isMinor ? 'pending_guardian_consent' : 'adult',
       guardian: isMinor ? (b.guardian || null) : null,
-      consents: { terms: store.now(), codeOfConduct: store.now() },
+      consents: { terms: store.now(), codeOfConduct: store.now(), nationalActivities: store.now() },
+      homeChurch: homeChurch || null, yearOfStudy,
     });
 
     // Every student is automatically in the General community of their institution.

@@ -96,6 +96,7 @@ export function InstitutionForm({
             {...register("type")}
           >
             <option value={InstitutionType.University}>University</option>
+            <option value={InstitutionType.Institute}>Institute</option>
             <option value={InstitutionType.HighSchool}>High school</option>
           </select>
         </div>

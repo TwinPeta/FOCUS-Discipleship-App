@@ -75,6 +75,7 @@ bool isPublic(String path) =>
 /// Sign-up/sign-in pages a fully signed-in user is sent away from.
 const _signedOutOnly = <String>{
   '/join',
+  '/join/start',
   '/join/password',
   '/join/verify',
   '/join/consent',

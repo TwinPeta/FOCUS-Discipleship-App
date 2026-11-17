@@ -57,6 +57,8 @@ model User {
   posts_authorId Post[] @relation("posts_authorId")
   likes_userId Like[] @relation("likes_userId")
   comments_authorId Comment[] @relation("comments_authorId")
+  questionFollows_userId QuestionFollow[] @relation("questionFollows_userId")
+  answerVotes_userId AnswerVote[] @relation("answerVotes_userId")
   prayerRequests_authorId PrayerRequest[] @relation("prayerRequests_authorId")
   prayed_userId Prayed[] @relation("prayed_userId")
   prayerResponses_authorId PrayerResponse[] @relation("prayerResponses_authorId")
@@ -172,6 +174,7 @@ model Post {
   author User @relation("posts_authorId", fields: [authorId], references: [id], onDelete: Cascade)
   likes_postId Like[] @relation("likes_postId")
   comments_postId Comment[] @relation("comments_postId")
+  questionFollows_postId QuestionFollow[] @relation("questionFollows_postId")
 
   @@index([communityId])
   @@index([authorId])
@@ -201,9 +204,38 @@ model Comment {
   extra     Json?
   post Post @relation("comments_postId", fields: [postId], references: [id], onDelete: Cascade)
   author User @relation("comments_authorId", fields: [authorId], references: [id], onDelete: Cascade)
+  answerVotes_commentId AnswerVote[] @relation("answerVotes_commentId")
 
   @@index([postId])
   @@map("comments")
+}
+
+model QuestionFollow {
+  id        String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  postId    String
+  userId    String
+  extra     Json?
+  post Post @relation("questionFollows_postId", fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation("questionFollows_userId", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("questionFollows")
+}
+
+model AnswerVote {
+  id        String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  commentId String
+  userId    String
+  extra     Json?
+  comment Comment @relation("answerVotes_commentId", fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation("answerVotes_userId", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([userId])
+  @@map("answerVotes")
 }
 
 model PrayerRequest {

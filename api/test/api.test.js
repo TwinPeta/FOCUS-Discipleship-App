@@ -8,6 +8,14 @@ const { seed, DEMO_PASSWORD } = require('./helpers/seed');
 const store = require('../src/db/store');
 const contract = require('./helpers/contract');
 
+// Sign-up fields added with the complete-profile form (home church, year of
+// study, national activities); every registration sends them.
+const SIGNUP_EXTRAS = {
+  year_of_study: 2,
+  home_church: { name: 'Watoto Church', location: 'Kampala', pastor: 'Pastor John' },
+  accepted_national_activities: true,
+};
+
 let server;
 let base;
 let ctx;
@@ -59,7 +67,7 @@ test('register: validation, minor guardian rule, auto General membership', async
   const base_ = {
     full_name: 'New Student', username: 'newstudent', birthdate: '2004-01-01', country: 'UG',
     email: 'new@fcu.test', institution_type: 'university', institution_id: inst.id,
-    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true,
+    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS,
   };
   const noConduct = await call('POST', '/v1/auth/register', { body: { ...base_, accepted_code_of_conduct: false } });
   assert.equal(noConduct.status, 422);
@@ -89,6 +97,66 @@ test('register: validation, minor guardian rule, auto General membership', async
 
   const dup = await call('POST', '/v1/auth/register', { body: base_ });
   assert.equal(dup.status, 409);
+});
+
+test('register: home church, year of study, national activities, institutes', async () => {
+  const uni = store.first('institutions', (i) => i.name === 'Makerere University');
+  const base_ = {
+    full_name: 'Profile Student', username: 'profilestudent', birthdate: '2003-03-03', country: 'UG',
+    email: 'profile@fcu.test', institution_type: 'university', institution_id: uni.id,
+    password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS,
+  };
+  const fields = (r) => r.body.errors.map((e) => e.field);
+
+  // The home church may be added later, but when sent it must be complete.
+  const later = await call('POST', '/v1/auth/register', { body: { ...base_, username: 'churchlater', email: 'later@fcu.test', home_church: undefined } });
+  assert.equal(later.status, 201);
+  assert.equal(later.body.user.home_church, null);
+  const noPastor = await call('POST', '/v1/auth/register', { body: { ...base_, home_church: { name: 'Watoto', location: 'Kampala', pastor: ' ' } } });
+  assert.equal(noPastor.status, 422);
+  assert.ok(fields(noPastor).includes('home_church.pastor'));
+
+  const noYear = await call('POST', '/v1/auth/register', { body: { ...base_, year_of_study: undefined } });
+  assert.ok(fields(noYear).includes('year_of_study'));
+  const badYear = await call('POST', '/v1/auth/register', { body: { ...base_, year_of_study: 1.5 } });
+  assert.ok(fields(badYear).includes('year_of_study'));
+
+  const noNational = await call('POST', '/v1/auth/register', { body: { ...base_, accepted_national_activities: false } });
+  assert.equal(noNational.status, 422);
+  assert.ok(fields(noNational).includes('accepted_national_activities'));
+
+  const ok = await call('POST', '/v1/auth/register', { body: base_ });
+  assert.equal(ok.status, 201);
+  assert.equal(ok.body.user.year_of_study, 2);
+  assert.deepEqual(ok.body.user.home_church, SIGNUP_EXTRAS.home_church);
+  assert.equal(ok.body.user.accepted_national_activities, true);
+
+  // The profile can be updated later.
+  const tk = ok.body.access_token;
+  const upd = await call('PATCH', '/v1/me', { token: tk, body: { year_of_study: 3, home_church: { name: 'New Life', location: 'Gulu', pastor: 'Rev. Okello' } } });
+  assert.equal(upd.status, 200);
+  assert.equal(upd.body.year_of_study, 3);
+  assert.equal(upd.body.home_church.location, 'Gulu');
+  assert.equal((await call('PATCH', '/v1/me', { token: tk, body: { home_church: { name: 'X' } } })).status, 422);
+
+  // An institute that is not listed: typed in, added hidden with its General community, reused by the next student.
+  const inst = { ...base_, institution_type: 'institute', institution_id: undefined, institution_name: 'Kampala  Technical Institute', year_of_study: undefined };
+  const a = await call('POST', '/v1/auth/register', { body: { ...inst, username: 'institutea', email: 'ia@fcu.test' } });
+  assert.equal(a.status, 201);
+  assert.equal(a.body.user.institution.name, 'Kampala Technical Institute');
+  assert.equal(a.body.user.year_of_study, null);
+  const mine = await call('GET', '/v1/me/communities', { token: a.body.access_token });
+  assert.equal(mine.body.general.membership_status, 'member');
+  const b = await call('POST', '/v1/auth/register', { body: { ...inst, username: 'instituteb', email: 'ib@fcu.test', institution_name: 'kampala technical institute' } });
+  assert.equal(b.status, 201);
+  assert.equal(b.body.user.institution.id, a.body.user.institution.id);
+  const listed = await call('GET', '/v1/lookups/institutions?type=institute&country=UG');
+  assert.ok(!listed.body.items.some((i) => i.id === a.body.user.institution.id), 'hidden until staff review');
+
+  // A typed name is only for institutes; universities pick from the list.
+  const uniTyped = await call('POST', '/v1/auth/register', { body: { ...base_, username: 'unityped', email: 'ut@fcu.test', institution_id: undefined, institution_name: 'Some University' } });
+  assert.equal(uniTyped.status, 422);
+  assert.ok(fields(uniTyped).includes('institution_id'));
 });
 
 test('join flow: one specific community, super-mentor approval, locking', async () => {
@@ -142,6 +210,97 @@ test('feed, like, comment, idempotent post creation', async () => {
   assert.equal(again.body.like_count, 1);
   const c = await call('POST', `/v1/posts/${a.body.id}/comments`, { token, body: { text: 'Amen' } });
   assert.equal(c.status, 201);
+});
+
+test('questions: follow, helpful votes on answers, post search', async () => {
+  const asker = await login('david@fcu.test');
+  const follower = await login('super@fcu.test');
+  const answerer = await login('mentor@fcu.test');
+  // Someone outside Growth Circle (an earlier test may have let the student join it).
+  const outsider = await login('student@fcu.test');
+  const studentId = store.first('users', (u) => u.email === 'student@fcu.test').id;
+  const outsiderRows = store.where('memberships', (m) => m.userId === studentId && m.communityId === ctx.growth.id);
+  const keep = outsiderRows.map((m) => m.status);
+  outsiderRows.forEach((m) => { m.status = 'left'; });
+  const followerId = store.first('users', (u) => u.email === 'super@fcu.test').id;
+  const askerId = store.first('users', (u) => u.email === 'david@fcu.test').id;
+  const q = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: asker, body: { text: 'Where do you find quiet places to pray on campus?', kind: 'question' } })).body;
+  assert.equal(q.follower_count, 0);
+  assert.equal(q.following, false);
+
+  // Follow (idempotent), and only questions can be followed.
+  let f = await call('PUT', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.equal(f.status, 200);
+  f = await call('PUT', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.deepEqual(f.body, { follower_count: 1, following: true });
+  const plain = (await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token: asker, body: { text: 'Just a plain post' } })).body;
+  assert.equal((await call('PUT', `/v1/posts/${plain.id}/follow`, { token: follower })).status, 422);
+  assert.equal(plain.following, undefined, 'plain posts carry no follow state');
+
+  // A new answer tells the follower and the asker.
+  const before = store.where('notifications', (n) => n.userId === followerId).length;
+  const answer = (await call('POST', `/v1/posts/${q.id}/comments`, { token: answerer, body: { text: 'The chapel garden is quiet before 8.' } })).body;
+  assert.equal(answer.vote_count, 0);
+  const told = store.where('notifications', (n) => n.userId === followerId);
+  assert.equal(told.length, before + 1);
+  assert.match(told[told.length - 1].title, /question you follow/);
+  assert.ok(store.where('notifications', (n) => n.userId === askerId).some((n) => /answered your question/.test(n.title)));
+
+  // Helpful votes: one per member, not on your own answer.
+  let v = await call('PUT', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.deepEqual(v.body, { vote_count: 1, voted_by_me: true });
+  v = await call('PUT', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.equal(v.body.vote_count, 1, 'idempotent');
+  assert.equal((await call('PUT', `/v1/comments/${answer.id}/vote`, { token: answerer })).status, 403);
+  assert.equal((await call('PUT', `/v1/comments/${answer.id}/vote`, { token: outsider })).status, 404);
+  const listed = (await call('GET', `/v1/posts/${q.id}/comments`, { token: follower })).body.items.find((c) => c.id === answer.id);
+  assert.equal(listed.vote_count, 1);
+  assert.equal(listed.voted_by_me, true);
+  v = await call('DELETE', `/v1/comments/${answer.id}/vote`, { token: follower });
+  assert.deepEqual(v.body, { vote_count: 0, voted_by_me: false });
+  const onPlain = (await call('POST', `/v1/posts/${plain.id}/comments`, { token: answerer, body: { text: 'Nice' } })).body;
+  assert.equal((await call('PUT', `/v1/comments/${onPlain.id}/vote`, { token: follower })).status, 422);
+
+  // Unfollow.
+  f = await call('DELETE', `/v1/posts/${q.id}/follow`, { token: follower });
+  assert.deepEqual(f.body, { follower_count: 0, following: false });
+
+  // Search: members find it by its words; too short is refused; outsiders see nothing.
+  const found = await call('GET', '/v1/search/posts?q=QUIET%20places', { token: answerer });
+  assert.equal(found.status, 200);
+  assert.ok(found.body.items.some((x) => x.id === q.id));
+  const onlyQuestions = await call('GET', '/v1/search/posts?q=plain&kind=question', { token: answerer });
+  assert.ok(!onlyQuestions.body.items.some((x) => x.id === plain.id));
+  assert.equal((await call('GET', '/v1/search/posts?q=a', { token: answerer })).status, 422);
+  const outside = await call('GET', '/v1/search/posts?q=quiet%20places', { token: outsider });
+  assert.ok(!outside.body.items.some((x) => x.id === q.id));
+  outsiderRows.forEach((m, i) => { m.status = keep[i]; });
+});
+
+test('posts: questions and anonymous posts (author hidden, still marked as mine)', async () => {
+  const token = await login('mentor@fcu.test');
+  const other = await login('student@fcu.test');
+  const q = await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'How do you keep a quiet time?', kind: 'question', anonymous: true } });
+  assert.equal(q.status, 201);
+  assert.equal(q.body.kind, 'question');
+  assert.equal(q.body.anonymous, true);
+  assert.equal(q.body.author, null);
+  assert.equal(q.body.is_mine, true);
+  const seen = await call('GET', `/v1/posts/${q.body.id}`, { token: other });
+  assert.equal(seen.body.author, null);
+  assert.equal(seen.body.is_mine, false);
+  // Moderators can still act: the author is kept on the record.
+  assert.ok(store.get('posts', q.body.id).authorId);
+
+  const plain = await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'Just a post' } });
+  assert.equal(plain.body.kind, 'post');
+  assert.equal(plain.body.anonymous, false);
+  assert.ok(plain.body.author);
+
+  const questions = await call('GET', `/v1/communities/${ctx.growth.id}/posts?kind=question`, { token: other });
+  assert.ok(questions.body.items.length >= 1);
+  assert.ok(questions.body.items.every((p) => p.kind === 'question'));
+  assert.equal((await call('POST', `/v1/communities/${ctx.growth.id}/posts`, { token, body: { text: 'x', kind: 'poll' } })).status, 422);
 });
 
 test('prayer: anonymous hides author, "I prayed" is idempotent', async () => {
@@ -218,6 +377,10 @@ test('messages: send, unread, filters, block', async () => {
   assert.equal((await call('GET', `/v1/conversations/${conv.body.id}/messages`, { token: outsider })).status, 404);
 
   // report then block
+  // "other" needs details (blank does not count); the other reasons and the screenshot are optional.
+  const other = (details) => call('POST', '/v1/reports', { token: student, body: { target_type: 'user', target_id: ctx.superMentor.id, reason: 'other', details } });
+  assert.equal((await other(undefined)).status, 422);
+  assert.equal((await other('   ')).status, 422);
   const rep = await call('POST', '/v1/reports', { token: student, body: { target_type: 'user', target_id: ctx.superMentor.id, reason: 'spam_or_fake_profile' } });
   assert.equal(rep.status, 201);
   assert.equal((await call('PUT', `/v1/users/${ctx.superMentor.id}/block`, { token: student })).status, 204);
@@ -232,7 +395,7 @@ test('minor awaiting consent cannot message unverified adults', async () => {
     body: {
       full_name: 'Young One', username: 'youngone', birthdate: '2012-05-05', country: 'UG', email: 'young@fcu.test',
       institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!',
-      accepted_terms: true, accepted_code_of_conduct: true, guardian: { name: 'Parent', phone: '+256700111222' },
+      accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS, guardian: { name: 'Parent', phone: '+256700111222' },
     },
   });
   assert.equal(reg.status, 201);
@@ -250,6 +413,14 @@ test('media upload slot rejects bad type and oversize', async () => {
   const token = await login('student@fcu.test');
   assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'application/pdf', size_bytes: 10 } })).status, 422);
   assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/png', size_bytes: 99999999 } })).status, 422);
+  // Photos are capped at 2 MB (the app compresses to WebP first).
+  assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/webp', size_bytes: 2 * 1024 * 1024 + 1 } })).status, 422);
+  assert.equal((await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/webp', size_bytes: 2 * 1024 * 1024 } })).status, 201);
+  // Story videos: at most 2 minutes, and the length must be given.
+  const video = (seconds) => call('POST', '/v1/media', { token, body: { purpose: 'testimony_video', content_type: 'video/mp4', size_bytes: 1000, duration_seconds: seconds } });
+  assert.equal((await video(150)).status, 422);
+  assert.equal((await video(undefined)).status, 422);
+  assert.equal((await video(95)).status, 201);
   const ok = await call('POST', '/v1/media', { token, body: { purpose: 'post_photo', content_type: 'image/png', size_bytes: 4 } });
   assert.equal(ok.status, 201);
   const up = await fetch(ok.body.upload_url.replace(/^https?:\/\/[^/]+/, base), { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: Buffer.from([1, 2, 3, 4]) });
@@ -269,7 +440,7 @@ test('leave a specific community; note is returned on a declined request', async
   const inst = store.first('institutions', (i) => i.name === 'Makerere University');
   const reg = await call('POST', '/v1/auth/register', {
     body: { full_name: 'Leaver One', username: 'leaverone', birthdate: '2001-01-01', country: 'UG', email: 'leaver@fcu.test',
-      institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true },
+      institution_type: 'university', institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS },
   });
   const tk = reg.body.access_token;
   const spec = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
@@ -463,6 +634,9 @@ test('contract sweep: remaining operations return what the spec says', async () 
   ok(await call('GET', '/v1/health'), 200);
   ok(await call('GET', '/v1/public/landing'), 200);
   ok(await call('GET', '/v1/lookups/countries'), 200);
+  const appConfig = await call('GET', '/v1/lookups/app-config');
+  ok(appConfig, 200);
+  assert.equal(typeof appConfig.body.join_requests.auto_approve, 'boolean');
   ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
@@ -516,7 +690,7 @@ test('contract sweep: remaining operations return what the spec says', async () 
   // join request: a fresh student asks, then cancels
   const inst = store.get('institutions', ctx.student.institutionId);
   const fresh = await call('POST', '/v1/auth/register', { body: { full_name: 'Sweep Student', username: 'sweepstudent', birthdate: '2002-02-02', country: 'UG', email: 'sweep@fcu.test',
-    institution_type: inst.type, institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true } });
+    institution_type: inst.type, institution_id: inst.id, password: 'Sup3rSecret!', accepted_terms: true, accepted_code_of_conduct: true, ...SIGNUP_EXTRAS } });
   ok(fresh, 201);
   const other = store.first('communities', (c) => c.type === 'specific' && c.institutionId === inst.id);
   const jr = await call('POST', `/v1/communities/${other.id}/join-requests`, { token: fresh.body.access_token });

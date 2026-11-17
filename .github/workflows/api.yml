@@ -4,7 +4,7 @@ name: API tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, screens, 'screens/**', 'fix/**']
     paths:
       - 'api/**'
       - 'docs/api/**'

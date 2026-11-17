@@ -1,8 +1,10 @@
 import '../../../core/network/api_client.dart';
 import '../../community/data/community_api_mapper.dart';
 import '../../community/data/people_directory.dart';
+import '../../feed/domain/post.dart' show PostPhoto;
 import '../domain/testimony.dart';
 import 'testimony_repository.dart';
+import '../../../core/network/media_uploader.dart';
 
 /// [TestimonyRepository] backed by the FCU API. Stories always go to review
 /// first (the server enforces it). The API has no "Encouraged" reaction yet,
@@ -12,7 +14,11 @@ class RemoteTestimonyRepository implements TestimonyRepository {
     this._api,
     this._directory, {
     bool Function(String testimonyId)? isHidden,
+    this.uploader,
   }) : _isHidden = isHidden ?? _never;
+
+  /// Uploads a story's photo and video (null in tests without uploads).
+  final MediaUploader? uploader;
 
   final ApiClient _api;
   final PeopleDirectory _directory;
@@ -27,6 +33,10 @@ class RemoteTestimonyRepository implements TestimonyRepository {
     if (author != null) memberFromApi(author, remember: _directory);
     final id = j['id'] as String;
     final mine = _encouraged.contains(id);
+    final media = [
+      for (final m in (j['media'] as List?) ?? const [])
+        if (m is Map<String, dynamic> && m['url'] is String) m,
+    ];
     return Testimony(
       id: id,
       communityId: (j['community_id'] as String?) ?? communityId,
@@ -47,6 +57,14 @@ class RemoteTestimonyRepository implements TestimonyRepository {
           DateTime.now(),
       encouragedByMe: mine,
       encouragedCount: mine ? 1 : 0,
+      videoUrl: media
+          .where((m) => m['kind'] == 'video')
+          .map((m) => m['url'] as String)
+          .firstOrNull,
+      photos: [
+        for (final m in media)
+          if (m['kind'] == 'image') PostPhoto.network(m['url'] as String),
+      ],
     );
   }
 
@@ -70,7 +88,30 @@ class RemoteTestimonyRepository implements TestimonyRepository {
   }
 
   @override
-  Future<Testimony> submitStory(Testimony testimony) async {
+  Future<Testimony> submitStory(
+    Testimony testimony, {
+    StoryAttachments attachments = StoryAttachments.none,
+  }) async {
+    final mediaIds = <String>[];
+    final uploader = this.uploader;
+    if (uploader != null) {
+      if (attachments.photoPath != null) {
+        mediaIds.add(
+          await uploader.uploadPhoto(
+            attachments.photoPath!,
+            purpose: 'testimony_photo',
+          ),
+        );
+      }
+      if (attachments.videoPath != null && attachments.videoLength != null) {
+        mediaIds.add(
+          await uploader.uploadVideo(
+            attachments.videoPath!,
+            duration: attachments.videoLength!,
+          ),
+        );
+      }
+    }
     final json = objectOf(
       await _api.post(
         '/communities/${testimony.communityId}/testimonies',
@@ -78,6 +119,7 @@ class RemoteTestimonyRepository implements TestimonyRepository {
           'title': testimony.title,
           'body': testimony.excerpt ?? '',
           'consent': true,
+          if (mediaIds.isNotEmpty) 'media_ids': mediaIds,
         },
       ),
     );

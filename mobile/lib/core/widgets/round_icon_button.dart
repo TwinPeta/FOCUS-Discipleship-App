@@ -11,20 +11,26 @@ class RoundIconButton extends StatelessWidget {
     required this.semanticLabel,
     this.onPressed,
     this.size = 44,
-    this.backgroundColor = AppColors.white,
+    this.backgroundColor,
     this.borderColor,
     this.borderWidth = 0,
-    this.iconColor = AppColors.ink,
+    this.iconColor,
   });
 
   final IconData icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
   final double size;
-  final Color backgroundColor;
+  final Color? backgroundColor;
+
+  /// [backgroundColor], or the theme's white.
+  Color get _backgroundColor => backgroundColor ?? AppColors.white;
   final Color? borderColor;
   final double borderWidth;
-  final Color iconColor;
+  final Color? iconColor;
+
+  /// [iconColor], or the theme's ink.
+  Color get _iconColor => iconColor ?? AppColors.ink;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,7 @@ class RoundIconButton extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: Material(
-        color: backgroundColor,
+        color: _backgroundColor,
         shape: CircleBorder(
           side: borderWidth > 0
               ? BorderSide(
@@ -47,7 +53,7 @@ class RoundIconButton extends StatelessWidget {
           child: SizedBox(
             width: size,
             height: size,
-            child: Icon(icon, color: iconColor, size: size * 0.5),
+            child: Icon(icon, color: _iconColor, size: size * 0.5),
           ),
         ),
       ),

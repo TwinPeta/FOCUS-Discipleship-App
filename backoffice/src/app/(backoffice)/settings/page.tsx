@@ -13,6 +13,7 @@ import { ConsentTextsForm } from "@/features/settings/components/ConsentTextsFor
 import { PushDeliveryCard } from "@/features/settings/components/PushDeliveryCard";
 import { EmailDeliveryCard } from "@/features/settings/components/EmailDeliveryCard";
 import { MinorsForm } from "@/features/settings/components/MinorsForm";
+import { JoinRequestsForm } from "@/features/settings/components/JoinRequestsForm";
 import { RetentionForm } from "@/features/settings/components/RetentionForm";
 
 export default function SettingsPage() {
@@ -46,6 +47,13 @@ export default function SettingsPage() {
         <h2 className="text-base font-semibold text-foreground">Users under 18</h2>
         <div className="mt-4">
           <MinorsForm />
+        </div>
+      </section>
+
+      <section className="rounded-card border border-border bg-white p-6">
+        <h2 className="text-base font-semibold text-foreground">Join requests</h2>
+        <div className="mt-4">
+          <JoinRequestsForm />
         </div>
       </section>
 

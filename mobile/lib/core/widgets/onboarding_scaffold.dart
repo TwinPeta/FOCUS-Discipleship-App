@@ -40,6 +40,8 @@ class OnboardingScaffold extends StatelessWidget {
       backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
+          // Full width, so Back stays on the left even without the step bar.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -99,7 +101,7 @@ class OnboardingScaffold extends StatelessWidget {
             if (bottom != null)
               Container(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.white,
                   border: Border(top: BorderSide(color: AppColors.cream)),
                 ),

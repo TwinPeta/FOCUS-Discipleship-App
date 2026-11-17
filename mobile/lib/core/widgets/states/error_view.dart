@@ -33,11 +33,11 @@ class ErrorView extends StatelessWidget {
               Container(
                 width: 72,
                 height: 72,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.cream,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.cloud_off_rounded,
                   size: 34,
                   color: AppColors.ink,

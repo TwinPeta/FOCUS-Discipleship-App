@@ -76,7 +76,7 @@ class CommunityListCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+          Icon(Icons.chevron_right_rounded, color: AppColors.ink),
         ],
       ),
     );

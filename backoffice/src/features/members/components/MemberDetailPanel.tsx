@@ -81,6 +81,33 @@ export function MemberDetailPanel({
 
       {member.isMinor && <MinorBadge consentStatus={member.guardianConsentStatus} />}
 
+      {member.isMinor && (
+        <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Parent or guardian</p>
+          {member.guardian?.name ? (
+            <dl className="mt-1 space-y-1">
+              <div className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">Name</dt>
+                <dd className="font-medium text-foreground">
+                  {member.guardian.name}
+                  {member.guardian.relationship ? ` (${member.guardian.relationship})` : ""}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">Phone</dt>
+                <dd className="text-foreground">{member.guardian.phone ?? "—"}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="text-foreground">{member.guardian.email ?? "—"}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="mt-1 text-muted-foreground">Not given yet in the app.</p>
+          )}
+        </div>
+      )}
+
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Email</dt>

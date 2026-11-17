@@ -25,7 +25,7 @@ info:
     | Pagination | Cursor based. `?limit=` (default 20, max 100) and `?cursor=`. Responses carry `next_cursor`, `null` on the last page. |
     | Caching | `GET` responses carry a weak `ETag`; send `If-None-Match` to get `304 Not Modified` on slow connections. |
     | Idempotency | Send an `Idempotency-Key` header (any unique string, e.g. a UUID) on `POST`s that create content: posts, prayer requests, messages and reports. A retry with the same key and the same user returns the original response (header `Idempotent-Replay: true`) instead of creating a duplicate. Keys are remembered for 24 hours. |
-    | Uploads | `POST /media` returns a signed `upload_url`; `PUT` the file bytes to it with the returned `upload_headers`; attach the `media_id` to a post, testimony, report or profile. Photos only (JPEG, PNG, WebP, HEIC), 10 MB at most; the app compresses to about 2 MB first. |
+    | Uploads | `POST /media` returns a signed `upload_url`; `PUT` the file bytes to it with the returned `upload_headers`; attach the `media_id` to a post, testimony, report or profile. Photos only (JPEG, PNG, WebP, HEIC), 2 MB at most; the app converts them to WebP under 2 MB first. |
     | Realtime | Optional WebSocket at `/v1/realtime`. Everything it pushes is also available by polling the REST endpoints. |
 
     ## Errors
@@ -325,6 +325,29 @@ paths:
       responses:
         '204': { description: Logged out }
   # ───────────────────────── Lookups ─────────────────────────
+  /lookups/app-config:
+    get:
+      tags: [Lookups]
+      operationId: getAppConfig
+      summary: How the back office is set up, for the app
+      description: >-
+        `join_requests.auto_approve`: a request to join a specific community is approved at once (back office
+        Settings > Join requests; on by default). When false the app shows the "request pending" state.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [join_requests]
+                properties:
+                  join_requests:
+                    type: object
+                    required: [auto_approve]
+                    properties:
+                      auto_approve: { type: boolean }
   /lookups/countries:
     get:
       tags: [Lookups]
@@ -354,7 +377,7 @@ paths:
       summary: Universities / high schools ("Select your university")
       security: []
       parameters:
-        - { name: type, in: query, schema: { type: string, enum: [university, high_school] } }
+        - { name: type, in: query, schema: { type: string, enum: [university, institute, high_school] } }
         - { name: country, in: query, schema: { type: string, example: UG } }
         - { name: q, in: query, schema: { type: string } }
         - { $ref: '#/components/parameters/Limit' }
@@ -401,6 +424,14 @@ paths:
                 phone: { type: string }
                 email: { type: string, format: email }
                 institution_id: { type: string }
+                year_of_study: { type: integer, minimum: 1, maximum: 7 }
+                home_church:
+                  type: object
+                  required: [name, location, pastor]
+                  properties:
+                    name: { type: string }
+                    location: { type: string }
+                    pastor: { type: string }
       responses:
         '200':
           description: OK
@@ -929,6 +960,7 @@ paths:
       summary: Community feed
       description: Screens *Community feed* and *General community feed*. Pinned announcements first, then newest.
       parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [post, question] }, description: 'Only this kind (questions for "Answer a question")' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
@@ -960,6 +992,8 @@ paths:
               required: [text]
               properties:
                 text: { type: string, maxLength: 5000 }
+                kind: { type: string, enum: [post, question], default: post }
+                anonymous: { type: boolean, default: false, description: 'Name hidden from students; moderators can still see who posted' }
                 media_ids:
                   type: array
                   maxItems: 4
@@ -1071,6 +1105,86 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Comment' }
+  /posts/{postId}/follow:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    put:
+      tags: [Feed]
+      operationId: followQuestion
+      summary: Follow a question (be told about new answers)
+      description: Questions only. Each new answer notifies followers (category replies), except its writer and the asker, who is told anyway.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowState' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Feed]
+      operationId: unfollowQuestion
+      summary: Stop following a question
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FollowState' }
+  /comments/{commentId}/vote:
+    parameters:
+      - name: commentId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Feed]
+      operationId: voteAnswer
+      summary: Mark an answer as helpful
+      description: Answers to questions only; one vote per member; not on your own answer (403 own_answer).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteState' }
+        '403': { description: Your own answer }
+        '404': { description: Not found or not a member }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Feed]
+      operationId: unvoteAnswer
+      summary: Remove your helpful vote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VoteState' }
+  /search/posts:
+    get:
+      tags: [Feed]
+      operationId: searchPosts
+      summary: Search posts and questions in your communities
+      description: Matches the text (at least 2 characters) of visible posts in communities you are a member of, newest first; blocked people are left out.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: kind, in: query, schema: { type: string, enum: [post, question] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Post' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   # ───────────────────────── Prayer ─────────────────────────
   /communities/{communityId}/prayer-requests:
     parameters:
@@ -1648,7 +1762,7 @@ paths:
       description: |
         Returns a pre-signed `upload_url` (PUT the bytes there with the given headers) and a `media_id` to
         reference in other requests. Media is attached to content only after it passes malware/size checks.
-        Limits: images ≤ 10 MB, video ≤ 200 MB.
+        Limits: images ≤ 2 MB (the app sends WebP), video ≤ 200 MB.
       requestBody:
         required: true
         content:
@@ -1660,6 +1774,7 @@ paths:
                 purpose: { type: string, enum: [profile_photo, post_photo, testimony_photo, testimony_video, report_evidence] }
                 content_type: { type: string, example: image/jpeg }
                 size_bytes: { type: integer }
+                duration_seconds: { type: number, maximum: 120, description: 'Required for testimony_video: story videos are at most 2 minutes' }
       responses:
         '201':
           description: OK
@@ -1855,9 +1970,17 @@ components:
           institution_type: university
           institution_id: 'b1f0c6e2-3c5a-4d0e-9a1e-2f6f3c1d8a77'
           password: 'a long passphrase'
+          year_of_study: 2
+          home_church: { name: Watoto Church, location: Kampala, pastor: Pastor John }
           accepted_terms: true
           accepted_code_of_conduct: true
-      required: [full_name, username, birthdate, country, institution_type, institution_id, password, accepted_terms, accepted_code_of_conduct]
+          accepted_national_activities: true
+      required: [full_name, username, birthdate, country, institution_type, password, accepted_terms, accepted_code_of_conduct, accepted_national_activities]
+      description: >-
+        Send `institution_id` from `GET /institutions`. Only for `institution_type: institute`, when the
+        institute is not listed, send `institution_name` instead: the institute is added (hidden from the
+        list until staff review it) or reused if one with that name exists in the country.
+        `high_school` is accepted only for older app versions.
       anyOf:
         - required: [email]
         - required: [phone]
@@ -1869,8 +1992,19 @@ components:
         country: { type: string, example: UG, description: 'ISO 3166-1 alpha-2 (UG, KE, RW)' }
         email: { type: string, format: email }
         phone: { type: string, example: '+256700000000', description: E.164 }
-        institution_type: { type: string, enum: [university, high_school] }
+        institution_type: { type: string, enum: [university, institute, high_school] }
         institution_id: { type: string }
+        institution_name: { type: string, minLength: 2, maxLength: 120, description: 'Institutes only: a name typed because it is not listed' }
+        year_of_study: { type: integer, minimum: 1, maximum: 7, description: Required for university students }
+        home_church:
+          type: object
+          description: Optional at sign-up (can be added later with `PATCH /me`); when sent, all three are required.
+          required: [name, location, pastor]
+          properties:
+            name: { type: string, maxLength: 120, example: Watoto Church }
+            location: { type: string, maxLength: 120, example: Kampala }
+            pastor: { type: string, maxLength: 120, example: Pastor John }
+        accepted_national_activities: { type: boolean, description: 'Agrees to take part in FOCUS national activities (must be true)' }
         password: { type: string, format: password, minLength: 8 }
         accepted_terms: { type: boolean }
         accepted_code_of_conduct: { type: boolean, description: Community guidelines shown at sign-up (BRD §8.2) }
@@ -1958,7 +2092,7 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        type: { type: string, enum: [university, high_school] }
+        type: { type: string, enum: [university, institute, high_school] }
         country: { type: string }
     UserRef:
       type: object
@@ -1983,6 +2117,16 @@ components:
         birthdate: { type: string, format: date }
         country: { type: string }
         institution: { $ref: '#/components/schemas/Institution' }
+        year_of_study: { type: [integer, 'null'], minimum: 1, maximum: 7 }
+        home_church:
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                name: { type: string }
+                location: { type: string }
+                pastor: { type: string }
+        accepted_national_activities: { type: boolean }
         minor_status:
           type: string
           enum: [adult, pending_guardian_consent, minor_consented]
@@ -2070,7 +2214,12 @@ components:
       properties:
         id: { type: string }
         community_id: { type: string }
-        author: { $ref: '#/components/schemas/UserRef' }
+        kind: { type: string, enum: [post, question], description: 'A question is answered in its comments' }
+        anonymous: { type: boolean }
+        author:
+          description: Null when the post is anonymous (moderators see the author in the back office)
+          oneOf: [{ $ref: '#/components/schemas/UserRef' }, { type: 'null' }]
+        is_mine: { type: boolean, description: The viewer wrote it (also for anonymous posts) }
         text: { type: string }
         media:
           type: array
@@ -2079,6 +2228,8 @@ components:
         like_count: { type: integer }
         comment_count: { type: integer }
         liked_by_me: { type: boolean }
+        follower_count: { type: integer, description: Questions only }
+        following: { type: boolean, description: Questions only; the viewer follows it }
         created_at: { type: string, format: date-time }
     Comment:
       type: object
@@ -2086,6 +2237,8 @@ components:
         id: { type: string }
         author: { $ref: '#/components/schemas/UserRef' }
         text: { type: string }
+        vote_count: { type: integer, description: Helpful votes (answers to questions) }
+        voted_by_me: { type: boolean }
         created_at: { type: string, format: date-time }
     PrayerResponse:
       type: object
@@ -2097,6 +2250,16 @@ components:
         anonymous: { type: boolean, description: True when the owner of an anonymous request replied on it }
         text: { type: string }
         created_at: { type: string, format: date-time }
+    FollowState:
+      type: object
+      properties:
+        follower_count: { type: integer }
+        following: { type: boolean }
+    VoteState:
+      type: object
+      properties:
+        vote_count: { type: integer }
+        voted_by_me: { type: boolean }
     ReactionState:
       type: object
       properties:
@@ -2259,7 +2422,7 @@ components:
         reason:
           type: string
           enum: [harassment_bullying, offensive_content, breaks_community_rules, spam_or_fake_profile, other]
-        details: { type: string, maxLength: 2000 }
+        details: { type: string, maxLength: 2000, description: "Required (not blank) when reason is other" }
         evidence_media_id: { type: [string, 'null'], description: Chat screenshot }
     PublicStory:
       type: object
@@ -2268,7 +2431,7 @@ components:
         quote: { type: string }
         student_name: { type: string }
         institution_name: { type: string }
-        institution_type: { type: string, enum: [university, high_school] }
+        institution_type: { type: string, enum: [university, institute, high_school] }
         duration_seconds: { type: integer }
         thumbnail_url: { type: string, format: uri }
         video_url: { type: string, format: uri }

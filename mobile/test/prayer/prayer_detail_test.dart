@@ -7,6 +7,8 @@ import 'package:focus_1/features/prayer/presentation/prayer_request_screen.dart'
 import 'package:focus_1/features/testimony/domain/testimony.dart';
 import 'package:focus_1/features/testimony/presentation/testimony_screen.dart';
 
+import 'package:focus_1/core/widgets/post_photo_art.dart';
+
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
 import '../support/fakes.dart';
@@ -181,10 +183,29 @@ void main() {
     expect(find.text('David Okello · Makerere University'), findsOneWidget);
     expect(find.text('Report'), findsOneWidget);
 
+    // The story's photo sits under the text.
+    expect(find.byType(PostPhotoArt), findsOneWidget);
+    await tester.ensureVisible(
+      find.widgetWithText(OutlinedButton, 'Encouraged'),
+    );
     await tester.tap(find.widgetWithText(OutlinedButton, 'Encouraged'));
     await settle(tester);
     expect(find.text('1 person encouraged'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Encouraged'), findsOneWidget);
+  });
+
+  testWidgets('screen 53: a video story plays when tapped', (tester) async {
+    final container = await pumpFcuApp(tester);
+    await goTo(tester, container, '/testimony/growth-circle-testimony-1');
+
+    expect(find.text('How FCU became my second family'), findsOneWidget);
+    expect(find.textContaining('family away from home'), findsOneWidget);
+    expect(find.text('1:50'), findsOneWidget, reason: 'length before play');
+
+    await tester.tap(find.byIcon(Icons.play_arrow_rounded));
+    await settle(tester);
+    expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+    expect(find.textContaining('/ 1:50'), findsOneWidget);
   });
 
   testWidgets('screen 53: a pending story by someone else is not shown', (

@@ -51,7 +51,7 @@ void main() {
     await tester.pumpWidget(_wrap(Membership.empty));
     await settle(tester);
 
-    expect(find.text('Specific community'), findsOneWidget);
+    expect(find.bySemanticsLabel('Specific community'), findsOneWidget);
     expect(find.text('Only 1 allowed · Pick below'), findsOneWidget);
     expect(find.text('Growth Circle'), findsOneWidget);
     expect(find.text('Life & Faith Circle'), findsOneWidget);

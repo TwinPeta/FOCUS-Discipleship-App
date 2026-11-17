@@ -212,12 +212,12 @@ router.post('/members/:id/remind', C.allow(SYS, SM), (req, res, next) => {
 const COUNTRY_CODES = Object.fromEntries(Object.entries(C.COUNTRY_NAMES).map(([k, v]) => [v.toLowerCase(), k]));
 function instInput(body, partial) {
   const b = check(body, {
-    name: { required: !partial, type: 'string', min: 2, max: 120 }, type: { required: !partial, type: 'string', enum: ['UNIVERSITY', 'HIGH_SCHOOL'] },
+    name: { required: !partial, type: 'string', min: 2, max: 120 }, type: { required: !partial, type: 'string', enum: ['UNIVERSITY', 'INSTITUTE', 'HIGH_SCHOOL'] },
     country: { type: 'string' }, city: { required: !partial, type: 'string', min: 2 }, generalCoverUrl: { type: 'string' },
   });
   const out = {};
   if (b.name) out.name = b.name.trim();
-  if (b.type) out.type = b.type === 'HIGH_SCHOOL' ? 'high_school' : 'university';
+  if (b.type) out.type = { HIGH_SCHOOL: 'high_school', INSTITUTE: 'institute' }[b.type] || 'university';
   if (b.country !== undefined || !partial) {
     const code = COUNTRY_CODES[String(b.country || 'Uganda').toLowerCase()] || (C.COUNTRY_NAMES[String(b.country).toUpperCase()] && String(b.country).toUpperCase());
     if (!code) throw validation([{ field: 'country', message: 'must be one of: ' + Object.values(C.COUNTRY_NAMES).join(', ') }]);

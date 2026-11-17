@@ -17,6 +17,9 @@ router.post('/reports', idempotency, (req, res, next) => {
       details: { type: 'string', max: 2000 },
       evidence_media_id: { type: 'string' },
     });
+    // Nothing empty: "other" says nothing on its own, so it needs details.
+    b.details = typeof b.details === 'string' ? b.details.trim() : undefined;
+    if (b.reason === 'other' && !b.details) throw validation([{ field: 'details', message: 'tell us what happened' }]);
     if (!store.get(TARGETS[b.target_type], b.target_id)) throw notFound('Report target');
     if (b.target_type === 'user' && b.target_id === req.user.id) throw validation([{ field: 'target_id', message: 'cannot report yourself' }]);
     if (b.evidence_media_id) {

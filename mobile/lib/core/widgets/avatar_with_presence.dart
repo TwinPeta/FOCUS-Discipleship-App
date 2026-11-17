@@ -13,14 +13,17 @@ class AvatarWithPresence extends StatelessWidget {
     this.photoPath,
     this.size = 44,
     this.online = false,
-    this.backgroundColor = AppColors.cream,
+    this.backgroundColor,
   });
 
   final String initials;
   final String? photoPath;
   final double size;
   final bool online;
-  final Color backgroundColor;
+  final Color? backgroundColor;
+
+  /// [backgroundColor], or the theme's cream.
+  Color get _backgroundColor => backgroundColor ?? AppColors.cream;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +38,7 @@ class AvatarWithPresence extends StatelessWidget {
             initials: initials,
             photoPath: photoPath,
             size: size,
-            backgroundColor: backgroundColor,
+            backgroundColor: _backgroundColor,
           ),
           if (online)
             Positioned(

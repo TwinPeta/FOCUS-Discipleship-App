@@ -46,7 +46,7 @@ class CheckRow extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: value
-                    ? const Icon(Icons.check, size: 14, color: AppColors.ink)
+                    ? Icon(Icons.check, size: 14, color: AppColors.ink)
                     : null,
               ),
               const SizedBox(width: 12),

@@ -5,6 +5,7 @@ import '../../../activity/domain/activity_event.dart';
 import '../../../activity/presentation/providers/activity_providers.dart';
 import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/testimony.dart';
+import '../../data/testimony_repository.dart';
 
 class TestimoniesController
     extends FamilyAsyncNotifier<List<Testimony>, String> {
@@ -17,7 +18,10 @@ class TestimoniesController
   }
 
   /// Optimistic insert as pending; removed again and rethrown on failure.
-  Future<void> submitStory(Testimony testimony) async {
+  Future<void> submitStory(
+    Testimony testimony, {
+    StoryAttachments attachments = StoryAttachments.none,
+  }) async {
     final pending = testimony.withStatus(TestimonyStatus.pending);
     final current = state.valueOrNull ?? const <Testimony>[];
     state = AsyncValue.data([
@@ -27,7 +31,7 @@ class TestimoniesController
     try {
       final saved = await ref
           .read(testimonyRepositoryProvider)
-          .submitStory(pending);
+          .submitStory(pending, attachments: attachments);
       // The server may assign its own id: swap the stored copy in.
       state = AsyncValue.data([
         for (final t in state.valueOrNull ?? const <Testimony>[])

@@ -9,7 +9,9 @@ import 'package:focus_1/core/widgets/otp_field.dart';
 import 'package:focus_1/features/auth/presentation/forgot_password_screen.dart';
 
 import '../support/fake_backend.dart';
-import '../support/fakes/auth_repository.dart';
+
+import 'package:focus_1/demo/fakes/auth_repository.dart';
+
 import '../support/pump_utils.dart';
 
 void main() {

@@ -282,11 +282,14 @@ const SETTING_DEFAULTS = {
   consents: { accountCreationText: 'I agree to the terms of use.', communitySpacesText: 'I agree to follow the community charter.', mentorContactText: 'I agree to be contacted by my mentor.' },
   minors: { ageThreshold: 18, requireGuardianConsent: true, limitAdultDirectMessages: true, requireVerifiedMentors: true },
   retention: { inactiveRetentionMonths: 24, deletionDeadlineDays: 30 },
+  // On: a request to join a specific community is approved at once (no waiting for a super-mentor who may be offline).
+  // Off: requests wait for approval in the app or the back office, as before.
+  joinRequests: { autoApprove: true },
 };
 const SETTING_RULES = {
   charter: { version: { required: true, type: 'string' }, effectiveDate: { required: true, type: 'string' }, text: { required: true, type: 'string', min: 10 } },
   consents: { accountCreationText: { required: true, type: 'string', min: 5 }, communitySpacesText: { required: true, type: 'string', min: 5 }, mentorContactText: { required: true, type: 'string', min: 5 } },
-  minors: {}, retention: {},
+  minors: {}, retention: {}, joinRequests: {},
 };
 const intIn = (v, lo, hi, field) => { if (!Number.isInteger(v) || v < lo || v > hi) throw validation([{ field, message: `must be a whole number between ${lo} and ${hi}` }]); return v; };
 router.get('/settings/inactivity-threshold', C.allow(SYS, CA, SM), (_req, res) => res.json({ days: C.getSetting('inactivityDays', 14) }));

@@ -10,6 +10,8 @@ const DEMO_PASSWORD = 'Password123!';
 function seed() {
   const hash = bcrypt.hashSync(DEMO_PASSWORD, 10);
   ensureBadges();
+  // The tests cover manual approval; auto-approval (the default without this row) has its own test.
+  store.insert('settings', { key: 'joinRequests', value: { autoApprove: false } });
 
   const makerere = store.insert('institutions', { name: 'Makerere University', type: 'university', country: 'UG' });
   const kyambogo = store.insert('institutions', { name: 'Kyambogo University', type: 'university', country: 'UG' });

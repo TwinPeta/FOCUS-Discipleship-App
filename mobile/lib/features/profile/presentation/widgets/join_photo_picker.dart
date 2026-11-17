@@ -12,6 +12,34 @@ import '../../../../core/theme/app_gradients.dart';
 /// The Join form's 76px circular photo picker: dashed border, person icon,
 /// amber "+" badge. Tapping opens a gallery/camera sheet, then [pickPhoto],
 /// which asks for the camera or photos permission first.
+/// Asks "gallery or camera", then picks (and resizes) a photo. Returns its
+/// path, or null when cancelled.
+Future<String?> choosePhoto(BuildContext context, WidgetRef ref) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Choose from gallery'),
+            onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: const Text('Take a photo'),
+            onTap: () => Navigator.of(context).pop(ImageSource.camera),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (source == null || !context.mounted) return null;
+  final picked = await pickPhoto(context, ref, source: source);
+  return picked?.path;
+}
+
 class JoinPhotoPicker extends ConsumerWidget {
   const JoinPhotoPicker({
     super.key,
@@ -23,32 +51,8 @@ class JoinPhotoPicker extends ConsumerWidget {
   final ValueChanged<String> onPhotoPicked;
 
   Future<void> _showSourceSheet(BuildContext context, WidgetRef ref) async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
-              onTap: () => Navigator.of(context).pop(ImageSource.camera),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) return;
-    if (!context.mounted) return;
-    final picked = await pickPhoto(context, ref, source: source);
-    if (picked != null) {
-      onPhotoPicked(picked.path);
-    }
+    final path = await choosePhoto(context, ref);
+    if (path != null) onPhotoPicked(path);
   }
 
   @override
@@ -85,8 +89,8 @@ class JoinPhotoPicker extends ConsumerWidget {
                     ),
                     child: hasPhoto
                         ? null
-                        : const CustomPaint(
-                            painter: DashedCirclePainter(),
+                        : CustomPaint(
+                            painter: const DashedCirclePainter(),
                             child: Center(
                               child: Icon(
                                 Icons.person_outline_rounded,
@@ -108,11 +112,7 @@ class JoinPhotoPicker extends ConsumerWidget {
                         border: Border.all(color: AppColors.white, width: 2),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: AppColors.ink,
-                      ),
+                      child: Icon(Icons.add, size: 16, color: AppColors.ink),
                     ),
                   ),
                 ],
@@ -122,7 +122,7 @@ class JoinPhotoPicker extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Add photo',
+          hasPhoto ? 'Change photo' : 'Add photo',
           style: AppTextStyles.fieldLabel.copyWith(fontWeight: FontWeight.w600),
         ),
       ],

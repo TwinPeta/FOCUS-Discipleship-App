@@ -35,10 +35,7 @@ class SearchField extends StatelessWidget {
           hintStyle: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.placeholder,
           ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            color: AppColors.placeholder,
-          ),
+          prefixIcon: Icon(Icons.search_rounded, color: AppColors.placeholder),
           filled: true,
           fillColor: enabled ? AppColors.white : AppColors.cream,
           contentPadding: const EdgeInsets.symmetric(
@@ -47,28 +44,19 @@ class SearchField extends StatelessWidget {
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.inputBorder,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: AppColors.inputBorder, width: 1.5),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.inputBorder,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: AppColors.inputBorder, width: 1.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
+            borderSide: BorderSide(color: AppColors.ink, width: 1.5),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.inputBorder,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: AppColors.inputBorder, width: 1.5),
           ),
         ),
       ),

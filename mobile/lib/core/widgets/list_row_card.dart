@@ -29,53 +29,62 @@ class ListRowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: opacity,
+      // The card (colour + soft shadow) is painted as ink, so the tap ripple
+      // shows on it and the shadow stays outside: a shadow under a
+      // see-through box greys the whole card.
       child: Material(
-        color: AppColors.white,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: AppShadows.soft,
-            ),
-            child: Row(
-              children: [
-                SizedBox(width: 48, height: 48, child: leading),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.cardTitle.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: AppShadows.soft,
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  SizedBox(width: 48, height: 48, child: leading),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          subtitle!,
-                          style: AppTextStyles.body.copyWith(
-                            fontSize: 12.5,
-                            color: AppColors.inkDeemphasized80,
+                          title,
+                          style: AppTextStyles.cardTitle.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle!,
+                            style: AppTextStyles.body.copyWith(
+                              fontSize: 12.5,
+                              color: AppColors.inkDeemphasized80,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-              ],
+                  if (trailing != null) ...[
+                    const SizedBox(width: 8),
+                    trailing!,
+                  ],
+                ],
+              ),
             ),
           ),
         ),

@@ -5,11 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../features/community/domain/membership.dart';
-import '../../features/community/presentation/providers/membership_provider.dart';
 import '../../features/create/presentation/create_menu_sheet.dart';
+import '../../features/messaging/presentation/providers/messaging_providers.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
+import '../push/app_icon_badge.dart';
+import 'count_badge.dart';
+import '../router/navigation.dart';
 
 /// The four top-level destinations.
 enum AppTab { home, communities, messages, profile }
@@ -25,29 +28,39 @@ String? approvedCommunityId(Membership m) =>
     m.status == MembershipStatus.approved ? m.communityId : null;
 
 /// Bottom navigation on the top-level screens (roadmap A1.1):
-/// Home (General campus feed) | Communities (your specific community's feed,
-/// or the hub to find one) | Messages | Profile, with a centre Create button
+/// Home (General campus feed) | Communities (the hub, as in the design) |
+/// Messages | Profile, with a centre Create button
 /// that opens the Create menu. The label shows on the selected tab only.
 /// Uses `go`, so switching tabs never grows the back stack.
 class AppBottomNav extends ConsumerWidget {
-  const AppBottomNav({super.key, required this.current});
+  const AppBottomNav({
+    super.key,
+    required this.current,
+    this.handlesBack = true,
+  });
 
   final AppTab current;
 
-  static String communityRoute(Membership m) {
-    final id = approvedCommunityId(m);
-    return id != null ? '/community/$id/feed' : '/communities';
-  }
+  /// False on screens with their own Back arrow (community pages,
+  /// Messages): the phone's Back then does what that arrow does.
+  final bool handlesBack;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final membership =
-        ref.watch(membershipProvider).valueOrNull ?? Membership.empty;
+  Widget build(BuildContext context, WidgetRef ref) =>
+      // Phone Back on a main tab goes Home; on Home the app closes.
+      SystemBack(
+        onBack: current == AppTab.home || !handlesBack
+            ? null
+            : () => context.go('/general-feed'),
+        child: _bar(context, ref),
+      );
+
+  Widget _bar(BuildContext context, WidgetRef ref) {
     void select(AppTab tab) {
       if (tab == current) return;
       context.go(switch (tab) {
         AppTab.home => '/general-feed',
-        AppTab.communities => communityRoute(membership),
+        AppTab.communities => '/communities',
         AppTab.messages => '/messages',
         AppTab.profile => '/profile',
       });
@@ -60,6 +73,7 @@ class AppBottomNav extends ConsumerWidget {
       String label,
       String tooltip, {
       bool showLabel = true,
+      int badge = 0,
     }) => Expanded(
       child: _NavTab(
         icon: icon,
@@ -67,13 +81,18 @@ class AppBottomNav extends ConsumerWidget {
         label: label,
         tooltip: tooltip,
         showLabel: showLabel,
+        badge: badge,
         selected: t == current,
         onTap: () => select(t),
       ),
     );
+    final unreadMessages = ref.watch(unreadMessageCountProvider);
+    // The phone's home-screen icon shows the same total (like WhatsApp).
+    // Skipped when the number has not changed.
+    updateAppIconBadge(unreadMessages);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
         border: Border(top: BorderSide(color: AppColors.cream)),
       ),
@@ -102,10 +121,11 @@ class AppBottomNav extends ConsumerWidget {
               const _CreateButton(),
               tab(
                 AppTab.messages,
-                Icons.chat_bubble_outline_rounded,
-                Icons.chat_bubble_rounded,
+                Icons.chat_outlined,
+                Icons.chat_rounded,
                 'Messages',
                 'Messages',
+                badge: unreadMessages,
               ),
               tab(
                 AppTab.profile,
@@ -131,6 +151,7 @@ class _NavTab extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.showLabel = true,
+    this.badge = 0,
   });
 
   final IconData icon;
@@ -143,12 +164,15 @@ class _NavTab extends StatelessWidget {
   /// When false the tab never shows its text, only the icon.
   final bool showLabel;
 
+  /// Unread count shown on the icon (0: none).
+  final int badge;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: badge > 0 ? '$label, $badge unread' : label,
       excludeSemantics: true,
       child: Tooltip(
         message: tooltip,
@@ -168,7 +192,21 @@ class _NavTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(selected ? selectedIcon : icon, color: AppColors.ink),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        selected ? selectedIcon : icon,
+                        color: AppColors.ink,
+                      ),
+                      if (badge > 0)
+                        Positioned(
+                          top: -8,
+                          right: -12,
+                          child: CountBadge(count: badge),
+                        ),
+                    ],
+                  ),
                   if (selected && showLabel)
                     Text(
                       label,
@@ -214,7 +252,7 @@ class _CreateButton extends StatelessWidget {
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => unawaited(showCreateMenu(context)),
-              child: const SizedBox(
+              child: SizedBox(
                 width: _createSize,
                 height: _createSize,
                 child: Icon(Icons.add_rounded, size: 30, color: AppColors.ink),
