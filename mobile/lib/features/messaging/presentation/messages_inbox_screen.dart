@@ -60,7 +60,10 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
     final threadsAsync = ref.watch(threadsProvider);
 
     return Scaffold(
-      bottomNavigationBar: const AppBottomNav(current: AppTab.messages),
+      bottomNavigationBar: const AppBottomNav(
+        current: AppTab.messages,
+        handlesBack: false,
+      ),
       body: AmberHeaderScaffold(
         title: 'Messages',
         subtitle: _roleFilter.label,

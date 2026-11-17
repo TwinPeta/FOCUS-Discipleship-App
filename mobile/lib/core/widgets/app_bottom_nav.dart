@@ -12,6 +12,7 @@ import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
 import '../push/app_icon_badge.dart';
 import 'count_badge.dart';
+import '../router/navigation.dart';
 
 /// The four top-level destinations.
 enum AppTab { home, communities, messages, profile }
@@ -32,12 +33,29 @@ String? approvedCommunityId(Membership m) =>
 /// that opens the Create menu. The label shows on the selected tab only.
 /// Uses `go`, so switching tabs never grows the back stack.
 class AppBottomNav extends ConsumerWidget {
-  const AppBottomNav({super.key, required this.current});
+  const AppBottomNav({
+    super.key,
+    required this.current,
+    this.handlesBack = true,
+  });
 
   final AppTab current;
 
+  /// False on screens with their own Back arrow (community pages,
+  /// Messages): the phone's Back then does what that arrow does.
+  final bool handlesBack;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      // Phone Back on a main tab goes Home; on Home the app closes.
+      SystemBack(
+        onBack: current == AppTab.home || !handlesBack
+            ? null
+            : () => context.go('/general-feed'),
+        child: _bar(context, ref),
+      );
+
+  Widget _bar(BuildContext context, WidgetRef ref) {
     void select(AppTab tab) {
       if (tab == current) return;
       context.go(switch (tab) {

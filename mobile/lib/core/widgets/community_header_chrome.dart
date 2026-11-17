@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_text_styles.dart';
 import 'round_icon_button.dart';
+import '../router/navigation.dart';
 
 /// One place in a community's "⋯" menu (General, Feed, Prayer wall, ...).
 class SectionMenuItem {
@@ -59,8 +60,19 @@ class CommunityHeaderChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Phone Back = the on-screen Back; General pages (no Back) go Home,
+    // and Home itself lets the app close.
+    final atHome = GoRouterState.of(context).uri.path == '/general-feed';
+    final VoidCallback? systemBack = showBack
+        ? (onBack ??
+              () =>
+                  context.canPop() ? context.pop() : context.go('/communities'))
+        : (atHome ? null : () => context.go('/general-feed'));
     // Clip: the cover art must not paint over the page below the header.
-    return ClipRect(child: _content(context));
+    return SystemBack(
+      onBack: systemBack,
+      child: ClipRect(child: _content(context)),
+    );
   }
 
   Widget _content(BuildContext context) {

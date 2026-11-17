@@ -47,6 +47,11 @@ class AmberHeaderScaffold extends StatelessWidget {
     // While the keyboard is up the header shrinks to the back row and a
     // one-line title, so the field being typed in is never squeezed out.
     final compact = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final back = onBack ?? () => popOr(context, backFallback);
+    return SystemBack(onBack: back, child: _scaffold(context, compact, back));
+  }
+
+  Widget _scaffold(BuildContext context, bool compact, VoidCallback back) {
     return Scaffold(
       backgroundColor: AppColors.page,
       body: Column(
@@ -75,8 +80,7 @@ class AmberHeaderScaffold extends StatelessWidget {
                         RoundIconButton(
                           icon: Icons.arrow_back_rounded,
                           semanticLabel: 'Back',
-                          onPressed:
-                              onBack ?? () => popOr(context, backFallback),
+                          onPressed: back,
                         ),
                         if (headerAction != null) ...[
                           const Spacer(),
