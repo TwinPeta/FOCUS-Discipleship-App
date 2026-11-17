@@ -2323,7 +2323,7 @@ components:
         reason:
           type: string
           enum: [harassment_bullying, offensive_content, breaks_community_rules, spam_or_fake_profile, other]
-        details: { type: string, maxLength: 2000 }
+        details: { type: string, maxLength: 2000, description: "Required (not blank) when reason is other" }
         evidence_media_id: { type: [string, 'null'], description: Chat screenshot }
     PublicStory:
       type: object

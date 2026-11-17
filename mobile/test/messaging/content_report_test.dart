@@ -168,8 +168,21 @@ void main() {
     await settle(tester);
     expect(find.text('Report this prayer request'), findsOneWidget);
 
+    // Nothing is sent empty: no reason, or "Something else" with no
+    // words (spaces do not count), keeps Send off.
+    ElevatedButton send() =>
+        tester.widget(find.widgetWithText(ElevatedButton, 'Send report'));
+    expect(send().onPressed, isNull, reason: 'no reason picked');
     await tester.tap(find.text('Something else'));
     await settle(tester);
+    expect(send().onPressed, isNull, reason: 'Something else needs words');
+    expect(find.text('Tell us what happened (required)'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.pump();
+    expect(send().onPressed, isNull, reason: 'blank is not words');
+    await tester.enterText(find.byType(TextField), 'Asks for money');
+    await tester.pump();
+    expect(send().onPressed, isNotNull);
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send report'));
     await settle(tester, steps: 20);
 
@@ -179,6 +192,7 @@ void main() {
       reportRepositoryProvider,
     ) as FakeReportRepository).reports.single;
     expect(report.targetType, ReportTargetType.prayerRequest);
+    expect(report.details, 'Asks for money');
 
     await tester.tap(find.text('Back to community'));
     await settle(tester);

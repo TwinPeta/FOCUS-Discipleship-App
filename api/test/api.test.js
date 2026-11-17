@@ -312,6 +312,10 @@ test('messages: send, unread, filters, block', async () => {
   assert.equal((await call('GET', `/v1/conversations/${conv.body.id}/messages`, { token: outsider })).status, 404);
 
   // report then block
+  // "other" needs details (blank does not count); the other reasons and the screenshot are optional.
+  const other = (details) => call('POST', '/v1/reports', { token: student, body: { target_type: 'user', target_id: ctx.superMentor.id, reason: 'other', details } });
+  assert.equal((await other(undefined)).status, 422);
+  assert.equal((await other('   ')).status, 422);
   const rep = await call('POST', '/v1/reports', { token: student, body: { target_type: 'user', target_id: ctx.superMentor.id, reason: 'spam_or_fake_profile' } });
   assert.equal(rep.status, 201);
   assert.equal((await call('PUT', `/v1/users/${ctx.superMentor.id}/block`, { token: student })).status, 204);
