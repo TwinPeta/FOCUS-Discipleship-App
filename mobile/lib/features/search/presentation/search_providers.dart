@@ -9,6 +9,7 @@ import '../../community/presentation/providers/community_providers.dart';
 import '../../community/presentation/providers/membership_provider.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../data/search_repository.dart';
+import '../../feed/domain/post.dart';
 import '../domain/search_results.dart';
 
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
@@ -36,7 +37,7 @@ final searchResultsProvider = FutureProvider.autoDispose
             membership.communityId != null)
           membership.communityId!,
       ];
-      return ref
+      final found = await ref
           .watch(searchRepositoryProvider)
           .search(
             query,
@@ -47,6 +48,17 @@ final searchResultsProvider = FutureProvider.autoDispose
               myId: profile.id,
             ),
           );
+      // Posts come from the server's post search. If it fails (or is not
+      // deployed yet), communities and people still show.
+      var posts = const <Post>[];
+      try {
+        posts = await ref.watch(postRepositoryProvider).searchPosts(query);
+      } catch (_) {}
+      return SearchResults(
+        communities: found.communities,
+        people: found.people,
+        posts: posts,
+      );
     });
 
 /// Recent searches, newest first. Session-only (in memory), capped at

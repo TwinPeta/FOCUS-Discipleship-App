@@ -298,4 +298,68 @@ class FakePostRepository implements PostRepository {
       return;
     }
   }
+
+  /// Comment ids the demo user marked helpful.
+  final Set<String> _votedByMe = {};
+
+  /// Who the demo user is, so they cannot vote on their own answers.
+  String? myId;
+
+  @override
+  Future<Post> setFollowing(String postId, {required bool following}) async {
+    await Future.delayed(latency);
+    for (final posts in _byCommunity.values) {
+      final index = posts.indexWhere((p) => p.id == postId);
+      if (index == -1) continue;
+      final current = posts[index];
+      if (current.kind != PostKind.question) {
+        throw ArgumentError('Only questions can be followed: $postId');
+      }
+      if (current.following == following) return _withCount(current);
+      final updated = current.copyWith(
+        following: following,
+        followerCount: current.followerCount + (following ? 1 : -1),
+      );
+      posts[index] = updated;
+      return _withCount(updated);
+    }
+    throw ArgumentError('Unknown post id: $postId');
+  }
+
+  @override
+  Future<({int count, bool mine})> setVoted(
+    String commentId, {
+    required bool voted,
+  }) async {
+    await Future.delayed(latency);
+    for (final comments in _comments.values) {
+      final index = comments.indexWhere((c) => c.id == commentId);
+      if (index == -1) continue;
+      final current = comments[index];
+      if (myId != null && current.author.id == myId) {
+        throw const OwnAnswerVote();
+      }
+      if (current.votedByMe != voted) {
+        voted ? _votedByMe.add(commentId) : _votedByMe.remove(commentId);
+        comments[index] = current.copyWith(
+          votedByMe: voted,
+          voteCount: current.voteCount + (voted ? 1 : -1),
+        );
+      }
+      return (count: comments[index].voteCount, mine: voted);
+    }
+    throw ArgumentError('Unknown comment id: $commentId');
+  }
+
+  @override
+  Future<List<Post>> searchPosts(String query) async {
+    await Future.delayed(latency);
+    final q = query.trim().toLowerCase();
+    if (q.length < 2) return const [];
+    return [
+      for (final posts in _byCommunity.values)
+        for (final p in posts)
+          if (_visible(p) && p.body.toLowerCase().contains(q)) _withCount(p),
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
 }

@@ -1,5 +1,6 @@
 import '../../community/domain/community.dart';
 import '../../community/domain/member_profile.dart';
+import '../../feed/domain/post.dart';
 
 /// What the signed-in user may search over: their institution's
 /// communities, and the people in the communities they belong to.
@@ -23,12 +24,19 @@ class SearchScope {
 
 /// Search screen (62) results, in display order.
 class SearchResults {
-  const SearchResults({this.communities = const [], this.people = const []});
+  const SearchResults({
+    this.communities = const [],
+    this.people = const [],
+    this.posts = const [],
+  });
 
   static const empty = SearchResults();
 
   final List<Community> communities;
   final List<MemberProfile> people;
 
-  bool get isEmpty => communities.isEmpty && people.isEmpty;
+  /// Posts and questions whose text matches, in the member's communities.
+  final List<Post> posts;
+
+  bool get isEmpty => communities.isEmpty && people.isEmpty && posts.isEmpty;
 }

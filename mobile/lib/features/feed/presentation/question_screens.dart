@@ -61,7 +61,9 @@ class QuestionBody extends ConsumerWidget {
         final byRole = (a.author.role == PersonRole.member ? 1 : 0).compareTo(
           b.author.role == PersonRole.member ? 1 : 0,
         );
-        return byRole != 0 ? byRole : a.createdAt.compareTo(b.createdAt);
+        if (byRole != 0) return byRole;
+        final byVotes = b.voteCount.compareTo(a.voteCount);
+        return byVotes != 0 ? byVotes : a.createdAt.compareTo(b.createdAt);
       });
     final count = answersAsync.hasValue
         ? answers.length
@@ -131,14 +133,20 @@ class QuestionBody extends ConsumerWidget {
                       style: TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      answersLabel(count),
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ),
+                  const SizedBox(width: 8),
+                  _FollowButton(question: question, online: online),
                 ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                [
+                  answersLabel(count),
+                  if (question.followerCount > 0)
+                    question.followerCount == 1
+                        ? '1 follower'
+                        : '${question.followerCount} followers',
+                ].join(' · '),
+                style: AppTextStyles.bodyMedium,
               ),
             ],
           ),
@@ -164,6 +172,19 @@ class QuestionBody extends ConsumerWidget {
           for (final a in answers)
             _AnswerCard(
               answer: a,
+              mine: a.author.id == me,
+              online: online,
+              onVote: () async {
+                try {
+                  await ref
+                      .read(postCommentsProvider(question.id).notifier)
+                      .toggleVote(a.id);
+                } catch (_) {
+                  if (context.mounted) {
+                    showErrorSnack(context, 'Could not save your vote.');
+                  }
+                }
+              },
               place: _placeOf(ref, question),
               onReport: a.author.id == me
                   ? null
@@ -187,11 +208,17 @@ class QuestionBody extends ConsumerWidget {
 class _AnswerCard extends StatelessWidget {
   const _AnswerCard({
     required this.answer,
+    required this.mine,
+    required this.online,
+    required this.onVote,
     required this.place,
     required this.onReport,
   });
 
   final Comment answer;
+  final bool mine;
+  final bool online;
+  final VoidCallback onVote;
   final String? place;
   final VoidCallback? onReport;
 
@@ -266,6 +293,13 @@ class _AnswerCard extends StatelessWidget {
                 answer.text,
                 style: AppTextStyles.body.copyWith(height: 1.45),
               ),
+            ),
+            const SizedBox(height: 6),
+            _HelpfulButton(
+              count: answer.voteCount,
+              voted: answer.votedByMe,
+              // Not on your own answer; not offline.
+              onTap: mine || !online ? null : onVote,
             ),
           ],
         ),
@@ -449,6 +483,111 @@ class _WriteAnswerScreenState extends ConsumerState<WriteAnswerScreen> {
           ],
         ),
       },
+    );
+  }
+}
+
+class _FollowButton extends ConsumerWidget {
+  const _FollowButton({required this.question, required this.online});
+
+  final Post question;
+  final bool online;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final following = question.following;
+    return Semantics(
+      toggled: following,
+      child: OutlinedButton.icon(
+        onPressed: online
+            ? () async {
+                try {
+                  await ref
+                      .read(postDetailProvider(question.id).notifier)
+                      .toggleFollow();
+                } catch (_) {
+                  if (context.mounted) {
+                    showErrorSnack(context, 'Could not save. Try again.');
+                  }
+                }
+              }
+            : null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.ink,
+          backgroundColor: following ? AppColors.honey : null,
+          side: BorderSide(color: AppColors.inputBorder, width: 1.5),
+          minimumSize: const Size(44, 44),
+          shape: const StadiumBorder(),
+        ),
+        icon: Icon(
+          following
+              ? Icons.notifications_active_rounded
+              : Icons.notifications_none_rounded,
+          size: 18,
+        ),
+        label: Text(
+          following ? 'Following' : 'Follow',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Helpful · n" on an answer: one vote per member, not on your own.
+class _HelpfulButton extends StatelessWidget {
+  const _HelpfulButton({
+    required this.count,
+    required this.voted,
+    required this.onTap,
+  });
+
+  final int count;
+  final bool voted;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      toggled: voted,
+      enabled: onTap != null,
+      label: voted
+          ? 'You found this helpful. $count in all'
+          : 'Mark as helpful. $count so far',
+      excludeSemantics: true,
+      child: Material(
+        color: voted ? AppColors.honey : AppColors.cream,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 36, minWidth: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    voted ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                    size: 16,
+                    color: AppColors.ink,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    count == 0 ? 'Helpful' : 'Helpful · $count',
+                    style: AppTextStyles.chip.copyWith(
+                      color: AppColors.ink,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

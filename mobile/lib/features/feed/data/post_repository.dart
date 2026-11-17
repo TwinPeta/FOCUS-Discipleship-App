@@ -36,6 +36,26 @@ abstract class PostRepository {
   /// Deletes a post. Only its author may: throws [PostPermissionDenied]
   /// for anyone else.
   Future<void> deletePost(String postId, {required String byUserId});
+
+  /// Questions only: follow (be told about new answers) or stop. Idempotent;
+  /// returns the question with its new follow state.
+  Future<Post> setFollowing(String postId, {required bool following});
+
+  /// A "helpful" vote on an answer (not your own). Idempotent; returns the
+  /// answer's new count and whether you voted.
+  Future<({int count, bool mine})> setVoted(
+    String commentId, {
+    required bool voted,
+  });
+
+  /// Posts and questions in the member's communities whose text matches
+  /// [query] (at least 2 characters), newest first.
+  Future<List<Post>> searchPosts(String query);
+}
+
+/// Thrown by [PostRepository.setVoted] on your own answer.
+class OwnAnswerVote implements Exception {
+  const OwnAnswerVote();
 }
 
 class PostPermissionDenied implements Exception {

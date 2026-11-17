@@ -49,6 +49,8 @@ class Post {
     this.anonymous = false,
     this.isMine = false,
     this.pinned = false,
+    this.following = false,
+    this.followerCount = 0,
   });
 
   final String id;
@@ -77,6 +79,11 @@ class Post {
   /// Pinned by a leader: shown first, as an announcement.
   final bool pinned;
 
+  /// Questions: the viewer follows it (told about new answers), and how
+  /// many people do.
+  final bool following;
+  final int followerCount;
+
   /// The name to show: "Anonymous" for anonymous posts.
   String get displayName => anonymous ? 'Anonymous' : author.name;
   String get displayInitials => anonymous ? '?' : author.initials;
@@ -98,6 +105,8 @@ class Post {
     bool? anonymous,
     bool? isMine,
     bool? pinned,
+    bool? following,
+    int? followerCount,
   }) {
     return Post(
       id: id ?? this.id,
@@ -116,6 +125,8 @@ class Post {
       anonymous: anonymous ?? this.anonymous,
       isMine: isMine ?? this.isMine,
       pinned: pinned ?? this.pinned,
+      following: following ?? this.following,
+      followerCount: followerCount ?? this.followerCount,
     );
   }
 }

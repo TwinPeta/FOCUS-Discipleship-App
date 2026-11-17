@@ -163,4 +163,63 @@ class RemotePostRepository implements PostRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<Post> setFollowing(String postId, {required bool following}) async {
+    final json = objectOf(
+      following
+          ? await _api.put('/posts/$postId/follow')
+          : await _api.delete('/posts/$postId/follow'),
+    );
+    final base = _seen[postId] ?? await getPost(postId);
+    if (base == null) throw const ApiException(404, code: 'not_found');
+    return _remember(
+      base.copyWith(
+        following: json?['following'] == true,
+        followerCount: (json?['follower_count'] as int?) ?? base.followerCount,
+      ),
+    );
+  }
+
+  @override
+  Future<({int count, bool mine})> setVoted(
+    String commentId, {
+    required bool voted,
+  }) async {
+    try {
+      final json = objectOf(
+        voted
+            ? await _api.put('/comments/$commentId/vote')
+            : await _api.delete('/comments/$commentId/vote'),
+      );
+      return (
+        count: (json?['vote_count'] as int?) ?? 0,
+        mine: json?['voted_by_me'] == true,
+      );
+    } on ApiException catch (e) {
+      if (e.status == 403) throw const OwnAnswerVote();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Post>> searchPosts(String query) async {
+    final q = query.trim();
+    if (q.length < 2) return const [];
+    final json = objectOf(
+      await _api.get('/search/posts', query: {'q': q, 'limit': '30'}),
+    );
+    final items = (json?['items'] as List?) ?? const [];
+    return [
+      for (final j in items.whereType<Map<String, dynamic>>())
+        if (!_hiddenForMe.contains(j['id']))
+          _remember(
+            postFromApi(
+              j,
+              await _scopeOf((j['community_id'] as String?) ?? ''),
+              remember: _directory,
+            ),
+          ),
+    ];
+  }
 }

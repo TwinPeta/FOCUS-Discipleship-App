@@ -52,6 +52,8 @@ Post postFromApi(
     anonymous: j['anonymous'] == true,
     isMine: j['is_mine'] == true,
     pinned: j['pinned'] == true,
+    following: j['following'] == true,
+    followerCount: (j['follower_count'] as int?) ?? 0,
   );
 }
 
@@ -66,4 +68,6 @@ Comment commentFromApi(
   text: (j['text'] as String?) ?? '',
   createdAt:
       DateTime.tryParse((j['created_at'] as String?) ?? '') ?? DateTime.now(),
+  voteCount: (j['vote_count'] as int?) ?? 0,
+  votedByMe: j['voted_by_me'] == true,
 );
