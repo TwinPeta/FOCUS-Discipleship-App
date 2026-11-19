@@ -276,9 +276,14 @@ void main() {
         'GET /v1/communities/c1/posts': (_) => _json(200, {
           'items': [post()],
         }),
+        'PUT /v1/posts/p1/hide': (_) => _json(204, null),
       });
       final posts = repo(api);
       await posts.hidePost('p1');
+      // Saved on the server; this session also leaves it out straight away.
+      expect(api.seen.map((r) => '${r.method} ${r.url.path}'), [
+        'PUT /v1/posts/p1/hide',
+      ]);
       final page = await posts.getPosts('c1', PostScope.specific);
       expect(page.items, isEmpty);
     });

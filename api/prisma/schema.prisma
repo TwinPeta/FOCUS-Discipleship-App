@@ -59,12 +59,14 @@ model User {
   comments_authorId Comment[] @relation("comments_authorId")
   questionFollows_userId QuestionFollow[] @relation("questionFollows_userId")
   answerVotes_userId AnswerVote[] @relation("answerVotes_userId")
+  postMarks_userId PostMark[] @relation("postMarks_userId")
   prayerRequests_authorId PrayerRequest[] @relation("prayerRequests_authorId")
   prayed_userId Prayed[] @relation("prayed_userId")
   prayerResponses_authorId PrayerResponse[] @relation("prayerResponses_authorId")
   testimonies_authorId Testimony[] @relation("testimonies_authorId")
   testimonies_approvedBy Testimony[] @relation("testimonies_approvedBy")
   testimonies_reviewedBy Testimony[] @relation("testimonies_reviewedBy")
+  testimonyEncouragements_userId TestimonyEncouragement[] @relation("testimonyEncouragements_userId")
   pathwayProgress_userId PathwayProgress[] @relation("pathwayProgress_userId")
   resources_addedBy Resource[] @relation("resources_addedBy")
   resourceProgress_userId ResourceProgress[] @relation("resourceProgress_userId")
@@ -175,6 +177,7 @@ model Post {
   likes_postId Like[] @relation("likes_postId")
   comments_postId Comment[] @relation("comments_postId")
   questionFollows_postId QuestionFollow[] @relation("questionFollows_postId")
+  postMarks_postId PostMark[] @relation("postMarks_postId")
 
   @@index([communityId])
   @@index([authorId])
@@ -236,6 +239,21 @@ model AnswerVote {
   @@index([commentId])
   @@index([userId])
   @@map("answerVotes")
+}
+
+model PostMark {
+  id        String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  postId    String
+  userId    String
+  kind      String
+  extra     Json?
+  post Post @relation("postMarks_postId", fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation("postMarks_userId", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("postMarks")
 }
 
 model PrayerRequest {
@@ -300,10 +318,25 @@ model Testimony {
   author User @relation("testimonies_authorId", fields: [authorId], references: [id], onDelete: Cascade)
   approvedByRef User? @relation("testimonies_approvedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
   reviewedByRef User? @relation("testimonies_reviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  testimonyEncouragements_testimonyId TestimonyEncouragement[] @relation("testimonyEncouragements_testimonyId")
 
   @@index([communityId])
   @@index([status])
   @@map("testimonies")
+}
+
+model TestimonyEncouragement {
+  id        String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  testimonyId String
+  userId    String
+  extra     Json?
+  testimony Testimony @relation("testimonyEncouragements_testimonyId", fields: [testimonyId], references: [id], onDelete: Cascade)
+  user User @relation("testimonyEncouragements_userId", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([testimonyId])
+  @@index([userId])
+  @@map("testimonyEncouragements")
 }
 
 model Pathway {
@@ -367,6 +400,8 @@ model ResourceProgress {
   userId    String
   positionSeconds Int?
   completed Boolean
+  reflection String?
+  reflectionAt DateTime? @db.Timestamptz(3)
   extra     Json?
   resource Resource @relation("resourceProgress_resourceId", fields: [resourceId], references: [id], onDelete: Cascade)
   user User @relation("resourceProgress_userId", fields: [userId], references: [id], onDelete: Cascade)
@@ -396,6 +431,7 @@ model QuizAttempt {
   score     Int
   total     Int
   passed    Boolean
+  answers   Json?
   extra     Json?
   quiz Quizze @relation("quizAttempts_quizId", fields: [quizId], references: [id], onDelete: Cascade)
   user User @relation("quizAttempts_userId", fields: [userId], references: [id], onDelete: Cascade)

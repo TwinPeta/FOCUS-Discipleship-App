@@ -8,9 +8,9 @@ import 'post_repository.dart';
 
 /// [PostRepository] backed by the FCU API.
 ///
-/// "Hide this post" is kept on the device only (the API has no per-user
-/// hide), so hidden posts come back after a restart. Posts by blocked
-/// people are filtered by the callers.
+/// "Hide this post" is saved on the server for this member only (the feed
+/// and search leave it out); it also takes effect at once in this session.
+/// Posts by blocked people are filtered by the callers.
 class RemotePostRepository implements PostRepository {
   RemotePostRepository(
     this._api,
@@ -148,10 +148,25 @@ class RemotePostRepository implements PostRepository {
   }
 
   @override
-  Future<void> hidePost(String postId) async => _hiddenForMe.add(postId);
+  Future<void> hidePost(String postId) async {
+    await _api.put('/posts/$postId/hide');
+    _hiddenForMe.add(postId);
+  }
 
   @override
-  Future<void> unhidePost(String postId) async => _hiddenForMe.remove(postId);
+  Future<void> unhidePost(String postId) async {
+    await _api.delete('/posts/$postId/hide');
+    _hiddenForMe.remove(postId);
+  }
+
+  @override
+  Future<void> setPassed(String postId, {required bool passed}) async {
+    passed
+        ? await _api.put('/posts/$postId/pass')
+        : await _api.delete('/posts/$postId/pass');
+    final seen = _seen[postId];
+    if (seen != null) _remember(seen.copyWith(passedByMe: passed));
+  }
 
   @override
   Future<void> deletePost(String postId, {required String byUserId}) async {

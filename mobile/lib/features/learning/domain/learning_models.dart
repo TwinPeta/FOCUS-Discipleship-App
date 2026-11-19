@@ -52,13 +52,19 @@ class DocumentContent {
     required this.item,
     required this.format,
     required this.sizeLabel,
-    required this.pageCount,
+    required this.url,
   });
 
   final LearningItem item;
+
+  /// The file type shown to the member ("PDF"), from the file's name.
   final String format;
+
+  /// "1.2 MB"; empty when the size is not known.
   final String sizeLabel;
-  final int pageCount;
+
+  /// Where the file is; null when it has not been uploaded yet.
+  final String? url;
 }
 
 class QuizQuestion {
@@ -67,7 +73,7 @@ class QuizQuestion {
     required this.prompt,
     required this.options,
     required this.correctIndex,
-  }) : assert(options.length == 4);
+  }) : assert(options.length >= 2); // the back office allows two or more
 
   final String id;
   final String prompt;

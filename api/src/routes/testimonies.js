@@ -15,7 +15,7 @@ router.get('/communities/:communityId/testimonies', requireMember, (req, res) =>
   const page = paginate(items, req.query);
   res.json({
     has_my_pending: items.some((t) => t.authorId === req.user.id && t.status === 'pending_review'),
-    items: page.items.map((t) => S.testimony(t)),
+    items: page.items.map((t) => S.testimony(t, { viewerId: req.user.id })),
     next_cursor: page.next_cursor,
   });
 });
@@ -39,15 +39,34 @@ router.post('/communities/:communityId/testimonies', requireMember, (req, res, n
       mediaIds: b.media_ids || [], status: 'pending_review', approvedBy: null, publishedAt: null,
     });
     logEvent(req.user.id, 'testimony_submitted', 'Submitted a testimony for review');
-    res.status(201).json(S.testimony(t, { detail: true }));
+    res.status(201).json(S.testimony(t, { detail: true, viewerId: req.user.id }));
   } catch (e) { next(e); }
 });
 
-router.get('/testimonies/:testimonyId', (req, res, next) => {
+// A testimony the caller may see: a member of its community, and published (or their own).
+function loadTestimony(req, _res, next) {
   const t = store.get('testimonies', req.params.testimonyId);
   const member = t && store.first('memberships', (m) => m.communityId === t.communityId && m.userId === req.user.id && m.status === 'member');
   if (!t || !member || !visibleTo(t, req.user.id)) return next(notFound('Testimony'));
-  res.json(S.testimony(t, { detail: true }));
+  req.testimony = t;
+  next();
+}
+
+router.get('/testimonies/:testimonyId', loadTestimony, (req, res) => {
+  res.json(S.testimony(req.testimony, { detail: true, viewerId: req.user.id }));
 });
+
+// "Encouraged": one reaction per member, on published stories only.
+function setEncouraged(on) {
+  return (req, res, next) => {
+    if (req.testimony.status !== 'published') return next(validation([{ field: 'testimonyId', message: 'only published stories can be encouraged' }]));
+    const mine = (e) => e.testimonyId === req.testimony.id && e.userId === req.user.id;
+    if (on && !store.first('testimonyEncouragements', mine)) store.insert('testimonyEncouragements', { testimonyId: req.testimony.id, userId: req.user.id });
+    if (!on) store.remove('testimonyEncouragements', mine);
+    res.json(S.encouragedState(req.testimony.id, req.user.id));
+  };
+}
+router.put('/testimonies/:testimonyId/encourage', loadTestimony, setEncouraged(true));
+router.delete('/testimonies/:testimonyId/encourage', loadTestimony, setEncouraged(false));
 
 module.exports = router;

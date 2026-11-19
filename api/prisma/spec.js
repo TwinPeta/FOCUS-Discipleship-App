@@ -44,6 +44,8 @@ module.exports = {
   questionFollows: { cols: { postId: 's', userId: 's' }, fk: { postId: ['posts'], userId: ['users'] }, index: ['postId', 'userId'] },
   // "Helpful" votes on an answer (a comment on a question).
   answerVotes: { cols: { commentId: 's', userId: 's' }, fk: { commentId: ['comments'], userId: ['users'] }, index: ['commentId', 'userId'] },
+  // One person's own marks on a post: 'hidden' ("Hide this post", only from their feed) or 'passed' (a question they passed on).
+  postMarks: { cols: { postId: 's', userId: 's', kind: 's' }, fk: { postId: ['posts'], userId: ['users'] }, index: ['postId', 'userId'] },
   prayerRequests: {
     cols: { communityId: 's', authorId: 's', anonymous: 'b', text: 's' },
     fk: { communityId: ['communities'], authorId: ['users'] }, index: ['communityId'],
@@ -56,6 +58,8 @@ module.exports = {
   },
 
   // ── learning
+  // "Encouraged" reactions on a published testimony, one per member.
+  testimonyEncouragements: { cols: { testimonyId: 's', userId: 's' }, fk: { testimonyId: ['testimonies'], userId: ['users'] }, index: ['testimonyId', 'userId'] },
   pathways: { cols: { title: 's', steps: 'j' } },
   pathwayProgress: { cols: { userId: 's', pathwayId: 's', completedStepIds: 'ss' }, fk: { userId: ['users'], pathwayId: ['pathways'] }, index: ['userId', 'pathwayId'] },
   resources: {
@@ -66,12 +70,14 @@ module.exports = {
     fk: { communityId: ['communities', true], addedBy: ['users', true] }, index: ['communityId', 'type'],
   },
   resourceProgress: {
-    cols: { resourceId: 's', userId: 's', positionSeconds: 'i?', completed: 'b' },
+    // reflection: the member's private note on a devotional (only they ever read it).
+    cols: { resourceId: 's', userId: 's', positionSeconds: 'i?', completed: 'b', reflection: 's?', reflectionAt: 'd?' },
     fk: { resourceId: ['resources'], userId: ['users'] }, index: ['resourceId', 'userId'],
   },
   quizzes: { cols: { title: 's', passMarkPercent: 'i?', questions: 'j' } },
   quizAttempts: {
-    cols: { quizId: 's', userId: 's', score: 'i', total: 'i', passed: 'b' },
+    // answers: [{ questionId, optionId }] as given, so the member can review their last attempt.
+    cols: { quizId: 's', userId: 's', score: 'i', total: 'i', passed: 'b', answers: 'j?' },
     fk: { quizId: ['quizzes'], userId: ['users'] }, index: ['quizId', 'userId'],
   },
   badges: { cols: { key: 's?', name: 's', iconUrl: 's?' }, unique: ['key'] },

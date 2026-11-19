@@ -2,22 +2,15 @@
 
 Checked by Agent A on 2026-11-14. No P0 found, so nothing was changed for this report except the Android launcher label ("FCU").
 
-## Test builds
-- Debug APKs are built by GitHub Actions (`.github/workflows/mobile-apk.yml`) on every push to `main` that touches `mobile/`, or on demand (Actions > "Mobile debug APK" > Run workflow). Download the APK from the run's **Artifacts** (kept 14 days).
-- **Debug on purpose:** the app runs on fake repositories, and testers need the debug scenario screen (long-press "Version" on Settings, or the name on My profile) to approve join requests, go offline, receive a warning, suspend the account, and so on.
-- CI runs analyze and all tests except the goldens. Golden images are rendered on Windows and fonts differ on Linux, so run `flutter test test/golden` locally.
+## Builds and releases
+- `.github/workflows/mobile-apk.yml` ("Mobile build") runs on every push to `main` that touches `mobile/`: analyze, all tests except the goldens, and an Android APK kept as a run artifact (14 days). Nothing is published.
+- **To release:** Actions > "Mobile build" > Run workflow > tick **Publish**. One GitHub release per app version, tagged `mobile-v<version>`, with `fcu.apk` (Android; the app's update banner installs it) and `fcu-<version>-unsigned.ipa` (iPhone; sideloaded until TestFlight exists), and `mobile/docs/release-notes/<version>.md` as its text. Steps: `docs/release-notes/README.md`.
+- Every mobile workflow stops before building when the version in `pubspec.yaml` has no release notes.
+- The APK is a debug build signed with the fixed FCU key (repository secrets), so each version installs over the last.
+- Golden images are rendered on Windows and fonts differ on Linux and macOS, so run `flutter test test/golden` on Windows.
 
-## Tester downloads
-Push a tag `mobile-vX.Y.Z[-beta.N]` (or run "Mobile release" in Actions) and `.github/workflows/mobile-release.yml` publishes a GitHub pre-release with a release APK and an unsigned iOS `.ipa`, using `mobile/docs/release-notes/<version>.md` as the text. The iOS file must be sideloaded until a TestFlight pipeline exists.
-
-## Debug-only code paths (all guarded)
-| Path | Guard |
-|---|---|
-| `/debug` route (scenario registry) | registered only `if (kDebugMode)` in `app_router.dart` |
-| Debug screen body | returns nothing unless `kDebugMode` (`debug_scenarios_screen.dart`) |
-| Long-press on "Version" (Settings) and on the profile name | `kDebugMode ? ... : null` |
-| Fake email code shown on Verify email | `if (kDebugMode)` (`verify_email_screen.dart`) |
-| `debug*` hooks (`debugApprove`, `debugSuspend`, `debugConfirmGuardian`, `debugSeedAccount`, role override) | live only on `Fake*` classes, reachable only from debug scenarios; they disappear when the fakes are replaced |
+## Debug-only code paths
+None: the app has no debug screens or test hooks. The in-memory doubles and their `debug*` hooks live in `test/support/` and never ship.
 
 ## Personal data and passwords
 - No `print`, `debugPrint` or `log` calls anywhere in `lib/`.
@@ -33,7 +26,7 @@ Push a tag `mobile-vX.Y.Z[-beta.N]` (or run "Mobile release" in Actions) and `.g
 | Icon | default Flutter icon (`mipmap-*/ic_launcher.png`) |
 | Splash | default white launch background |
 | Release signing | release build uses the debug key; needs a real keystore |
-| Version | `1.0.0+1` in pubspec, `appVersion = '1.0'` shown in Settings |
+| Version | `version:` in pubspec (e.g. `1.0.0-beta.2`), passed to the app by CI and shown on Settings |
 | Support email | placeholder `support@fcu.example` (`core/config/app_info.dart`) |
 | Fonts | `google_fonts` downloads at runtime: the first launch needs internet; bundle the fonts for offline-first |
 

@@ -1130,6 +1130,40 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/FollowState' }
+  /posts/{postId}/hide:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    put:
+      tags: [Feed]
+      operationId: hidePost
+      summary: Hide a post from my own feed
+      description: '"Hide this post": it leaves the caller''s community feed and post search; nobody else is affected. Not a report.'
+      responses:
+        '204': { description: Hidden for me }
+    delete:
+      tags: [Feed]
+      operationId: unhidePost
+      summary: Show a post I hid again
+      responses:
+        '204': { description: Shown again }
+  /posts/{postId}/pass:
+    parameters:
+      - $ref: '#/components/parameters/PostId'
+    put:
+      tags: [Feed]
+      operationId: passQuestion
+      summary: Pass on answering a question
+      description: Questions only. Sets `passed_by_me` so the app leaves it out of "Questions to answer". The question stays in the feed.
+      responses:
+        '204': { description: Passed }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Feed]
+      operationId: unpassQuestion
+      summary: Undo a pass
+      responses:
+        '204': { description: Undone }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /comments/{commentId}/vote:
     parameters:
       - name: commentId
@@ -1384,6 +1418,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Testimony' }
+  /testimonies/{testimonyId}/encourage:
+    parameters:
+      - { name: testimonyId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Testimonies]
+      operationId: encourageTestimony
+      summary: Say "Encouraged" on a story
+      description: One per member, published stories only (422 otherwise).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EncouragedState' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Testimonies]
+      operationId: unencourageTestimony
+      summary: Take back "Encouraged"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EncouragedState' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   # ───────────────────────── Pathways ─────────────────────────
   /pathways:
     get:
@@ -1519,6 +1579,40 @@ paths:
                 completed: { type: boolean }
       responses:
         '204': { description: Saved }
+  /resources/{resourceId}/reflection:
+    parameters:
+      - { name: resourceId, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Resources]
+      operationId: getReflection
+      summary: My private reflection on a devotional
+      description: Only its author ever reads it. Empty text when there is none.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reflection' }
+    put:
+      tags: [Resources]
+      operationId: saveReflection
+      summary: Save my private reflection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 5000, description: Empty text clears the reflection }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reflection' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /quizzes/{quizId}:
     parameters:
       - { name: quizId, in: path, required: true, schema: { type: string } }
@@ -2230,6 +2324,7 @@ components:
         liked_by_me: { type: boolean }
         follower_count: { type: integer, description: Questions only }
         following: { type: boolean, description: Questions only; the viewer follows it }
+        passed_by_me: { type: boolean, description: Questions only; the viewer chose "Pass" on answering it }
         created_at: { type: string, format: date-time }
     Comment:
       type: object
@@ -2260,6 +2355,16 @@ components:
       properties:
         vote_count: { type: integer }
         voted_by_me: { type: boolean }
+    EncouragedState:
+      type: object
+      properties:
+        encouraged_count: { type: integer }
+        encouraged_by_me: { type: boolean }
+    Reflection:
+      type: object
+      properties:
+        text: { type: string, description: Empty when the member has not written one }
+        updated_at: { type: [string, 'null'], format: date-time }
     ReactionState:
       type: object
       properties:
@@ -2298,6 +2403,8 @@ components:
         reviewed: { type: boolean, description: Shows the "Reviewed" badge }
         approved_by: { type: [string, 'null'], description: Approver name (traceability, BRD §8.1) }
         published_at: { type: [string, 'null'], format: date-time }
+        encouraged_count: { type: integer, description: '"Encouraged" reactions' }
+        encouraged_by_me: { type: boolean }
         created_at: { type: string, format: date-time }
     PathwaySummary:
       type: object
@@ -2378,6 +2485,23 @@ components:
                   properties:
                     id: { type: string }
                     text: { type: string }
+        my_last_attempt:
+          description: The caller's most recent attempt, or null. Only their own choices; the correct answers are never sent.
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties:
+                score: { type: integer }
+                total: { type: integer }
+                passed: { type: boolean }
+                created_at: { type: string, format: date-time }
+                answers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      question_id: { type: string }
+                      option_id: { type: string }
     Badge:
       type: object
       properties:

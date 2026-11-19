@@ -26,8 +26,9 @@ abstract class PostRepository {
   /// Idempotent on the comment id. Raises the post's comment count.
   Future<Comment> addComment(Comment comment);
 
-  /// Hides a post for the current user only ("Hide this post"). Hidden
-  /// posts are left out of [getPosts] and [getPost]. Idempotent.
+  /// Hides a post for the current user only ("Hide this post"), on every
+  /// device. Hidden posts are left out of [getPosts] and [getPost].
+  /// Idempotent.
   Future<void> hidePost(String postId);
 
   /// Undoes [hidePost]. Idempotent.
@@ -40,6 +41,10 @@ abstract class PostRepository {
   /// Questions only: follow (be told about new answers) or stop. Idempotent;
   /// returns the question with its new follow state.
   Future<Post> setFollowing(String postId, {required bool following});
+
+  /// Questions only: "Pass" on answering it (or undo). Idempotent; the
+  /// question stays in the feed with [Post.passedByMe] set.
+  Future<void> setPassed(String postId, {required bool passed});
 
   /// A "helpful" vote on an answer (not your own). Idempotent; returns the
   /// answer's new count and whether you voted.

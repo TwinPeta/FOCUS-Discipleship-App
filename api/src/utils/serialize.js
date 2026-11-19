@@ -117,11 +117,14 @@ function post(p, viewerId) {
     like_count: likes.length,
     comment_count: store.where('comments', (c) => c.postId === p.id).length,
     liked_by_me: likes.some((l) => l.userId === viewerId),
-    // Questions only: who follows it to hear about new answers.
-    ...((p.kind || 'post') === 'question' ? followState(p.id, viewerId) : {}),
+    // Questions only: who follows it to hear about new answers, and whether the viewer passed on answering it.
+    ...((p.kind || 'post') === 'question' ? { ...followState(p.id, viewerId), passed_by_me: marked(p.id, viewerId, 'passed') } : {}),
     created_at: p.createdAt,
   };
 }
+
+/** True when [userId] put their own [kind] mark ('hidden' or 'passed') on the post. */
+const marked = (postId, userId, kind) => !!store.first('postMarks', (m) => m.postId === postId && m.userId === userId && m.kind === kind);
 
 function followState(postId, viewerId) {
   const f = store.where('questionFollows', (x) => x.postId === postId);
@@ -156,7 +159,12 @@ function prayerRequest(r, viewerId) {
   };
 }
 
-function testimony(t, { detail = false } = {}) {
+function encouragedState(testimonyId, viewerId) {
+  const e = store.where('testimonyEncouragements', (x) => x.testimonyId === testimonyId);
+  return { encouraged_count: e.length, encouraged_by_me: e.some((x) => x.userId === viewerId) };
+}
+
+function testimony(t, { detail = false, viewerId = null } = {}) {
   const author = store.get('users', t.authorId);
   const approver = store.get('users', t.approvedBy);
   const inst = store.get('institutions', author?.institutionId);
@@ -176,6 +184,8 @@ function testimony(t, { detail = false } = {}) {
     approved_by: approver ? approver.fullName : null,
     published_at: t.publishedAt || null,
     created_at: t.createdAt || null,
+    // "Encouraged" reactions (published stories only take them).
+    ...encouragedState(t.id, viewerId),
   };
 }
 
@@ -216,5 +226,5 @@ const message = (m) => ({
 
 module.exports = {
   mediaUrl, institution, userRef, myProfile, communitySummary, community, media, mediaList,
-  post, comment, followState, voteState, prayerRequest, testimony, resource, message, initials,
+  post, comment, followState, voteState, marked, encouragedState, prayerRequest, testimony, resource, message, initials,
 };

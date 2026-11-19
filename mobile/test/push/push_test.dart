@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_1/core/config/app_info.dart';
 import 'package:focus_1/core/network/api_client.dart';
 import 'package:focus_1/core/push/device_registration.dart';
 import 'package:focus_1/core/push/push_service.dart';
@@ -61,7 +62,7 @@ void main() {
       expect(jsonDecode(seen.single.body), {
         'platform': 'android',
         'push_token': 'tok',
-        'app_version': '1.0',
+        if (appVersion.isNotEmpty) 'app_version': appVersion,
         'locale': 'en-UG',
       });
       expect(seen.single.headers['Authorization'], 'Bearer a');

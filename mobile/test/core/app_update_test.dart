@@ -18,36 +18,77 @@ Map<String, dynamic> _release(String tag, {String asset = 'fcu.apk'}) => {
 };
 
 void main() {
+  group('compareVersions', () {
+    test('orders versions the semantic-versioning way', () {
+      const ordered = [
+        '0.9.9',
+        '1.0.0-alpha',
+        '1.0.0-beta.1',
+        '1.0.0-beta.2',
+        '1.0.0-beta.10',
+        '1.0.0-rc.1',
+        '1.0.0',
+        '1.0.1',
+        '1.2.0',
+        '2.0.0',
+      ];
+      for (var i = 0; i < ordered.length - 1; i++) {
+        expect(
+          compareVersions(ordered[i], ordered[i + 1]),
+          lessThan(0),
+          reason: '${ordered[i]} < ${ordered[i + 1]}',
+        );
+        expect(compareVersions(ordered[i + 1], ordered[i]), greaterThan(0));
+      }
+      expect(compareVersions('1.0.0', '1.0.0'), 0);
+      expect(compareVersions('1.0.0+7', '1.0.0+3'), 0, reason: 'build ignored');
+      expect(compareVersions('1.0', '1.0.0'), isNull);
+      expect(compareVersions('android-build-25', '1.0.0'), isNull);
+    });
+  });
+
   group('parseLatestRelease', () {
-    test('a newer android build with an apk is an update', () {
-      final u = parseLatestRelease(_release('android-build-12'), current: 10);
-      expect(u!.buildNumber, 12);
-      expect(u.downloadUrl, endsWith('/android-build-12/fcu.apk'));
+    test('a newer version with fcu.apk is an update', () {
+      final u = parseLatestRelease(
+        _release('mobile-v1.0.0-beta.3'),
+        current: '1.0.0-beta.2',
+      );
+      expect(u!.version, '1.0.0-beta.3');
+      expect(u.downloadUrl, endsWith('/mobile-v1.0.0-beta.3/fcu.apk'));
     });
 
-    test('same or older build, other tags, or no apk: no update', () {
+    test('same or older version, other tags, or no fcu.apk: no update', () {
+      const current = '1.0.0-beta.2';
       expect(
-        parseLatestRelease(_release('android-build-10'), current: 10),
+        parseLatestRelease(_release('mobile-v1.0.0-beta.2'), current: current),
         isNull,
       );
       expect(
-        parseLatestRelease(_release('android-build-9'), current: 10),
+        parseLatestRelease(_release('mobile-v1.0.0-beta.1'), current: current),
         isNull,
       );
-      expect(parseLatestRelease(_release('v1.2.0'), current: 1), isNull);
+      expect(
+        parseLatestRelease(_release('android-build-99'), current: current),
+        isNull,
+      );
+      expect(
+        parseLatestRelease(_release('mobile-vnext'), current: current),
+        isNull,
+      );
       expect(
         parseLatestRelease(
-          _release('android-build-12', asset: 'notes.txt'),
-          current: 10,
+          _release('mobile-v1.0.0', asset: 'fcu-1.0.0.apk'),
+          current: current,
         ),
         isNull,
+        reason: 'only the fcu.apk asset is offered',
       );
     });
   });
 
   Future<void> pumpBanner(
     WidgetTester tester, {
-    required int current,
+    required String current,
     required Map<String, dynamic>? latest,
   }) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -55,7 +96,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          currentBuildNumberProvider.overrideWithValue(current),
+          currentVersionProvider.overrideWithValue(current),
           latestReleaseFetcherProvider.overrideWithValue(() async => latest),
         ],
         child: const MaterialApp(home: Scaffold(body: UpdateBanner())),
@@ -65,17 +106,29 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('banner shows when a newer build exists', (tester) async {
-    await pumpBanner(tester, current: 5, latest: _release('android-build-6'));
-    expect(find.textContaining('build 6'), findsOneWidget);
+  testWidgets('banner shows when a newer version exists', (tester) async {
+    await pumpBanner(
+      tester,
+      current: '1.0.0-beta.2',
+      latest: _release('mobile-v1.0.0-beta.3'),
+    );
+    expect(find.text('FCU 1.0.0-beta.3 is ready to install.'), findsOneWidget);
     expect(find.text('Download'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('no banner when up to date or a local build', (tester) async {
-    await pumpBanner(tester, current: 6, latest: _release('android-build-6'));
+    await pumpBanner(
+      tester,
+      current: '1.0.0-beta.3',
+      latest: _release('mobile-v1.0.0-beta.3'),
+    );
     expect(find.text('Download'), findsNothing);
-    await pumpBanner(tester, current: 0, latest: _release('android-build-6'));
+    await pumpBanner(
+      tester,
+      current: '',
+      latest: _release('mobile-v1.0.0-beta.3'),
+    );
     expect(find.text('Download'), findsNothing);
     debugDefaultTargetPlatformOverride = null;
   });

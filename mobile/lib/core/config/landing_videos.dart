@@ -45,7 +45,7 @@ class LandingVideos {
   ];
 
   /// The story's own link when it is a real YouTube video, else a curated
-  /// one (the backend's demo stories carry placeholder links).
+  /// one (a story saved without a YouTube link).
   static String forStory(int index, String? fromBackend) {
     final url = fromBackend?.trim() ?? '';
     return youtubeIdOf(url) != null ? url : stories[index % stories.length].url;
