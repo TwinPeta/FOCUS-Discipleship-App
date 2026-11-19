@@ -444,6 +444,7 @@ paths:
                 email: { type: string, format: email }
                 institution_id: { type: string }
                 year_of_study: { type: integer, minimum: 1, maximum: 7 }
+                show_username_only: { type: boolean, description: 'Show my @username instead of my name (and no photo) to other students. Staff still see who I am.' }
                 home_church:
                   type: object
                   required: [name, location, pastor]
@@ -2222,6 +2223,7 @@ components:
         id: { type: string }
         full_name: { type: string }
         username: { type: string }
+        show_username_only: { type: boolean }
         photo_url: { type: [string, 'null'], format: uri }
         email: { type: [string, 'null'], format: email }
         phone: { type: [string, 'null'] }

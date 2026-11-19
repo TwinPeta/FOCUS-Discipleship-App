@@ -840,3 +840,40 @@ test('contract sweep: remaining operations return what the spec says', async () 
 test('zz every documented operation is exercised by a test (WebSocket aside)', async () => {
   assert.deepEqual(contract.unexercised(spec), ['GET /realtime']);
 });
+
+test('show username only: other students see @username, staff and the owner still see the name', async () => {
+  const student = await login('student@fcu.test');
+  const sm = await login('super@fcu.test');
+  const me = (await call('GET', '/v1/me', { token: student })).body;
+  assert.equal(me.show_username_only, false);
+
+  const on = await call('PATCH', '/v1/me', { token: student, body: { show_username_only: true } });
+  assert.equal(on.status, 200);
+  assert.equal(on.body.show_username_only, true);
+  assert.equal(on.body.full_name, me.full_name); // the owner still sees their own name
+
+  const post = await call('POST', `/v1/communities/${ctx.generalMak.id}/posts`, { token: student, body: { text: 'Posting as my username' } });
+  assert.equal(post.status, 201);
+  assert.equal(post.body.author.full_name, `@${me.username}`);
+  assert.equal(post.body.author.photo_url, null);
+
+  const seenByOther = await call('GET', `/v1/posts/${post.body.id}`, { token: sm });
+  assert.equal(seenByOther.body.author.full_name, `@${me.username}`);
+  assert.ok(!JSON.stringify(seenByOther.body).includes(me.full_name));
+
+  const pal = await login('david@fcu.test');
+  const started = await call('POST', '/v1/conversations', { token: pal, body: { user_id: me.id } });
+  assert.equal(started.status, 201);
+  const inbox = await call('GET', '/v1/conversations', { token: pal });
+  const theirs = inbox.body.items.find((c) => c.participant.id === me.id);
+  assert.ok(theirs, 'conversation with the student is listed');
+  assert.equal(theirs.participant.full_name, `@${me.username}`);
+
+  // Staff in the back office always see who it is.
+  const stored = store.get('users', me.id);
+  assert.equal(stored.fullName, me.full_name);
+
+  const off = await call('PATCH', '/v1/me', { token: student, body: { show_username_only: false } });
+  assert.equal(off.body.show_username_only, false);
+  assert.equal((await call('GET', `/v1/posts/${post.body.id}`, { token: sm })).body.author.full_name, me.full_name);
+});

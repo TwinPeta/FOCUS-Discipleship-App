@@ -119,7 +119,7 @@ router.post('/posts/:postId/comments', loadPost, (req, res, next) => {
     const preview = b.text.trim().slice(0, 140);
     if (req.post.authorId !== req.user.id) {
       notify(req.post.authorId, 'comment_reply', {
-        title: question ? `${req.user.fullName} answered your question` : `${req.user.fullName} commented on your post`,
+        title: question ? `${S.displayName(req.user)} answered your question` : `${S.displayName(req.user)} commented on your post`,
         body: preview, targetRoute: `/post/${req.post.id}`,
       });
     }

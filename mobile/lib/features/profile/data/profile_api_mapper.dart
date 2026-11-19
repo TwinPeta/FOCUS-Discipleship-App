@@ -62,6 +62,7 @@ UserProfile profileFromApi(Map<String, dynamic> j) {
     photoPath: j['photo_url'] as String?,
     yearOfStudy: (j['year_of_study'] as num?)?.toInt(),
     homeChurch: homeChurchFromApi(j['home_church']),
+    showUsernameOnly: j['show_username_only'] == true,
   );
 }
 

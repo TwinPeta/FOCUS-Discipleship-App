@@ -4,6 +4,7 @@ export type Profile = {
   id: string;
   full_name: string;
   username: string;
+  show_username_only?: boolean;
   photo_url: string | null;
   email: string | null;
   phone: string | null;

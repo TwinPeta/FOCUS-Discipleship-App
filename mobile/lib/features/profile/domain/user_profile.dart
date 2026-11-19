@@ -52,6 +52,7 @@ class UserProfile {
     this.photoPath,
     this.yearOfStudy,
     this.homeChurch,
+    this.showUsernameOnly = false,
   });
 
   final String id;
@@ -69,6 +70,10 @@ class UserProfile {
   final int? yearOfStudy;
   final HomeChurch? homeChurch;
 
+  /// Other students see `@username` (no name, no photo) instead of this
+  /// student's name. Staff still see who they are.
+  final bool showUsernameOnly;
+
   UserProfile copyWith({
     String? id,
     String? fullName,
@@ -82,6 +87,7 @@ class UserProfile {
     String? photoPath,
     int? yearOfStudy,
     HomeChurch? homeChurch,
+    bool? showUsernameOnly,
     bool clearYearOfStudy = false,
   }) {
     return UserProfile(
@@ -97,6 +103,7 @@ class UserProfile {
       photoPath: photoPath ?? this.photoPath,
       yearOfStudy: clearYearOfStudy ? null : (yearOfStudy ?? this.yearOfStudy),
       homeChurch: homeChurch ?? this.homeChurch,
+      showUsernameOnly: showUsernameOnly ?? this.showUsernameOnly,
     );
   }
 
