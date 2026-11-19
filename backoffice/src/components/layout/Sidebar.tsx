@@ -13,7 +13,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import { getNavGroupsForRole, isNavActive } from "./nav-config";
 import { useShell } from "./ShellContext";
 import { useSession } from "@/features/auth/hooks/useSession";
@@ -125,28 +125,29 @@ export function Sidebar() {
 
         {/* Signed-in user */}
         {user && (
-          <div className="mt-auto flex items-center gap-2.5 rounded-nav bg-white/60 p-2.5">
-            <Link
-              href={ROUTES.account}
-              aria-label="My account"
-              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-white text-[13px] font-extrabold"
-            >
-              {initialsOf(user.fullName)}
-            </Link>
-            <div className="min-w-0 text-sm leading-[1.15]">
-              <b className="block truncate">{user.fullName}</b>
-              <span className="block truncate">
-                {ROLE_LABELS[user.role] ?? user.role} ·{" "}
-                <button
-                  type="button"
-                  onClick={signOut}
-                  disabled={signingOut}
-                  className="font-bold text-blue underline"
-                >
-                  {signingOut ? "Signing out…" : "Sign out"}
-                </button>
-              </span>
+          <div className="mt-auto rounded-nav bg-white/60 p-2.5">
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={ROUTES.account}
+                aria-label="My account"
+                className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-white text-[13px] font-extrabold"
+              >
+                {initialsOf(user.fullName)}
+              </Link>
+              <div className="min-w-0 text-sm leading-[1.15]">
+                <b className="block truncate">{user.fullName}</b>
+                <span className="block truncate">{ROLE_LABELS[user.role] ?? user.role}</span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={signOut}
+              disabled={signingOut}
+              className="btn btn-secondary mt-2.5 w-full justify-center"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
           </div>
         )}
       </aside>
