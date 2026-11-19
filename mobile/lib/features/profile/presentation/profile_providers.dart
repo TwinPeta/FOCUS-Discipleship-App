@@ -23,6 +23,16 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     return saved;
   }
 
+  Future<UserProfile> setShowUsernameOnly(bool value) async {
+    final current = state.value;
+    if (current == null) throw StateError('No profile loaded');
+    final saved = await ref
+        .read(profileRepositoryProvider)
+        .setShowUsernameOnly(current, value);
+    state = AsyncValue.data(saved);
+    return saved;
+  }
+
   Future<UserProfile> save(UserProfile profile) async {
     final saved = await ref
         .read(profileRepositoryProvider)

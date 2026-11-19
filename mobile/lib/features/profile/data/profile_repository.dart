@@ -34,6 +34,10 @@ abstract class ProfileRepository {
   Future<UserProfile> createProfile(UserProfile profile);
   Future<UserProfile> updateProfile(UserProfile profile);
 
+  /// Saves only the "show my username instead of my name" choice, so it
+  /// cannot fail on the rest of the profile.
+  Future<UserProfile> setShowUsernameOnly(UserProfile current, bool value);
+
   /// Removes the profile and frees its username. Idempotent.
   Future<void> deleteProfile(String accountId);
 

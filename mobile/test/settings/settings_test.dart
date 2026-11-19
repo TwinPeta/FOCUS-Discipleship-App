@@ -176,4 +176,33 @@ void main() {
     await settle(tester);
     expect(copied, supportEmail);
   });
+
+  testWidgets('46: Show my username switch saves the choice', (tester) async {
+    final container = await pumpFcuApp(tester);
+    await goTo(tester, container, '/settings');
+    expect(find.text('Others see your name and photo'), findsOneWidget);
+    expect(
+      container.read(profileControllerProvider).value!.showUsernameOnly,
+      isFalse,
+    );
+
+    await tester.tap(find.byType(Switch));
+    await settle(tester, steps: 12);
+
+    expect(
+      container.read(profileControllerProvider).value!.showUsernameOnly,
+      isTrue,
+    );
+    expect(
+      find.text('Others see @${testProfile.username}, not your name or photo'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byType(Switch));
+    await settle(tester, steps: 12);
+    expect(
+      container.read(profileControllerProvider).value!.showUsernameOnly,
+      isFalse,
+    );
+  });
 }

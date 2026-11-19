@@ -179,13 +179,12 @@ class _UsernameOnlyRowState extends ConsumerState<_UsernameOnlyRow> {
   var _saving = false;
 
   Future<void> _set(bool value) async {
-    final profile = ref.read(profileControllerProvider).value;
-    if (profile == null || _saving) return;
+    if (_saving) return;
     setState(() => _saving = true);
     try {
       await ref
           .read(profileControllerProvider.notifier)
-          .save(profile.copyWith(showUsernameOnly: value));
+          .setShowUsernameOnly(value);
     } catch (_) {
       if (mounted) showErrorSnack(context);
     } finally {

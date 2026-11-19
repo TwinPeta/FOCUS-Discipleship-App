@@ -59,6 +59,12 @@ function ProfileForm() {
   const photo = useAction();
   const [saved, setSaved] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const userId = user?.id;
+  // After a page reload the profile arrives after this form mounts: fill the boxes once it does.
+  useEffect(() => {
+    if (user) setF({ full_name: user.full_name, email: user.email || "", phone: user.phone || "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
   if (!user) return null;
   const changed = f.full_name.trim() !== user.full_name || f.email.trim() !== (user.email || "") || f.phone.trim() !== (user.phone || "");
   return (

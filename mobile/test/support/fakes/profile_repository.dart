@@ -38,6 +38,17 @@ class FakeProfileRepository implements ProfileRepository {
     return _profiles[accountId];
   }
 
+  @override
+  Future<UserProfile> setShowUsernameOnly(
+    UserProfile current,
+    bool value,
+  ) async {
+    await Future.delayed(latency);
+    final saved = current.copyWith(showUsernameOnly: value);
+    _profiles[saved.id] = saved;
+    return saved;
+  }
+
   bool _available(String username, String? ownerId) {
     final lower = username.trim().toLowerCase();
     final own = ownerId == null ? null : _profiles[ownerId];

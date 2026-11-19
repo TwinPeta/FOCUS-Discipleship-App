@@ -187,6 +187,18 @@ class RemoteProfileRepository implements ProfileRepository {
     }
   }
 
+  @override
+  Future<UserProfile> setShowUsernameOnly(
+    UserProfile current,
+    bool value,
+  ) async {
+    final json = await _api.patch(
+      '/me',
+      body: {'show_username_only': value},
+    ) as Map<String, dynamic>;
+    return _cached = profileFromApi(json);
+  }
+
   /// Account deletion is done by [RemoteAuthRepository.deleteAccount].
   @override
   Future<void> deleteProfile(String accountId) async => _cached = null;
