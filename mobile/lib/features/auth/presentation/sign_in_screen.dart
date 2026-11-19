@@ -6,7 +6,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/error_snack.dart';
@@ -15,13 +14,18 @@ import '../../../core/widgets/password_field.dart';
 import '../data/auth_repository.dart';
 import 'providers/auth_providers.dart';
 import '../../../core/theme/app_gradients.dart';
+import '../../../core/network/api_client.dart';
 
-/// Screen 25: Sign in (`/login`). One generic error that never says
-/// whether the email or the password was wrong.
+/// Screen 25: Sign in (`/login`). Takes an email, a phone number or a
+/// username, like the web app. One generic error that never says whether the
+/// account or the password was wrong.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
-  static const genericError = 'Email or password is incorrect';
+  static const genericError = 'Your sign-in details or password are incorrect';
+
+  static const tooManyAttempts =
+      'Too many attempts. Please wait a few minutes and try again.';
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -44,7 +48,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   bool get _canSubmit =>
       !_busy &&
-      Validators.email(_email.text) == null &&
+      _email.text.trim().isNotEmpty &&
       _password.text.isNotEmpty;
 
   Future<void> _signIn() async {
@@ -62,6 +66,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (mounted) context.go('/communities');
     } on InvalidCredentials {
       if (mounted) setState(() => _error = SignInScreen.genericError);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.status == 429) {
+        setState(() => _error = SignInScreen.tooManyAttempts);
+      } else {
+        showErrorSnack(context);
+      }
     } catch (_) {
       if (mounted) showErrorSnack(context);
     } finally {
@@ -81,9 +92,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              label: 'Email',
+              label: 'Email, phone or username',
               controller: _email,
-              placeholder: 'you@example.com',
+              placeholder: 'you@example.com or @username',
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [
                 AutofillHints.email,

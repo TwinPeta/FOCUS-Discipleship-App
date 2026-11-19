@@ -45,6 +45,16 @@ router.get('/username-available', (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Lets the sign-up forms say "this email already has an account" at the start instead of after the last step.
+// Limited per address so it cannot be used to list who has an account.
+router.get('/email-available', rateLimit({ windowMs: 600000, max: 30 }), (req, res, next) => {
+  try {
+    const q = check(req.query, { email: { required: true, type: 'string', email: true } });
+    const email = normEmail(q.email);
+    res.json({ available: !store.first('users', (u) => !u.deletedAt && u.email === email) });
+  } catch (e) { next(e); }
+});
+
 router.post('/register', rateLimit({ windowMs: 3600000, max: 20 }), (req, res, next) => {
   try {
     const b = check(req.body, {

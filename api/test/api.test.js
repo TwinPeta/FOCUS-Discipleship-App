@@ -734,6 +734,12 @@ test('contract sweep: remaining operations return what the spec says', async () 
   assert.equal(typeof appConfig.body.join_requests.auto_approve, 'boolean');
   ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
+  const free = await call('GET', '/v1/auth/email-available?email=brand.new@fcu.test');
+  ok(free, 200);
+  assert.equal(free.body.available, true);
+  const taken = await call('GET', '/v1/auth/email-available?email=Student@FCU.test');
+  assert.equal(taken.body.available, false); // case does not matter
+  ok(await call('GET', '/v1/auth/email-available?email=not-an-email'), 422);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
   ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
   ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'x@fcu.test', code: '000000', new_password: 'A-brand-new-pass-1' } }), 400); // success: password-reset.test.js

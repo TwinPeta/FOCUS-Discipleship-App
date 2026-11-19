@@ -105,10 +105,21 @@ class RemoteAuthRepository implements AuthRepository {
     _api.tokens.clear();
   }
 
-  /// There is no pre-check endpoint: a duplicate email is reported by
-  /// [register] (409) instead.
+  /// Asks the API, so a duplicate email shows on the details step. If the
+  /// check itself cannot be answered (offline, rate limited), the step goes
+  /// on: [register] still reports a duplicate (409) at the end.
   @override
-  Future<bool> isEmailAvailable(String email) async => true;
+  Future<bool> isEmailAvailable(String email) async {
+    try {
+      final json = await _api.get(
+        '/auth/email-available',
+        query: {'email': _key(email)},
+      ) as Map<String, dynamic>;
+      return json['available'] != false;
+    } on ApiException {
+      return true;
+    }
+  }
 
   @override
   Future<void> sendVerificationCode(String email) async {
