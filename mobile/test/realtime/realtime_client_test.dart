@@ -19,6 +19,9 @@ class FakeChannel implements RealtimeChannel {
   int? closeCode;
 
   @override
+  Future<void> get ready async {}
+
+  @override
   Stream<dynamic> get stream => controller.stream;
 
   void serverClose([int? code]) {

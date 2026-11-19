@@ -64,25 +64,40 @@ async function raw(path: string, init: RequestInit, token?: string): Promise<Res
 
 let refreshing: Promise<Tokens | null> | null = null;
 
-/** One refresh at a time: the server rotates refresh tokens, so two parallel refreshes would sign the student out. */
-function refresh(): Promise<Tokens | null> {
+/** What one refresh does. `stale` is the access token that was just refused: if another tab has already replaced it, use theirs. */
+async function refreshOnce(stale?: string): Promise<Tokens | null> {
+  const current = readTokens();
+  if (!current) return null;
+  if (stale && current.access_token !== stale) return current;
+  const res = await raw("/auth/refresh", { method: "POST", body: JSON.stringify({ refresh_token: current.refresh_token }) });
+  if (!res.ok) {
+    // Only a refused token ends the session; a server or network problem leaves the student signed in.
+    if (res.status === 401) {
+      const latest = readTokens();
+      // Another tab may have renewed it a moment ago: if so, carry on with theirs.
+      if (latest && latest.refresh_token !== current.refresh_token) return latest;
+      writeTokens(null);
+    }
+    return null;
+  }
+  const next = (await res.json()) as Tokens;
+  writeTokens(next);
+  return next;
+}
+
+/**
+ * Renews the session. One refresh at a time in this tab, and one at a time across tabs (Web Locks), because the server
+ * replaces the refresh token each time. The server also tolerates a repeat for a minute, as a backstop.
+ */
+export function refreshSession(stale?: string): Promise<Tokens | null> {
   if (!refreshing) {
-    refreshing = (async () => {
-      const current = readTokens();
-      if (!current) return null;
-      const res = await raw("/auth/refresh", { method: "POST", body: JSON.stringify({ refresh_token: current.refresh_token }) });
-      if (!res.ok) {
-        if (res.status === 401) writeTokens(null);
-        return null;
-      }
-      const next = (await res.json()) as Tokens;
-      writeTokens(next);
-      return next;
-    })().finally(() => {
+    const locks = typeof navigator !== "undefined" ? (navigator as Navigator & { locks?: LockManager }).locks : undefined;
+    const started: Promise<Tokens | null> = (async () => (locks ? await locks.request("fcu-refresh", () => refreshOnce(stale)) : await refreshOnce(stale)))();
+    refreshing = started.finally(() => {
       refreshing = null;
     });
   }
-  return refreshing;
+  return refreshing as Promise<Tokens | null>;
 }
 
 export async function api<T>(path: string, init: RequestInit = {}, auth = true): Promise<T> {
@@ -90,7 +105,7 @@ export async function api<T>(path: string, init: RequestInit = {}, auth = true):
   if (auth && !tokens) throw new ApiError(401, "Please sign in.");
   let res = await raw(path, init, tokens?.access_token);
   if (auth && res.status === 401) {
-    tokens = await refresh();
+    tokens = await refreshSession(tokens?.access_token);
     if (!tokens) throw new ApiError(401, "Your session has ended. Please sign in again.");
     res = await raw(path, init, tokens.access_token);
   }

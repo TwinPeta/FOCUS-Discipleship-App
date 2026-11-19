@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Avatar, ErrorText, Load, Panel } from "@/components/ui";
 import { post } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
+import { onJoinRequest } from "@/lib/realtime";
 import { useAction, useGet } from "@/lib/hooks";
 import type { JoinRequest, ModerationCase } from "@/lib/types";
 
@@ -11,8 +12,8 @@ const CONTENT: Record<string, string> = { post: "Post", comment: "Comment", pray
 
 /** Super-mentor tools: approve or decline people asking to join, and act on reported content. */
 export function ManageTab({ communityId }: { communityId: string }) {
-  const requests = useGet<{ items: JoinRequest[] }>(`/communities/${communityId}/join-requests`, 30000);
-  const cases = useGet<{ items: ModerationCase[] }>(`/communities/${communityId}/moderation/cases`, 60000);
+  const requests = useGet<{ items: JoinRequest[] }>(`/communities/${communityId}/join-requests`, onJoinRequest);
+  const cases = useGet<{ items: ModerationCase[] }>(`/communities/${communityId}/moderation/cases`);
   const act = useAction();
   const [declining, setDeclining] = useState<string | null>(null);
   const [note, setNote] = useState("");

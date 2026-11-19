@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     if (status === "signedIn") router.replace("/dashboard");
@@ -27,7 +28,11 @@ export default function LoginPage() {
       await signIn(identifier.trim(), password);
     } catch (err) {
       const e2 = err as ApiError;
-      setError(e2.status === 401 ? "That email, phone or username and password do not match." : e2.message);
+      setError(
+        e2.status === 401 ? "That email, phone or username and password do not match."
+          : e2.status === 429 ? "Too many attempts. Please wait a few minutes and try again."
+          : e2.message,
+      );
       setBusy(false);
     }
   }
@@ -48,8 +53,11 @@ export default function LoginPage() {
             </div>
             <div className="field">
               <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" autoComplete="current-password" required value={password}
-                onChange={(e) => setPassword(e.target.value)} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input id="password" name="password" type={show ? "text" : "password"} autoComplete="current-password" required value={password}
+                  style={{ flex: 1 }} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" className="btn btn-sm" aria-pressed={show} onClick={() => setShow((v) => !v)}>{show ? "Hide" : "Show"}</button>
+              </div>
             </div>
             <button className="btn btn-primary btn-block" type="submit" disabled={busy || !identifier || !password}>
               {busy ? "Logging in…" : "Log in"}

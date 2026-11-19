@@ -13,6 +13,7 @@ const brand = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
+  applicationName: "FCU Student Community",
   title: { default: "FCU Student Community", template: "%s · FCU Student Community" },
   description:
     "Connect with students on your campus who share your values, learn together and grow with mentors. On your phone or in your browser.",

@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'token_vault.dart';
+
 /// A failed call to the backend. [status] is 0 when the server could not be
 /// reached at all (offline, DNS, timeout).
 class ApiException implements Exception {
@@ -33,22 +35,72 @@ class ApiException implements Exception {
   String toString() => 'ApiException($status, $code)';
 }
 
-/// The signed-in user's tokens. Held in memory only (the app has no secure
-/// storage yet, by decision), so closing the app signs the user out.
+/// The signed-in user's tokens. Kept in a [TokenVault] (secure storage) as
+/// well as in memory, so a student signs in once and stays signed in until
+/// they log out. Without a vault (tests) it is memory only.
 class TokenStore {
+  TokenStore({this.vault});
+
+  final TokenVault? vault;
+
   String? accessToken;
   String? refreshToken;
 
+  /// Who the saved tokens belong to, so the app can open without a network.
+  String? accountId;
+  String? email;
+
   bool get hasSession => refreshToken != null;
+
+  /// Loads the saved session at launch. A vault that cannot be read just means
+  /// signing in again.
+  Future<void> restore() async {
+    try {
+      final saved = await vault?.read();
+      if (saved == null) return;
+      accessToken = saved.access;
+      refreshToken = saved.refresh;
+      accountId = saved.accountId;
+      email = saved.email;
+    } catch (_) {}
+  }
 
   void save({required String access, required String refresh}) {
     accessToken = access;
     refreshToken = refresh;
+    _persist();
+  }
+
+  /// Notes whose session this is (after sign-in or sign-up).
+  void remember({required String accountId, required String email}) {
+    this.accountId = accountId;
+    this.email = email;
+    _persist();
   }
 
   void clear() {
     accessToken = null;
     refreshToken = null;
+    accountId = null;
+    email = null;
+    vault?.clear().catchError((_) {});
+  }
+
+  void _persist() {
+    final vault = this.vault;
+    final access = accessToken;
+    final refresh = refreshToken;
+    if (vault == null || access == null || refresh == null) return;
+    vault
+        .write(
+          SavedSession(
+            access: access,
+            refresh: refresh,
+            accountId: accountId,
+            email: email,
+          ),
+        )
+        .catchError((_) {});
   }
 }
 
@@ -179,9 +231,12 @@ class ApiClient {
       final response = await _once('POST', '/auth/refresh', null, {
         'refresh_token': refresh,
       }, false);
-      if (response.statusCode != 200) {
-        tokens.clear();
+      if (response.statusCode == 401) {
+        tokens.clear(); // the server no longer accepts it: signed out
         return false;
+      }
+      if (response.statusCode != 200) {
+        return false; // a server hiccup: keep the session and try again later
       }
       final json = jsonDecode(utf8.decode(response.bodyBytes));
       if (json is! Map<String, dynamic>) {

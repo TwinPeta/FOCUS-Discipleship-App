@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar, Load, PageTitle, Panel } from "@/components/ui";
 import { timeAgo } from "@/lib/format";
+import { onMessage } from "@/lib/realtime";
 import { useGet } from "@/lib/hooks";
 import type { Conversation, Page } from "@/lib/types";
 
@@ -11,7 +12,7 @@ const FILTERS: [string, string][] = [["all", "All"], ["mentors", "Mentors"], ["m
 
 export default function Messages() {
   const [filter, setFilter] = useState("all");
-  const list = useGet<Page<Conversation> & { unread_total: number }>(`/conversations?limit=50&filter=${filter}`, 10000);
+  const list = useGet<Page<Conversation> & { unread_total: number }>(`/conversations?limit=50&filter=${filter}`, onMessage);
   return (
     <>
       <PageTitle title="Messages" sub="Private conversations with mentors and members of your communities." />

@@ -720,6 +720,27 @@ test('resources: a private reflection, and the last quiz attempt with my own ans
   assert.equal((await call('GET', `/v1/quizzes/${quizRes.id}`, { token: me })).body.my_last_attempt, null, 'per member');
 });
 
+test('refresh: parallel refreshes both work, an old token does not, logout ends it all', async () => {
+  const login = await call('POST', '/v1/auth/login', { body: { identifier: 'student@fcu.test', password: DEMO_PASSWORD } });
+  assert.equal(login.status, 200);
+  const rt = login.body.refresh_token;
+  // two tabs refresh with the same token at once
+  const [a, b] = await Promise.all([1, 2].map(() => call('POST', '/v1/auth/refresh', { body: { refresh_token: rt } })));
+  assert.equal(a.status, 200);
+  assert.equal(b.status, 200);
+  assert.notEqual(a.body.refresh_token, b.body.refresh_token);
+  // the new tokens carry on
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: a.body.refresh_token } })).status, 200);
+  // outside the grace window the replaced token is refused
+  store.col('refreshTokens').filter((t) => t.usedAt).forEach((t) => { t.usedAt -= 120000; });
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: rt } })).status, 401);
+  // logging out also ends the token that was just replaced
+  const c = await call('POST', '/v1/auth/login', { body: { identifier: 'student@fcu.test', password: DEMO_PASSWORD } });
+  const d = await call('POST', '/v1/auth/refresh', { body: { refresh_token: c.body.refresh_token } });
+  assert.equal((await call('POST', '/v1/auth/logout', { token: d.body.access_token, body: { refresh_token: d.body.refresh_token } })).status, 204);
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: c.body.refresh_token } })).status, 401);
+});
+
 test('contract sweep: remaining operations return what the spec says', async () => {
   const ok = (r, ...codes) => assert.ok(codes.includes(r.status), `expected ${codes} got ${r.status} ${JSON.stringify(r.body)}`);
   const token = await login('student@fcu.test');
@@ -734,6 +755,12 @@ test('contract sweep: remaining operations return what the spec says', async () 
   assert.equal(typeof appConfig.body.join_requests.auto_approve, 'boolean');
   ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
+  const free = await call('GET', '/v1/auth/email-available?email=brand.new@fcu.test');
+  ok(free, 200);
+  assert.equal(free.body.available, true);
+  const taken = await call('GET', '/v1/auth/email-available?email=Student@FCU.test');
+  assert.equal(taken.body.available, false); // case does not matter
+  ok(await call('GET', '/v1/auth/email-available?email=not-an-email'), 422);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
   ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
   ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'x@fcu.test', code: '000000', new_password: 'A-brand-new-pass-1' } }), 400); // success: password-reset.test.js

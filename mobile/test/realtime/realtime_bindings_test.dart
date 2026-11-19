@@ -15,9 +15,22 @@ import '../support/fakes.dart';
 
 class _ScriptedClient implements RealtimeClient {
   final controller = StreamController<RealtimeEvent>.broadcast();
+  final link = StreamController<bool>.broadcast();
+  bool open = false;
+
+  void setConnected(bool value) {
+    open = value;
+    link.add(value);
+  }
 
   @override
   Stream<RealtimeEvent> get events => controller.stream;
+
+  @override
+  bool get connected => open;
+
+  @override
+  Stream<bool> get connection => link.stream;
 
   @override
   void start() {}
@@ -26,7 +39,10 @@ class _ScriptedClient implements RealtimeClient {
   Future<void> stop() async {}
 
   @override
-  void dispose() => controller.close();
+  void dispose() {
+    controller.close();
+    link.close();
+  }
 }
 
 class _CountingNotifications extends FakeNotificationRepository {
@@ -151,5 +167,59 @@ void main() {
     );
     await pumpEventQueue();
     expect(container.read(liveOnlineCountsProvider), {'c1': 7});
+  });
+
+  test('the connection state reaches the screens', () async {
+    expect(container.read(realtimeConnectedProvider), isFalse);
+    socket.setConnected(true);
+    await pumpEventQueue();
+    expect(container.read(realtimeConnectedProvider), isTrue);
+    socket.setConnected(false);
+    await pumpEventQueue();
+    expect(container.read(realtimeConnectedProvider), isFalse);
+  });
+
+  test('while the socket is open the list is not polled', () async {
+    final polled = fakeContainer(
+      overrides: [
+        realtimeClientProvider.overrideWithValue(socket),
+        notificationRepositoryProvider.overrideWith((ref) => notifications),
+        notificationPollIntervalProvider.overrideWithValue(
+          const Duration(milliseconds: 30),
+        ),
+      ],
+    );
+    addTearDown(polled.dispose);
+    polled.read(realtimeBindingsProvider);
+    socket.setConnected(true);
+    await pumpEventQueue();
+    polled.listen(notificationsProvider, (_, _) {});
+    await polled.read(notificationsProvider.future);
+    final loaded = notifications.fetches;
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(notifications.fetches, loaded, reason: 'loaded once, no polling');
+
+    // The socket drops: the list starts checking again.
+    socket.setConnected(false);
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    expect(notifications.fetches, greaterThan(loaded));
+  });
+
+  test('coming back after a gap loads what was missed, once', () async {
+    container.listen(notificationsProvider, (_, _) {});
+    socket.setConnected(true); // first connection: nothing to catch up
+    await pumpEventQueue();
+    await container.read(notificationsProvider.future);
+    final first = notifications.fetches;
+
+    socket.setConnected(false);
+    await pumpEventQueue();
+    await container.read(notificationsProvider.future);
+    final afterDrop = notifications.fetches;
+    socket.setConnected(true); // reconnected
+    await pumpEventQueue();
+    await container.read(notificationsProvider.future);
+    expect(notifications.fetches, greaterThan(afterDrop));
+    expect(first, greaterThanOrEqualTo(1));
   });
 }

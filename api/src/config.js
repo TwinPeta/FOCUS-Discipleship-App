@@ -16,7 +16,9 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'dev-only-change-me',
   accessTtl: process.env.ACCESS_TOKEN_TTL || '15m',
   accessTtlSeconds: 900,
-  refreshTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30),
+  // Sliding: every refresh issues a new token with a fresh lifetime, so a student who opens the app stays signed in
+  // until they log out. Only a year without opening it ends the session.
+  refreshTtlDays: Number(process.env.REFRESH_TOKEN_TTL_DAYS || 365),
   // Back-office (staff) sessions live on the server: an opaque cookie, looked up on every request.
   // Idle timeout slides with activity; the absolute limit cannot be extended.
   staffSession: {

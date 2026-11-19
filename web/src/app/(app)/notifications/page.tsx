@@ -4,22 +4,24 @@ import Link from "next/link";
 import { ErrorText, Load, MoreButton, PageTitle, Panel } from "@/components/ui";
 import { post } from "@/lib/api";
 import { timeAgo, webRoute } from "@/lib/format";
+import { onNotification, useRealtime } from "@/lib/realtime";
 import { useAction, useGet } from "@/lib/hooks";
 import type { Notification, Page } from "@/lib/types";
 
 export default function Notifications() {
   const path = "/me/notifications?limit=30";
-  const got = useGet<Page<Notification> & { unread_count: number }>(path, 30000);
+  const got = useGet<Page<Notification> & { unread_count: number }>(path, onNotification);
   const act = useAction();
+  const { publish } = useRealtime();
   const read = (n: Notification) => {
     if (n.read_at) return;
     got.setData((d) => (d ? { ...d, unread_count: Math.max(0, d.unread_count - 1), items: d.items.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x)) } : d));
-    post(`/me/notifications/${n.id}/read`, {}).catch(() => undefined);
+    post(`/me/notifications/${n.id}/read`, {}).then(() => publish({ event: "local.notifications", data: {} })).catch(() => undefined);
   };
   return (
     <>
       <PageTitle title="Notifications" action={got.data?.unread_count ? (
-        <button className="btn btn-sm" disabled={act.busy} onClick={() => act.run(async () => { await post("/me/notifications/read-all", {}); await got.reload(); })}>Mark all as read</button>
+        <button className="btn btn-sm" disabled={act.busy} onClick={() => act.run(async () => { await post("/me/notifications/read-all", {}); publish({ event: "local.notifications", data: {} }); })}>Mark all as read</button>
       ) : null} />
       <ErrorText>{act.error}</ErrorText>
       <Panel>

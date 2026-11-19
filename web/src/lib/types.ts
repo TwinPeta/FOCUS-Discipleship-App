@@ -1,4 +1,4 @@
-export type Institution = { id: string; name: string; type: "university" | "high_school"; country?: string };
+export type Institution = { id: string; name: string; type: "university" | "institute" | "high_school"; country?: string };
 
 export type Profile = {
   id: string;

@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'core/network/api_client.dart';
+import 'core/network/token_vault.dart';
+import 'core/providers/repository_providers.dart';
 import 'core/push/push_service.dart';
 import 'core/realtime/realtime_bindings.dart';
 import 'core/push/firebase_push.dart';
@@ -27,9 +30,16 @@ Future<void> main() async {
   try {
     prefs = await SharedPreferences.getInstance();
   } catch (_) {}
+  // The saved sign-in (Keychain / encrypted storage): a student signs in once
+  // and stays signed in until they log out.
+  final tokens = TokenStore(vault: SecureTokenVault());
+  await tokens.restore();
   runApp(
     ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        tokenStoreProvider.overrideWithValue(tokens),
+      ],
       child: const FcuApp(),
     ),
   );

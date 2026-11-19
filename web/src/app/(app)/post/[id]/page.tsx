@@ -14,7 +14,7 @@ export default function PostPage() {
   const { user } = useAuth();
   const got = useGet<Post>(`/posts/${id}`);
   const path = `/posts/${id}/comments?limit=50`;
-  const comments = useGet<Page<Comment>>(path, 30000);
+  const comments = useGet<Page<Comment>>(path);
   const back = got.data ? `/community/${got.data.community_id}` : "/community";
   return (
     <>

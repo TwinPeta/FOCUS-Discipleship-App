@@ -273,6 +273,8 @@ a.card-item:hover { transform: translate(-1px, -1px); box-shadow: var(--shadow);
 .radios label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 2px solid var(--input-border); border-radius: 12px; cursor: pointer; }
 .radios label:has(input:checked) { border-color: var(--ink); background: var(--cream); }
 .radios input { accent-color: var(--ink); width: 18px; height: 18px; }
+.group { margin: 0; padding: 0; border: 0; display: grid; gap: 14px; min-width: 0; }
+.group legend { padding: 0; margin-bottom: 6px; font-weight: 700; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
 .more { display: grid; justify-items: center; gap: 8px; }
 .notice.danger { background: #fdecea; border-color: var(--error); }
