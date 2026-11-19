@@ -39,7 +39,7 @@ export function DetailsFields({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="content-title" className="block text-sm font-medium text-foreground">
+        <label htmlFor="content-title" className="block text-[13px] font-extrabold">
           Title
         </label>
         <input
@@ -53,14 +53,14 @@ export function DetailsFields({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="bible-link-select" className="block text-sm font-medium text-foreground">
+          <label htmlFor="bible-link-select" className="block text-[13px] font-extrabold">
             Linked Bible character or text
           </label>
           <BibleLinkSelect value={bibleLink} onChange={onBibleLinkChange} />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="content-language" className="block text-sm font-medium text-foreground">
+          <label htmlFor="content-language" className="block text-[13px] font-extrabold">
             Language
           </label>
           <input
@@ -74,7 +74,7 @@ export function DetailsFields({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="content-tags" className="block text-sm font-medium text-foreground">
+        <label htmlFor="content-tags" className="block text-[13px] font-extrabold">
           Tags (comma-separated)
         </label>
         <input
@@ -88,7 +88,7 @@ export function DetailsFields({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="content-description" className="block text-sm font-medium text-foreground">
+        <label htmlFor="content-description" className="block text-[13px] font-extrabold">
           Description
         </label>
         <textarea

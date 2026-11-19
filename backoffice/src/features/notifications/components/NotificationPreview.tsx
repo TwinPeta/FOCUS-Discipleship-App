@@ -18,7 +18,7 @@ interface NotificationPreviewProps {
 function interpolateSample(text: string): string {
   return text
     .replace(/\{\{member_name\}\}/g, "[Member name]")
-    .replace(/\{\{community_name\}\}/g, "[Community name]")
+    .replace(/\{\{community_name\}\}/g, "[Caregroup name]")
     .replace(/\{\{item_title\}\}/g, "Faithful Discipleship")
     .replace(/\{\{message_preview\}\}/g, "Registration has opened for the annual conference.");
 }
@@ -28,7 +28,7 @@ export function NotificationPreview({ template, channels }: NotificationPreviewP
   const renderedMessage = interpolateSample(template.message);
 
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-slate-50/50 p-4">
+    <div className="space-y-4 rounded-xl border border-border bg-blue-tint p-4">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
         Live Message Preview
       </h3>

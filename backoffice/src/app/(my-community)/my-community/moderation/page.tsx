@@ -48,11 +48,11 @@ export default function MyCommunityModerationPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Moderation (Level 1) — {communityName || "your community"}
+        <h1 className="text-[34px] leading-[1.05]">
+          Moderation (Level 1) — {communityName || "your caregroup"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           Review reports within your community. Severe violations can be escalated to Level 2 admins (suspensions and deletions require L2/System admin).
@@ -75,10 +75,10 @@ export default function MyCommunityModerationPage() {
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                     report.status === "open"
-                      ? "bg-amber-50 text-amber-800"
+                      ? "bg-primary-soft text-ink"
                       : report.status === "escalated"
-                        ? "bg-rose-50 text-rose-800"
-                        : "bg-slate-100 text-muted"
+                        ? "bg-danger-soft text-danger"
+                        : "bg-blue-tint text-muted"
                   }`}
                 >
                   {report.status}
@@ -94,7 +94,7 @@ export default function MyCommunityModerationPage() {
                 <button
                   type="button"
                   onClick={() => handleDecision(report.id, "dismissed")}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Dismiss</span>
@@ -112,6 +112,6 @@ export default function MyCommunityModerationPage() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

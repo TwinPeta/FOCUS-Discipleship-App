@@ -359,6 +359,138 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+  /roles:
+    get:
+      tags: [Roles]
+      operationId: getRoles
+      summary: "List the built-in and custom roles with their permission matrix and headcount"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/RoleDef' } }, total: { type: integer }, modules: { type: array, items: { type: string } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Roles]
+      operationId: postRoles
+      summary: "Create a custom Backoffice role (based on Content admin or Super-mentor)"
+      description: "Roles: SYSTEM_ADMIN"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleInput' }
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleDef' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /roles/{id}:
+    get:
+      tags: [Roles]
+      operationId: getRolesId
+      summary: "One role"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleDef' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Roles]
+      operationId: putRolesId
+      summary: "Edit a role's permissions (custom roles can also be renamed). System admin, Student, Alumni and Mentor are fixed."
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleDef' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Roles]
+      operationId: deleteRolesId
+      summary: "Delete a custom role nobody holds"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /roles/{id}/reset:
+    post:
+      tags: [Roles]
+      operationId: postRolesIdReset
+      summary: "Put a built-in role back to the proposed matrix"
+      description: "Roles: SYSTEM_ADMIN"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleDef' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /churches:
+    get:
+      tags: [Institutions]
+      operationId: getChurches
+      summary: "List local churches (built from students' home churches) with student and mentor counts"
+      description: "Roles: SYSTEM_ADMIN"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        location: { type: string }
+                        pastor: { type: string }
+                        students: { type: integer }
+                        mentors: { type: integer }
+                  total: { type: integer }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
   /institutions:
     get:
       tags: [Institutions]
@@ -535,6 +667,24 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+  /join-requests/{id}/hello:
+    post:
+      tags: [Join requests]
+      operationId: postJoinrequestsIdHello
+      summary: "Welcome a member who has joined (sends them a notification once)"
+      description: "Roles: SYSTEM_ADMIN, SUPER_MENTOR"
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinRequest' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
   /join-requests/{id}/decline:
     post:
       tags: [Join requests]
@@ -1595,7 +1745,7 @@ paths:
       operationId: postMedia
       summary: "Start an upload (returns where to send the file and its permanent address)"
       description: |
-        Roles: staff. Allowed per `purpose`: `cover_photo` (jpeg/png, 5 MB), `content_thumbnail` (jpeg/png/webp, 5 MB),
+        Roles: staff. Allowed per `purpose`: `cover_photo` (jpeg/png, 5 MB), `content_thumbnail` (jpeg/png/webp, 5 MB), `avatar` (jpeg/png/webp, 2 MB),
         `content_video` (mp4/webm/quicktime, 500 MB), `content_document` (pdf/doc/docx, 25 MB), `story_video` (mp4/webm/quicktime, 200 MB).
 
         With Cloudflare R2 (`direct: true`) the browser `PUT`s the file to `upload_url` with `upload_headers`; otherwise it sends
@@ -1826,6 +1976,7 @@ components:
         requestedCommunityName: { type: string }
         requestedAt: { type: string, format: date-time }
         status: { type: string }
+        welcomedAt: { type: [string, "null"] }
         currentSpecificCommunityId: { type: [string, "null"] }
         currentSpecificCommunityName: { type: [string, "null"] }
       required: [id]
@@ -2087,6 +2238,14 @@ components:
     ReportsCatalog:
       type: object
       properties:
+        summary:
+          type: object
+          description: Last 30 days against the 30 days before
+          properties:
+            members: { type: object, properties: { value: { type: integer }, changePercent: { type: integer } } }
+            active: { type: object, properties: { value: { type: integer }, changePercent: { type: integer } } }
+            meetingsAttended: { type: object, properties: { value: { type: integer }, changePercent: { type: integer } } }
+            reportsHandled: { type: object, properties: { value: { type: integer }, averageAnswerHours: { type: number } } }
         membersOverTime: { type: array, items: { type: object, properties: { period: { type: string }, totalMembers: { type: integer }, activeMembers: { type: integer } }, required: [period, totalMembers, activeMembers] } }
         completionsByType: { type: array, items: {} }
         activeCommunities: { type: array, items: { type: object, properties: { id: { type: string }, name: { type: string }, campus: { type: string }, memberCount: { type: integer }, activePercent: { type: integer } }, required: [id, name, campus, memberCount, activePercent] } }
@@ -2094,7 +2253,7 @@ components:
     MediaSlotBody:
       type: object
       properties:
-        purpose: { type: string, enum: [cover_photo, content_thumbnail, content_video, content_document, story_video] }
+        purpose: { type: string, enum: [cover_photo, content_thumbnail, avatar, content_video, content_document, story_video] }
         content_type: { type: string }
         size_bytes: { type: integer, minimum: 1 }
       required: [purpose, content_type, size_bytes]
@@ -2441,9 +2600,44 @@ components:
         communityId: { type: string }
         guardianConsentReceived: { type: boolean }
         sendInvitation: { type: boolean }
+        country: { type: string, description: 'Country name; defaults to the campus country' }
+        yearOfStudy: { type: integer, minimum: 1, maximum: 7 }
+        localChurch: { type: string, maxLength: 120 }
     ImportBody: { type: object, required: [rows], properties: { rows: { type: array, maxItems: 2000, items: { $ref: '#/components/schemas/AddMember' } } } }
     ImportResult: { type: object, properties: { createdCount: { type: integer }, skippedCount: { type: integer }, failedRows: { type: array, items: { type: object, properties: { rowNumber: { type: integer }, error: { type: string } } } } } }
-    RoleBody: { type: object, required: [role], properties: { role: { $ref: '#/components/schemas/Role' } } }
+    PermissionMatrix:
+      type: object
+      description: "Module name -> what the role can do there. Codes: V view, C create, E edit, A approve, D delete, X export. own limits it to the person's own caregroups."
+      additionalProperties:
+        type: object
+        properties:
+          codes: { type: array, items: { type: string, enum: [V, C, E, A, D, X] } }
+          own: { type: boolean }
+    RoleDef:
+      type: object
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        builtIn: { type: boolean }
+        base: { type: string }
+        editable: { type: boolean }
+        renamable: { type: boolean }
+        deletable: { type: boolean }
+        edited: { type: boolean }
+        where: { type: string }
+        scope: { type: string }
+        people: { type: integer }
+        matrix: { $ref: '#/components/schemas/PermissionMatrix' }
+    RoleInput:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        base: { type: string, enum: [CONTENT_ADMIN, SUPER_MENTOR] }
+        matrix: { $ref: '#/components/schemas/PermissionMatrix' }
+    RoleBody: { type: object, properties: { role: { $ref: '#/components/schemas/Role' }, customRoleId: { type: string }, reason: { type: string, maxLength: 500 } } }
     CommunityIdBody: { type: object, required: [communityId], properties: { communityId: { type: string } } }
     ReasonBody: { type: object, required: [reason], properties: { reason: { type: string, minLength: 3 } } }
     OptReasonBody: { type: object, properties: { reason: { type: string } } }

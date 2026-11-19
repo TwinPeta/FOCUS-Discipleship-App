@@ -40,10 +40,10 @@ export default function ContentDetailPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="flex flex-col gap-5">
       {loading && <p className="text-sm text-muted-foreground">Loading content...</p>}
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -51,7 +51,7 @@ export default function ContentDetailPage({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{item.title}</h1>
+              <h1 className="text-[34px] leading-[1.05]">{item.title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {item.type} · {item.bibleLink} · Author: {item.authorName}
               </p>

@@ -12,11 +12,12 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { AuditNotice } from "@/components/common/AuditNotice";
-import { RoleSelector } from "@/features/members/components/RoleSelector";
 import { ROUTES } from "@/lib/constants/routes";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { Role } from "@/types/enums";
 import { createStaffAccount, type StaffAccountResult } from "../queries";
+import { fetchRoles } from "../api";
+import { useRemoteData } from "@/lib/hooks/useRemoteData";
 import { useLookups } from "@/lib/hooks/useLookups";
 
 const STAFF_ROLES: Role[] = [
@@ -30,7 +31,11 @@ export function StaffAccountForm() {
   const { communities } = useLookups({ communities: true });
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Role>(Role.ContentAdmin);
+  const [choice, setChoice] = useState<string>(Role.ContentAdmin);
+  const { data: rolesData } = useRemoteData(fetchRoles);
+  const customRoles = (rolesData?.items ?? []).filter((r) => !r.builtIn);
+  const custom = customRoles.find((r) => r.id === choice);
+  const role = (custom ? custom.base : choice) as Role;
   const [communityId, setCommunityId] = useState("");
   const [sendInviteEmail, setSendInviteEmail] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -52,7 +57,7 @@ export function StaffAccountForm() {
       return;
     }
     if (needsCommunityScope && !communityId) {
-      setError("Super-mentors must be assigned to a community.");
+      setError("Super-mentors must be assigned to a caregroup.");
       return;
     }
 
@@ -62,6 +67,7 @@ export function StaffAccountForm() {
         fullName: fullName.trim(),
         email: email.trim(),
         role,
+        customRoleId: custom?.id,
         communityId: needsCommunityScope ? communityId : undefined,
         sendInviteEmail,
       });
@@ -83,7 +89,7 @@ export function StaffAccountForm() {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {error}
         </div>
@@ -92,7 +98,7 @@ export function StaffAccountForm() {
       {created && (
         <div
           role="status"
-          className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          className="rounded-md border border-blue/30 bg-blue-soft px-4 py-3 text-sm text-ink"
         >
           <p className="font-semibold">
             Staff account created for {created.fullName}
@@ -113,7 +119,7 @@ export function StaffAccountForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="staff-full-name" className="block text-sm font-medium text-foreground">
+          <label htmlFor="staff-full-name" className="block text-[13px] font-extrabold">
             Full name
           </label>
           <input
@@ -128,7 +134,7 @@ export function StaffAccountForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="staff-email" className="block text-sm font-medium text-foreground">
+          <label htmlFor="staff-email" className="block text-[13px] font-extrabold">
             Email address
           </label>
           <input
@@ -145,15 +151,25 @@ export function StaffAccountForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="staff-role" className="block text-sm font-medium text-foreground">
+          <label htmlFor="staff-role" className="block text-[13px] font-extrabold">
             Staff role
           </label>
-          <RoleSelector
-            id="staff-role"
-            value={role}
-            onChange={setRole}
-            roles={STAFF_ROLES}
-          />
+          <select id="staff-role" value={choice} onChange={(e) => setChoice(e.target.value)} className="w-full px-3.5">
+            {STAFF_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))}
+            {customRoles.length > 0 && (
+              <optgroup label="Custom roles">
+                {customRoles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
           <p className="text-xs text-muted">
             Only Super-mentor, Content admin, and System admin accounts can access the backoffice.
           </p>
@@ -161,8 +177,8 @@ export function StaffAccountForm() {
 
         {needsCommunityScope && (
           <div className="space-y-1.5">
-            <label htmlFor="staff-community" className="block text-sm font-medium text-foreground">
-              Assigned community
+            <label htmlFor="staff-community" className="block text-[13px] font-extrabold">
+              Assigned caregroup
             </label>
             <select
               id="staff-community"
@@ -171,7 +187,7 @@ export function StaffAccountForm() {
               className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground"
               required
             >
-              <option value="">Select community…</option>
+              <option value="">Select caregroup…</option>
               {communities.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -200,7 +216,7 @@ export function StaffAccountForm() {
       <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
         <Link
           href={ROUTES.roles}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-slate-50"
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-blue-tint"
         >
           Cancel
         </Link>

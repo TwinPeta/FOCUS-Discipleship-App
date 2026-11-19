@@ -32,6 +32,7 @@ function setSpecific(user, communityId, role = 'member') {
 function applyRole(user, role) {
   user.platformRole = role === SYS ? 'system_admin' : role === CA ? 'content_admin' : (['system_admin', 'content_admin'].includes(user.platformRole) ? 'student' : user.platformRole);
   user.roleOverride = [SYS, CA].includes(role) ? undefined : role;
+  user.customRoleId = undefined; // choosing a built-in role ends any custom role
   user.verifiedMentor = [SYS, CA, SM, 'MENTOR'].includes(role);
   const ms = C.specificMemberships(user.id)[0];
   if (ms && [SM, 'MENTOR'].includes(role)) ms.role = role === SM ? 'super_mentor' : 'mentor';
@@ -49,8 +50,10 @@ function createUser(b, { invited = true } = {}) {
   const role = b.role || 'STUDENT';
   const u = store.insert('users', {
     fullName: b.fullName.trim(), username: uniqueUsername(email), email, phone: b.phone ? String(b.phone).replace(/[\s-]/g, '') : undefined,
-    birthdate: b.birthdate || undefined, institutionId: inst.id, country: inst.country, passwordHash: bcrypt.hashSync(crypto.randomBytes(12).toString('hex'), 10),
-    emailVerified: false, phoneVerified: false, minorStatus: C.isMinor(b.birthdate) ? (b.guardianConsentReceived ? 'consented' : 'pending_guardian_consent') : 'adult',
+    birthdate: b.birthdate || undefined, institutionId: inst.id, country: (b.country && COUNTRY_CODES[String(b.country).toLowerCase()]) || inst.country, passwordHash: bcrypt.hashSync(crypto.randomBytes(12).toString('hex'), 10),
+    emailVerified: false, phoneVerified: false,
+    ...(b.yearOfStudy ? { yearOfStudy: b.yearOfStudy } : {}), ...(b.localChurch ? { homeChurch: { name: String(b.localChurch).trim(), location: '', pastor: '' } } : {}),
+    minorStatus: C.isMinor(b.birthdate) ? (b.guardianConsentReceived ? 'consented' : 'pending_guardian_consent') : 'adult',
     platformRole: 'student', invited, verifiedMentor: false,
   });
   applyRole(u, role);
@@ -80,6 +83,15 @@ router.get('/dashboard', C.allow(...someRole), (req, res) => {
     const ms = C.specificMemberships(u.id)[0];
     return { id: u.id, name: u.fullName, community: ms ? store.get('communities', ms.communityId)?.name || '' : '', daysInactive: Math.floor((Date.now() - Date.parse(last)) / 864e5), lastActiveAt: last };
   });
+  const iso30 = new Date(Date.now() - 30 * 864e5).toISOString(); const iso60 = new Date(Date.now() - 60 * 864e5).toISOString();
+  const newMembers = users.filter((u) => u.createdAt >= iso30).length;
+  const newPrev = users.filter((u) => u.createdAt >= iso60 && u.createdAt < iso30).length;
+  const uids = new Set(users.map((u) => u.id));
+  const progress = store.col('resourceProgress').filter((p) => uids.has(p.userId));
+  const completedNow = progress.filter((p) => (p.createdAt || '') >= iso30).length;
+  const completedPrev = progress.filter((p) => (p.createdAt || '') >= iso60 && (p.createdAt || '') < iso30).length;
+  const pctChange = (a, b) => (b ? Math.round(((a - b) / b) * 100) : a ? 100 : 0);
+  const noSpecific = users.filter((u) => C.roleOf(u) === 'STUDENT' && !C.specificMemberships(u.id).length).length;
   const days = [...Array(7)].map((_, i) => { const d = new Date(Date.now() - (6 - i) * 864e5); return d.toISOString().slice(0, 10); });
   const events = store.col('events').filter((e) => !e.internal);
   const weeklyActivity = days.map((d) => ({
@@ -89,17 +101,18 @@ router.get('/dashboard', C.allow(...someRole), (req, res) => {
   }));
   res.json({
     kpis: [
-      { id: 'members', label: 'Total members', value: String(users.length), changePercent: 0 },
       { id: 'active', label: 'Active members', value: String(statuses.filter((s) => s === 'ACTIVE').length), changePercent: 0 },
-      { id: 'pending', label: 'Pending join requests', value: String(pending), changePercent: 0 },
+      { id: 'new', label: 'New members', value: String(newMembers), changePercent: pctChange(newMembers, newPrev) },
+      { id: 'completed', label: 'Resources completed', value: String(completedNow), changePercent: pctChange(completedNow, completedPrev) },
       { id: 'reports', label: 'Open reports', value: String(openReports), changePercent: 0 },
     ],
     weeklyActivity,
     needsAttention: [
-      { id: 'jr', label: 'Join requests awaiting approval', count: pending, href: '/join-requests' },
+      { id: 'ns', label: 'Students without a specific caregroup', count: noSpecific, href: '/members' },
+      { id: 'jr', label: 'New members awaiting approval', count: pending, href: '/join-requests' },
       { id: 'rep', label: 'Reports to review', count: openReports, href: '/moderation/reports' },
-      { id: 'tes', label: 'Testimonies awaiting review', count: pendingTestimonies, href: '/moderation/testimonies' },
-      ...(req.role === SM ? [] : [{ id: 'con', label: 'Content awaiting validation', count: pendingContent, href: '/content' }]),
+      { id: 'tes', label: 'Testimonies awaiting moderation', count: pendingTestimonies, href: '/moderation/testimonies' },
+      ...(req.role === SM ? [] : [{ id: 'con', label: 'Content in review', count: pendingContent, href: '/content' }]),
     ].filter((x) => x.count > 0),
     inactiveMembers: inactive,
   });
@@ -128,8 +141,10 @@ router.post('/members', C.allow(SYS), (req, res, next) => {
       fullName: { required: true, type: 'string', min: 2, max: 100 }, email: { required: true, type: 'string', email: true },
       phone: { type: 'string' }, birthdate: { type: 'string', pattern: /^\d{4}-\d{2}-\d{2}$/ },
       role: { type: 'string', enum: ROLE_ENUM }, institutionId: { required: true, type: 'string' }, communityId: { type: 'string' },
+      country: { type: 'string' }, yearOfStudy: { type: 'integer', min: 1, max: 7 }, localChurch: { type: 'string', max: 120 },
     });
     b.guardianConsentReceived = req.body.guardianConsentReceived === true;
+    if (b.yearOfStudy !== undefined && (!Number.isInteger(b.yearOfStudy) || b.yearOfStudy < 1 || b.yearOfStudy > 7)) throw validation([{ field: 'yearOfStudy', message: 'must be a whole number from 1 to 7' }]);
     if (b.role === SM && !b.communityId) throw validation([{ field: 'communityId', message: 'is required for a super-mentor' }]);
     const u = createUser(b);
     if (b.role && [SYS, CA, SM].includes(b.role)) C.audit(req, 'staff_created', `${u.fullName} (${b.role})`);
@@ -161,11 +176,16 @@ router.post('/members/import', C.allow(SYS), (req, res, next) => {
 router.patch('/members/:id/role', C.allow(SYS), (req, res, next) => {
   try {
     const u = loadMember(req);
-    const b = check(req.body, { role: { required: true, type: 'string', enum: ROLE_ENUM } });
+    const b = check(req.body, { role: { type: 'string', enum: ROLE_ENUM }, customRoleId: { type: 'string' }, reason: { type: 'string', max: 500 } });
+    const custom = b.customRoleId ? require('./permissions').customRoles().find((r) => r.id === b.customRoleId) : null;
+    if (b.customRoleId && !custom) throw validation([{ field: 'customRoleId', message: 'unknown role' }]);
+    if (!b.role && !custom) throw validation([{ field: 'role', message: 'is required' }]);
+    if (custom) b.role = custom.base;
     if (u.id === req.user.id) throw forbidden('cannot_change_own_role', 'You cannot change your own role');
     const before = C.roleOf(u);
     applyRole(u, b.role);
-    C.audit(req, 'role_changed', `${u.fullName}: ${before} → ${b.role}`);
+    if (custom) u.customRoleId = custom.id;
+    C.audit(req, 'role_changed', `${u.fullName}: ${before} → ${custom ? custom.name : b.role}${b.reason ? ` (${b.reason.trim()})` : ''}`);
     res.json(C.memberDto(u));
   } catch (e) { next(e); }
 });
@@ -245,6 +265,23 @@ router.patch('/institutions/:id', C.allow(SYS), (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ───────── local churches ─────────
+// Read-only: built from the home church each student gives when they sign up, so the list needs no extra data entry.
+router.get('/churches', C.allow(SYS), (_req, res) => {
+  const byChurch = new Map();
+  for (const u of store.where('users', (x) => !x.deletedAt)) {
+    const h = u.homeChurch;
+    if (!h || !h.name) continue;
+    const key = `${h.name.trim().toLowerCase()}|${String(h.location || '').trim().toLowerCase()}`;
+    const e = byChurch.get(key) || { id: key, name: h.name.trim(), location: h.location || '', pastor: h.pastor || '', students: 0, mentors: 0 };
+    const role = C.roleOf(u);
+    if (role === 'MENTOR' || role === 'SUPER_MENTOR') e.mentors += 1;
+    else if (role === 'STUDENT') e.students += 1;
+    byChurch.set(key, e);
+  }
+  res.json(C.list([...byChurch.values()].sort((a, b) => a.name.localeCompare(b.name))));
+});
+
 // ───────── communities ─────────
 const visibleCommunity = (req) => (c) => C.inScope(req.scope, c.id);
 router.get('/communities', C.allow(...someRole), (req, res) => {
@@ -320,7 +357,7 @@ function jrDto(j) {
   return {
     id: j.id, studentId: j.userId, studentUsername: u.username || '', institutionName: inst ? inst.name : '',
     requestedCommunityId: j.communityId, requestedCommunityName: c.name || '', requestedAt: j.createdAt, status: STATUS_OUT[j.status] || 'PENDING',
-    currentSpecificCommunityId: curC ? curC.id : null, currentSpecificCommunityName: curC ? curC.name : null,
+    welcomedAt: j.welcomedAt || null, currentSpecificCommunityId: curC ? curC.id : null, currentSpecificCommunityName: curC ? curC.name : null,
   };
 }
 router.get('/join-requests', C.allow(SYS, SM, CA), (req, res) => {
@@ -333,6 +370,20 @@ function decide(req, j, approve, reason) {
   if (!C.inScope(req.scope, j.communityId)) throw notFound('Join request');
   require('../utils/joinRequests').decide(j, { approve, by: req.user.id, note: reason });
 }
+router.post('/join-requests/:id/hello', C.allow(SYS, SM), (req, res, next) => {
+  try {
+    const j = C.must('joinRequests', req.params.id, 'Join request');
+    if (!C.inScope(req.scope, j.communityId)) throw notFound('Join request');
+    if (j.status !== 'approved') throw conflict('not_approved', 'Only members who have joined can be welcomed');
+    if (!j.welcomedAt) {
+      const c = store.get('communities', j.communityId) || {};
+      require('../utils/notify').notify(j.userId, 'announcement', { title: `Welcome to ${c.name || 'your caregroup'}`, body: `${req.user.fullName} is glad you joined. Say hello in the feed.`, targetRoute: '/notifications', email: false });
+      j.welcomedAt = store.now();
+      C.audit(req, 'member_welcomed', `${(store.get('users', j.userId) || {}).fullName || ''} → ${c.name || ''}`, c.name);
+    }
+    res.json(jrDto(j));
+  } catch (e) { next(e); }
+});
 router.post('/join-requests/bulk-approve', C.allow(SYS, SM), (req, res, next) => {
   try {
     if (!req.body || !Array.isArray(req.body.ids)) throw validation([{ field: 'ids', message: 'must be an array' }]);
@@ -351,12 +402,17 @@ router.post('/join-requests/:id/decline', C.allow(SYS, SM), (req, res, next) => 
 // ───────── staff accounts (roles page) ─────────
 router.post('/roles/staff', C.allow(SYS), (req, res, next) => {
   try {
-    const b = check(req.body, { fullName: { required: true, type: 'string', min: 2 }, email: { required: true, type: 'string', email: true }, role: { required: true, type: 'string', enum: [SYS, CA, SM] }, communityId: { type: 'string' } });
+    const b = check(req.body, { fullName: { required: true, type: 'string', min: 2 }, email: { required: true, type: 'string', email: true }, role: { type: 'string', enum: [SYS, CA, SM] }, customRoleId: { type: 'string' }, communityId: { type: 'string' } });
+    const custom = b.customRoleId ? require('./permissions').customRoles().find((r) => r.id === b.customRoleId) : null;
+    if (b.customRoleId && !custom) throw validation([{ field: 'customRoleId', message: 'unknown role' }]);
+    if (!b.role && !custom) throw validation([{ field: 'role', message: 'is required' }]);
+    if (custom) b.role = custom.base;
     if (b.role === SM && !b.communityId) throw validation([{ field: 'communityId', message: 'is required for a super-mentor' }]);
     const comm = b.communityId && C.must('communities', b.communityId, 'Community');
     const institutionId = comm ? comm.institutionId : store.col('institutions')[0].id;
     const u = createUser({ fullName: b.fullName, email: b.email, role: b.role, institutionId, communityId: b.communityId });
-    C.audit(req, 'staff_created', `${u.fullName} (${b.role})`);
+    if (custom) u.customRoleId = custom.id;
+    C.audit(req, 'staff_created', `${u.fullName} (${custom ? custom.name : b.role})`);
     res.status(201).json({ id: u.id, fullName: u.fullName, email: u.email, role: b.role, communityId: b.communityId || null, createdAt: u.createdAt });
   } catch (e) { next(e); }
 });

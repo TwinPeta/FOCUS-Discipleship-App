@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { AuditNotice } from "@/components/common/AuditNotice";
+import { ReportSummaryCards } from "@/features/reports/components/ReportSummaryCards";
 import { ActiveCommunitiesList } from "@/features/reports/components/ActiveCommunitiesList";
 import { CompletionsByTypeChart } from "@/features/reports/components/CompletionsByTypeChart";
 import { ExportButtons } from "@/features/reports/components/ExportButtons";
@@ -54,14 +55,14 @@ export default function ReportsPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-[34px] leading-[1.05]">
             Reports &amp; statistics
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Track membership growth, content completions, community engagement, and scheduled exports.
+            Track membership growth, content completions, caregroup engagement, and scheduled exports.
           </p>
         </div>
 
@@ -78,7 +79,8 @@ export default function ReportsPage() {
       {!data && loading && <PanelSkeleton />}
       {data && (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
+          {data.summary && <ReportSummaryCards summary={data.summary} />}
+          <div className="grid gap-4 lg:grid-cols-2">
             <MembersOverTimeChart data={data.membersOverTime} />
             <CompletionsByTypeChart data={data.completionsByType} />
           </div>
@@ -91,6 +93,6 @@ export default function ReportsPage() {
           />
         </>
       )}
-    </main>
+    </div>
   );
 }

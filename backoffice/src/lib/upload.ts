@@ -13,6 +13,7 @@ import { ApiError } from "@/lib/api/errors";
 export type UploadPurpose =
   | "cover_photo"
   | "content_thumbnail"
+  | "avatar"
   | "content_video"
   | "content_document"
   | "story_video";

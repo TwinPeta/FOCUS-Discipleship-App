@@ -21,7 +21,7 @@ import { ReviewStep } from "./ReviewStep";
 import { RunStep } from "./RunStep";
 import { UploadStep } from "./UploadStep";
 
-const STEPS = ["1. Upload CSV", "2. Match columns", "3. Review rows", "4. Import"] as const;
+const STEPS = ["Upload", "Match columns", "Review", "Import"] as const;
 
 export function ImportStepper() {
   const [step, setStep] = useState(0);
@@ -34,20 +34,18 @@ export function ImportStepper() {
     : { validRows: [], invalidRows: [], duplicateEmails: [] };
 
   return (
-    <div className="space-y-6">
-      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="flex flex-col gap-5">
+      <ol className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Import steps">
         {STEPS.map((label, idx) => (
-          <li
-            key={label}
-            className={`rounded-md border px-3 py-2 text-xs font-semibold ${
-              idx === step
-                ? "border-primary bg-primary-soft text-foreground"
-                : idx < step
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                  : "border-border bg-surface text-muted-foreground"
-            }`}
-          >
-            {label}
+          <li key={label} aria-current={idx === step ? "step" : undefined} className="flex items-center gap-2.5">
+            <span
+              className={`grid h-8 w-8 place-items-center rounded-full border-2 border-ink text-sm font-black ${
+                idx === step ? "bg-grad-yellow" : idx < step ? "bg-blue text-white" : "bg-white"
+              }`}
+            >
+              {idx + 1}
+            </span>
+            <span className={`text-base ${idx === step ? "font-extrabold" : "font-semibold"}`}>{label}</span>
           </li>
         ))}
       </ol>

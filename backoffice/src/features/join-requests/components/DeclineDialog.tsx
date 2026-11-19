@@ -53,7 +53,7 @@ export function DeclineDialog({
         </h2>
 
         <div className="space-y-1.5">
-          <label htmlFor="decline-reason" className="block text-sm font-medium text-foreground">
+          <label htmlFor="decline-reason" className="block text-[13px] font-extrabold">
             Reason (optional)
           </label>
           <textarea
@@ -78,7 +78,7 @@ export function DeclineDialog({
             type="button"
             disabled={submitting}
             onClick={handleConfirm}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            className="rounded-md bg-danger px-3 py-1.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
           >
             {submitting ? "Declining..." : "Decline request"}
           </button>

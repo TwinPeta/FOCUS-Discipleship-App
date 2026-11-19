@@ -51,26 +51,26 @@ export default function MyCommunityJoinRequestsPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Join requests — {communityName || "your community"}
+        <h1 className="text-[34px] leading-[1.05]">
+          Join requests — {communityName || "your caregroup"}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Approve or decline students requesting to join your community.
+          Approve or decline students requesting to join your caregroup.
         </p>
       </div>
 
       {requests.length === 0 ? (
         <div className="rounded-xl border border-border bg-white p-8 text-center text-sm text-muted">
-          No pending join requests for {communityName || "your community"}.
+          No pending join requests for {communityName || "your caregroup"}.
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-white">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-muted">
+              <tr className="border-b border-border bg-blue-tint text-xs font-semibold uppercase tracking-wide text-muted">
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Note</th>
                 <th className="px-4 py-3">Requested</th>
@@ -102,7 +102,7 @@ export default function MyCommunityJoinRequestsPage() {
                       <button
                         type="button"
                         onClick={() => handleDecline(req.id)}
-                        className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
                       >
                         <X className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>Decline</span>
@@ -115,6 +115,6 @@ export default function MyCommunityJoinRequestsPage() {
           </table>
         </div>
       )}
-    </main>
+    </div>
   );
 }

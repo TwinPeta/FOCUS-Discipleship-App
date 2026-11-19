@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { InstitutionTable } from "@/features/institutions/components/InstitutionTable";
 import type { Institution } from "@/features/institutions/schemas";
 import { ROUTES } from "@/lib/constants/routes";
@@ -17,22 +18,21 @@ export default function InstitutionsPage() {
   const initialItems: Institution[] = [];
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Institutions</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage universities and high schools. A general community is created
-            automatically per institution.
-          </p>
+          <h1 className="text-[34px] leading-[1.05]">Campuses</h1>
+          <p>Manage universities and high schools. A general caregroup is created automatically per campus.</p>
         </div>
-
-        <Link
-          href={ROUTES.institutionNew}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95"
-        >
-          New institution
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href={ROUTES.churches} className="btn btn-secondary">
+            Local churches
+          </Link>
+          <Link href={ROUTES.institutionNew} className="btn btn-primary">
+            <Plus className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />
+            Add campus
+          </Link>
+        </div>
       </div>
 
       <InstitutionTable initialItems={initialItems} />

@@ -88,6 +88,10 @@ test('members: list, create (minor consent), role change, suspend', async () => 
   assert.equal(created.body.isMinor, true);
   assert.equal(created.body.guardianConsentStatus, 'PENDING');
   assert.equal(created.body.status, 'INVITED');
+  const rich = await call('POST', '/members', { token: sys, body: { fullName: 'Rita Rich', email: 'rita@fcu.test', institutionId: inst, country: 'Kenya', yearOfStudy: 3, localChurch: 'Grace Chapel' } });
+  assert.equal(rich.status, 201);
+  assert.deepEqual([rich.body.country, rich.body.yearOfStudy, rich.body.localChurch], ['Kenya', 3, 'Grace Chapel']);
+  assert.equal((await call('POST', '/members', { token: sys, body: { fullName: 'Bad Year', email: 'by@fcu.test', institutionId: inst, yearOfStudy: 12 } })).status, 422);
   assert.equal((await call('POST', '/members', { token: sys, body: { fullName: 'Tina Minor', email: 'tina@fcu.test', institutionId: inst } })).status, 409);
   const id = created.body.id;
   assert.equal((await call('PATCH', `/members/${id}/role`, { token: sys, body: { role: 'MENTOR' } })).body.role, 'MENTOR');
@@ -110,6 +114,16 @@ test('import reports created / skipped / failed rows', async () => {
   assert.equal(r.status, 200);
   assert.deepEqual([r.body.createdCount, r.body.skippedCount, r.body.failedRows.length], [1, 1, 1]);
   assert.equal(r.body.failedRows[0].rowNumber, 3);
+});
+
+test('local churches are read from students\' home churches', async () => {
+  const sys = (await login('admin@fcu.test')).token;
+  const ca = (await login('content@fcu.test')).token;
+  const r = await call('GET', '/churches', { token: sys });
+  assert.equal(r.status, 200);
+  assert.ok(Array.isArray(r.body.items));
+  for (const c of r.body.items) assert.ok(c.name && Number.isInteger(c.students) && Number.isInteger(c.mentors));
+  assert.equal((await call('GET', '/churches', { token: ca })).status, 403);
 });
 
 test('institutions & communities CRUD', async () => {
@@ -139,6 +153,10 @@ test('join requests: approve, conflict, bulk skips conflicts', async () => {
   const bulk = await call('POST', '/join-requests/bulk-approve', { token: sm, body: { ids: [j1.id, 'missing'] } });
   assert.deepEqual(bulk.body.approved, [j1.id]);
   assert.equal(bulk.body.skipped[0].reason, 'not_found');
+  const hello = await call('POST', `/join-requests/${j1.id}/hello`, { token: sm });
+  assert.equal(hello.status, 200);
+  assert.ok(hello.body.welcomedAt);
+  assert.equal((await call('POST', `/join-requests/${j1.id}/hello`, { token: sm })).body.welcomedAt, hello.body.welcomedAt); // welcomed once
   assert.equal((await call('POST', `/join-requests/${j1.id}/approve`, { token: sm })).status, 409); // already decided
   assert.ok(pending.length > 0);
 });
@@ -234,6 +252,8 @@ test('dashboard, reports, my-community, account', async () => {
   assert.equal(d.body.weeklyActivity.length, 7);
   const rep = await call('GET', '/reports?range=30d&campus=all&community=all', { token: sys });
   assert.equal(rep.body.membersOverTime.length, 6);
+  assert.ok(Number.isInteger(rep.body.summary.members.value) && Number.isInteger(rep.body.summary.reportsHandled.value));
+  assert.equal(typeof rep.body.summary.reportsHandled.averageAnswerHours, 'number');
   const sch = await call('POST', '/reports/schedules', { token: sys, body: { reportType: 'community_health', cadence: 'weekly', recipientEmail: 'ops@fcu.test' } });
   assert.equal(sch.body.reportLabel, 'Community health & attendance');
   const csv = await fetch(base + A + '/reports/export', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sys}` }, body: JSON.stringify({ format: 'csv', filters: {} }) });
@@ -383,6 +403,7 @@ test('staff uploads: slot -> bytes -> complete -> permanent address that serves 
 
   // rules per purpose, and one person cannot touch another's upload
   assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'cover_photo', content_type: 'image/gif', size_bytes: 10 } })).status, 422);
+  assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'avatar', content_type: 'image/png', size_bytes: 3 * 1024 * 1024 } })).status, 422); // avatars are at most 2 MB
   assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'cover_photo', content_type: 'image/png', size_bytes: 6 * 1024 * 1024 } })).status, 422);
   assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'content_video', content_type: 'video/mp4', size_bytes: 400 * 1024 * 1024 } })).status, 201);
   assert.equal((await call('POST', '/media', { token: sys, body: { purpose: 'nope', content_type: 'image/png', size_bytes: 1 } })).status, 422);
@@ -463,6 +484,55 @@ test('push diagnostics: status hides the key; the test needs configuration and a
     assert.match(failed.body.detail, /Permission denied/);
     assert.equal((await call('GET', '/push/status', { token: sys })).body.recent[0].ok, false);
   } finally { config.env = env; config.fcm.serviceAccountJson = ''; push.useFetch(null); push.reset(); store.remove('devices', (d) => d.pushToken === 'tok-2'); }
+});
+
+test('custom roles and edited permissions are enforced', async () => {
+  const sys = (await login('admin@fcu.test')).token;
+  const ca = (await login('content@fcu.test')).token;
+  const sm = (await login('super@fcu.test')).token;
+  const caUser = store.first('users', (u) => u.email === 'content@fcu.test');
+
+  // create a read-only reviewer role and give it to the content admin
+  assert.equal((await call('POST', '/roles', { token: ca, body: { name: 'X', base: 'CONTENT_ADMIN' } })).status, 403);
+  const made = await call('POST', '/roles', { token: sys, body: { name: 'Reviewer', description: 'Reads content', base: 'CONTENT_ADMIN', matrix: { 'Content library': { codes: ['V'] } } } });
+  assert.equal(made.status, 201);
+  assert.equal((await call('POST', '/roles', { token: sys, body: { name: 'reviewer', base: 'CONTENT_ADMIN' } })).status, 409);
+  assert.equal((await call('PATCH', `/members/${caUser.id}/role`, { token: sys, body: { customRoleId: made.body.id, reason: 'trial' } })).status, 200);
+  assert.equal((await call('GET', '/content', { token: ca })).status, 200);
+  const denied = await call('POST', '/content', { token: ca, body: { title: 'Nope', type: 'DEVOTIONAL', bibleLink: 'Psalm 1' } });
+  assert.equal(denied.status, 403);
+  assert.equal(denied.body.code, 'permission_denied');
+  assert.equal((await call('GET', '/dashboard', { token: ca })).status, 403); // no Dashboard module
+  const me = await call('GET', '/auth/me', { token: ca });
+  assert.deepEqual(me.body.user.access['Content library'], ['V']);
+
+  // widening the role takes effect on the next request
+  await call('PUT', `/roles/${made.body.id}`, { token: sys, body: { matrix: { 'Content library': { codes: ['V', 'C'] }, Dashboard: { codes: ['V'] } } } });
+  assert.equal((await call('POST', '/content', { token: ca, body: { title: 'Allowed now', type: 'DEVOTIONAL', bibleLink: 'Psalm 1', body: 'x' } })).status, 201);
+  assert.equal((await call('GET', '/dashboard', { token: ca })).status, 200);
+
+  // a role in use cannot be deleted; after moving the person it can
+  assert.equal((await call('DELETE', `/roles/${made.body.id}`, { token: sys })).status, 409);
+  assert.equal((await call('PATCH', `/members/${caUser.id}/role`, { token: sys, body: { role: 'CONTENT_ADMIN' } })).status, 200);
+  assert.equal((await call('GET', '/auth/me', { token: ca })).body.user.access, undefined);
+  assert.equal((await call('DELETE', `/roles/${made.body.id}`, { token: sys })).status, 204);
+
+  // editing a built-in role: remove access, then grant new access, then reset
+  await call('PUT', '/roles/content-admin', { token: sys, body: { matrix: { 'Content library': { codes: ['V'] } } } });
+  assert.equal((await call('GET', '/pathways', { token: ca })).status, 403);
+  assert.equal((await call('GET', '/audit-log', { token: sm })).status, 403);
+  await call('PUT', '/roles/super-mentor', { token: sys, body: { matrix: { 'Audit log': { codes: ['V'] } } } });
+  assert.equal((await call('GET', '/audit-log', { token: sm })).status, 200); // widened beyond the old role list
+  assert.equal((await call('POST', '/roles/content-admin/reset', { token: sys })).status, 200);
+  assert.equal((await call('POST', '/roles/super-mentor/reset', { token: sys })).status, 200);
+  assert.equal((await call('GET', '/pathways', { token: ca })).status, 200);
+  assert.equal((await call('PUT', '/roles/system-admin', { token: sys, body: { matrix: {} } })).status, 403); // fixed
+  assert.equal((await call('GET', '/roles/student', { token: sys })).status, 200);
+  assert.equal((await call('GET', '/roles/nope', { token: sys })).status, 404);
+  assert.equal((await call('POST', '/roles/student/reset', { token: sys })).status, 200);
+  const list = await call('GET', '/roles', { token: sys });
+  assert.equal(list.body.items.length, 6);
+  assert.ok(list.body.items.every((r) => typeof r.people === 'number'));
 });
 
 test('zz every documented staff operation is exercised by a test', async () => {

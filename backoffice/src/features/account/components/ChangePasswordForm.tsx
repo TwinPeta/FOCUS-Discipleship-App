@@ -71,7 +71,7 @@ export function ChangePasswordForm() {
       {saved && (
         <div
           role="status"
-          className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
+          className="rounded-md border border-blue/30 bg-blue-soft px-3 py-2 text-sm text-ink"
         >
           Password updated.
         </div>
@@ -79,14 +79,14 @@ export function ChangePasswordForm() {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {error}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="currentPassword" className="block text-sm font-medium text-foreground">
+        <label htmlFor="currentPassword" className="block text-[13px] font-extrabold">
           Current password
         </label>
         <input
@@ -97,14 +97,14 @@ export function ChangePasswordForm() {
           {...register("currentPassword")}
         />
         {errors.currentPassword && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.currentPassword.message}
           </p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="newPassword" className="block text-sm font-medium text-foreground">
+        <label htmlFor="newPassword" className="block text-[13px] font-extrabold">
           New password
         </label>
         <input
@@ -115,7 +115,7 @@ export function ChangePasswordForm() {
           {...register("newPassword")}
         />
         {errors.newPassword && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.newPassword.message}
           </p>
         )}
@@ -124,7 +124,7 @@ export function ChangePasswordForm() {
       <PasswordRules password={newPasswordValue} />
 
       <div className="space-y-1.5">
-        <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-foreground">
+        <label htmlFor="confirmNewPassword" className="block text-[13px] font-extrabold">
           Repeat new password
         </label>
         <input
@@ -135,7 +135,7 @@ export function ChangePasswordForm() {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.confirmPassword.message}
           </p>
         )}

@@ -20,8 +20,8 @@ export function MinorBadge({ consentStatus }: MinorBadgeProps) {
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
         received
-          ? "bg-emerald-100 text-emerald-800"
-          : "bg-amber-100 text-amber-900"
+          ? "bg-blue-soft text-ink"
+          : "bg-primary-soft text-ink"
       }`}
     >
       Minor · {received ? "Consent received" : "Consent pending"}

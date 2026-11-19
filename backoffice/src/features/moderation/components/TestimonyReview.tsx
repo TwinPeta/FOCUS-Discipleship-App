@@ -10,6 +10,8 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import type {
   ModerationTestimony,
   TestimonyAction,
@@ -39,37 +41,38 @@ export function TestimonyReview({
   }
 
   return (
-    <aside className="space-y-4 rounded-card border border-border bg-white p-5">
+    <aside className="card flex min-w-0 flex-[1_1_320px] flex-col gap-3 lg:max-w-[420px]">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">
-            {testimony.authorName}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {testimony.communityName} · {testimony.createdAt}
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-[22px] font-black">{testimony.title || "Testimony"}</h2>
+          <StatusPill status={testimony.status === "PENDING" ? "Pending" : testimony.status === "APPROVED" ? "Published" : testimony.status === "REJECTED" ? "Rejected" : "Changes asked"} variant={testimony.status === "PENDING" ? "pending" : testimony.status === "APPROVED" ? "active" : "inactive"} />
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Close
+        <button type="button" onClick={onClose} aria-label="Close" className="rounded-md p-1 hover:bg-blue-soft">
+          <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
-      <p className="text-xs font-medium text-foreground">
-        Student agreement:{" "}
-        {testimony.studentAgreement ? "Confirmed" : "Missing"}
-      </p>
+      <dl className="divide-y-[1.5px] divide-border text-[15px]">
+        {[
+          ["Author", testimony.authorName],
+          ["Caregroup", testimony.communityName],
+          ["Submitted", testimony.createdAt],
+        ].map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3 py-2">
+            <dt>{k}</dt>
+            <dd className="text-right font-extrabold">{v}</dd>
+          </div>
+        ))}
+      </dl>
 
-      {testimony.title && (
-        <h3 className="text-sm font-semibold text-foreground">{testimony.title}</h3>
-      )}
-
-      <div className="rounded-md border border-border bg-surface p-3 text-sm leading-relaxed text-foreground">
+      <p className="eyebrow">Story</p>
+      <div className="rounded-xl bg-blue-tint p-3 text-[15px] leading-relaxed">
         {testimony.story}
       </div>
+
+      <p className="notice">
+        <span>{testimony.studentAgreement ? "The student agreed to share this story with the caregroup." : "The student has not confirmed they agree to share this story."}</span>
+      </p>
 
       {testimony.videoUrl && (
         <div className="space-y-1">
@@ -104,7 +107,7 @@ export function TestimonyReview({
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="testimony-notes" className="block text-sm font-medium">
+        <label htmlFor="testimony-notes" className="block text-[13px] font-extrabold">
           Reviewer notes
         </label>
         <textarea
@@ -137,7 +140,7 @@ export function TestimonyReview({
           type="button"
           disabled={submitting}
           onClick={() => submit("REJECT")}
-          className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+          className="rounded-md border border-danger/40 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger-soft disabled:opacity-60"
         >
           Reject
         </button>

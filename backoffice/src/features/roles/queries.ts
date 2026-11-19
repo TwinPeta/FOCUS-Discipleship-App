@@ -81,10 +81,10 @@ export const B30_PERMISSION_GROUPS: MatrixGroup[] = [
     ],
   },
   {
-    group: "Community",
+    group: "Caregroup",
     rows: [
       {
-        module: "Join requests",
+        module: "New members",
         cells: {
           [Role.Student]: cell(),
           [Role.Alumni]: cell(),
@@ -95,7 +95,7 @@ export const B30_PERMISSION_GROUPS: MatrixGroup[] = [
         },
       },
       {
-        module: "Communities & meetings",
+        module: "Caregroups & meetings",
         cells: {
           [Role.Student]: cell(),
           [Role.Alumni]: cell(),
@@ -117,7 +117,7 @@ export const B30_PERMISSION_GROUPS: MatrixGroup[] = [
         },
       },
       {
-        module: "Institutions",
+        module: "Campuses",
         cells: {
           [Role.Student]: cell(),
           [Role.Alumni]: cell(),
@@ -282,6 +282,8 @@ export interface StaffAccountInput {
   fullName: string;
   email: string;
   role: Role;
+  /** A custom role to give instead of the built-in one (role is then its base) */
+  customRoleId?: string;
   communityId?: string;
   sendInviteEmail: boolean;
 }

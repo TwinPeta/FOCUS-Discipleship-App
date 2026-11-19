@@ -16,7 +16,7 @@ interface ApprovalTrailProps {
 export function ApprovalTrail({ entries }: ApprovalTrailProps) {
   return (
     <div className="space-y-3 rounded-card border border-border bg-white p-5">
-      <h2 className="text-base font-semibold text-foreground">Approval trail</h2>
+      <h2 className="eyebrow">Approval trail</h2>
 
       {entries.length === 0 ? (
         <p className="text-xs text-muted-foreground">No workflow events recorded yet.</p>

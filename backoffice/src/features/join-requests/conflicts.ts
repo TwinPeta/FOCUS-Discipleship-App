@@ -18,6 +18,7 @@ export interface JoinRequestItem {
   requestedCommunityName: string;
   requestedAt: string;
   status: JoinRequestStatus;
+  welcomedAt?: string | null;
   currentSpecificCommunityId?: string | null;
   currentSpecificCommunityName?: string | null;
 }

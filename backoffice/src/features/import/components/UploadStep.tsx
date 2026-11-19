@@ -42,11 +42,11 @@ export function UploadStep({ onParsed }: UploadStepProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="csv-upload" className="block text-sm font-medium text-foreground">
+        <label htmlFor="csv-upload" className="block text-[13px] font-extrabold">
           Upload members CSV
         </label>
         <p className="mt-1 text-xs text-muted-foreground">
-          Include columns for full name, email, phone, institution, community, and role.
+          Include columns for full name, email, phone, campus, caregroup, and role.
         </p>
       </div>
 
@@ -59,7 +59,7 @@ export function UploadStep({ onParsed }: UploadStepProps) {
       />
 
       {error && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}

@@ -11,9 +11,9 @@ import { StaffAccountForm } from "@/features/roles/components/StaffAccountForm";
 
 export default function NewStaffAccountPage() {
   return (
-    <main className="mx-auto max-w-2xl space-y-6">
+    <div className="flex max-w-3xl flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-[34px] leading-[1.05]">
           Add staff account
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -22,6 +22,6 @@ export default function NewStaffAccountPage() {
       </div>
 
       <StaffAccountForm />
-    </main>
+    </div>
   );
 }

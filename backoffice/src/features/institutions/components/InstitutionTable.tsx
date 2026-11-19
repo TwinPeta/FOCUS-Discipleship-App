@@ -10,6 +10,8 @@
 "use client";
 
 import { useState } from "react";
+import { Search, X } from "lucide-react";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import { institutionTypeLabel, type Institution, type InstitutionInput } from "@/features/institutions/schemas";
 import { updateInstitution } from "@/features/institutions/queries";
 import { InstitutionForm } from "./InstitutionForm";
@@ -39,68 +41,65 @@ export function InstitutionTable({ initialItems }: InstitutionTableProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className={selected ? "lg:col-span-2 space-y-4" : "lg:col-span-3 space-y-4"}>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search institutions by name or city..."
-          aria-label="Search institutions"
-          className="w-full max-w-sm rounded-md border border-border bg-white px-3 py-2 text-sm"
-        />
+    <div className="flex flex-wrap items-start gap-4">
+      <section className="card flex min-w-0 flex-[999_1_560px] flex-col gap-2">
+        <div className="relative mb-1.5">
+          <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search a campus"
+            aria-label="Search campuses"
+            className="field-soft w-full pl-10 pr-3"
+          />
+        </div>
 
-        <div className="overflow-x-auto rounded-card border border-border bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Institution</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Location</th>
-                <th className="px-4 py-3">Communities</th>
-                <th className="px-4 py-3">Students</th>
-                <th className="px-4 py-3">Sign-up list</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th>Campus</th>
+                <th>Type</th>
+                <th>City</th>
+                <th>Caregroups</th>
+                <th>Students</th>
+                <th>Sign-up list</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    No institutions found.
+                  <td colSpan={6} className="text-center text-muted-foreground">
+                    No campuses found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((inst) => (
-                  <tr key={inst.id} className="hover:bg-surface/60">
-                    <td className="px-4 py-3 font-medium text-foreground">{inst.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {institutionTypeLabel(inst.type)}
+                  <tr
+                    key={inst.id}
+                    aria-selected={selected?.id === inst.id}
+                    tabIndex={0}
+                    onClick={() => setSelected(inst)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelected(inst);
+                      }
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <td className="text-base font-extrabold">{inst.name}</td>
+                    <td>
+                      <span className="chip">{institutionTypeLabel(inst.type)}</span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td>
                       {inst.city}, {inst.country}
                     </td>
-                    <td className="px-4 py-3">{inst.communityCount}</td>
-                    <td className="px-4 py-3">{inst.studentCount}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          inst.shownInSignup
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-stone-100 text-stone-700"
-                        }`}
-                      >
-                        {inst.shownInSignup ? "Visible" : "Hidden"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(inst)}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface"
-                      >
-                        Edit
-                      </button>
+                    <td className="font-extrabold">{inst.communityCount}</td>
+                    <td className="font-extrabold">{inst.studentCount}</td>
+                    <td>
+                      <StatusPill status={inst.shownInSignup ? "Visible" : "Hidden"} variant={inst.shownInSignup ? "active" : "inactive"} />
                     </td>
                   </tr>
                 ))
@@ -108,20 +107,19 @@ export function InstitutionTable({ initialItems }: InstitutionTableProps) {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {selected && (
-        <aside className="rounded-card border border-border bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground">
-              Edit {selected.name}
-            </h2>
+        <aside className="card min-w-0 flex-[1_1_340px] lg:max-w-[400px]">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-[22px] font-black">Edit campus</h2>
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+              className="rounded-md p-1 hover:bg-blue-soft"
             >
-              Close
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
           <InstitutionForm

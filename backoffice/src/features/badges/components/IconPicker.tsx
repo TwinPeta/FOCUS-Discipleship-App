@@ -40,7 +40,7 @@ interface IconPickerProps {
 export function IconPicker({ value, onChange }: IconPickerProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">Badge Icon</label>
+      <label className="block text-[13px] font-extrabold">Badge Icon</label>
       <div className="flex flex-wrap gap-2">
         {Object.entries(BADGE_ICONS).map(([key, item]) => {
           const IconComponent = item.icon;
@@ -54,7 +54,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
               className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm transition ${
                 isSelected
                   ? "border-primary bg-primary text-white shadow-sm"
-                  : "border-border bg-white text-muted hover:border-slate-300 hover:text-foreground"
+                  : "border-border bg-white text-muted hover:border-border hover:text-foreground"
               }`}
             >
               <IconComponent className="h-5 w-5" />

@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { MemberTable } from "@/features/members/components/MemberTable";
 import type { Member } from "@/features/members/schemas";
 import { ROUTES } from "@/lib/constants/routes";
@@ -16,26 +17,15 @@ export default function MembersPage() {
   const initialItems: Member[] = [];
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Members</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Search, filter, and manage student, mentor, and alumni accounts.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href={ROUTES.memberImport}
-            className="rounded-md border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:bg-surface"
-          >
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[34px] leading-[1.05]">Members</h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href={ROUTES.memberImport} className="btn btn-secondary">
             Import CSV
           </Link>
-          <Link
-            href={ROUTES.memberNew}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95"
-          >
+          <Link href={ROUTES.memberNew} className="btn btn-primary">
+            <Plus className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />
             Add user
           </Link>
         </div>

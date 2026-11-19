@@ -57,8 +57,8 @@ export function MoveCommunityDialog({
         </h2>
 
         <div className="space-y-1.5">
-          <label htmlFor="target-community" className="block text-sm font-medium">
-            Target community
+          <label htmlFor="target-community" className="block text-[13px] font-extrabold">
+            Target caregroup
           </label>
           <select
             id="target-community"
@@ -66,7 +66,7 @@ export function MoveCommunityDialog({
             onChange={(e) => setCommunityId(e.target.value)}
             className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
           >
-            <option value="">Select community</option>
+            <option value="">Select caregroup</option>
             {communities.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}

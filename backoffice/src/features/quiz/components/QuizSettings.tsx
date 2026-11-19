@@ -35,10 +35,10 @@ export function QuizSettings({
 }: QuizSettingsProps) {
   return (
     <div className="space-y-4 rounded-card border border-border bg-white p-5">
-      <h2 className="text-base font-semibold text-foreground">Quiz details</h2>
+      <h2 className="eyebrow">Quiz details</h2>
 
       <div className="space-y-1.5">
-        <label htmlFor="quiz-title" className="block text-sm font-medium text-foreground">
+        <label htmlFor="quiz-title" className="block text-[13px] font-extrabold">
           Quiz title
         </label>
         <input
@@ -53,7 +53,7 @@ export function QuizSettings({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <label htmlFor="quiz-bible-link" className="block text-sm font-medium text-foreground">
+          <label htmlFor="quiz-bible-link" className="block text-[13px] font-extrabold">
             Bible character or text
           </label>
           <BibleLinkSelect
@@ -64,7 +64,7 @@ export function QuizSettings({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="quiz-pass-mark" className="block text-sm font-medium text-foreground">
+          <label htmlFor="quiz-pass-mark" className="block text-[13px] font-extrabold">
             Pass mark (%)
           </label>
           <input
@@ -79,7 +79,7 @@ export function QuizSettings({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="quiz-show-answers" className="block text-sm font-medium text-foreground">
+          <label htmlFor="quiz-show-answers" className="block text-[13px] font-extrabold">
             Show correct answers
           </label>
           <select

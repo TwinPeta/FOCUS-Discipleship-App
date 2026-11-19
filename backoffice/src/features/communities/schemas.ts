@@ -17,9 +17,9 @@ export const CommunityStatus = {
 export type CommunityStatus = (typeof CommunityStatus)[keyof typeof CommunityStatus];
 
 export const communitySchema = z.object({
-  institutionId: z.string().min(1, "Institution is required"),
+  institutionId: z.string().min(1, "Campus is required"),
   kind: z.enum([CommunityKind.General, CommunityKind.Specific]).default(CommunityKind.Specific),
-  name: z.string().trim().min(2, "Community name is required"),
+  name: z.string().trim().min(2, "Caregroup name is required"),
   description: z.string().trim().max(1000).optional().or(z.literal("")),
   coverPhotoUrl: z.string().optional().or(z.literal("")),
   meetingDay: z.string().trim().optional().or(z.literal("")),

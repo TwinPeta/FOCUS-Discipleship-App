@@ -73,20 +73,12 @@ export function BadgeForm({ badge, onSaved, onClose }: BadgeFormProps) {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={badge ? "Edit badge" : "New badge"}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-4 rounded-xl border border-border bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between border-b border-border pb-3">
+    <div aria-label={badge ? "Edit badge" : "New badge"} className="min-w-0 flex-[1_1_340px] lg:max-w-[440px]">
+      <form onSubmit={handleSubmit} className="card flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-1">
           <div>
-            <h3 className="text-base font-semibold text-foreground">
-              {badge ? "Edit Discipleship Badge" : "New Discipleship Badge"}
+            <h3 className="text-[22px] font-black">
+              {badge ? "Edit badge" : "New badge"}
             </h3>
             <p className="text-xs text-muted">
               Define achievement badge criteria, icon and profile visibility.
@@ -103,13 +95,13 @@ export function BadgeForm({ badge, onSaved, onClose }: BadgeFormProps) {
         </div>
 
         {error && (
-          <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
+          <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-2.5 text-xs text-danger">
             {error}
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label htmlFor="badge-name-input" className="block text-sm font-medium text-foreground">
+          <label htmlFor="badge-name-input" className="block text-[13px] font-extrabold">
             Badge name
           </label>
           <input
@@ -124,7 +116,7 @@ export function BadgeForm({ badge, onSaved, onClose }: BadgeFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="badge-desc-input" className="block text-sm font-medium text-foreground">
+          <label htmlFor="badge-desc-input" className="block text-[13px] font-extrabold">
             Description
           </label>
           <textarea
@@ -149,7 +141,7 @@ export function BadgeForm({ badge, onSaved, onClose }: BadgeFormProps) {
 
         <div className="grid gap-3 sm:grid-cols-2 pt-1">
           <div className="space-y-1.5">
-            <label htmlFor="badge-status-select" className="block text-sm font-medium text-foreground">
+            <label htmlFor="badge-status-select" className="block text-[13px] font-extrabold">
               Status
             </label>
             <select
@@ -181,7 +173,7 @@ export function BadgeForm({ badge, onSaved, onClose }: BadgeFormProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
           >
             Cancel
           </button>

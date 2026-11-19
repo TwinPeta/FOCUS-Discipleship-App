@@ -12,6 +12,14 @@ const mailer = require('../services/mailer');
 
 const strong = (p) => typeof p === 'string' && p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 
+// A custom role, or a built-in role an admin has edited, tells the back office which modules to show
+function accessOf(u, role) {
+  const P = require('./permissions');
+  const matrix = P.matrixFor(u, role);
+  if (!matrix) return {};
+  const custom = u.customRoleId && P.customRoles().find((r) => r.id === u.customRoleId);
+  return { roleName: custom ? custom.name : undefined, access: Object.fromEntries(Object.entries(matrix).map(([m, c]) => [m, c.codes])) };
+}
 function sessionUser(u) {
   const role = C.roleOf(u);
   const scope = C.scopeOf(u);
@@ -19,6 +27,7 @@ function sessionUser(u) {
   return {
     id: u.id, email: u.email, fullName: u.fullName, avatarUrl: u.photoUrl || null, role, status: C.statusOf(u),
     communityId: c ? c.id : null, communityIds: scope || undefined, communityName: c ? c.name : null,
+    ...accessOf(u, role),
   };
 }
 C.sessionUser = sessionUser;

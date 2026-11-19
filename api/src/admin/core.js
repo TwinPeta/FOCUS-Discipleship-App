@@ -29,6 +29,8 @@ function scopeOf(u) {
   if (role === SYS || role === CA) return null;
   return store.where('memberships', (m) => m.userId === u.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.communityId);
 }
+/** The caregroups a person leads (what "own" means in a permission) */
+const ownScope = (u) => store.where('memberships', (m) => m.userId === u.id && m.role === 'super_mentor' && m.status === 'member').map((m) => m.communityId);
 const inScope = (scope, communityId) => scope === null || scope.includes(communityId);
 
 function statusOf(u) {
@@ -65,10 +67,13 @@ function memberDto(u) {
     guardianConsentStatus: minor ? ((gc && gc.status === 'RECEIVED') || u.minorStatus === 'minor_consented' ? 'RECEIVED' : 'PENDING') : null,
     // The guardian the minor entered in the app (screen 24).
     guardian: gu ? { name: gu.name || null, relationship: gu.relationship || null, phone: gu.phone || null, email: gu.email || null } : null,
-    role: roleOf(u), status: statusOf(u),
+    role: roleOf(u), customRoleId: u.customRoleId || null, customRoleName: u.customRoleId ? ((require('./permissions').customRoles().find((r) => r.id === u.customRoleId) || {}).name || null) : null, status: statusOf(u),
     institutionId: u.institutionId, institutionName: inst ? inst.name : '',
     communityId: c ? c.id : null, communityName: c ? c.name : null,
     lastActiveAt: lastActive(u),
+    country: COUNTRY_NAMES[u.country] || u.country || null,
+    yearOfStudy: u.yearOfStudy || null,
+    localChurch: (u.homeChurch && u.homeChurch.name) || null,
     participation: {
       resourcesCompleted: store.where('resourceProgress', (r) => r.userId === u.id).length,
       meetingsAttended: store.where('events', (e) => e.userId === u.id && e.type === 'meeting_attended').length,
@@ -113,7 +118,8 @@ function institutionDto(i) {
 const AUDIT_LABELS = {
   role_changed: 'Changed role', staff_created: 'Created staff account', content_published: 'Published content',
   moderation_action: 'Moderation action', data_request_processed: 'Processed data request',
-  audit_exported: 'Exported audit log', settings_updated: 'Updated settings',
+  audit_exported: 'Exported audit log', settings_updated: 'Updated settings', member_welcomed: 'Welcomed a new member',
+  role_created: 'Created a role', role_updated: 'Edited a role', role_deleted: 'Deleted a role',
 };
 function audit(req, action, target, place = 'Back office') {
   store.insert('auditLog', {
@@ -136,7 +142,7 @@ function adminAuth(req, res, next) {
   if (sessions.touch(session) && viaCookie) sessions.setCookie(res, token, session); // keeps a remembered session sliding forward
   next();
 }
-const allow = (...roles) => (req, _res, next) => (roles.includes(req.role) ? next() : next(forbidden('forbidden', `Requires one of: ${roles.join(', ')}`)));
+const allow = (...roles) => (req, _res, next) => (req.permGrant || roles.includes(req.role) ? next() : next(forbidden('forbidden', `Requires one of: ${roles.join(', ')}`)));
 
 // ───────── misc ─────────
 const must = (col, id, label) => { const r = store.get(col, id); if (!r) throw notFound(label); return r; };
@@ -147,6 +153,7 @@ const setSetting = (key, value) => { const s = store.first('settings', (x) => x.
 const needObj = (b) => { if (!b || typeof b !== 'object') throw validation([{ field: 'body', message: 'JSON body required' }]); return b; };
 
 module.exports = {
+  ownScope,
   ROLES, STAFF, SYS, CA, SM, roleOf, scopeOf, inScope, statusOf, lastActive, specificMemberships,
   memberDto, communityDto, institutionDto, communityDays: DAYS, dayCode, isMinor, COUNTRY_NAMES,
   audit, adminAuth, allow, must, list, text, getSetting, setSetting, needObj,

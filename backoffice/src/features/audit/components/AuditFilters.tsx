@@ -38,9 +38,9 @@ const STAFF_ROLES: Role[] = [
 
 export function AuditFilters({ value, onChange }: AuditFiltersProps) {
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1">
-        <label htmlFor="audit-search" className="block text-xs font-medium text-muted">
+    <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+      <div className="contents">
+        <label htmlFor="audit-search" className="sr-only">
           Search
         </label>
         <input
@@ -48,13 +48,13 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
           type="search"
           value={value.search}
           onChange={(e) => onChange({ ...value, search: e.target.value })}
-          placeholder="Actor, target, or community…"
-          className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
+          placeholder="Search by person or action"
+          className="field-soft min-w-[220px] flex-1 px-3.5"
         />
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="audit-action" className="block text-xs font-medium text-muted">
+      <div className="contents">
+        <label htmlFor="audit-action" className="sr-only">
           Action
         </label>
         <select
@@ -66,7 +66,7 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
               action: e.target.value as AuditFilterState["action"],
             })
           }
-          className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
+          className="pill-select"
         >
           {ACTION_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -76,8 +76,8 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
         </select>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="audit-role" className="block text-xs font-medium text-muted">
+      <div className="contents">
+        <label htmlFor="audit-role" className="sr-only">
           Role
         </label>
         <select
@@ -89,7 +89,7 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
               role: e.target.value as AuditFilterState["role"],
             })
           }
-          className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
+          className="pill-select"
         >
           <option value="all">All roles</option>
           {STAFF_ROLES.map((r) => (
@@ -100,8 +100,8 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
         </select>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="audit-period" className="block text-xs font-medium text-muted">
+      <div className="contents">
+        <label htmlFor="audit-period" className="sr-only">
           Period
         </label>
         <select
@@ -113,7 +113,7 @@ export function AuditFilters({ value, onChange }: AuditFiltersProps) {
               period: e.target.value as AuditFilterState["period"],
             })
           }
-          className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
+          className="pill-select"
         >
           <option value="7d">Last 7 days</option>
           <option value="30d">Last 30 days</option>

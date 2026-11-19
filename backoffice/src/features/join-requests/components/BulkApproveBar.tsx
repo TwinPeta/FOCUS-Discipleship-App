@@ -29,11 +29,11 @@ export function BulkApproveBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-primary-soft px-4 py-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-grad-select border-2 border-ink px-4 py-3 text-sm">
       <div>
         <span className="font-semibold">{selectedCount} selected</span>
         {skippedConflictCount > 0 && (
-          <span className="ml-2 text-amber-900">
+          <span className="ml-2 text-ink">
             ({skippedConflictCount} with community conflicts will be skipped)
           </span>
         )}

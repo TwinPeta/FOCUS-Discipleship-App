@@ -23,13 +23,13 @@ export function ReviewStep({ validation, onBack, onNext }: ReviewStepProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm">
-          <p className="font-semibold text-emerald-900">
+        <div className="rounded-md border border-blue/30 bg-blue-soft p-3 text-sm">
+          <p className="font-semibold text-ink">
             {validRows.length} ready to import
           </p>
         </div>
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-          <p className="font-semibold text-amber-900">
+        <div className="rounded-md border border-primary bg-primary-soft p-3 text-sm">
+          <p className="font-semibold text-ink">
             {invalidRows.length} skipped (problems found)
           </p>
         </div>
@@ -48,7 +48,7 @@ export function ReviewStep({ validation, onBack, onNext }: ReviewStepProps) {
               {invalidRows.map((row) => (
                 <tr key={row.rowNumber}>
                   <td className="px-3 py-2 font-medium">#{row.rowNumber}</td>
-                  <td className="px-3 py-2 text-red-700">{row.errors.join("; ")}</td>
+                  <td className="px-3 py-2 text-danger">{row.errors.join("; ")}</td>
                 </tr>
               ))}
             </tbody>

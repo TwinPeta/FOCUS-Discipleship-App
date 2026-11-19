@@ -10,6 +10,9 @@
 "use client";
 
 import type { ModerationReport, ReportAction } from "@/features/moderation/schemas";
+import { X } from "lucide-react";
+import { StatusPill } from "@/components/data-table/StatusPill";
+import { ReportStatus } from "@/types/enums";
 import { ModerationActions } from "./ModerationActions";
 
 interface ReportDetailProps {
@@ -20,41 +23,41 @@ interface ReportDetailProps {
 
 export function ReportDetail({ report, onAction, onClose }: ReportDetailProps) {
   return (
-    <aside className="space-y-4 rounded-card border border-border bg-white p-5">
+    <aside className="card flex min-w-0 flex-[1_1_320px] flex-col gap-3 lg:max-w-[440px]">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{report.reason}</h2>
-          <p className="text-xs text-muted-foreground">
-            {report.communityName} · {report.createdAt}
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-[22px] font-black">Report</h2>
+          <StatusPill status={report.status} variant={report.status === ReportStatus.Resolved ? "inactive" : "pending"} />
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Close
+        <button type="button" onClick={onClose} aria-label="Close" className="rounded-md p-1 hover:bg-blue-soft">
+          <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
-      <dl className="space-y-1.5 text-sm">
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Reported user</dt>
-          <dd className="font-medium text-foreground">{report.reportedUserName}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Reporter</dt>
-          <dd className="text-foreground">{report.reporterName}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Earlier reports</dt>
-          <dd className="text-foreground">{report.earlierReportsCount}</dd>
-        </div>
+      <dl className="divide-y-[1.5px] divide-border text-[15px]">
+        {[
+          ["Reason", report.reason],
+          ["Reported user", report.reportedUserName],
+          ["Reported by", report.reporterName],
+          ["Caregroup", report.communityName],
+        ].map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3 py-2">
+            <dt>{k}</dt>
+            <dd className="text-right font-extrabold">{v}</dd>
+          </div>
+        ))}
       </dl>
 
-      <div className="rounded-md border border-border bg-surface p-3 text-sm text-foreground">
-        {report.details}
+      <div>
+        <p className="eyebrow mb-1">Details from the reporter</p>
+        <p className="text-[15px]">{report.details}</p>
       </div>
+
+      {report.earlierReportsCount > 0 && (
+        <p className="notice">
+          <span>{report.earlierReportsCount} earlier reports about this user.</span>
+        </p>
+      )}
 
       <ModerationActions report={report} onAction={onAction} />
     </aside>

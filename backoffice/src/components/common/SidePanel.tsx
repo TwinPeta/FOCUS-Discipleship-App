@@ -52,7 +52,7 @@ export function SidePanel({
         <div className={`w-screen ${width} bg-white shadow-2xl flex flex-col`}>
           <div className="flex items-start justify-between border-b border-border p-5">
             <div>
-              <h2 className="text-base font-semibold text-foreground">{title}</h2>
+              <h2 className="eyebrow">{title}</h2>
               {description && (
                 <p className="mt-0.5 text-xs text-muted">{description}</p>
               )}
@@ -61,7 +61,7 @@ export function SidePanel({
               type="button"
               onClick={onClose}
               aria-label="Close panel"
-              className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-foreground transition"
+              className="rounded-lg p-1.5 text-muted hover:bg-blue-tint hover:text-foreground transition"
             >
               <X className="h-5 w-5" />
             </button>

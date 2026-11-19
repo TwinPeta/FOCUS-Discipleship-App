@@ -48,7 +48,7 @@ export function DataTablePagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
           aria-label="Go to previous page"
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-foreground hover:bg-slate-50 disabled:opacity-40 transition"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-foreground hover:bg-blue-tint disabled:opacity-40 transition"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           <span>Previous</span>
@@ -63,7 +63,7 @@ export function DataTablePagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
           aria-label="Go to next page"
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-foreground hover:bg-slate-50 disabled:opacity-40 transition"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1 text-xs font-medium text-foreground hover:bg-blue-tint disabled:opacity-40 transition"
         >
           <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5" />

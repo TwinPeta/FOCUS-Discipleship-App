@@ -17,7 +17,7 @@ interface DevotionalFormProps {
 export function DevotionalForm({ body, onChange }: DevotionalFormProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor="devotional-body" className="block text-sm font-medium text-foreground">
+      <label htmlFor="devotional-body" className="block text-[13px] font-extrabold">
         Devotional text
       </label>
       <textarea

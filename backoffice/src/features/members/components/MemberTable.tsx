@@ -14,9 +14,10 @@ import type { Member } from "@/features/members/schemas";
 import { formatRelativeTime } from "@/lib/format/date";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 import { MemberStatus, Role } from "@/types/enums";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import { MemberDetailPanel } from "./MemberDetailPanel";
 import { MemberFilters } from "./MemberFilters";
-import { MinorBadge } from "./MinorBadge";
 import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
 import { fetchMembers } from "@/features/members/queries";
 
@@ -79,114 +80,104 @@ export function MemberTable({ initialItems }: MemberTableProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className={selected ? "lg:col-span-2 space-y-4" : "lg:col-span-3 space-y-4"}>
-        <div className="flex flex-wrap gap-2 border-b border-border pb-2" role="tablist">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={roleTab === tab.key}
-              onClick={() => setRoleTab(tab.key)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                roleTab === tab.key
-                  ? "bg-primary text-foreground"
-                  : "text-muted-foreground hover:bg-surface"
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
-        </div>
-
-        <MemberFilters
-          search={search}
-          onSearchChange={setSearch}
-          institutionFilter={institutionFilter}
-          onInstitutionChange={setInstitutionFilter}
-          institutions={institutions}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-        />
-
-        <div className="overflow-x-auto rounded-card border border-border bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Member</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Institution</th>
-                <th className="px-4 py-3">Last active</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No members match your filters.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((member) => (
-                  <tr key={member.id} className="hover:bg-surface/60">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{member.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                      {member.isMinor && (
-                        <div className="mt-1">
-                          <MinorBadge consentStatus={member.guardianConsentStatus} />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {ROLE_LABELS[member.role]}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {member.institutionName}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {member.lastActiveAt ? formatRelativeTime(member.lastActiveAt) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          member.status === MemberStatus.Active
-                            ? "bg-emerald-100 text-emerald-800"
-                            : member.status === MemberStatus.Suspended
-                              ? "bg-red-100 text-red-800"
-                              : "bg-stone-100 text-stone-700"
-                        }`}
-                      >
-                        {member.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(member)}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap gap-2" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={roleTab === tab.key}
+            onClick={() => setRoleTab(tab.key)}
+            className="tab"
+          >
+            {tab.label} <span className="opacity-80">{tab.count.toLocaleString("en-US")}</span>
+          </button>
+        ))}
       </div>
 
-      {selected && (
-        <MemberDetailPanel
-          member={selected}
-          onUpdated={handleUpdated}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      <div className="flex flex-wrap items-start gap-4">
+        <section className="card flex min-w-0 flex-[999_1_560px] flex-col gap-2">
+          <MemberFilters
+            search={search}
+            onSearchChange={setSearch}
+            institutionFilter={institutionFilter}
+            onInstitutionChange={setInstitutionFilter}
+            institutions={institutions}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+
+          <div className="overflow-x-auto">
+            <table className="data-table w-full text-left">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Role</th>
+                  <th>Specific caregroup</th>
+                  <th>Last active</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr className="empty">
+                    <td colSpan={5} className="text-center text-muted-foreground">
+                      No members match your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((member) => (
+                    <tr
+                      key={member.id}
+                      aria-selected={selected?.id === member.id}
+                      tabIndex={0}
+                      onClick={() => setSelected(member)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelected(member);
+                        }
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <InitialsAvatar name={member.fullName} />
+                          <div className="min-w-0">
+                            <p className="truncate text-base font-extrabold">{member.fullName}</p>
+                            <p className="truncate text-[13px] opacity-80">
+                              @{member.username} · {member.institutionName}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="chip">{member.customRoleName ?? ROLE_LABELS[member.role]}</span>
+                      </td>
+                      <td>{member.communityName ?? "No specific caregroup"}</td>
+                      <td className="whitespace-nowrap text-sm">
+                        {member.lastActiveAt ? formatRelativeTime(member.lastActiveAt) : "—"}
+                      </td>
+                      <td>
+                        <StatusPill status={member.status.toLowerCase()} variant={member.status === MemberStatus.Active ? "active" : member.status === MemberStatus.Suspended ? "suspended" : "inactive"} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {selected && (
+          <MemberDetailPanel
+            member={selected}
+            onUpdated={handleUpdated}
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }

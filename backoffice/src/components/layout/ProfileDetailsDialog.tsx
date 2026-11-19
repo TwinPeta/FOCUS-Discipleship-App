@@ -25,13 +25,13 @@ import { Role } from "@/types/enums";
 import { useShell } from "./ShellContext";
 
 const ROLE_BADGE: Partial<Record<Role, string>> = {
-  [Role.SystemAdmin]: "bg-slate-900 text-white",
+  [Role.SystemAdmin]: "bg-ink text-white",
   [Role.ContentAdmin]: "bg-info-soft text-info ring-1 ring-info/30",
   [Role.SuperMentor]: "bg-success-soft text-success ring-1 ring-success/30",
 };
 
 const ROLE_SCOPE: Partial<Record<Role, string>> = {
-  [Role.SystemAdmin]: "Full access to every community and setting",
+  [Role.SystemAdmin]: "Full access to every caregroup and setting",
   [Role.ContentAdmin]: "Creates and reviews content and pathways",
 };
 
@@ -72,7 +72,7 @@ export function ProfileDetailsDialog() {
   const roleLabel = ROLE_LABELS[user.role] ?? user.role;
   const scope =
     user.role === Role.SuperMentor
-      ? `Leads ${user.communityName ?? "one community"}`
+      ? `Leads ${user.communityName ?? "one caregroup"}`
       : ROLE_SCOPE[user.role];
   const previewUrl = avatarUrl.trim() && isValidUrl(avatarUrl.trim()) ? avatarUrl.trim() : null;
 

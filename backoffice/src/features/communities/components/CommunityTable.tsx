@@ -11,6 +11,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Search } from "lucide-react";
+import { getInitials } from "@/components/common/InitialsAvatar";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import { CommunityStatus, type Community } from "@/features/communities/schemas";
 import { ROUTES } from "@/lib/constants/routes";
 import { CommunityKind } from "@/types/enums";
@@ -35,21 +38,24 @@ export function CommunityTable({ items: seedItems }: CommunityTableProps) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search communities..."
-          aria-label="Search communities"
-          className="w-full max-w-sm rounded-md border border-border bg-white px-3 py-2 text-sm"
-        />
+    <section className="card flex flex-col gap-2">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search a caregroup"
+            aria-label="Search caregroups"
+            className="field-soft w-full pl-10 pr-3"
+          />
+        </div>
         <select
           value={kindFilter}
           onChange={(e) => setKindFilter(e.target.value)}
-          aria-label="Filter by community kind"
-          className="rounded-md border border-border bg-white px-3 py-2 text-sm"
+          aria-label="Filter by caregroup kind"
+          className="pill-select"
         >
           <option value="ALL">All types</option>
           <option value={CommunityKind.Specific}>Specific</option>
@@ -57,65 +63,63 @@ export function CommunityTable({ items: seedItems }: CommunityTableProps) {
         </select>
       </div>
 
-      <div className="overflow-x-auto rounded-card border border-border bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
             <tr>
-              <th className="px-4 py-3">Community</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Institution</th>
-              <th className="px-4 py-3">Super-mentor</th>
-              <th className="px-4 py-3">Members</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th>Cover</th>
+              <th>Caregroup</th>
+              <th>Super-mentor</th>
+              <th>Members</th>
+              <th>Status</th>
+              <th className="text-right">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  No communities found.
+                <td colSpan={6} className="text-center text-muted-foreground">
+                  No caregroups found.
                 </td>
               </tr>
             ) : (
-              filtered.map((comm) => (
-                <tr key={comm.id} className="hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">{comm.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {comm.kind === CommunityKind.General ? "General" : "Specific"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {comm.institutionName ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {comm.superMentorName ?? "Unassigned"}
-                  </td>
-                  <td className="px-4 py-3">{comm.memberCount}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        comm.status === CommunityStatus.Active
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-stone-100 text-stone-700"
-                      }`}
-                    >
-                      {comm.status === CommunityStatus.Active ? "Active" : "Closed"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={ROUTES.communityDetail(comm.id)}
-                      className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface"
-                    >
-                      Manage
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              filtered.map((comm) => {
+                const general = comm.kind === CommunityKind.General;
+                return (
+                  <tr key={comm.id}>
+                    <td className="w-[88px]">
+                      <span className="grid h-10 w-[68px] place-items-center rounded-[10px] border-2 border-ink bg-grad-yellow text-sm font-black">
+                        {general ? "GEN" : getInitials(comm.name).slice(0, 2)}
+                      </span>
+                    </td>
+                    <td>
+                      <p className="text-base font-extrabold">{general ? `${comm.institutionName ?? ""} general caregroup`.trim() : comm.name}</p>
+                      <p className="text-[13px] opacity-80">
+                        {comm.institutionName ?? "—"} · {general ? "General" : "Specific"}
+                      </p>
+                    </td>
+                    <td>{comm.superMentorName ?? (general ? "All campus" : "Unassigned")}</td>
+                    <td className="font-extrabold">{comm.memberCount}</td>
+                    <td>
+                      <StatusPill
+                        status={comm.status === CommunityStatus.Active ? "Active" : "Closed"}
+                        variant={comm.status === CommunityStatus.Active ? "active" : "inactive"}
+                      />
+                    </td>
+                    <td className="text-right">
+                      <Link href={ROUTES.communityDetail(comm.id)} className="btn btn-secondary btn-sm">
+                        Manage
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

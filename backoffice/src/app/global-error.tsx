@@ -25,10 +25,10 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col items-center justify-center p-6 bg-slate-50 text-foreground font-sans text-center">
+      <body className="flex min-h-screen flex-col items-center justify-center p-6 bg-blue-tint text-foreground font-sans text-center">
         <div role="alert" className="max-w-md space-y-4">
-          <h1 className="text-2xl font-bold">System Error</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-[34px] leading-[1.05]">System Error</h1>
+          <p className="text-sm text-muted-foreground">
             A critical error occurred while loading the application.
           </p>
           {error.digest && (

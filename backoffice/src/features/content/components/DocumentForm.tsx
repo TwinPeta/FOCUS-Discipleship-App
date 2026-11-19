@@ -42,7 +42,7 @@ export function DocumentForm({ documentUrl, onChange }: DocumentFormProps) {
 
   return (
     <div className="space-y-2 rounded-md border border-border bg-surface p-4">
-      <label htmlFor="document-upload" className="block text-sm font-medium text-foreground">
+      <label htmlFor="document-upload" className="block text-[13px] font-extrabold">
         Study guide or document (PDF or Word, up to 25 MB)
       </label>
       <input
@@ -55,10 +55,10 @@ export function DocumentForm({ documentUrl, onChange }: DocumentFormProps) {
       />
       {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
       {documentUrl && !uploading && (
-        <p className="text-xs font-medium text-emerald-800">Document attached.</p>
+        <p className="text-xs font-medium text-ink">Document attached.</p>
       )}
       {error && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}

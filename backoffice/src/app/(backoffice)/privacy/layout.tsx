@@ -23,20 +23,19 @@ export default function PrivacyLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Privacy &amp; consents</h1>
+        <h1 className="text-[34px] leading-[1.05]">Consents &amp; data requests</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage minor guardian consents and personal data export or deletion
           requests (30-day statutory deadline).
         </p>
       </div>
 
-      <AuditNotice message="All consent reminders, data exports, and deletions are recorded in the audit log." />
 
       <nav
         aria-label="Privacy sections"
-        className="flex gap-2 border-b border-border pb-2"
+        className="flex flex-wrap gap-2"
       >
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -44,17 +43,16 @@ export default function PrivacyLayout({ children }: { children: ReactNode }) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                active
-                  ? "bg-primary text-foreground"
-                  : "text-muted-foreground hover:bg-surface"
-              }`}
+              className="tab"
+            aria-current={active ? "page" : undefined}
             >
               {tab.label}
             </Link>
           );
         })}
       </nav>
+
+      <AuditNotice message="All consent reminders, data exports, and deletions are recorded in the audit log." />
 
       {children}
     </div>

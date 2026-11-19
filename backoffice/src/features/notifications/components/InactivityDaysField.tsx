@@ -39,7 +39,7 @@ export function InactivityDaysField({ initialDays }: InactivityDaysFieldProps) {
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="eyebrow">
             Inactivity Follow-Up Threshold
           </h2>
         </div>
@@ -50,7 +50,7 @@ export function InactivityDaysField({ initialDays }: InactivityDaysFieldProps) {
 
       <div className="flex items-center gap-3">
         {savedNote && (
-          <span className="text-xs text-emerald-700" role="status">
+          <span className="text-xs text-ink" role="status">
             {savedNote}
           </span>
         )}

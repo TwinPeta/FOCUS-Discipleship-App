@@ -46,13 +46,13 @@ export function NextMeetingCard({ meeting, onUpdated }: NextMeetingCardProps) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-foreground">Next meeting</h2>
+          <h2 className="eyebrow">Next meeting</h2>
         </div>
         {!editing && (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-slate-50"
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-blue-tint"
           >
             <Edit2 className="h-3 w-3" aria-hidden="true" />
             <span>Edit details</span>
@@ -64,7 +64,7 @@ export function NextMeetingCard({ meeting, onUpdated }: NextMeetingCardProps) {
         <form onSubmit={handleSave} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <label htmlFor="meeting-day" className="block text-xs font-medium text-muted">
+              <label htmlFor="meeting-day" className="block text-[13px] font-extrabold">
                 Day
               </label>
               <input
@@ -77,7 +77,7 @@ export function NextMeetingCard({ meeting, onUpdated }: NextMeetingCardProps) {
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="meeting-time" className="block text-xs font-medium text-muted">
+              <label htmlFor="meeting-time" className="block text-[13px] font-extrabold">
                 Time
               </label>
               <input
@@ -92,7 +92,7 @@ export function NextMeetingCard({ meeting, onUpdated }: NextMeetingCardProps) {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="meeting-place" className="block text-xs font-medium text-muted">
+            <label htmlFor="meeting-place" className="block text-[13px] font-extrabold">
               Place
             </label>
             <input
@@ -109,7 +109,7 @@ export function NextMeetingCard({ meeting, onUpdated }: NextMeetingCardProps) {
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
             >
               Cancel
             </button>

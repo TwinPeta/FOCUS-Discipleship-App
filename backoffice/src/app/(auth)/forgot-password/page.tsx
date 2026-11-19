@@ -11,15 +11,13 @@ import { ForgotPasswordForm } from "@/features/auth/components/ForgotPasswordFor
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="space-y-6">
+    <>
       <div>
-        <h2 className="text-xl font-bold text-foreground">Forgot password</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Enter your work email and we will send you a single-use reset link.
-        </p>
+        <h2 className="text-4xl font-black leading-[1.05] tracking-[-0.02em]">Forgot your password?</h2>
+        <p className="mt-1.5 text-[17px] opacity-85">Enter your work email. We will send you a link to choose a new password.</p>
       </div>
 
       <ForgotPasswordForm />
-    </div>
+    </>
   );
 }

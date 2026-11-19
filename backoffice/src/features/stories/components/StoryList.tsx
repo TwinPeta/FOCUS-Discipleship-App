@@ -62,7 +62,7 @@ export function StoryList({ stories, onChange }: StoryListProps) {
       {stories.map((story, index) => (
         <div
           key={story.id}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white p-3.5 shadow-sm hover:border-slate-300"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white p-3.5 shadow-sm hover:border-border"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -77,7 +77,7 @@ export function StoryList({ stories, onChange }: StoryListProps) {
           </div>
 
           <div className="flex items-center gap-4 text-xs">
-            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium">
+            <span className="inline-flex items-center gap-1 text-ink bg-blue-soft px-2 py-0.5 rounded text-[11px] font-medium">
               <CheckCircle className="h-3 w-3" />
               <span>Consent verified</span>
             </span>
@@ -87,8 +87,8 @@ export function StoryList({ stories, onChange }: StoryListProps) {
               onClick={() => handleToggleVisible(index)}
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition ${
                 story.visible
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-100 text-muted"
+                  ? "bg-blue-soft text-ink"
+                  : "bg-blue-tint text-muted"
               }`}
             >
               {story.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -101,7 +101,7 @@ export function StoryList({ stories, onChange }: StoryListProps) {
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 aria-label="Move story up"
-                className="rounded p-1 text-muted hover:bg-slate-100 hover:text-foreground disabled:opacity-30"
+                className="rounded p-1 text-muted hover:bg-blue-tint hover:text-foreground disabled:opacity-30"
               >
                 <ArrowUp className="h-4 w-4" />
               </button>
@@ -110,7 +110,7 @@ export function StoryList({ stories, onChange }: StoryListProps) {
                 onClick={() => handleMoveDown(index)}
                 disabled={index === stories.length - 1}
                 aria-label="Move story down"
-                className="rounded p-1 text-muted hover:bg-slate-100 hover:text-foreground disabled:opacity-30"
+                className="rounded p-1 text-muted hover:bg-blue-tint hover:text-foreground disabled:opacity-30"
               >
                 <ArrowDown className="h-4 w-4" />
               </button>

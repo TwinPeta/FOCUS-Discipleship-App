@@ -6,7 +6,9 @@ const C = require('./core');
 
 router.use('/auth', auth);               // login / logout / forgot / reset are public; /auth/me is guarded inside
 router.use(C.adminAuth);
+router.use(require('./permissions').enforce);
 router.use('/', require('./people').router);
+router.use('/', require('./roles').router);
 router.use('/', require('./content').router);
 router.use('/', require('./governance').router);
 router.use('/', require('./media').router);

@@ -19,15 +19,13 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
 
   return (
-    <div className="space-y-6">
+    <>
       <div>
-        <h2 className="text-xl font-bold text-foreground">Reset password</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose a strong password you have not used recently.
-        </p>
+        <h2 className="text-4xl font-black leading-[1.05] tracking-[-0.02em]">Choose a new password</h2>
+        <p className="mt-1.5 text-[17px] opacity-85">This link works once and expires after 1 hour.</p>
       </div>
 
       <ResetPasswordForm token={params.token ?? ""} />
-    </div>
+    </>
   );
 }

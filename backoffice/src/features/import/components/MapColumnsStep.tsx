@@ -19,8 +19,8 @@ const FIELD_LABELS: Record<ImportTargetField, string> = {
   fullName: "Full name (required)",
   email: "Email (required)",
   phone: "Phone",
-  institution: "Institution",
-  community: "Community",
+  institution: "Campus",
+  community: "Caregroup",
   role: "Role",
 };
 
@@ -50,7 +50,7 @@ export function MapColumnsStep({
       <div className="grid gap-4 sm:grid-cols-2">
         {IMPORT_TARGET_FIELDS.map((field) => (
           <div key={field} className="space-y-1.5">
-            <label htmlFor={`map-${field}`} className="block text-sm font-medium text-foreground">
+            <label htmlFor={`map-${field}`} className="block text-[13px] font-extrabold">
               {FIELD_LABELS[field]}
             </label>
             <select

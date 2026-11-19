@@ -58,7 +58,7 @@ export function BibleLinkSelect({
         ))}
       </select>
       {failed && (
-        <p role="alert" className="mt-1 text-xs text-red-700">
+        <p role="alert" className="mt-1 text-xs text-danger">
           Could not load the Bible list. Refresh to try again.
         </p>
       )}

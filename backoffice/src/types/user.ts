@@ -21,6 +21,10 @@ export interface SessionUser {
   /** Optional list of community IDs if a user is scoped to specific communities */
   communityIds?: string[];
   communityName?: string | null;
+  /** Name of the custom role, when the person has one */
+  roleName?: string;
+  /** Modules and codes allowed, present only when a custom or edited role governs this person */
+  access?: Record<string, string[]>;
 }
 
 export interface Session {

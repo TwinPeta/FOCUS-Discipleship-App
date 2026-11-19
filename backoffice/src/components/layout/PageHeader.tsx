@@ -27,28 +27,23 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/50 pb-5">
-      <div className="space-y-1">
-        {backHref && (
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground mb-1 transition"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{backLabel}</span>
-          </Link>
-        )}
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {title}
-        </h1>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-[34px] leading-[1.05]">{title}</h1>
         {description && (
-          <p className="text-sm text-muted max-w-2xl">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-[15px] text-muted-foreground">{description}</p>
         )}
       </div>
 
-      {children && (
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+      {(backHref || children) && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5">
           {children}
+          {backHref && (
+            <Link href={backHref} className="btn btn-secondary">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>{backLabel}</span>
+            </Link>
+          )}
         </div>
       )}
     </div>

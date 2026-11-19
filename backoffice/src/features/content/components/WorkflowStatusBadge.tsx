@@ -17,18 +17,12 @@ const LABELS: Record<ContentStatus, string> = {
 };
 
 const STYLES: Record<ContentStatus, string> = {
-  [ContentStatus.Draft]: "bg-stone-100 text-stone-800",
-  [ContentStatus.InReview]: "bg-amber-100 text-amber-900",
-  [ContentStatus.Published]: "bg-emerald-100 text-emerald-800",
-  [ContentStatus.Archived]: "bg-zinc-200 text-zinc-700",
+  [ContentStatus.Draft]: "bg-[#F5F6F8] text-muted-foreground",
+  [ContentStatus.InReview]: "bg-primary-soft text-ink",
+  [ContentStatus.Published]: "bg-blue-soft text-ink",
+  [ContentStatus.Archived]: "bg-[#F5F6F8] text-muted-foreground",
 };
 
 export function WorkflowStatusBadge({ status }: { status: ContentStatus }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STYLES[status]}`}
-    >
-      {LABELS[status]}
-    </span>
-  );
+  return <span className={`chip ${STYLES[status]}`}>{LABELS[status]}</span>;
 }

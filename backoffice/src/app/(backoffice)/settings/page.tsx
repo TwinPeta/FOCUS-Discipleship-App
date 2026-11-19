@@ -18,9 +18,9 @@ import { RetentionForm } from "@/features/settings/components/RetentionForm";
 
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <h1 className="text-[34px] leading-[1.05]">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage the community charter, legal consent texts, minor safeguarding
           rules, and data retention policy.
@@ -30,49 +30,49 @@ export default function SettingsPage() {
       <AuditNotice message="All changes to legal texts, safeguarding thresholds, and retention rules are recorded in the audit log." />
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Community charter</h2>
+        <h2 className="eyebrow">Caregroup charter</h2>
         <div className="mt-4">
           <CharterForm />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Consent texts</h2>
+        <h2 className="eyebrow">Consent texts</h2>
         <div className="mt-4">
           <ConsentTextsForm />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Users under 18</h2>
+        <h2 className="eyebrow">Users under 18</h2>
         <div className="mt-4">
           <MinorsForm />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Join requests</h2>
+        <h2 className="eyebrow">New members</h2>
         <div className="mt-4">
           <JoinRequestsForm />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Data retention</h2>
+        <h2 className="eyebrow">Data retention</h2>
         <div className="mt-4">
           <RetentionForm />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Email delivery</h2>
+        <h2 className="eyebrow">Email delivery</h2>
         <div className="mt-4">
           <EmailDeliveryCard />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-white p-6">
-        <h2 className="text-base font-semibold text-foreground">Phone push notifications</h2>
+        <h2 className="eyebrow">Phone push notifications</h2>
         <div className="mt-4">
           <PushDeliveryCard />
         </div>

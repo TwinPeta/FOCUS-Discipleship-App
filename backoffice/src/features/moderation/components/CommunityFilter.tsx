@@ -33,10 +33,10 @@ export function CommunityFilter({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      aria-label="Filter moderation by community"
+      aria-label="Filter moderation by caregroup"
       className="rounded-md border border-border bg-white px-3 py-2 text-sm"
     >
-      <option value="ALL">All communities</option>
+      <option value="ALL">All caregroups</option>
       {communities.map((c) => (
         <option key={c.id} value={c.id}>
           {c.name}

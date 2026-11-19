@@ -32,11 +32,11 @@ export default function MemberDetailPage({
   }, [id]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-foreground">Member details</h1>
+    <div className="flex flex-col gap-5">
+      <h1 className="text-[34px] leading-[1.05]">Member details</h1>
       {loading && <p className="text-sm text-muted-foreground">Loading member...</p>}
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}

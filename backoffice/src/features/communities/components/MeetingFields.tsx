@@ -30,7 +30,7 @@ export function MeetingFields({ register }: MeetingFieldsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <div className="space-y-1.5">
-        <label htmlFor="meetingDay" className="block text-sm font-medium text-foreground">
+        <label htmlFor="meetingDay" className="block text-[13px] font-extrabold">
           Meeting day
         </label>
         <select
@@ -48,7 +48,7 @@ export function MeetingFields({ register }: MeetingFieldsProps) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="meetingTime" className="block text-sm font-medium text-foreground">
+        <label htmlFor="meetingTime" className="block text-[13px] font-extrabold">
           Meeting time
         </label>
         <input
@@ -60,7 +60,7 @@ export function MeetingFields({ register }: MeetingFieldsProps) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="meetingPlace" className="block text-sm font-medium text-foreground">
+        <label htmlFor="meetingPlace" className="block text-[13px] font-extrabold">
           Meeting place
         </label>
         <input
