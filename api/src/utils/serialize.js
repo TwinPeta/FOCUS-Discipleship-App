@@ -8,8 +8,12 @@ function institution(i) {
   return i && { id: i.id, name: i.name, type: i.type, country: i.country };
 }
 
+/** What other students see: the username when the student chose to hide their name (staff still see the real name). */
+const displayName = (u) => (u.showUsernameOnly && u.username ? `@${u.username}` : u.fullName);
+
 function userRef(u, communityId) {
   if (!u) return null;
+  const hidden = !!(u.showUsernameOnly && u.username);
   let role = 'member';
   if (communityId) {
     const m = store.first('memberships', (x) => x.communityId === communityId && x.userId === u.id && x.status === 'member');
@@ -17,9 +21,9 @@ function userRef(u, communityId) {
   }
   return {
     id: u.id,
-    full_name: u.fullName,
+    full_name: displayName(u),
     username: u.username,
-    photo_url: mediaUrl(store.get('media', u.photoMediaId)),
+    photo_url: hidden ? null : mediaUrl(store.get('media', u.photoMediaId)),
     community_role: role,
     online: realtime.isOnline(u.id),
   };
@@ -30,6 +34,7 @@ function myProfile(u) {
     id: u.id,
     full_name: u.fullName,
     username: u.username,
+    show_username_only: !!u.showUsernameOnly,
     photo_url: mediaUrl(store.get('media', u.photoMediaId)),
     email: u.email || null,
     phone: u.phone || null,
@@ -225,6 +230,6 @@ const message = (m) => ({
 });
 
 module.exports = {
-  mediaUrl, institution, userRef, myProfile, communitySummary, community, media, mediaList,
+  mediaUrl, institution, userRef, displayName, myProfile, communitySummary, community, media, mediaList,
   post, comment, followState, voteState, marked, encouragedState, prayerRequest, testimony, resource, message, initials,
 };

@@ -157,6 +157,7 @@ class RemoteProfileRepository implements ProfileRepository {
         body: {
           'photo_media_id': ?photoMediaId,
           'full_name': profile.fullName.trim(),
+          'show_username_only': profile.showUsernameOnly,
           'country': countryCodeOf(profile.country),
           'email': profile.email.trim(),
           if (profile.phone.trim().isNotEmpty) 'phone': profile.phone.trim(),
