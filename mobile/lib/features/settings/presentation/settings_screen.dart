@@ -21,6 +21,7 @@ import '../../../core/widgets/list_row_card.dart';
 import '../../../core/widgets/states/skeleton.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../../profile/presentation/profile_providers.dart';
+import 'app_update_row.dart';
 
 const _tileSize = 48.0;
 const _avatarSize = 56.0;
@@ -141,7 +142,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const SizedBox(height: 10),
                 ],
-                const SizedBox(height: 14),
+                const AppUpdateRow(),
+                const SizedBox(height: 24),
                 AppSecondaryButton(
                   label: 'Sign out',
                   icon: Icons.logout_rounded,

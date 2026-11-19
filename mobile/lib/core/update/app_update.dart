@@ -110,12 +110,41 @@ final latestReleaseFetcherProvider =
 /// This build's version (empty for local builds); overridable in tests.
 final currentVersionProvider = Provider<String>((ref) => appVersion);
 
+/// Whether this build can update itself: an Android build made by CI (local
+/// builds have no version; iPhones install new versions by hand).
+bool canSelfUpdate(String currentVersion) =>
+    currentVersion.isNotEmpty &&
+    !kIsWeb &&
+    defaultTargetPlatform == TargetPlatform.android;
+
+/// GitHub could not be reached (offline, or it refused the request).
+class UpdateCheckFailed implements Exception {
+  const UpdateCheckFailed();
+}
+
+/// Checks now, for the "App updates" row on Settings. Unlike
+/// [appUpdateProvider] it throws [UpdateCheckFailed] when GitHub cannot be
+/// reached, so the person is not told "up to date" while offline. Null: up
+/// to date.
+final updateCheckProvider = Provider<Future<AppUpdate?> Function()>((ref) {
+  return () async {
+    final current = ref.read(currentVersionProvider);
+    Map<String, dynamic>? json;
+    try {
+      json = await ref.read(latestReleaseFetcherProvider)();
+    } catch (_) {
+      throw const UpdateCheckFailed();
+    }
+    if (json == null) throw const UpdateCheckFailed();
+    return parseLatestRelease(json, current: current);
+  };
+});
+
 /// A newer Android version, or null (not Android, a local build, offline, or
 /// already up to date). Checked once per app start; failures are silent.
 final appUpdateProvider = FutureProvider<AppUpdate?>((ref) async {
   final current = ref.watch(currentVersionProvider);
-  final onAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-  if (current.isEmpty || !onAndroid) return null;
+  if (!canSelfUpdate(current)) return null;
   try {
     final json = await ref.watch(latestReleaseFetcherProvider)();
     return json == null ? null : parseLatestRelease(json, current: current);

@@ -38,9 +38,11 @@ void main() {
       'English',
       'Download or delete my data',
       'Answers and contact',
+      'App updates',
     ]) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
+    await tester.ensureVisible(find.text(appVersionLabel));
     expect(find.text(appVersionLabel), findsOneWidget);
 
     await tester.tap(find.text('Sign out'));
