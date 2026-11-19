@@ -33,6 +33,8 @@ function issueTokens(user) {
   return { access_token: access, refresh_token: refresh, expires_in: config.accessTtlSeconds };
 }
 
+const REFRESH_GRACE_MS = 60000;
+
 const SP = require('../utils/studentProfile');
 
 const session = (user) => ({ ...issueTokens(user), user: S.myProfile(user) });
@@ -210,9 +212,13 @@ router.post('/password/reset', rateLimit({ windowMs: 600000, max: 20 }), (req, r
 router.post('/refresh', (req, res, next) => {
   try {
     const b = check(req.body, { refresh_token: { required: true, type: 'string' } });
+    const now = Date.now();
+    // A used token is kept for a short grace window, so two tabs (or a retry after a dropped connection) that refresh
+    // at the same moment both succeed. After the window a used token is refused: a copied token cannot be replayed.
+    store.remove('refreshTokens', (t) => t.usedAt && now - t.usedAt > REFRESH_GRACE_MS);
     const rec = store.first('refreshTokens', (t) => t.hash === sha(b.refresh_token));
-    if (!rec || rec.expiresAt < Date.now()) throw unauthorized('Invalid refresh token');
-    store.remove('refreshTokens', (t) => t.id === rec.id); // rotate
+    if (!rec || rec.expiresAt < now) throw unauthorized('Invalid refresh token');
+    if (!rec.usedAt) rec.usedAt = now; // rotate: the new token below replaces it
     const user = store.get('users', rec.userId);
     if (!user || user.deletedAt) throw unauthorized();
     res.json(issueTokens(user));
@@ -222,7 +228,7 @@ router.post('/refresh', (req, res, next) => {
 router.post('/logout', authenticate, (req, res, next) => {
   try {
     const rt = req.body && req.body.refresh_token;
-    if (rt) store.remove('refreshTokens', (t) => t.hash === sha(rt) && t.userId === req.user.id);
+    if (rt) store.remove('refreshTokens', (t) => t.userId === req.user.id && (t.hash === sha(rt) || t.usedAt)); // and any token just replaced
     else store.remove('refreshTokens', (t) => t.userId === req.user.id);
     res.status(204).end();
   } catch (e) { next(e); }
