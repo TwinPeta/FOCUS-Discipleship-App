@@ -7,6 +7,7 @@
  * STATUS: implemented
  */
 
+import { SignOutButton } from "@/features/account/components/SignOutButton";
 import { ChangePasswordForm } from "@/features/account/components/ChangePasswordForm";
 import { ProfileForm } from "@/features/account/components/ProfileForm";
 import { SessionsList } from "@/features/account/components/SessionsList";
@@ -14,11 +15,14 @@ import { SessionsList } from "@/features/account/components/SessionsList";
 export default function AccountPage() {
   return (
     <div className="flex max-w-4xl flex-col gap-5">
-      <div>
-        <h1 className="text-[34px] leading-[1.05]">My account</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your profile, password, and active staff sessions.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[34px] leading-[1.05]">My account</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your profile, password, and active staff sessions.
+          </p>
+        </div>
+        <SignOutButton />
       </div>
 
       <section className="rounded-card border border-border bg-white p-6">
