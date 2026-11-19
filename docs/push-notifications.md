@@ -9,8 +9,8 @@ How it fits together: the API sends each new notification to the person's regist
 ### 1. Create the Firebase project
 1. Go to https://console.firebase.google.com and **Add project** (for example "FCU Student Community"). Google Analytics is not needed.
 2. **Project settings > General > Your apps > Add app**:
-   - **Android**: package name `com.example.focus_1` (that is what the app uses today; see the note at the end).
-   - **iOS**: bundle id `com.example.focus1`.
+   - **Android**: package name `org.focusuganda.fcu`.
+   - **iOS**: bundle id `org.focusuganda.fcu`.
    You do **not** need to download `google-services.json` or `GoogleService-Info.plist`: the app is given the identifiers at build time.
 3. Write down these values (Project settings > General > Your apps):
    - Project ID, and **Project number** (this is the sender id)
@@ -44,7 +44,7 @@ In GitHub: **Settings > Secrets and variables > Actions > Variables**, add (thes
 | `FCM_APP_ID_ANDROID` | Android App ID |
 | `FCM_API_KEY_IOS` | iOS API key |
 | `FCM_APP_ID_IOS` | iOS App ID |
-| `FCM_IOS_BUNDLE_ID` | `com.example.focus1` |
+| `FCM_IOS_BUNDLE_ID` | `org.focusuganda.fcu` |
 
 Then build a new app version (push a `mobile-v*` tag, or run the workflow). For a local build add the same values as `--dart-define=NAME=value`.
 
@@ -61,6 +61,6 @@ Then build a new app version (push a `mobile-v*` tag, or run the workflow). For 
 - `PUSH_ENABLED=false` on the server switches push off without removing the key.
 
 ## Good to know
-- **The app id is still the template default** (`com.example.focus_1` / `com.example.focus1`). Whatever you register in Firebase must match what the app is built with. Changing an app id later means people have to reinstall (updates will not install over it), so decide on the permanent ids (for example `org.focusuganda.fcu`) **before** the first real release, then register those in Firebase.
+- **The app id is `org.focusuganda.fcu`** (Android and iPhone). Whatever you register in Firebase must match it exactly. It replaced the template id `com.example.focus_1`, so phones that have an earlier beta installed must uninstall it and install this version fresh: Android will not update one over the other. Do not change it again after real users install.
 - Push messages only carry the title, text and where to open; the full notification is still fetched from the API after sign-in.
 - Not yet verified on a real phone: the Android and iPhone builds with the new Firebase packages have not been run on a device here. The first build and the test in step 5 are the check.

@@ -1,4 +1,4 @@
-package com.example.focus_1
+package org.focusuganda.fcu
 
 import io.flutter.embedding.android.FlutterActivity
 

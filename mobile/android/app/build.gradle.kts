@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.focus_1"
+    namespace = "org.focusuganda.fcu"
     // 37: flutter_local_notifications and permission_handler require it
     // (compile-time only; minSdk/targetSdk are unchanged).
     compileSdk = maxOf(flutter.compileSdkVersion, 37)
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.focus_1"
+        applicationId = "org.focusuganda.fcu"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

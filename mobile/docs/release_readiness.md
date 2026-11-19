@@ -21,8 +21,8 @@ None: the app has no debug screens or test hooks. The in-memory doubles and thei
 | Item | Status |
 |---|---|
 | App name | "FCU" on Android (label) and iOS (`CFBundleDisplayName`) |
-| iOS | unsigned build check on macOS (`.github/workflows/mobile-ios.yml`); permission texts for photos, camera and microphone added. **To install on iPhones:** Apple Developer Program account, own bundle id (now `com.example.focus1`), signing via App Store Connect API key, TestFlight |
-| Application id | still `com.example.focus_1`. **Must change before Play Store** (renaming touches `build.gradle.kts`, `namespace` and the Kotlin package path) |
+| iOS | unsigned build check on macOS (`.github/workflows/mobile-ios.yml`); permission texts for photos, camera and microphone added. **To install on iPhones:** Apple Developer Program account, own bundle id (now `org.focusuganda.fcu`), signing via App Store Connect API key, TestFlight |
+| Application id | `org.focusuganda.fcu` on Android and iPhone (was the template `com.example.focus_1`). Installed betas cannot update to it: testers uninstall and reinstall once |
 | Icon | default Flutter icon (`mipmap-*/ic_launcher.png`) |
 | Splash | default white launch background |
 | Release signing | release build uses the debug key; needs a real keystore |
