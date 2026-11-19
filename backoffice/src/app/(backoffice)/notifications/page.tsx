@@ -61,18 +61,18 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Notifications &amp; Inactivity Rules
+        <h1 className="text-[34px] leading-[1.05]">
+          Notifications
         </h1>
         <p className="mt-1 text-sm text-muted">
           Configure automated notification triggers, delivery channels, template wording, and member follow-up thresholds.
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-slate-50 p-3.5 text-xs text-muted">
+      <div className="rounded-lg border border-border bg-blue-tint p-3.5 text-xs text-muted">
         <span className="font-semibold text-foreground">Channel Scope (Open Question #12): </span>
         Push notifications and transactional emails are delivered across all configured triggers. SMS delivery mentioned in initial BRD is deferred pending telecom gateway integration.
       </div>
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Notification Triggers</h2>
+        <h2 className="eyebrow">Notification Triggers</h2>
         <NotificationRuleTable
           rules={rules}
           onToggleRule={handleToggleRule}
@@ -97,6 +97,6 @@ export default function NotificationsPage() {
           onClose={() => setEditingRule(null)}
         />
       )}
-    </main>
+    </div>
   );
 }

@@ -10,18 +10,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Plus } from "lucide-react";
+import { PathwayEditor } from "@/features/pathways/components/PathwayEditor";
 import { PathwayList } from "@/features/pathways/components/PathwayList";
 import {
   fetchPathways,
   type Pathway,
 } from "@/features/pathways/queries";
-import { ROUTES } from "@/lib/constants/routes";
 import { ErrorState } from "@/components/feedback/ErrorState";
 
 export default function PathwaysPage() {
   const [pathways, setPathways] = useState<Pathway[]>([]);
+  const [editing, setEditing] = useState<Pathway | null | undefined>(undefined);
 
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -39,29 +39,50 @@ export default function PathwaysPage() {
     };
   }, []);
 
+  function handleSaved(saved: Pathway) {
+    setPathways((prev) => {
+      const i = prev.findIndex((p) => p.id === saved.id);
+      if (i >= 0) {
+        const copy = [...prev];
+        copy[i] = saved;
+        return copy;
+      }
+      return [...prev, saved];
+    });
+    setEditing(undefined);
+  }
+
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Discipleship Pathways
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Guided spiritual growth journeys structured into ordered learning steps with unlock rules and completion badges.
-          </p>
+          <h1 className="text-[34px] leading-[1.05]">Pathways</h1>
+          <p>Guided spiritual growth journeys structured into ordered learning steps with unlock rules and completion badges.</p>
         </div>
 
-        <Link
-          href={ROUTES.pathwayNew}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>New pathway</span>
-        </Link>
+        <button type="button" onClick={() => setEditing(null)} className="btn btn-primary">
+          <Plus className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />
+          New pathway
+        </button>
       </div>
 
-      <PathwayList pathways={pathways} />
-    </main>
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="min-w-0 flex-[1_1_300px] lg:max-w-[420px]">
+          <PathwayList pathways={pathways} selectedId={editing?.id} onSelect={(p) => setEditing(p)} />
+        </div>
+        {editing !== undefined && (
+          <div className="min-w-0 flex-[999_1_520px]">
+            <h2 className="mb-3 text-[22px] font-black">{editing ? "Edit pathway" : "New pathway"}</h2>
+            <PathwayEditor
+              key={editing?.id ?? "new"}
+              initialPathway={editing}
+              onSaved={handleSaved}
+              onCancel={() => setEditing(undefined)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

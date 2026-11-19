@@ -31,14 +31,14 @@ export function ExportButtons({ filters, data }: ExportButtonsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {status && (
-        <span className="text-xs text-emerald-700" role="status">
+        <span className="text-xs text-ink" role="status">
           {status}
         </span>
       )}
       <button
         type="button"
         onClick={() => handleExport("csv")}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-medium text-foreground hover:bg-slate-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-medium text-foreground hover:bg-blue-tint"
       >
         <Download className="h-3.5 w-3.5" aria-hidden="true" />
         <span>Export CSV</span>
@@ -46,7 +46,7 @@ export function ExportButtons({ filters, data }: ExportButtonsProps) {
       <button
         type="button"
         onClick={() => handleExport("pdf")}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-medium text-foreground hover:bg-slate-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-medium text-foreground hover:bg-blue-tint"
       >
         <FileText className="h-3.5 w-3.5" aria-hidden="true" />
         <span>Export PDF</span>

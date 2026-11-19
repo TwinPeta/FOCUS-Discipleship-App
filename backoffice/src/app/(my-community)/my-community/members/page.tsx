@@ -58,18 +58,18 @@ export default function MyCommunityMembersPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Members — {communityName || "your community"}
+        <h1 className="text-[34px] leading-[1.05]">
+          Members — {communityName || "your caregroup"}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Scoped to your community only. Role changes and exports are managed by System admins.
+          Scoped to your caregroup only. Role changes and exports are managed by System admins.
         </p>
       </div>
 
-      <AuditNotice message="Viewing community member details and sending follow-up reminders are recorded in the audit log." />
+      <AuditNotice message="Viewing caregroup member details and sending follow-up reminders are recorded in the audit log." />
 
       <div className="max-w-sm">
         <label htmlFor="my-members-search" className="sr-only">
@@ -88,7 +88,7 @@ export default function MyCommunityMembersPage() {
       <div className="overflow-x-auto rounded-xl border border-border bg-white">
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-muted">
+            <tr className="border-b border-border bg-blue-tint text-xs font-semibold uppercase tracking-wide text-muted">
               <th className="px-4 py-3">Member</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Joined</th>
@@ -111,8 +111,8 @@ export default function MyCommunityMembersPage() {
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                         m.active
-                          ? "bg-emerald-50 text-emerald-800"
-                          : "bg-amber-50 text-amber-800"
+                          ? "bg-blue-soft text-ink"
+                          : "bg-primary-soft text-ink"
                       }`}
                     >
                       {m.active ? "Active" : "Inactive 14+ days"}
@@ -124,11 +124,11 @@ export default function MyCommunityMembersPage() {
                         type="button"
                         onClick={() => handleRemind(m.id)}
                         disabled={sent}
-                        className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-slate-50 disabled:opacity-60"
+                        className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-blue-tint disabled:opacity-60"
                       >
                         {sent ? (
                           <>
-                            <MailCheck className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
+                            <MailCheck className="h-3.5 w-3.5 text-ink" aria-hidden="true" />
                             <span>Sent</span>
                           </>
                         ) : (
@@ -146,6 +146,6 @@ export default function MyCommunityMembersPage() {
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

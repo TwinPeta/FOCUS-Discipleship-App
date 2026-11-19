@@ -28,13 +28,13 @@ export function EmptyState({
   return (
     <div
       role="status"
-      className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-white p-8 text-center sm:p-12 ${className}`}
+      className={`flex flex-col items-center justify-center card p-8 text-center sm:p-12 ${className}`}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-muted mb-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-tint text-blue mb-3">
         {icon ?? <Inbox className="h-6 w-6" aria-hidden="true" />}
       </div>
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-1 text-xs text-muted max-w-sm">{description}</p>
+      <h3 className="text-base font-extrabold text-foreground">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

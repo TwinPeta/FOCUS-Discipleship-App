@@ -11,7 +11,7 @@ import type { Institution, InstitutionInput } from "./schemas";
 
 export async function fetchInstitutions(): Promise<Institution[]> {
   const res = await fetch("/api/proxy/institutions", { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load institutions");
+  if (!res.ok) throw new Error("Failed to load campuses");
   const data = (await res.json()) as { items?: Institution[] };
   return data.items ?? [];
 }
@@ -22,7 +22,7 @@ export async function createInstitution(input: InstitutionInput): Promise<Instit
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Failed to create institution");
+  if (!res.ok) throw new Error("Failed to create campus");
   return (await res.json()) as Institution;
 }
 
@@ -35,6 +35,6 @@ export async function updateInstitution(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Failed to update institution");
+  if (!res.ok) throw new Error("Failed to update campus");
   return (await res.json()) as Institution;
 }

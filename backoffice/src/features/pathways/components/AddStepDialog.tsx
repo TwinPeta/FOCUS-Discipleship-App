@@ -59,7 +59,7 @@ export function AddStepDialog({ existingStepContentIds, onAddStep }: AddStepDial
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-slate-50"
+        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-blue-tint"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
         <span>Add step from content library</span>
@@ -126,7 +126,7 @@ export function AddStepDialog({ existingStepContentIds, onAddStep }: AddStepDial
                 filtered.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 text-xs hover:bg-slate-50"
+                    className="flex items-center justify-between p-3 text-xs hover:bg-blue-tint"
                   >
                     <div>
                       <p className="font-medium text-foreground">{item.title}</p>
@@ -148,7 +148,7 @@ export function AddStepDialog({ existingStepContentIds, onAddStep }: AddStepDial
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
               >
                 Close
               </button>

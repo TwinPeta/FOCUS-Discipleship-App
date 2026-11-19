@@ -28,17 +28,17 @@ export function FilterBar({
   hasActiveFilters,
 }: FilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white p-3.5 shadow-xs">
+    <div className="card flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[240px]">
         {onSearchChange && (
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted pointer-events-none" />
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-md border border-border pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              className="field-soft w-full pl-10 pr-3 text-foreground placeholder:text-muted"
             />
           </div>
         )}
@@ -50,7 +50,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={onClearFilters}
-          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:bg-slate-50 transition"
+          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-bold text-blue underline"
         >
           <X className="h-3.5 w-3.5" />
           <span>Clear filters</span>

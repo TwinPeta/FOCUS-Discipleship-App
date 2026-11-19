@@ -25,7 +25,7 @@ const UNLOCK_RULES: { value: UnlockRuleType; label: string; description: string 
 export function UnlockRuleSelect({ value, onChange, disabled }: UnlockRuleSelectProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor="unlock-rule-select" className="block text-sm font-medium text-foreground">
+      <label htmlFor="unlock-rule-select" className="block text-[13px] font-extrabold">
         Unlock requirement
       </label>
       <select

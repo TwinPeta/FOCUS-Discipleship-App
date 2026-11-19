@@ -29,11 +29,11 @@ export function PendingRequestsMini({
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-foreground">
-            Pending join requests
+          <h2 className="eyebrow">
+            Pending new members
           </h2>
           <p className="text-xs text-muted">
-            Students requesting to join your community.
+            Students requesting to join your caregroup.
           </p>
         </div>
         <Link
@@ -46,7 +46,7 @@ export function PendingRequestsMini({
       </div>
 
       {requests.length === 0 ? (
-        <p className="text-sm text-muted">No pending join requests right now.</p>
+        <p className="text-sm text-muted">No pending new members right now.</p>
       ) : (
         <div className="divide-y divide-border rounded-lg border border-border">
           {requests.map((req) => (
@@ -72,7 +72,7 @@ export function PendingRequestsMini({
                 <button
                   type="button"
                   onClick={() => onDecline(req.id)}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Decline</span>

@@ -10,6 +10,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { X } from "lucide-react";
+import { ROUTES } from "@/lib/constants/routes";
+import { getInitials } from "@/components/common/InitialsAvatar";
 import { AuditNotice } from "@/components/common/AuditNotice";
 import {
   changeMemberRole,
@@ -59,125 +63,100 @@ export function MemberDetailPanel({
     onUpdated?.(updated);
   }
 
+  const rows: [string, string][] = [
+    ["Email", member.email],
+    ["Phone", member.phone ?? "—"],
+    ["Birthdate", member.birthdate ?? "—"],
+    ["Country", member.country ?? "—"],
+    ["Campus", member.institutionName || "—"],
+    ["Year", member.yearOfStudy ? `Year ${member.yearOfStudy}` : "—"],
+    ["Local church", member.localChurch ?? "—"],
+  ];
+
   return (
-    <aside className="space-y-5 rounded-card border border-border bg-white p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">{member.fullName}</h2>
-          <p className="text-xs text-muted-foreground">@{member.username}</p>
+    <aside className="card flex min-w-0 flex-[1_1_320px] flex-col gap-3 lg:sticky lg:top-4 lg:max-w-[360px]">
+      <div className="flex items-center gap-3.5">
+        <div className="avatar h-16 w-16 shrink-0 bg-[#FFCB3D] bg-none text-lg text-ink" role="img" aria-label={`Avatar for ${member.fullName}`}>
+          {getInitials(member.fullName)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[22px] font-black leading-tight">{member.fullName}</h2>
+          <p className="text-sm opacity-80">@{member.username}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <span className="chip">{member.customRoleName ?? ROLE_LABELS[member.role]}</span>
+            {member.isMinor && <MinorBadge consentStatus={member.guardianConsentStatus} />}
+          </div>
         </div>
         {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Close
+          <button type="button" onClick={onClose} aria-label="Close details" className="self-start rounded-md p-1 hover:bg-blue-soft">
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         )}
       </div>
 
-      <AuditNotice message="Viewing member contact details and changing roles or status are recorded in the audit log." />
-
-      {member.isMinor && <MinorBadge consentStatus={member.guardianConsentStatus} />}
+      <dl className="divide-y-[1.5px] divide-border text-[15px]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3 py-2">
+            <dt>{label}</dt>
+            <dd className="min-w-0 break-words text-right font-extrabold">{value}</dd>
+          </div>
+        ))}
+      </dl>
 
       {member.isMinor && (
-        <div className="rounded-md border border-border bg-surface px-3 py-2 text-sm">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Parent or guardian</p>
+        <div className="rounded-xl bg-[#FFF8E6] p-3 text-sm">
+          <p className="eyebrow mb-1">Parent or guardian</p>
           {member.guardian?.name ? (
-            <dl className="mt-1 space-y-1">
+            <dl className="space-y-0.5">
               <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Name</dt>
-                <dd className="font-medium text-foreground">
+                <dt>Name</dt>
+                <dd className="font-extrabold">
                   {member.guardian.name}
                   {member.guardian.relationship ? ` (${member.guardian.relationship})` : ""}
                 </dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Phone</dt>
-                <dd className="text-foreground">{member.guardian.phone ?? "—"}</dd>
+                <dt>Phone</dt>
+                <dd className="font-extrabold">{member.guardian.phone ?? "—"}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="text-foreground">{member.guardian.email ?? "—"}</dd>
+                <dt>Email</dt>
+                <dd className="font-extrabold">{member.guardian.email ?? "—"}</dd>
               </div>
             </dl>
           ) : (
-            <p className="mt-1 text-muted-foreground">Not given yet in the app.</p>
+            <p>Not given yet in the app.</p>
           )}
         </div>
       )}
 
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Email</dt>
-          <dd className="font-medium text-foreground">{member.email}</dd>
+      <div>
+        <p className="eyebrow mb-1.5">Caregroups</p>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="chip">General caregroup</span>
+          {member.communityName && <span className="chip">{member.communityName}</span>}
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Phone</dt>
-          <dd className="text-foreground">{member.phone ?? "—"}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Birthdate</dt>
-          <dd className="text-foreground">{member.birthdate ?? "—"}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Role</dt>
-          <dd className="font-medium text-foreground">{ROLE_LABELS[member.role]}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Institution</dt>
-          <dd className="text-foreground">{member.institutionName}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Community</dt>
-          <dd className="text-foreground">{member.communityName ?? "General only"}</dd>
-        </div>
-      </dl>
+      </div>
 
       {member.participation && (
-        <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-surface p-3 text-center text-xs">
-          <div>
-            <p className="text-base font-bold text-foreground">
-              {member.participation.resourcesCompleted}
-            </p>
-            <p className="text-muted-foreground">Resources</p>
-          </div>
-          <div>
-            <p className="text-base font-bold text-foreground">
-              {member.participation.meetingsAttended}
-            </p>
-            <p className="text-muted-foreground">Meetings</p>
-          </div>
-          <div>
-            <p className="text-base font-bold text-foreground">
-              {member.participation.badgesEarned}
-            </p>
-            <p className="text-muted-foreground">Badges</p>
-          </div>
+        <div>
+          <p className="eyebrow mb-1">Participation</p>
+          <p className="text-[15px]">
+            {member.participation.resourcesCompleted} resources completed · {member.participation.meetingsAttended} meetings attended · {member.participation.badgesEarned} badges
+          </p>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 pt-2">
-        <button
-          type="button"
-          onClick={() => setRoleDialogOpen(true)}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface"
-        >
+      <AuditNotice message="Viewing member contact details and changing roles or status are recorded in the audit log." />
+
+      <div className="flex flex-wrap gap-2.5">
+        <Link href={ROUTES.memberChangeRole(member.id)} className="btn btn-primary">
           Change role
+        </Link>
+        <button type="button" onClick={() => setMoveDialogOpen(true)} className="btn btn-secondary">
+          Move caregroup
         </button>
-        <button
-          type="button"
-          onClick={() => setMoveDialogOpen(true)}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface"
-        >
-          Move community
-        </button>
-        <button
-          type="button"
-          onClick={() => setSuspendDialogOpen(true)}
-          className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
-        >
+        <button type="button" onClick={() => setSuspendDialogOpen(true)} className="btn btn-secondary">
           Suspend
         </button>
       </div>

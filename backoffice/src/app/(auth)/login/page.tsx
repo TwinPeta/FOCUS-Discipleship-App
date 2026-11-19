@@ -24,18 +24,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   if (session) redirect(getHomeRouteForRole(session.user.role));
 
   return (
-    <div className="space-y-6">
+    <>
       <div>
-        <h2 className="text-xl font-bold text-foreground">Sign in</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Use your staff work email and password to continue.
-        </p>
+        <h2 className="text-4xl font-black leading-[1.05] tracking-[-0.02em]">Sign in</h2>
+        <p className="mt-1.5 text-[17px] opacity-85">Authorised staff only.</p>
       </div>
 
       <LoginForm
         returnTo={params.returnTo ?? null}
         initialError={params.error ?? null}
       />
-    </div>
+    </>
   );
 }

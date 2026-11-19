@@ -69,7 +69,7 @@ export function FileDropzone({
         className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition ${
           isDragging
             ? "border-primary bg-primary-soft/50"
-            : "border-border bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
+            : "border-border bg-blue-tint hover:bg-blue-tint hover:border-border"
         }`}
       >
         <UploadCloud className="h-8 w-8 text-muted mb-2" />
@@ -84,7 +84,7 @@ export function FileDropzone({
         />
       </div>
       {error && (
-        <p role="alert" className="text-xs text-rose-600">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}

@@ -17,47 +17,54 @@
 
 :root {
   /* Surfaces */
-  --background: 255 253 245;        /* #fffdf5 page background (cream) */
-  --background-subtle: 254 249 231; /* #fef9e7 */
+  --background: 255 250 242;        /* #FFFAF2 page cream */
+  --background-subtle: 255 241 212; /* #FFF1D4 top of the page wash */
   --surface: 255 255 255;           /* cards, inputs, active nav item */
-  --surface-glass: 255 255 255;     /* use with /80-/90 opacity + backdrop blur */
+  --surface-glass: 255 255 255;
 
-  /* Text (contrast checked against cream and white: >= 4.5:1) */
-  --foreground: 15 23 42;           /* #0f172a slate-900 */
-  --muted-foreground: 71 85 105;    /* #475569 slate-600 */
+  /* Text: navy ink */
+  --ink: 31 45 61;                  /* #1F2D3D text, outlines, icons */
+  --foreground: 31 45 61;
+  --muted-foreground: 79 96 116;    /* #4F6074, 6.5:1 on white */
 
   /* Brand */
-  --primary: 244 180 0;             /* #f4b400 sidebar, primary buttons */
-  --primary-hover: 217 159 0;       /* #d99f00 */
-  --primary-soft: 255 243 196;      /* #fff3c4 soft highlights, selected rows */
-  --accent: 253 230 138;            /* #fde68a badges, hover */
-  --border: 230 212 138;            /* #e6d48a borders and dividers */
+  --primary: 244 180 0;             /* #F4B400 */
+  --primary-hover: 238 154 0;       /* #EE9A00 */
+  --primary-soft: 255 240 184;      /* #FFF0B8 selected rows */
+  --accent: 253 230 138;            /* #FDE68A */
+  --border: 207 224 243;            /* #CFE0F3 hairlines */
+
+  /* Blue accent (active navigation, tabs, links, avatars) */
+  --blue: 30 106 184;               /* #1E6AB8 */
+  --blue-mid: 42 116 192;           /* #2A74C0 */
+  --blue-light: 76 152 230;         /* #4C98E6 */
+  --blue-soft: 227 240 253;         /* #E3F0FD chips and tints */
+  --blue-tint: 232 242 253;         /* #E8F2FD avatars */
 
   /* Status */
-  --success: 5 150 105;             /* #059669 */
+  --success: 5 150 105;
   --success-soft: 236 253 245;
-  --warning: 217 119 6;             /* #d97706 */
+  --warning: 217 119 6;
   --warning-soft: 255 251 235;
-  --danger: 225 29 72;              /* #e11d48 */
+  --danger: 225 29 72;
   --danger-soft: 255 241 242;
-  --info: 2 132 199;                /* #0284c7 */
-  --info-soft: 240 249 255;
+  --info: 30 106 184;
+  --info-soft: 227 240 253;
 
   /* Layout */
   --sidebar-width: 240px;
-  --sidebar-collapsed-width: 68px;
+  --sidebar-collapsed-width: 240px;
   --radius-nav: 14px;
-  --radius-card: 16px;
+  --radius-card: 18px;
+
+  /* Signature gradients */
+  --grad-yellow: linear-gradient(135deg, #ffcb3d 0%, #f4b400 55%, #ee9a00 130%);
+  --grad-blue: linear-gradient(135deg, #1e6ab8 0%, #2a74c0 45%, #4c98e6 120%);
+  --grad-select: linear-gradient(135deg, #fff0b8 0%, #fde68a 100%);
+  --shadow-card: 0 1px 3px rgb(31 45 61 / 0.1);
 
   color-scheme: light;
-  accent-color: rgb(var(--primary));
-}
-
-html,
-body {
-  background: rgb(var(--background));
-  color: rgb(var(--foreground));
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  accent-color: rgb(var(--blue));
 }
 
 html {
@@ -79,6 +86,342 @@ input:user-invalid,
 textarea:user-invalid,
 select:user-invalid {
   border-color: rgb(var(--danger));
+}
+
+/* ======================================================================
+   Design system (caregroup-backoffice.html)
+   Chunky navy outlines, yellow + blue gradients, white cards on a warm wash.
+   Existing screens use plain Tailwind classes; the selectors below map those
+   onto the design so every screen picks it up. New code should prefer the
+   named classes (.btn, .card, .chip, .tab, .field).
+   ====================================================================== */
+
+html {
+  background: rgb(var(--background));
+}
+body {
+  background: linear-gradient(180deg, #fff1d4 0%, #fffaf2 34%, #fffaf2 100%) fixed;
+  font-weight: 500;
+}
+
+/* The design shows a title only; the one-line description stays for screen readers */
+#main-content h1 + p {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+h1 {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Small uppercase section label used above cards and table headers */
+.eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ---------- Cards ---------- */
+.card,
+:is(div, section, article, aside, form, details)[class~="bg-white"][class~="border"]:is([class~="rounded-xl"], [class~="rounded-card"], [class~="rounded-lg"]) {
+  background: #fff;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+.card {
+  padding: 18px;
+}
+
+/* Nested bordered boxes inside a card keep a light blue outline */
+.card :is(div, section)[class~="border"][class~="rounded-lg"],
+:is(div, section, article)[class~="bg-white"][class~="border"] :is(div, section)[class~="border"][class~="rounded-lg"] {
+  border: 2px solid rgb(var(--blue-soft));
+  border-radius: 14px;
+}
+
+/* ---------- Form fields ---------- */
+.field,
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]),
+select,
+textarea {
+  background: #fff;
+  border: 2px solid rgb(var(--ink));
+  border-radius: 12px;
+  color: rgb(var(--ink));
+  font-size: 16px;
+  font-weight: 500;
+  min-height: 44px;
+}
+textarea {
+  min-height: 96px;
+}
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[readonly] {
+  background: rgb(var(--blue-tint));
+  border-color: rgb(var(--border));
+  color: rgb(var(--muted-foreground));
+}
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid,
+[aria-invalid="true"] {
+  border-color: rgb(var(--danger));
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: rgb(var(--blue));
+  width: 18px;
+  height: 18px;
+}
+label {
+  font-weight: 700;
+}
+
+/* ---------- Buttons ---------- */
+.btn,
+:is(button, a)[class~="bg-primary"]:not([class~="rounded-full"]),
+:is(button, a)[class~="border-border"][class~="rounded-md"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgb(var(--ink));
+  white-space: nowrap;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+/* primary */
+.btn-primary,
+:is(button, a)[class~="bg-primary"]:not([class~="rounded-full"]) {
+  background: var(--grad-yellow);
+  border: 0;
+  color: rgb(var(--ink));
+}
+/* secondary: white with a navy outline */
+.btn-secondary,
+:is(button, a)[class~="border-border"][class~="rounded-md"] {
+  background: #fff;
+  border: 2px solid rgb(var(--ink));
+  color: rgb(var(--ink));
+}
+.btn-blue {
+  background: var(--grad-blue);
+  border: 0;
+  color: #fff;
+}
+.btn-danger,
+:is(button, a)[class~="bg-danger"] {
+  background: #fff;
+  border: 2px solid rgb(var(--danger));
+  color: rgb(var(--danger));
+}
+/* compact variant, used inside rows */
+.btn-sm,
+:is(button, a)[class~="text-xs"][class~="bg-primary"],
+:is(button, a)[class~="text-xs"][class~="border-border"][class~="rounded-md"] {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+:is(button, a):is(.btn, [class~="bg-primary"], [class~="border-border"][class~="rounded-md"]):hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+:is(button, a):is(.btn, [class~="bg-primary"]):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+:is(button, a)[class~="bg-primary"][class~="text-white"] {
+  color: rgb(var(--ink));
+}
+:focus-visible {
+  outline: 3px solid rgb(var(--blue-light));
+  outline-offset: 2px;
+}
+
+/* Hairline search fields (inside cards) */
+input.field-soft,
+select.field-soft {
+  border: 1.5px solid rgb(var(--border));
+  border-radius: 12px;
+}
+
+/* Outlined select that reads like a button ("All campuses") */
+select.pill-select {
+  align-self: flex-start;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+/* Tables render each row as a rounded pill-card, like the design's lists.
+   Add .plain-table to a table that must stay a normal grid (e.g. permission matrices). */
+table:not(.plain-table) {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 15px;
+}
+table:not(.plain-table) thead,
+table:not(.plain-table) thead tr {
+  background: transparent !important;
+  border: 0 !important;
+}
+table:not(.plain-table) thead th {
+  padding: 0 14px 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgb(var(--ink));
+  opacity: 0.8;
+  white-space: nowrap;
+  background: transparent;
+}
+table:not(.plain-table) tbody td {
+  padding: 10px 14px;
+  background: #fff;
+  border-top: 2px solid rgb(var(--blue-soft));
+  border-bottom: 2px solid rgb(var(--blue-soft));
+  color: rgb(var(--ink));
+}
+table:not(.plain-table) tbody td:first-child {
+  border-left: 2px solid rgb(var(--blue-soft));
+  border-radius: 14px 0 0 14px;
+}
+table:not(.plain-table) tbody td:last-child {
+  border-right: 2px solid rgb(var(--blue-soft));
+  border-radius: 0 14px 14px 0;
+}
+table:not(.plain-table) tbody td[colspan],
+table:not(.plain-table) tbody tr.empty td {
+  border: 0;
+  background: transparent;
+  padding: 28px 14px;
+}
+table:not(.plain-table) tbody tr:hover td {
+  border-color: rgb(var(--border));
+}
+table:not(.plain-table) tbody tr[aria-selected="true"] td {
+  background: var(--grad-select);
+  border-color: rgb(var(--ink));
+}
+/* the wrapper card around a table */
+div:has(> table:not(.plain-table))[class~="bg-white"] {
+  padding: 12px 18px 8px;
+}
+
+/* Blue info box (audit notices, rules) */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e8f2fd 0%, #cfe3f8 100%);
+  color: rgb(var(--ink));
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* ---------- Chips, tabs, status ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(var(--blue-soft));
+  color: rgb(var(--ink));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid rgb(var(--border));
+  color: rgb(var(--ink));
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tab[aria-selected="true"],
+.tab[aria-current="page"],
+.tab.is-active {
+  background: var(--grad-blue);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 800;
+}
+
+/* Any tab control in the app reads as the design's pill tabs */
+[role="tablist"] {
+  border: 0 !important;
+  padding-bottom: 0 !important;
+}
+button[role="tab"] {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 0 !important;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  border: 1.5px solid rgb(var(--border)) !important;
+  color: rgb(var(--ink)) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+}
+button[role="tab"][aria-selected="true"] {
+  background: var(--grad-blue) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+}
+
+/* Avatar badge used in lists */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e8f2fd 0%, #cfe3f8 100%);
+  color: rgb(var(--blue));
+  font-weight: 800;
+}
+
+/* Table rows read as separate pill-cards */
+.row-card {
+  background: #fff;
+  border: 2px solid rgb(var(--blue-soft));
+  border-radius: 14px;
+}
+button.row-card { cursor: pointer; }
+.row-card.is-selected {
+  background: var(--grad-select);
+  border-color: rgb(var(--ink));
 }
 
 /* ---------- Native <dialog> (command palette, profile) ---------- */

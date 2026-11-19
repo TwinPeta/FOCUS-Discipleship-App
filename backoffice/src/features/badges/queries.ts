@@ -46,8 +46,8 @@ export const RULE_DEFINITIONS: Record<
   { label: string; formatDescription: (count: number) => string; defaultCount: number }
 > = {
   join_community: {
-    label: "Join a fellowship community",
-    formatDescription: () => "Awarded upon successfully joining a campus community",
+    label: "Join a fellowship caregroup",
+    formatDescription: () => "Awarded upon successfully joining a campus caregroup",
     defaultCount: 1,
   },
   finish_quizzes: {

@@ -10,6 +10,8 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import type { ModerationPost, PostAction } from "@/features/moderation/schemas";
 
 interface PostReviewProps {
@@ -32,31 +34,34 @@ export function PostReview({ post, onAction, onClose }: PostReviewProps) {
   }
 
   return (
-    <aside className="space-y-4 rounded-card border border-border bg-white p-5">
+    <aside className="card flex min-w-0 flex-[1_1_320px] flex-col gap-3 lg:max-w-[440px]">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">
-            {post.kind} by {post.authorName}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {post.communityName} · {post.reportCount} reports
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-[22px] font-black">{post.kind === "PRAYER" ? "Prayer request" : post.kind === "POST" ? "Feed post" : "Comment"}</h2>
+          <StatusPill status={post.hidden ? "Hidden" : "Flagged"} variant={post.hidden ? "inactive" : "pending"} />
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Close
+        <button type="button" onClick={onClose} aria-label="Close" className="btn btn-secondary btn-sm">
+          <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="rounded-md border border-border bg-surface p-3 text-sm text-foreground">
-        {post.content}
-      </div>
+      <dl className="divide-y-[1.5px] divide-border text-[15px]">
+        {[
+          ["Author", post.authorName],
+          ["Caregroup", post.communityName],
+          ["Reports", String(post.reportCount)],
+        ].map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3 py-2">
+            <dt>{k}</dt>
+            <dd className="text-right font-extrabold">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="rounded-xl bg-blue-tint p-3 text-[15px]">{post.content}</div>
 
       <div className="space-y-1.5">
-        <label htmlFor="post-mod-notes" className="block text-sm font-medium">
+        <label htmlFor="post-mod-notes" className="block text-[13px] font-extrabold">
           Moderation note
         </label>
         <textarea
@@ -73,7 +78,7 @@ export function PostReview({ post, onAction, onClose }: PostReviewProps) {
           type="button"
           disabled={submitting}
           onClick={() => submit("KEEP")}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface"
+          className="btn btn-secondary btn-sm"
         >
           Keep
         </button>
@@ -81,15 +86,15 @@ export function PostReview({ post, onAction, onClose }: PostReviewProps) {
           type="button"
           disabled={submitting}
           onClick={() => submit("HIDE")}
-          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-foreground hover:brightness-95"
+          className="btn btn-secondary btn-sm"
         >
-          Hide
+          Hide content
         </button>
         <button
           type="button"
           disabled={submitting}
           onClick={() => submit("WARN_AUTHOR")}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface"
+          className="btn btn-secondary btn-sm"
         >
           Warn author
         </button>
@@ -97,9 +102,9 @@ export function PostReview({ post, onAction, onClose }: PostReviewProps) {
           type="button"
           disabled={submitting}
           onClick={() => submit("ESCALATE")}
-          className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200"
+          className="btn btn-secondary btn-sm"
         >
-          Escalate
+          Escalate to admin
         </button>
       </div>
     </aside>

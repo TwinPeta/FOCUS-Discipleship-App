@@ -22,7 +22,7 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
   return (
     <div className="grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-3">
       <div className="space-y-1">
-        <label htmlFor="report-range" className="block text-xs font-medium text-muted">
+        <label htmlFor="report-range" className="block text-[13px] font-extrabold">
           Date range
         </label>
         <select
@@ -44,8 +44,8 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="report-campus" className="block text-xs font-medium text-muted">
-          Institution
+        <label htmlFor="report-campus" className="block text-[13px] font-extrabold">
+          Campus
         </label>
         <select
           id="report-campus"
@@ -63,8 +63,8 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="report-community" className="block text-xs font-medium text-muted">
-          Community
+        <label htmlFor="report-community" className="block text-[13px] font-extrabold">
+          Caregroup
         </label>
         <select
           id="report-community"
@@ -72,7 +72,7 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
           onChange={(e) => onChange({ ...value, community: e.target.value })}
           className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-sm text-foreground"
         >
-          <option value="all">All communities</option>
+          <option value="all">All caregroups</option>
           {communities.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}

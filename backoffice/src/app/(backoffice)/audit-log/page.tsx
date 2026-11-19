@@ -50,11 +50,11 @@ export default function AuditLogPage() {
   }, [filters]);
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Audit log</h1>
+          <h1 className="text-[34px] leading-[1.05]">Audit log</h1>
           <p className="mt-1 text-sm text-muted">
             Immutable record of administrative, moderation, and privacy actions.
           </p>
@@ -62,9 +62,11 @@ export default function AuditLogPage() {
         <ExportAuditButton entries={entries} />
       </div>
 
-      <AuditNotice message="Audit entries are immutable. Exporting this log records an audit event under your account." />
-      <AuditFilters value={filters} onChange={setFilters} />
-      <AuditTable entries={entries} />
-    </main>
+      <section className="card flex flex-col gap-2">
+        <AuditFilters value={filters} onChange={setFilters} />
+        <AuditTable entries={entries} />
+      </section>
+      <AuditNotice message="The audit log cannot be edited or deleted. Exporting this log records an audit event under your account." />
+    </div>
   );
 }

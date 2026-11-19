@@ -72,10 +72,10 @@ export function StepList({ steps, onChange }: StepListProps) {
         <div
           key={step.id}
           data-testid={`step-item-${index}`}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white p-3 text-xs shadow-sm transition hover:border-slate-300"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white p-3 text-xs shadow-sm transition hover:border-border"
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 font-semibold text-muted">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-tint font-semibold text-muted">
               {index + 1}
             </span>
             <GripVertical className="h-4 w-4 text-muted/60" aria-hidden="true" />
@@ -103,7 +103,7 @@ export function StepList({ steps, onChange }: StepListProps) {
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 aria-label="Move step up"
-                className="rounded p-1 text-muted hover:bg-slate-100 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
+                className="rounded p-1 text-muted hover:bg-blue-tint hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ArrowUp className="h-3.5 w-3.5" />
               </button>
@@ -112,7 +112,7 @@ export function StepList({ steps, onChange }: StepListProps) {
                 onClick={() => handleMoveDown(index)}
                 disabled={index === steps.length - 1}
                 aria-label="Move step down"
-                className="rounded p-1 text-muted hover:bg-slate-100 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
+                className="rounded p-1 text-muted hover:bg-blue-tint hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ArrowDown className="h-3.5 w-3.5" />
               </button>
@@ -120,7 +120,7 @@ export function StepList({ steps, onChange }: StepListProps) {
                 type="button"
                 onClick={() => handleRemove(index)}
                 aria-label={`Remove step ${step.title}`}
-                className="rounded p-1 text-rose-500 hover:bg-rose-50 hover:text-rose-700 ml-1"
+                className="rounded p-1 text-rose-500 hover:bg-danger-soft hover:text-danger ml-1"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

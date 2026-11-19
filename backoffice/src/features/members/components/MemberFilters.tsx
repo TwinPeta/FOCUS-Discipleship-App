@@ -9,6 +9,7 @@
 
 "use client";
 
+import { Search } from "lucide-react";
 import { MemberStatus } from "@/types/enums";
 
 interface MemberFiltersProps {
@@ -31,23 +32,26 @@ export function MemberFilters({
   onStatusChange,
 }: MemberFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <input
-        type="search"
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search by name, username, or email..."
-        aria-label="Search members"
-        className="w-full max-w-sm rounded-md border border-border bg-white px-3 py-2 text-sm"
-      />
+    <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+      <div className="relative min-w-[220px] flex-1">
+        <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" aria-hidden="true" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search by name, username or email"
+          aria-label="Search members"
+          className="field-soft w-full pl-10 pr-3"
+        />
+      </div>
 
       <select
         value={institutionFilter}
         onChange={(e) => onInstitutionChange(e.target.value)}
-        aria-label="Filter by institution"
-        className="rounded-md border border-border bg-white px-3 py-2 text-sm"
+        aria-label="Filter by campus"
+        className="pill-select"
       >
-        <option value="ALL">All institutions</option>
+        <option value="ALL">All campuses</option>
         {institutions.map((name) => (
           <option key={name} value={name}>
             {name}
@@ -59,7 +63,7 @@ export function MemberFilters({
         value={statusFilter}
         onChange={(e) => onStatusChange(e.target.value)}
         aria-label="Filter by status"
-        className="rounded-md border border-border bg-white px-3 py-2 text-sm"
+        className="pill-select"
       >
         <option value="ALL">All statuses</option>
         <option value={MemberStatus.Active}>Active</option>

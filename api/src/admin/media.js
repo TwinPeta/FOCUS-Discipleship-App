@@ -23,6 +23,7 @@ const DOCUMENT = ['application/pdf', 'application/msword', 'application/vnd.open
 const PURPOSES = {
   cover_photo: { types: ['image/jpeg', 'image/png'], max: 5 * MB },
   content_thumbnail: { types: IMAGE, max: 5 * MB },
+  avatar: { types: IMAGE, max: 2 * MB },
   content_video: { types: VIDEO, max: 500 * MB },
   content_document: { types: DOCUMENT, max: 25 * MB },
   story_video: { types: VIDEO, max: 200 * MB },

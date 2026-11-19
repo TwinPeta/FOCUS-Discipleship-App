@@ -25,7 +25,7 @@ export function MembersOverTimeChart({ data }: { data: MembersTimePoint[] }) {
   return (
     <section className="rounded-xl border border-border bg-white p-5">
       <div className="mb-4">
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="eyebrow">
           Members over time
         </h2>
         <p className="text-xs text-muted">

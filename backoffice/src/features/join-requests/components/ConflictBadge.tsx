@@ -13,7 +13,7 @@ interface ConflictBadgeProps {
 
 export function ConflictBadge({ communityName }: ConflictBadgeProps) {
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+    <span className="inline-flex items-center rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink">
       Already in {communityName}
     </span>
   );

@@ -37,7 +37,7 @@ export function QuestionEditor({
           <button
             type="button"
             onClick={onRemove}
-            className="text-xs text-red-700 hover:underline"
+            className="text-xs text-danger hover:underline"
           >
             Remove question
           </button>
@@ -47,7 +47,7 @@ export function QuestionEditor({
       <div className="space-y-1.5">
         <label
           htmlFor={`q-prompt-${question.id}`}
-          className="block text-sm font-medium text-foreground"
+          className="block text-[13px] font-extrabold"
         >
           Question prompt
         </label>
@@ -73,7 +73,7 @@ export function QuestionEditor({
       <div className="space-y-1.5">
         <label
           htmlFor={`q-exp-${question.id}`}
-          className="block text-xs font-medium text-muted-foreground"
+          className="block text-[13px] font-extrabold"
         >
           Explanation (optional)
         </label>

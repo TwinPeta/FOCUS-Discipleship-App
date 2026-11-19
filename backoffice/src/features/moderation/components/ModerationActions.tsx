@@ -64,7 +64,7 @@ export function ModerationActions({ report, onAction }: ModerationActionsProps) 
       ) : (
         <>
           <div className="space-y-1.5">
-            <label htmlFor="mod-notes" className="block text-sm font-medium text-foreground">
+            <label htmlFor="mod-notes" className="block text-[13px] font-extrabold">
               Moderation note
             </label>
             <textarea
@@ -86,13 +86,7 @@ export function ModerationActions({ report, onAction }: ModerationActionsProps) 
                   type="button"
                   disabled={submitting}
                   onClick={() => handleAction(action)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
-                    destructive
-                      ? "bg-red-600 text-white hover:bg-red-700"
-                      : action === "ESCALATE"
-                        ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                        : "border border-border bg-white text-foreground hover:bg-surface"
-                  }`}
+                  className={`btn btn-sm ${destructive ? "btn-danger" : action === "DISMISS" || action === "WARN" || action === "HIDE" ? "btn-secondary" : "btn-primary"}`}
                 >
                   {ACTION_LABELS[action]}
                 </button>

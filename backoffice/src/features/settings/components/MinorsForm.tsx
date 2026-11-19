@@ -55,13 +55,13 @@ export function MinorsForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {saved && (
-        <p role="status" className="text-xs font-medium text-emerald-800">
+        <p role="status" className="text-xs font-medium text-ink">
           Minors safeguarding rules saved.
         </p>
       )}
 
       <div className="space-y-1.5 max-w-xs">
-        <label htmlFor="minors-age" className="block text-sm font-medium">
+        <label htmlFor="minors-age" className="block text-[13px] font-extrabold">
           Minor age threshold (years)
         </label>
         <input
@@ -77,7 +77,7 @@ export function MinorsForm() {
       {threshold !== 18 && (
         <div
           role="alert"
-          className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          className="rounded-md border border-primary bg-primary-soft px-3 py-2 text-xs text-ink"
         >
           Changing the age threshold affects existing user accounts and guardian
           consent requirements.

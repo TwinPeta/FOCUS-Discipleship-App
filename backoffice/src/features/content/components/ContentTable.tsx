@@ -67,8 +67,8 @@ export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 border-b border-border pb-2" role="tablist">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap gap-2" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -82,11 +82,12 @@ export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
                 : "text-muted-foreground hover:bg-surface"
             }`}
           >
-            {tab.label} ({tab.count})
+            {tab.label} <span className="opacity-80">{tab.count}</span>
           </button>
         ))}
       </div>
 
+      <section className="card flex flex-col gap-2">
       <ContentFilters
         search={search}
         onSearchChange={setSearch}
@@ -94,7 +95,7 @@ export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
         onTypeChange={setTypeFilter}
       />
 
-      <div className="overflow-x-auto rounded-card border border-border bg-white">
+      <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
             <tr>
@@ -117,8 +118,8 @@ export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
             ) : (
               filtered.map((item) => (
                 <tr key={item.id} className="hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">{item.title}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.type}</td>
+                  <td className="text-base font-extrabold">{item.title}</td>
+                  <td className="capitalize">{item.type.toString().toLowerCase()}</td>
                   <td className="px-4 py-3 text-muted-foreground">{item.bibleLink}</td>
                   <td className="px-4 py-3 text-muted-foreground">{item.authorName}</td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -141,6 +142,7 @@ export function ContentTable({ initialItems: seedItems }: ContentTableProps) {
           </tbody>
         </table>
       </div>
+      </section>
     </div>
   );
 }

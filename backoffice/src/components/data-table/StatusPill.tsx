@@ -26,28 +26,31 @@ interface StatusPillProps {
   className?: string;
 }
 
+const POSITIVE = "bg-blue-soft text-ink";
+const WARM = "bg-primary-soft text-ink";
+const MUTED = "bg-[#F5F6F8] text-muted-foreground";
+const NEGATIVE = "bg-danger-soft text-danger";
+
 const VARIANT_STYLES: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  published: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  approved: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  validated: "bg-sky-50 text-sky-800 border-sky-200",
-  pending: "bg-amber-50 text-amber-800 border-amber-200",
-  in_review: "bg-amber-50 text-amber-800 border-amber-200",
-  draft: "bg-slate-100 text-slate-800 border-slate-200",
-  inactive: "bg-slate-100 text-slate-600 border-slate-200",
-  declined: "bg-rose-50 text-rose-800 border-rose-200",
-  suspended: "bg-rose-50 text-rose-800 border-rose-200",
-  archived: "bg-slate-100 text-slate-500 border-slate-200",
+  active: POSITIVE,
+  published: POSITIVE,
+  approved: POSITIVE,
+  validated: POSITIVE,
+  pending: WARM,
+  in_review: WARM,
+  draft: MUTED,
+  inactive: MUTED,
+  archived: MUTED,
+  declined: NEGATIVE,
+  suspended: NEGATIVE,
 };
 
 export function StatusPill({ status, variant, className = "" }: StatusPillProps) {
   const normalizedKey = variant ?? status.toLowerCase().replace(/\s+/g, "_");
-  const style = VARIANT_STYLES[normalizedKey] ?? "bg-slate-100 text-foreground border-border";
+  const style = VARIANT_STYLES[normalizedKey] ?? POSITIVE;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize tracking-wide select-none ${style} ${className}`}
-    >
+    <span className={`chip select-none capitalize ${style} ${className}`}>
       {status}
     </span>
   );

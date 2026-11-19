@@ -47,7 +47,7 @@ export function ModerationTabs({ counts = {} }: ModerationTabsProps) {
   return (
     <nav
       aria-label="Moderation queues"
-      className="flex flex-wrap gap-2 border-b border-border pb-2"
+      className="flex flex-wrap gap-2"
     >
       {tabs.map((tab) => {
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
@@ -55,14 +55,11 @@ export function ModerationTabs({ counts = {} }: ModerationTabsProps) {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              active
-                ? "bg-primary text-foreground"
-                : "text-muted-foreground hover:bg-surface"
-            }`}
+            className="tab"
+            aria-current={active ? "page" : undefined}
           >
             {tab.label}
-            {typeof tab.count === "number" ? ` (${tab.count})` : ""}
+            {typeof tab.count === "number" && <span className="opacity-80">{tab.count}</span>}
           </Link>
         );
       })}

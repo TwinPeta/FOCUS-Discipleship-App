@@ -38,7 +38,7 @@ export function ExportAuditButton({ entries }: { entries: AuditEntry[] }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       {exportedNote && (
-        <span className="text-xs text-emerald-700" role="status">
+        <span className="text-xs text-ink" role="status">
           {exportedNote}
         </span>
       )}
@@ -46,7 +46,7 @@ export function ExportAuditButton({ entries }: { entries: AuditEntry[] }) {
         type="button"
         onClick={handleExport}
         disabled={exporting || entries.length === 0}
-        className="inline-flex items-center gap-2 rounded-md border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-slate-50 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-md border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground hover:bg-blue-tint disabled:opacity-50"
       >
         <Download className="h-4 w-4" aria-hidden="true" />
         <span>{exporting ? "Exporting…" : "Export CSV"}</span>

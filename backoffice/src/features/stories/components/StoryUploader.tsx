@@ -53,7 +53,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
     setError(null);
 
     if (!studentName.trim() || !institution.trim() || !videoUrl.trim()) {
-      setError("Please fill in student name, institution, and video URL.");
+      setError("Please fill in student name, campus, and video URL.");
       return;
     }
     if (!consentObtained) {
@@ -125,13 +125,13 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
             <ConsentReminder />
 
             {error && (
-              <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
+              <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-2.5 text-xs text-danger">
                 {error}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label htmlFor="story-student" className="block text-xs font-medium text-muted">
+              <label htmlFor="story-student" className="block text-[13px] font-extrabold">
                 Student Name
               </label>
               <input
@@ -146,7 +146,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="story-inst" className="block text-xs font-medium text-muted">
+              <label htmlFor="story-inst" className="block text-[13px] font-extrabold">
                 Campus / Institution
               </label>
               <input
@@ -154,7 +154,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
                 type="text"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
-                placeholder="Institution"
+                placeholder="Campus"
                 className="w-full rounded-md border border-border px-3 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-primary"
                 required
               />
@@ -162,7 +162,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label htmlFor="story-url" className="block text-xs font-medium text-muted">
+                <label htmlFor="story-url" className="block text-[13px] font-extrabold">
                   Video (upload a file or paste a link)
                 </label>
                 <input
@@ -185,14 +185,14 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
                 />
                 {videoUploading && <p className="text-xs text-muted">Uploading video...</p>}
                 {videoError && (
-                  <p role="alert" className="text-xs text-red-700">
+                  <p role="alert" className="text-xs text-danger">
                     {videoError}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="story-dur" className="block text-xs font-medium text-muted">
+                <label htmlFor="story-dur" className="block text-[13px] font-extrabold">
                   Duration (mm:ss)
                 </label>
                 <input
@@ -226,7 +226,7 @@ export function StoryUploader({ onStoryCreated }: StoryUploaderProps) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
               >
                 Cancel
               </button>

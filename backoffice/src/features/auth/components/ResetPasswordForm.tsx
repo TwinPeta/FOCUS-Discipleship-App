@@ -79,7 +79,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <div className="space-y-4">
         <div
           role="alert"
-          className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          className="rounded-md border border-primary bg-primary-soft px-4 py-3 text-sm text-ink"
         >
           This password reset link is invalid, has expired, or has already been used.
         </div>
@@ -98,7 +98,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <div className="space-y-4">
         <div
           role="status"
-          className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          className="rounded-md border border-blue/30 bg-blue-soft px-4 py-3 text-sm text-ink"
         >
           Your password has been updated. You can now sign in with your new password.
         </div>
@@ -119,14 +119,14 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       {errorMessage && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {errorMessage}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm font-medium text-foreground">
+        <label htmlFor="password" className="block text-[13px] font-extrabold">
           New password
         </label>
         <input
@@ -139,7 +139,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           {...register("password")}
         />
         {errors.password && (
-          <p id="password-error" role="alert" className="text-xs text-red-700">
+          <p id="password-error" role="alert" className="text-xs text-danger">
             {errors.password.message}
           </p>
         )}
@@ -150,7 +150,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="confirmPassword"
-          className="block text-sm font-medium text-foreground"
+          className="block text-[13px] font-extrabold"
         >
           Confirm new password
         </label>
@@ -164,7 +164,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p id="confirm-error" role="alert" className="text-xs text-red-700">
+          <p id="confirm-error" role="alert" className="text-xs text-danger">
             {errors.confirmPassword.message}
           </p>
         )}

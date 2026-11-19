@@ -67,12 +67,12 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Announcements &amp; Stories
+          <h1 className="text-[34px] leading-[1.05]">
+            Announcements &amp; stories
           </h1>
           <p className="mt-1 text-sm text-muted">
             Broadcast updates to fellowships and showcase student testimonial videos on the mobile app landing page.
@@ -84,35 +84,17 @@ export default function AnnouncementsPage() {
         )}
       </div>
 
-      <div className="border-b border-border">
-        <nav className="flex space-x-6 text-sm font-medium" aria-label="Tabs">
-          <button
-            type="button"
-            onClick={() => setActiveTab("announcements")}
-            className={`border-b-2 pb-3 transition ${
-              activeTab === "announcements"
-                ? "border-primary text-foreground font-semibold"
-                : "border-transparent text-muted hover:border-slate-300 hover:text-foreground"
-            }`}
-          >
-            Announcements ({announcements.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("stories")}
-            className={`border-b-2 pb-3 transition ${
-              activeTab === "stories"
-                ? "border-primary text-foreground font-semibold"
-                : "border-transparent text-muted hover:border-slate-300 hover:text-foreground"
-            }`}
-          >
-            Landing Page Stories ({stories.length})
-          </button>
-        </nav>
+      <div className="flex flex-wrap gap-2" role="tablist">
+        <button type="button" role="tab" aria-selected={activeTab === "announcements"} onClick={() => setActiveTab("announcements")}>
+          Announcements <span className="opacity-80">{announcements.length}</span>
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === "stories"} onClick={() => setActiveTab("stories")}>
+          Landing page stories <span className="opacity-80">{stories.length}</span>
+        </button>
       </div>
 
       {activeTab === "announcements" ? (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-5">
           <AnnouncementForm onCreated={handleAnnouncementCreated} />
           <AnnouncementList announcements={announcements} />
         </div>
@@ -124,6 +106,6 @@ export default function AnnouncementsPage() {
           <StoryList stories={stories} onChange={handleStoriesChange} />
         </div>
       )}
-    </main>
+    </div>
   );
 }

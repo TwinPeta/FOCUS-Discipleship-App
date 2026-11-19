@@ -27,7 +27,7 @@ export function ForbiddenState({
       role="alert"
       className="flex flex-col items-center justify-center rounded-xl border border-border bg-white p-8 text-center sm:p-12"
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-700 mb-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-amber-700 mb-3">
         <ShieldX className="h-6 w-6" aria-hidden="true" />
       </div>
       <h2 className="text-base font-bold text-foreground">{title}</h2>

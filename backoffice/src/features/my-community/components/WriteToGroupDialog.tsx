@@ -41,7 +41,7 @@ export function WriteToGroupDialog({ communityName }: { communityName: string })
   return (
     <div className="flex items-center gap-3">
       {sentBanner && (
-        <span className="text-xs text-emerald-700" role="status">
+        <span className="text-xs text-ink" role="status">
           {sentBanner}
         </span>
       )}
@@ -59,7 +59,7 @@ export function WriteToGroupDialog({ communityName }: { communityName: string })
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Write to community group"
+          aria-label="Write to caregroup group"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         >
           <form
@@ -71,12 +71,12 @@ export function WriteToGroupDialog({ communityName }: { communityName: string })
                 Write to {communityName}
               </h3>
               <p className="mt-0.5 text-xs text-muted">
-                Sends a notification to all members of your community.
+                Sends a notification to all members of your caregroup.
               </p>
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="group-msg-subject" className="block text-xs font-medium text-muted">
+              <label htmlFor="group-msg-subject" className="block text-[13px] font-extrabold">
                 Subject
               </label>
               <input
@@ -91,7 +91,7 @@ export function WriteToGroupDialog({ communityName }: { communityName: string })
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="group-msg-body" className="block text-xs font-medium text-muted">
+              <label htmlFor="group-msg-body" className="block text-[13px] font-extrabold">
                 Message
               </label>
               <textarea
@@ -109,7 +109,7 @@ export function WriteToGroupDialog({ communityName }: { communityName: string })
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+                className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
               >
                 Cancel
               </button>

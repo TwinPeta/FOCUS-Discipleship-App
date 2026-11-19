@@ -13,7 +13,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirects";
 import { ROUTES } from "@/lib/constants/routes";
@@ -96,14 +96,14 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
       {serverError && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {serverError}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+        <label htmlFor="email" className="block text-base font-extrabold text-foreground">
           Work email
         </label>
         <input
@@ -113,28 +113,20 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "email-error" : undefined}
           className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="name@focusuganda.org"
+          placeholder="name@example.com"
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" role="alert" className="text-xs text-red-700">
+          <p id="email-error" role="alert" className="text-xs text-danger">
             {errors.email.message}
           </p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label htmlFor="password" className="block text-sm font-medium text-foreground">
-            Password
-          </label>
-          <Link
-            href={ROUTES.forgotPassword}
-            className="text-xs font-medium text-foreground underline underline-offset-2 hover:text-muted-foreground"
-          >
-            Forgot password?
-          </Link>
-        </div>
+        <label htmlFor="password" className="block text-base font-extrabold text-foreground">
+          Password
+        </label>
         <div className="relative">
           <input
             id="password"
@@ -143,47 +135,51 @@ export function LoginForm({ returnTo, initialError }: LoginFormProps) {
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? "password-error" : undefined}
             className="w-full rounded-md border border-border bg-white px-3 py-2 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            {...register("password")}
+            placeholder="Your password"
+          {...register("password")}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+            className="absolute right-1.5 top-1 flex h-11 w-11 items-center justify-center text-ink"
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4" aria-hidden="true" />
+              <EyeOff className="h-[22px] w-[22px]" aria-hidden="true" />
             ) : (
-              <Eye className="h-4 w-4" aria-hidden="true" />
+              <Eye className="h-[22px] w-[22px]" aria-hidden="true" />
             )}
           </button>
         </div>
         {errors.password && (
-          <p id="password-error" role="alert" className="text-xs text-red-700">
+          <p id="password-error" role="alert" className="text-xs text-danger">
             {errors.password.message}
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="rememberMe"
-          type="checkbox"
-          className="h-4 w-4 rounded border-border accent-primary"
-          {...register("rememberMe")}
-        />
-        <label htmlFor="rememberMe" className="text-sm text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <label htmlFor="rememberMe" className="flex items-center gap-2.5 text-base font-semibold">
+          <input id="rememberMe" type="checkbox" className="h-5 w-5 accent-ink" {...register("rememberMe")} />
           Keep me signed in
         </label>
+        <Link href={ROUTES.forgotPassword} className="text-base font-extrabold text-blue underline">
+          Forgot password?
+        </Link>
       </div>
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground transition hover:brightness-95 disabled:opacity-60"
+        className="btn btn-primary btn-lg w-full"
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
+
+      <div className="flex items-start gap-2.5 rounded-lg bg-[linear-gradient(135deg,#E8F2FD_0%,#CFE3F8_100%)] px-3.5 py-3 text-sm leading-[1.35]">
+        <ShieldCheck className="h-[22px] w-[22px] shrink-0" aria-hidden="true" />
+        <span>Sign-ins and access to personal data are recorded in the audit log.</span>
+      </div>
     </form>
   );
 }

@@ -30,7 +30,7 @@ export function FollowUpList({ members }: { members: FollowUpMember[] }) {
   return (
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div>
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="eyebrow">
           Members to follow up
         </h2>
         <p className="text-xs text-muted">
@@ -39,7 +39,7 @@ export function FollowUpList({ members }: { members: FollowUpMember[] }) {
       </div>
 
       {members.length === 0 ? (
-        <p className="text-sm text-muted">Everyone in your community has been active recently.</p>
+        <p className="text-sm text-muted">Everyone in your caregroup has been active recently.</p>
       ) : (
         <div className="divide-y divide-border rounded-lg border border-border">
           {members.map((m) => {
@@ -63,8 +63,8 @@ export function FollowUpList({ members }: { members: FollowUpMember[] }) {
                   disabled={isSent || isSending}
                   className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium ${
                     isSent
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                      : "border-border bg-white text-foreground hover:bg-slate-50"
+                      ? "border-blue/30 bg-blue-soft text-ink"
+                      : "border-border bg-white text-foreground hover:bg-blue-tint"
                   }`}
                 >
                   {isSent ? (

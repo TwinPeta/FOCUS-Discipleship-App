@@ -21,8 +21,8 @@ describe("buildBreadcrumbs", () => {
   it("builds a trail for a nested create page", () => {
     expect(buildBreadcrumbs("/communities/new", ROUTES.dashboard)).toEqual([
       { label: "Dashboard", href: "/dashboard" },
-      { label: "Communities", href: "/communities" },
-      { label: "New community", href: null },
+      { label: "Caregroups", href: "/communities" },
+      { label: "New caregroup", href: null },
     ]);
   });
 
@@ -38,7 +38,7 @@ describe("buildBreadcrumbs", () => {
 
   it("does not duplicate the super-mentor home", () => {
     const labels = buildBreadcrumbs("/my-community/members", ROUTES.myCommunity).map((c) => c.label);
-    expect(labels).toEqual(["My community", "Members"]);
+    expect(labels).toEqual(["My caregroup", "Members"]);
   });
 
   it("quick back goes to the nearest clickable parent", () => {
@@ -66,7 +66,7 @@ describe("role filtering", () => {
   it("hides admin-only quick actions from content admins", () => {
     const labels = getQuickActions(Role.ContentAdmin).map((a) => a.label);
     expect(labels).toContain("New content");
-    expect(labels).not.toContain("Create community");
+    expect(labels).not.toContain("New caregroup");
   });
 
   it("gives super-mentors the my-community nav and no quick actions", () => {

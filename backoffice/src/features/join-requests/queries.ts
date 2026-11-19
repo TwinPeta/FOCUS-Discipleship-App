@@ -11,7 +11,7 @@ import type { JoinRequestItem } from "./conflicts";
 
 export async function fetchJoinRequests(): Promise<JoinRequestItem[]> {
   const res = await fetch("/api/proxy/join-requests", { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load join requests");
+  if (!res.ok) throw new Error("Failed to load new members");
   const data = (await res.json()) as { items?: JoinRequestItem[] };
   return data.items ?? [];
 }
@@ -38,5 +38,11 @@ export async function bulkApproveJoinRequests(ids: string[]): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ids }),
   });
-  if (!res.ok) throw new Error("Failed to bulk approve join requests");
+  if (!res.ok) throw new Error("Failed to bulk approve new members");
+}
+
+export async function sayHelloToMember(id: string): Promise<{ welcomedAt: string | null }> {
+  const res = await fetch(`/api/proxy/join-requests/${id}/hello`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to send the welcome");
+  return (await res.json()) as { welcomedAt: string | null };
 }

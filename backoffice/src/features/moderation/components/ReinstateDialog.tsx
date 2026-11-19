@@ -54,7 +54,7 @@ export function ReinstateDialog({
         </h2>
 
         <div className="space-y-1.5">
-          <label htmlFor="reinstate-reason" className="block text-sm font-medium">
+          <label htmlFor="reinstate-reason" className="block text-[13px] font-extrabold">
             Reason for reinstatement
           </label>
           <textarea

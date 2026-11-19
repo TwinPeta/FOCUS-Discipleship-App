@@ -8,38 +8,27 @@
  */
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { AttentionItem } from "../queries";
 
 export function NeedsAttention({ items }: { items: AttentionItem[] }) {
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-white p-5">
-      <div>
-        <h2 className="text-base font-semibold text-foreground">
-          Needs your attention
-        </h2>
-        <p className="text-xs text-muted">
-          Items currently queued for staff review or approval.
-        </p>
-      </div>
-
-      <div className="grid gap-2.5 sm:grid-cols-2">
+    <section className="card flex h-full flex-col gap-1">
+      <h2 className="eyebrow mb-1">Needs your attention</h2>
+      {items.length === 0 && <p className="py-2 text-sm text-muted-foreground">Nothing is waiting for review right now.</p>}
+      <ul className="divide-y-[1.5px] divide-border">
         {items.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="flex items-center justify-between rounded-lg border border-border px-3.5 py-3 transition hover:border-primary hover:bg-primary-soft/40"
-          >
-            <div>
-              <p className="text-xs font-medium text-muted">{item.label}</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">
+          <li key={item.id}>
+            <Link href={item.href} className="flex items-center gap-3 py-2.5 hover:opacity-80">
+              <span className="grid h-9 min-w-9 shrink-0 place-items-center rounded-[10px] bg-blue-soft px-2 text-sm font-extrabold text-blue">
                 {item.count}
-              </p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted" aria-hidden="true" />
-          </Link>
+              </span>
+              <span className="flex-1 text-base font-extrabold">{item.label}</span>
+              <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

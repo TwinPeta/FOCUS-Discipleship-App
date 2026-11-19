@@ -52,47 +52,36 @@ export default function BadgesPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Discipleship Badges
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Spiritual growth milestones, community engagement recognitions, and pathway achievement rewards.
-          </p>
+          <h1 className="text-[34px] leading-[1.05]">Badges</h1>
+          <p>Spiritual growth milestones, caregroup engagement recognitions, and pathway achievement rewards.</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setEditingBadge(null)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>New badge</span>
+        <button type="button" onClick={() => setEditingBadge(null)} className="btn btn-primary">
+          <Plus className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />
+          New badge
         </button>
       </div>
 
-      <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900">
-        <p className="font-semibold">Note on Spiritual Context (Open Question #3)</p>
-        <p className="mt-0.5">
-          Badges serve as encouraging milestones in discipleship rather than competitive gamification. Rules are evaluated automatically by the backend engine upon meeting attendance, quiz completions, and pathway milestones.
-        </p>
+      <div className="flex flex-wrap items-start gap-4">
+        <BadgeTable badges={badges} onEditBadge={(b) => setEditingBadge(b)} selectedId={editingBadge?.id} />
+
+        {editingBadge !== undefined && (
+          <BadgeForm
+            key={editingBadge?.id ?? "new"}
+            badge={editingBadge}
+            onSaved={handleSaved}
+            onClose={() => setEditingBadge(undefined)}
+          />
+        )}
       </div>
 
-      <BadgeTable
-        badges={badges}
-        onEditBadge={(b) => setEditingBadge(b)}
-      />
-
-      {editingBadge !== undefined && (
-        <BadgeForm
-          badge={editingBadge}
-          onSaved={handleSaved}
-          onClose={() => setEditingBadge(undefined)}
-        />
-      )}
-    </main>
+      <p className="notice">
+        <span>Badges are a proposal. Check with FOCUS Uganda that they suit the spiritual context. Rules are evaluated automatically from meeting attendance, quiz completions and pathway milestones.</span>
+      </p>
+    </div>
   );
 }

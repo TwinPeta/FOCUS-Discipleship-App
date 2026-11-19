@@ -58,7 +58,7 @@ export function ConfirmDialog({
       <div className="w-full max-w-md space-y-4 rounded-xl border border-border bg-white p-6 shadow-xl">
         <div className="flex items-start gap-3">
           {variant === "danger" && (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger">
               <AlertTriangle className="h-5 w-5" aria-hidden="true" />
             </div>
           )}
@@ -78,7 +78,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50 transition"
+            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint transition"
           >
             {cancelLabel}
           </button>

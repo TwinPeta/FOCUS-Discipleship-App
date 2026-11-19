@@ -43,10 +43,10 @@ export function ReviewPanel({ status, onTransition }: ReviewPanelProps) {
 
   return (
     <div className="space-y-4 rounded-card border border-border bg-white p-5">
-      <h2 className="text-base font-semibold text-foreground">Validation review</h2>
+      <h2 className="eyebrow">Validation review</h2>
 
       <div className="space-y-1.5">
-        <label htmlFor="reviewer-notes" className="block text-sm font-medium text-foreground">
+        <label htmlFor="reviewer-notes" className="block text-[13px] font-extrabold">
           Reviewer notes
         </label>
         <textarea

@@ -45,12 +45,17 @@ export interface Member {
     email: string | null;
   } | null;
   role: Role;
+  customRoleId?: string | null;
+  customRoleName?: string | null;
   status: MemberStatus;
   institutionId: string;
   institutionName: string;
   communityId?: string | null;
   communityName?: string | null;
   lastActiveAt?: string | null;
+  country?: string | null;
+  yearOfStudy?: number | null;
+  localChurch?: string | null;
   participation?: {
     resourcesCompleted: number;
     meetingsAttended: number;
@@ -71,8 +76,11 @@ export const addUserSchema = z.object({
     Role.ContentAdmin,
     Role.SystemAdmin,
   ]),
-  institutionId: z.string().min(1, "Institution is required"),
+  institutionId: z.string().min(1, "Campus is required"),
   communityId: z.string().optional().or(z.literal("")),
+  country: z.string().optional().or(z.literal("")),
+  yearOfStudy: z.string().optional().or(z.literal("")),
+  localChurch: z.string().trim().max(120).optional().or(z.literal("")),
   guardianConsentReceived: z.boolean().default(false),
   sendInvitation: z.boolean().default(true),
 });

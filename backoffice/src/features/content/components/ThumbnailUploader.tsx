@@ -45,7 +45,7 @@ export function ThumbnailUploader({ value, onChange }: ThumbnailUploaderProps) {
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor="thumbnail-upload" className="block text-sm font-medium text-foreground">
+      <label htmlFor="thumbnail-upload" className="block text-[13px] font-extrabold">
         Thumbnail (optional)
       </label>
       <input
@@ -61,7 +61,7 @@ export function ThumbnailUploader({ value, onChange }: ThumbnailUploaderProps) {
         <p className="text-xs text-muted-foreground">Thumbnail uploaded.</p>
       )}
       {error && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}

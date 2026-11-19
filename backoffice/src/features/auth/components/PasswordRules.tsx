@@ -32,7 +32,7 @@ export function PasswordRules({
         <li
           key={rule.id}
           className={`flex items-center gap-2 ${
-            rule.passed ? "text-emerald-700 font-medium" : "text-muted-foreground"
+            rule.passed ? "text-ink font-medium" : "text-muted-foreground"
           }`}
         >
           {rule.passed ? (

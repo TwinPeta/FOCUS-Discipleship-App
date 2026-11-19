@@ -62,7 +62,7 @@ export function SuspendDialog({
         </p>
 
         <div className="space-y-1.5">
-          <label htmlFor="suspend-reason" className="block text-sm font-medium">
+          <label htmlFor="suspend-reason" className="block text-[13px] font-extrabold">
             Reason
           </label>
           <textarea
@@ -73,7 +73,7 @@ export function SuspendDialog({
             className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
           />
           {error && (
-            <p role="alert" className="text-xs text-red-700">
+            <p role="alert" className="text-xs text-danger">
               {error}
             </p>
           )}
@@ -91,7 +91,7 @@ export function SuspendDialog({
             type="button"
             disabled={submitting}
             onClick={handleConfirm}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            className="rounded-md bg-danger px-3 py-1.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
           >
             {submitting ? "Suspending..." : "Confirm suspension"}
           </button>

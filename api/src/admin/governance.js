@@ -259,7 +259,27 @@ function reportsData(req) {
     const act = ms.filter((m) => { const u = store.get('users', m.userId); return u && C.statusOf(u) === 'ACTIVE'; }).length;
     return { id: c.id, name: c.name, campus: store.get('institutions', c.institutionId)?.name || '', memberCount: ms.length, activePercent: ms.length ? Math.round((act / ms.length) * 100) : 0 };
   }).sort((a, b) => b.activePercent - a.activePercent);
-  return { membersOverTime, completionsByType: Object.entries(byType).map(([type, completions]) => ({ type, completions })), activeCommunities, scheduledReports: store.col('reportSchedules').map(schedDto) };
+  // Headline numbers for the last 30 days against the 30 days before
+  const DAY = 864e5; const now = Date.now();
+  const iso = (ms) => new Date(ms).toISOString();
+  const win = (from, to) => (t) => t >= iso(from) && t < iso(to);
+  const cur = win(now - 30 * DAY, now + 1); const prev = win(now - 60 * DAY, now - 30 * DAY);
+  const ids = new Set(scoped.map((u) => u.id));
+  const evts = store.col('events').filter((e) => ids.has(e.userId) && !e.internal);
+  const pct = (a, b) => (b ? Math.round(((a - b) / b) * 100) : a ? 100 : 0);
+  const activeIn = (w) => new Set(evts.filter((e) => w(e.createdAt)).map((e) => e.userId)).size;
+  const meetIn = (w) => evts.filter((e) => e.type === 'meeting_attended' && w(e.createdAt)).length;
+  const resolved = store.col('reports').filter((r) => r.resolution && r.resolution.at);
+  const handledIn = (w) => resolved.filter((r) => w(r.resolution.at));
+  const handled = handledIn(cur);
+  const hours = handled.length ? Math.round((handled.reduce((n, r) => n + (new Date(r.resolution.at) - new Date(r.createdAt)), 0) / handled.length / 36e5) * 10) / 10 : 0;
+  const summary = {
+    members: { value: scoped.length, changePercent: pct(scoped.length, scoped.filter((u) => u.createdAt < iso(now - 30 * DAY)).length) },
+    active: { value: activeIn(cur), changePercent: pct(activeIn(cur), activeIn(prev)) },
+    meetingsAttended: { value: meetIn(cur), changePercent: pct(meetIn(cur), meetIn(prev)) },
+    reportsHandled: { value: handled.length, averageAnswerHours: hours },
+  };
+  return { summary, membersOverTime, completionsByType: Object.entries(byType).map(([type, completions]) => ({ type, completions })), activeCommunities, scheduledReports: store.col('reportSchedules').map(schedDto) };
 }
 const schedDto = (s) => ({ id: s.id, reportType: s.reportType, reportLabel: REPORT_LABELS[s.reportType], cadence: s.cadence, recipientEmail: s.recipientEmail, active: s.active !== false });
 router.get('/reports', C.allow(SYS, CA, SM), (req, res) => res.json(reportsData(req)));

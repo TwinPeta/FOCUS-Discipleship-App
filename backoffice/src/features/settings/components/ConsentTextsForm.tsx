@@ -30,9 +30,9 @@ export function ConsentTextsForm() {
     resolver: zodResolver(consentTextsSchema),
     defaultValues: {
       accountCreationText:
-        "I agree to FOCUS Uganda processing my account details for discipleship and campus community participation.",
+        "I agree to FOCUS Uganda processing my account details for discipleship and campus caregroup participation.",
       communitySpacesText:
-        "I consent to sharing my posts and prayer requests with members of my campus community.",
+        "I consent to sharing my posts and prayer requests with members of my campus caregroup.",
       mentorContactText:
         "I consent to being contacted by verified campus mentors for pastoral follow-up.",
     },
@@ -57,13 +57,13 @@ export function ConsentTextsForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {saved && (
-        <p role="status" className="text-xs font-medium text-emerald-800">
+        <p role="status" className="text-xs font-medium text-ink">
           Consent texts saved.
         </p>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="consent-account" className="block text-sm font-medium">
+        <label htmlFor="consent-account" className="block text-[13px] font-extrabold">
           Creating an account
         </label>
         <textarea
@@ -75,7 +75,7 @@ export function ConsentTextsForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="consent-community" className="block text-sm font-medium">
+        <label htmlFor="consent-community" className="block text-[13px] font-extrabold">
           Taking part in community spaces
         </label>
         <textarea
@@ -87,7 +87,7 @@ export function ConsentTextsForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="consent-mentor" className="block text-sm font-medium">
+        <label htmlFor="consent-mentor" className="block text-[13px] font-extrabold">
           Being contacted by a mentor
         </label>
         <textarea

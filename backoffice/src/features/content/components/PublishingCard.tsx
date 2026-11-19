@@ -38,14 +38,14 @@ export function PublishingCard({
   onSubmitForReview,
 }: PublishingCardProps) {
   return (
-    <aside className="space-y-4 rounded-card border border-border bg-white p-5">
+    <aside className="card flex min-w-0 flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Publishing</h2>
+        <h2 className="eyebrow">Publishing</h2>
         <WorkflowStatusBadge status={status} />
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Author: <strong className="text-foreground">{authorName}</strong>
+      <p className="text-[15px]">
+        Author: <strong>{authorName}</strong>
       </p>
 
       <ValidatorField value={validatorName} onChange={onValidatorChange} />
@@ -57,7 +57,7 @@ export function PublishingCard({
           type="button"
           disabled={isSubmitting}
           onClick={onSaveDraft}
-          className="w-full rounded-md border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:bg-surface disabled:opacity-60"
+          className="btn btn-secondary w-full"
         >
           Save draft
         </button>
@@ -65,11 +65,15 @@ export function PublishingCard({
           type="button"
           disabled={isSubmitting}
           onClick={onSubmitForReview}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
+          className="btn btn-primary w-full"
         >
           {isSubmitting ? "Submitting..." : "Submit for review"}
         </button>
       </div>
+
+      <p className="notice">
+        <span>Draft → In review → Published. The validator is recorded.</span>
+      </p>
     </aside>
   );
 }

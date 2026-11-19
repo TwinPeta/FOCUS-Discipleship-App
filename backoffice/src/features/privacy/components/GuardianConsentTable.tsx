@@ -10,6 +10,8 @@
 "use client";
 
 import { useState } from "react";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import {
   confirmGuardianConsent,
   sendGuardianReminder,
@@ -57,13 +59,14 @@ export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsen
       {remindedId && (
         <div
           role="status"
-          className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-900"
+          className="rounded-md border border-blue/30 bg-blue-soft px-4 py-2 text-sm text-ink"
         >
           Reminder sent to guardian.
         </div>
       )}
 
       <div className="overflow-x-auto rounded-card border border-border bg-white">
+        <h2 className="eyebrow mb-1">Users under 18: guardian consent</h2>
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
             <tr>
@@ -85,8 +88,11 @@ export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsen
             ) : (
               initialItems.map((item) => (
                 <tr key={item.id} className="hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {item.studentName}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <InitialsAvatar name={item.studentName} />
+                      <span className="text-base font-extrabold">{item.studentName}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-foreground">
                     {item.guardianName}
@@ -107,17 +113,7 @@ export function GuardianConsentTable({ initialItems: seedItems }: GuardianConsen
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        item.status === GuardianConsentStatus.Received
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-amber-100 text-amber-900"
-                      }`}
-                    >
-                      {item.status === GuardianConsentStatus.Received
-                        ? "Received"
-                        : "Pending"}
-                    </span>
+                    <StatusPill status={item.status === GuardianConsentStatus.Received ? "Received" : "Pending"} variant={item.status === GuardianConsentStatus.Received ? "active" : "pending"} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{item.updatedAt}</td>
                   <td className="px-4 py-3 text-right">

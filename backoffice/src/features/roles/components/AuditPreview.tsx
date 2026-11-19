@@ -23,7 +23,7 @@ export function AuditPreview() {
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-foreground">
+          <h2 className="eyebrow">
             Recent audit activity
           </h2>
           <p className="text-xs text-muted">
@@ -40,7 +40,7 @@ export function AuditPreview() {
       </div>
 
       <div className="divide-y divide-border rounded-lg border border-border">
-        {error && <p role="alert" className="px-3 py-2.5 text-xs text-red-700">{error}</p>}
+        {error && <p role="alert" className="px-3 py-2.5 text-xs text-danger">{error}</p>}
         {!error && !loading && entries.length === 0 && (
           <p className="px-3 py-2.5 text-xs text-muted">No audit activity recorded yet.</p>
         )}

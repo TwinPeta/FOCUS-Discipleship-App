@@ -53,7 +53,7 @@ export function PushDeliveryCard() {
     <div className="space-y-4 text-sm">
       <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">Phone push</dt>
-        <dd className={data.enabled ? "text-emerald-800" : "font-medium text-red-700"}>
+        <dd className={data.enabled ? "text-ink" : "font-medium text-danger"}>
           {data.enabled
             ? `Connected (Firebase project ${data.projectId})`
             : data.configured
@@ -76,7 +76,7 @@ export function PushDeliveryCard() {
           {sending ? "Sending..." : "Send a test to my phone"}
         </button>
         {result && (
-          <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-emerald-800" : "text-red-700"}>
+          <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-ink" : "text-danger"}>
             {result.message}
           </p>
         )}
@@ -91,9 +91,9 @@ export function PushDeliveryCard() {
             {data.recent.map((r, i) => (
               <li key={`${r.at}-${i}`} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                 <span>
-                  <span className={r.ok ? "text-emerald-800" : "font-medium text-red-700"}>{r.ok ? "Delivered" : "Failed"}</span>{" "}
+                  <span className={r.ok ? "text-ink" : "font-medium text-danger"}>{r.ok ? "Delivered" : "Failed"}</span>{" "}
                   · {r.platform ?? "phone"} · {r.user}
-                  {r.error && <span className="block text-xs text-red-700">{r.error}</span>}
+                  {r.error && <span className="block text-xs text-danger">{r.error}</span>}
                 </span>
                 <span className="text-xs text-muted-foreground">{new Date(r.at).toLocaleString()}</span>
               </li>

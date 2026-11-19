@@ -43,7 +43,7 @@ export function TeamPicker({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="superMentorId" className="block text-sm font-medium text-foreground">
+        <label htmlFor="superMentorId" className="block text-[13px] font-extrabold">
           Super-mentor
         </label>
         <select

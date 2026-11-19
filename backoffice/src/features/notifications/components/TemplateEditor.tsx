@@ -22,7 +22,7 @@ interface TemplateEditorProps {
 
 const TEMPLATE_VARIABLES = [
   { tag: "{{member_name}}", label: "Member name" },
-  { tag: "{{community_name}}", label: "Community name" },
+  { tag: "{{community_name}}", label: "Caregroup name" },
   { tag: "{{item_title}}", label: "Item / Event title" },
   { tag: "{{message_preview}}", label: "Message preview" },
 ];
@@ -57,16 +57,11 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Edit notification template"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-    >
-      <div className="w-full max-w-2xl space-y-4 rounded-xl border border-border bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+    <div aria-label="Edit notification template">
+      <div className="card flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-1">
           <div>
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 className="text-[22px] font-black">
               Edit Template: {rule.triggerLabel}
             </h3>
             <p className="text-xs text-muted">Recipient: {rule.recipient}</p>
@@ -82,14 +77,14 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
         </div>
 
         {error && (
-          <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
+          <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-2.5 text-xs text-danger">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="tpl-title" className="block text-xs font-medium text-muted">
+            <label htmlFor="tpl-title" className="block text-[13px] font-extrabold">
               Notification Title
             </label>
             <input
@@ -104,7 +99,7 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="tpl-message" className="block text-xs font-medium text-muted">
+              <label htmlFor="tpl-message" className="block text-[13px] font-extrabold">
                 Message Content
               </label>
               <span className="text-[11px] text-muted">Click a variable tag to append</span>
@@ -123,7 +118,7 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
                   key={v.tag}
                   type="button"
                   onClick={() => insertVariable(v.tag)}
-                  className="rounded border border-border bg-slate-50 px-2 py-0.5 text-[11px] font-mono text-foreground hover:bg-slate-100"
+                  className="rounded border border-border bg-blue-tint px-2 py-0.5 text-[11px] font-mono text-foreground hover:bg-blue-tint"
                 >
                   + {v.tag}
                 </button>
@@ -132,7 +127,7 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
           </div>
 
           <div className="space-y-1.5 pt-1">
-            <label className="block text-xs font-medium text-muted">Enabled Delivery Channels</label>
+            <label className="block text-[13px] font-extrabold">Enabled Delivery Channels</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer">
                 <input
@@ -164,7 +159,7 @@ export function TemplateEditor({ rule, onSave, onClose }: TemplateEditorProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+              className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
             >
               Cancel
             </button>

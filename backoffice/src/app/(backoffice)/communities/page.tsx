@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { CommunityTable } from "@/features/communities/components/CommunityTable";
 import type { Community } from "@/features/communities/schemas";
 import { ROUTES } from "@/lib/constants/routes";
@@ -16,21 +17,15 @@ export default function CommunitiesPage() {
   const items: Community[] = [];
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Communities</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage general and specific campus communities, meeting details, and
-            cover photos.
-          </p>
+          <h1 className="text-[34px] leading-[1.05]">Caregroups</h1>
+          <p>Manage general and specific campus caregroups, meeting details, and cover photos.</p>
         </div>
-
-        <Link
-          href={ROUTES.communityNew}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95"
-        >
-          New community
+        <Link href={ROUTES.communityNew} className="btn btn-primary">
+          <Plus className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" />
+          New caregroup
         </Link>
       </div>
 

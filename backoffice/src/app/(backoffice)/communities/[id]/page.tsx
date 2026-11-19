@@ -30,7 +30,7 @@ export default function CommunityDetailPage({
   useEffect(() => {
     fetchCommunity(id)
       .then(setCommunity)
-      .catch(() => setError("Could not load community details."))
+      .catch(() => setError("Could not load caregroup details."))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -41,17 +41,17 @@ export default function CommunityDetailPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {community ? community.name : "Community details"}
+        <h1 className="text-[34px] leading-[1.05]">
+          {community ? community.name : "Caregroup details"}
         </h1>
       </div>
 
       <div className="rounded-card border border-border bg-white p-6">
-        {loading && <p className="text-sm text-muted-foreground">Loading community...</p>}
+        {loading && <p className="text-sm text-muted-foreground">Loading caregroup...</p>}
         {error && (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}

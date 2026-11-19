@@ -53,14 +53,14 @@ export function RetentionForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {saved && (
-        <p role="status" className="text-xs font-medium text-emerald-800">
+        <p role="status" className="text-xs font-medium text-ink">
           Retention settings saved.
         </p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="retention-months" className="block text-sm font-medium">
+          <label htmlFor="retention-months" className="block text-[13px] font-extrabold">
             Keep inactive accounts (months)
           </label>
           <input
@@ -74,7 +74,7 @@ export function RetentionForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="deletion-days" className="block text-sm font-medium">
+          <label htmlFor="deletion-days" className="block text-[13px] font-extrabold">
             Answer deletion requests within (days)
           </label>
           <input
