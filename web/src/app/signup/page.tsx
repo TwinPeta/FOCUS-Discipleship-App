@@ -294,7 +294,7 @@ export default function SignupPage() {
             </div>
             <div className="field" role="group" aria-labelledby="inst-type">
               <span className="legend" id="inst-type">I study at a</span>
-              <div className="seg" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+              <div className="seg" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
                 {TYPES.map(([v, l]) => (
                   <label key={v}>
                     <input type="radio" name="institution_type" value={v} checked={f.institution_type === v}
