@@ -5,11 +5,21 @@ import { useAuth } from "@/lib/auth";
 import { ANDROID_URL, IOS_URL } from "@/lib/config";
 
 export function DownloadButtons({ dark = false }: { dark?: boolean }) {
-  const cls = dark ? "btn btn-dark" : "btn";
+  const cls = `store-btn${dark ? " store-btn-dark" : ""}`;
   return (
     <>
-      {ANDROID_URL ? <a className={cls} href={ANDROID_URL} rel="noopener">Download for Android</a> : null}
-      {IOS_URL ? <a className={cls} href={IOS_URL} rel="noopener">Download for iPhone</a> : null}
+      {ANDROID_URL ? (
+        <a className={cls} href={ANDROID_URL} rel="noopener" aria-label="Download for Android">
+          <i className="bx bxl-play-store" aria-hidden="true" />
+          <span><small>Download for</small>Android</span>
+        </a>
+      ) : null}
+      {IOS_URL ? (
+        <a className={cls} href={IOS_URL} rel="noopener" aria-label="Download for iPhone">
+          <i className="bx bxl-apple" aria-hidden="true" />
+          <span><small>Download for</small>iPhone</span>
+        </a>
+      ) : null}
     </>
   );
 }
