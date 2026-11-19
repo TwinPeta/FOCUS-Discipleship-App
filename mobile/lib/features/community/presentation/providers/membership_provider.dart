@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/repository_providers.dart';
+import '../../../../core/realtime/realtime_bindings.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../notifications/presentation/notification_providers.dart';
 import 'community_providers.dart';
@@ -22,7 +23,8 @@ class MembershipController extends AsyncNotifier<Membership> {
     // a request is pending it is also re-checked on the notifications poll
     // interval, so a decision missed by the socket (app in the background,
     // socket reconnecting) still shows up.
-    if (membership.status == MembershipStatus.pending) {
+    if (membership.status == MembershipStatus.pending &&
+        !ref.watch(realtimeConnectedProvider)) {
       final timer = Timer(
         ref.watch(notificationPollIntervalProvider),
         ref.invalidateSelf,

@@ -56,6 +56,9 @@ Uri realtimeUri(String baseUrl, String token) {
 abstract class RealtimeChannel {
   Stream<dynamic> get stream;
 
+  /// Completes when the connection is open (throws if it could not open).
+  Future<void> get ready;
+
   /// The close code once [stream] is done (4401 = bad token).
   int? get closeCode;
 
@@ -66,6 +69,9 @@ class WebSocketRealtimeChannel implements RealtimeChannel {
   WebSocketRealtimeChannel(Uri uri) : _channel = WebSocketChannel.connect(uri);
 
   final WebSocketChannel _channel;
+
+  @override
+  Future<void> get ready => _channel.ready;
 
   @override
   Stream<dynamic> get stream => _channel.stream;
@@ -84,6 +90,13 @@ typedef RealtimeDelay = Future<void> Function(Duration wait);
 abstract class RealtimeClient {
   Stream<RealtimeEvent> get events;
 
+  /// True while the socket is open. Screens only fall back to checking now
+  /// and then while it is false.
+  bool get connected;
+
+  /// Changes of [connected].
+  Stream<bool> get connection;
+
   void start();
 
   Future<void> stop();
@@ -95,6 +108,12 @@ abstract class RealtimeClient {
 class NoopRealtimeClient implements RealtimeClient {
   @override
   Stream<RealtimeEvent> get events => const Stream.empty();
+
+  @override
+  bool get connected => false;
+
+  @override
+  Stream<bool> get connection => const Stream.empty();
 
   @override
   void start() {}
@@ -134,6 +153,8 @@ class SocketRealtimeClient implements RealtimeClient {
   final RealtimeConnect _connect;
   final RealtimeDelay _delay;
   final _events = StreamController<RealtimeEvent>.broadcast();
+  final _connection = StreamController<bool>.broadcast();
+  bool _connected = false;
 
   bool _running = false;
   int _generation = 0;
@@ -146,6 +167,18 @@ class SocketRealtimeClient implements RealtimeClient {
 
   @override
   Stream<RealtimeEvent> get events => _events.stream;
+
+  @override
+  bool get connected => _connected;
+
+  @override
+  Stream<bool> get connection => _connection.stream;
+
+  void _setConnected(bool value) {
+    if (_connected == value) return;
+    _connected = value;
+    if (!_connection.isClosed) _connection.add(value);
+  }
 
   @override
   void start() {
@@ -172,6 +205,9 @@ class SocketRealtimeClient implements RealtimeClient {
       return;
     }
     _channel = channel;
+    channel.ready.then((_) {
+      if (_running && generation == _generation) _setConnected(true);
+    }).catchError((Object _) {});
     _sub = channel.stream.listen(
       (frame) {
         _attempt = 0;
@@ -186,6 +222,7 @@ class SocketRealtimeClient implements RealtimeClient {
 
   Future<void> _closed(int generation, int? code) async {
     if (!_running || generation != _generation) return;
+    _setConnected(false);
     _channel = null;
     _sub = null;
     if (code == realtimeUnauthorizedCode) {
@@ -215,6 +252,7 @@ class SocketRealtimeClient implements RealtimeClient {
   Future<void> stop() async {
     _running = false;
     _generation++;
+    _setConnected(false);
     final channel = _channel;
     _channel = null;
     await _sub?.cancel();
@@ -226,5 +264,6 @@ class SocketRealtimeClient implements RealtimeClient {
   void dispose() {
     unawaited(stop());
     unawaited(_events.close());
+    unawaited(_connection.close());
   }
 }

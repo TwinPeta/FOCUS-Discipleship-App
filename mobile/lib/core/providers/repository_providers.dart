@@ -59,8 +59,15 @@ import '../../features/testimony/data/testimony_repository.dart';
 
 /// One client (and one set of tokens) for the whole app. Every repository
 /// below talks to the real API through it (see [ApiConfig]).
+/// The saved session. `main` replaces it with one restored from secure
+/// storage; tests and anything else get an empty, memory-only store.
+final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
+
 final apiClientProvider = Provider<ApiClient>((ref) {
-  final client = ApiClient(baseUrl: ApiConfig.baseUrl);
+  final client = ApiClient(
+    baseUrl: ApiConfig.baseUrl,
+    tokens: ref.watch(tokenStoreProvider),
+  );
   ref.onDispose(client.close);
   return client;
 });

@@ -22,6 +22,10 @@ final liveOnlineCountsProvider = StateProvider<Map<String, int>>(
   (ref) => const {},
 );
 
+/// Whether the live socket is open. While it is, screens load once and update
+/// from pushes; only while it is not do they check now and then.
+final realtimeConnectedProvider = StateProvider<bool>((ref) => false);
+
 /// Shows phone notifications for `notification.created`. Taps open the
 /// in-app route through the router.
 final pushServiceProvider = Provider<PushService>((ref) {
@@ -130,9 +134,23 @@ final firebasePushBindingsProvider = Provider<void>((ref) {
 final realtimeBindingsProvider = Provider<void>((ref) {
   ref.watch(deviceRegistrationProvider);
   ref.watch(firebasePushBindingsProvider);
-  final sub = ref
-      .watch(realtimeClientProvider)
-      .events
-      .listen((event) => applyRealtimeEvent(ref, event));
-  ref.onDispose(sub.cancel);
+  final client = ref.watch(realtimeClientProvider);
+  final sub = client.events.listen((event) => applyRealtimeEvent(ref, event));
+  var hadConnection = false;
+  final link = client.connection.listen((open) {
+    ref.read(realtimeConnectedProvider.notifier).state = open;
+    if (!open) return;
+    // Back after a gap: what was pushed meanwhile is gone, so load it once.
+    if (hadConnection) {
+      ref.invalidate(notificationsProvider);
+      ref.invalidate(threadsProvider);
+      ref.invalidate(threadMessagesProvider);
+      ref.invalidate(membershipProvider);
+    }
+    hadConnection = true;
+  });
+  ref.onDispose(() {
+    sub.cancel();
+    link.cancel();
+  });
 });

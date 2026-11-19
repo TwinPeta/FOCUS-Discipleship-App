@@ -44,11 +44,19 @@ class RemoteAuthRepository implements AuthRepository {
     if (!_api.tokens.hasSession) return null;
     try {
       final me = await _api.get('/me') as Map<String, dynamic>;
-      return _sessionFrom(me, '');
+      final session = _sessionFrom(me, _api.tokens.email ?? '');
+      _api.tokens.remember(accountId: session.accountId, email: session.email);
+      return session;
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
         _api.tokens.clear();
         return null;
+      }
+      // Opened with no network (or the server is down): the saved sign-in
+      // stands, so the student is not logged out for a signal problem.
+      final id = _api.tokens.accountId;
+      if (id != null && _api.tokens.hasSession) {
+        return AuthSession(accountId: id, email: _api.tokens.email ?? '');
       }
       rethrow;
     }
@@ -64,7 +72,12 @@ class RemoteAuthRepository implements AuthRepository {
       ) as Map<String, dynamic>;
       _storeTokens(json);
       _identifier = email.trim();
-      return _sessionFrom(json['user'] as Map<String, dynamic>, _key(email));
+      final session = _sessionFrom(
+        json['user'] as Map<String, dynamic>,
+        _key(email),
+      );
+      _api.tokens.remember(accountId: session.accountId, email: session.email);
+      return session;
     } on ApiException catch (e) {
       if (e.status == 401) throw const InvalidCredentials();
       rethrow;
@@ -234,6 +247,11 @@ class RemoteAuthRepository implements AuthRepository {
       },
     ) as Map<String, dynamic>;
     _storeTokens(json);
+    final user = json['user'] as Map<String, dynamic>;
+    _api.tokens.remember(
+      accountId: user['id'] as String,
+      email: (user['email'] as String?) ?? pending.email,
+    );
     _identifier = pending.email;
     _pending = null;
     return profileFromApi(json['user'] as Map<String, dynamic>);

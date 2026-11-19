@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/repository_providers.dart';
+import '../../../core/realtime/realtime_bindings.dart';
 import '../domain/app_notification.dart';
 import '../domain/notification_preferences.dart';
 
@@ -12,18 +13,22 @@ final notificationPollIntervalProvider = Provider<Duration>(
   (ref) => const Duration(seconds: 60),
 );
 
-/// The signed-in user's notifications, newest first. Re-fetches itself every
-/// [notificationPollIntervalProvider] while anything listens (the hub bell
-/// keeps it alive); the timer is cancelled whenever the state is rebuilt or
-/// disposed. Reads are applied locally right away and synced to the server.
+/// The signed-in user's notifications, newest first. Loaded once and updated
+/// by the live socket; while the socket is down it re-fetches itself every
+/// [notificationPollIntervalProvider] (the hub bell keeps it alive). The timer
+/// is cancelled whenever the state is rebuilt or disposed. Reads are applied locally right away and synced to the server.
 class NotificationsController extends AsyncNotifier<List<AppNotification>> {
   @override
   Future<List<AppNotification>> build() {
-    final timer = Timer(
-      ref.watch(notificationPollIntervalProvider),
-      ref.invalidateSelf,
-    );
-    ref.onDispose(timer.cancel);
+    // Loaded once; the socket pushes new ones. Only while it is down does the
+    // list check again on a timer, so nothing is missed.
+    if (!ref.watch(realtimeConnectedProvider)) {
+      final timer = Timer(
+        ref.watch(notificationPollIntervalProvider),
+        ref.invalidateSelf,
+      );
+      ref.onDispose(timer.cancel);
+    }
     return ref.watch(notificationRepositoryProvider).getNotifications();
   }
 
