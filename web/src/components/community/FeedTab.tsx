@@ -8,7 +8,7 @@ import { PostCard } from "./PostCard";
 
 export function FeedTab({ communityId, isLeader }: { communityId: string; isLeader: boolean }) {
   const path = `/communities/${communityId}/posts?limit=20`;
-  const feed = useGet<Page<Post>>(path, 60000);
+  const feed = useGet<Page<Post>>(path);
   const update = (fn: (items: Post[]) => Post[]) => feed.setData((d) => (d ? { ...d, items: fn(d.items) } : d));
   return (
     <>

@@ -37,7 +37,7 @@ export function PrayerCard({ request, onChange, link = true }: { request: Prayer
 
 export function PrayerTab({ communityId }: { communityId: string }) {
   const path = `/communities/${communityId}/prayer-requests?limit=20`;
-  const list = useGet<Page<PrayerRequest>>(path, 60000);
+  const list = useGet<Page<PrayerRequest>>(path);
   const [anonymous, setAnonymous] = useState(false);
   return (
     <>

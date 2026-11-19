@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Confirm, ErrorText, Load, PageTitle, Panel } from "@/components/ui";
 import { del, post } from "@/lib/api";
 import { meetingText } from "@/lib/format";
+import { onNotification } from "@/lib/realtime";
 import { useAction, useGet } from "@/lib/hooks";
 import type { CommunitySummary, MyCommunities, MyCommunity, Page } from "@/lib/types";
 
@@ -33,7 +34,7 @@ function Mine({ label, m, onChanged }: { label: string; m: MyCommunity; onChange
 }
 
 export default function Communities() {
-  const mine = useGet<MyCommunities>("/me/communities", 30000);
+  const mine = useGet<MyCommunities>("/me/communities", onNotification);
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const browse = useGet<Page<CommunitySummary>>(`/communities?type=specific&limit=50${term ? `&q=${encodeURIComponent(term)}` : ""}`);
