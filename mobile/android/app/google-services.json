@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "644223421360",
+    "project_id": "focus-uganda",
+    "storage_bucket": "focus-uganda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:644223421360:android:47c89fb0f4a50c7ce22475",
+        "android_client_info": {
+          "package_name": "org.focusuganda.fcu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ4QWMM2lNvfPNKMuiUFo76LQ0qrc04S4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

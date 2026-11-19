@@ -19,7 +19,8 @@ import 'device_registration.dart';
 ///     --dart-define=FCM_IOS_BUNDLE_ID=...
 ///
 /// (Firebase console > Project settings > Your apps.) These are identifiers, not
-/// secrets. Without them the app simply has no remote push: phone notifications
+/// secrets. Android does not need them: its config is `android/app/google-services.json`.
+/// An iPhone build without them simply has no remote push: phone notifications
 /// stay local, exactly as before.
 class FirebaseConfig {
   const FirebaseConfig({
@@ -81,8 +82,11 @@ class FirebasePush {
     TargetPlatform? platform,
   }) async {
     if (kIsWeb || _ready) return _ready;
-    final options = config.optionsFor(platform ?? defaultTargetPlatform);
-    if (options == null) return false;
+    final target = platform ?? defaultTargetPlatform;
+    final options = config.optionsFor(target);
+    // Android reads android/app/google-services.json by itself, so it needs no
+    // build-time values. iPhone still needs them (or a GoogleService-Info.plist).
+    if (options == null && target != TargetPlatform.android) return false;
     try {
       await Firebase.initializeApp(options: options);
       _ready = true;
