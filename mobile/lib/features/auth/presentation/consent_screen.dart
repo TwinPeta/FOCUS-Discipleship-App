@@ -7,12 +7,12 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/check_row.dart';
-import '../../../core/widgets/error_snack.dart';
 import '../../../core/widgets/info_banner.dart';
 import '../../../core/widgets/onboarding_scaffold.dart';
 import '../domain/auth_models.dart';
 import 'charter_screen.dart';
 import 'providers/auth_providers.dart';
+import 'sign_up_failure.dart';
 
 /// Screen 23: Before you join (`/join/consent`, Step 3 of 3). Every box
 /// starts unticked: consent must be an explicit action.
@@ -52,11 +52,35 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       // The campus General community is derived from the profile, so it is
       // joined as soon as the profile exists.
       context.go(isMinor(profile) ? '/join/guardian' : '/communities');
-    } catch (_) {
-      if (mounted) {
-        setState(() => _joining = false);
-        showErrorSnack(context, 'We could not create your account. Try again.');
-      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _joining = false);
+      final failure = describeSignUpFailure(e);
+      final (label, route) = switch (failure.fix) {
+        SignUpFix.signIn => ('Sign in', '/login'),
+        SignUpFix.editDetails => ('Edit details', '/join'),
+        SignUpFix.startAgain => ('Start again', '/join/start'),
+        SignUpFix.none => (null, null),
+      };
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(failure.message),
+            duration: const Duration(seconds: 8),
+            action: label == null
+                ? null
+                : SnackBarAction(
+                    label: label,
+                    onPressed: () {
+                      if (failure.fix == SignUpFix.startAgain) {
+                        ref.read(signUpControllerProvider.notifier).reset();
+                      }
+                      context.go(route!);
+                    },
+                  ),
+          ),
+        );
     }
   }
 
