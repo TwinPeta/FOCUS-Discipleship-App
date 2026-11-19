@@ -1,0 +1,20 @@
+# App icon: the FCU flame (assets/logo/Asset 4.png) on the app's ink colour.
+# The square sources in assets/icon/ are built from the logo. Regenerate the
+# platform icons with:  dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+
+  android: "ic_launcher"
+  min_sdk_android: 21
+  adaptive_icon_background: "#111111"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/app_icon_monochrome.png"
+
+  ios: true
+  remove_alpha_ios: true
+
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#111111"
+    theme_color: "#111111"
