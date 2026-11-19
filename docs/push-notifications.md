@@ -11,7 +11,7 @@ How it fits together: the API sends each new notification to the person's regist
 2. **Project settings > General > Your apps > Add app**:
    - **Android**: package name `org.focusuganda.fcu`.
    - **iOS**: bundle id `org.focusuganda.fcu`.
-   You do **not** need to download `google-services.json` or `GoogleService-Info.plist`: the app is given the identifiers at build time.
+   The app reads `mobile/android/app/google-services.json` (Android) and `mobile/ios/Runner/GoogleService-Info.plist` (iPhone), both for project `focus-uganda` and already in the repository. They hold public identifiers, not secrets. Build-time `FCM_*` values (step 4) are only an optional override.
 3. Write down these values (Project settings > General > Your apps):
    - Project ID, and **Project number** (this is the sender id)
    - Android: **App ID** (`1:...:android:...`) and the **Web/Android API key**
@@ -33,7 +33,8 @@ Apple delivers iPhone pushes. You need an Apple Developer account, then:
 3. In Xcode, for the Runner target, add the **Push Notifications** capability and the **Background Modes > Remote notifications** capability.
 Android needs none of this.
 
-### 4. Give the app the identifiers
+### 4. Optional: build-time identifiers (not needed now)
+The two config files above already cover Android and iPhone. Only use these to point a build at a different Firebase project.
 In GitHub: **Settings > Secrets and variables > Actions > Variables**, add (these are public identifiers, not secrets):
 
 | Variable | Value |
