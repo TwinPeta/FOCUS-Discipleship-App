@@ -204,13 +204,13 @@ class _ProfileCard extends StatelessWidget {
                   AppChip(
                     label: institution,
                     icon: Icons.school_outlined,
-                    backgroundColor: AppColors.cream,
+                    backgroundColor: AppColors.primarySoft,
                   ),
                 if (profile.communityName != null)
                   AppChip(
                     label: profile.communityName!,
                     icon: Icons.groups_outlined,
-                    backgroundColor: AppColors.cream,
+                    backgroundColor: AppColors.primarySoft,
                   ),
               ],
             ),

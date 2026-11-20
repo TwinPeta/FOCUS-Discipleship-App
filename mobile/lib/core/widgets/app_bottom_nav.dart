@@ -248,8 +248,10 @@ class _CreateButton extends StatelessWidget {
         child: Tooltip(
           message: 'Create',
           // Design: a raised gold-gradient rounded square.
+          // Solid fill under the gradient: a see-through Material paints its
+          // shadow as a dark ring around the button.
           child: Material(
-            color: Colors.transparent,
+            color: AppColors.amberDark,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),

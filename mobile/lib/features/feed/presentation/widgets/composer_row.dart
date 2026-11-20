@@ -49,7 +49,7 @@ class ComposerRow extends ConsumerWidget {
             initials: initials,
             photoPath: photoPath,
             size: 38,
-            backgroundColor: AppColors.cream,
+            backgroundColor: AppColors.primarySoft,
           ),
           const SizedBox(width: 10),
           Expanded(
