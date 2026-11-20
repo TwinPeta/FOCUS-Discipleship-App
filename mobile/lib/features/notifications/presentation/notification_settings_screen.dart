@@ -99,7 +99,7 @@ class _Group extends StatelessWidget {
         child: Column(
           children: [
             for (var i = 0; i < children.length; i++) ...[
-              if (i > 0) Divider(height: 1, color: AppColors.cream),
+              if (i > 0) Divider(height: 1, color: AppColors.inputBorder),
               children[i],
             ],
           ],

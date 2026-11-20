@@ -69,7 +69,7 @@ class MessagePersonButton extends ConsumerWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.cream,
+              color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,

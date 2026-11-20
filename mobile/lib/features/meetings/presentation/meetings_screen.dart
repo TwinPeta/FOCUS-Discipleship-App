@@ -312,7 +312,9 @@ class _PastRow extends StatelessWidget {
           AppChip(
             label: m.attended ? 'Attended' : 'Missed',
             icon: m.attended ? Icons.check_rounded : Icons.close_rounded,
-            backgroundColor: m.attended ? AppColors.honey : AppColors.cream,
+            backgroundColor: m.attended
+                ? AppColors.primarySoft
+                : AppColors.cream,
           ),
         ],
       ),

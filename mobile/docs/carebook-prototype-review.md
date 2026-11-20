@@ -8,7 +8,13 @@ Status per item: `[ ]` to do, `[x]` done, `[?]` needs a decision first.
 
 ## Progress log
 
-- 2026-11-20 (fc2b37a): palette retuned (navy ink, cream page, gold CTA, blue selected), blue roles + gradients (`primary`, `selected()`, `pageHeader`), Material scheme primary = blue. Shared widgets updated: bottom nav (blue active pill, gold square +), check rows, segmented toggle, step progress, info banner, avatars, text/search focus, ⋯ menu active row, sub-page headers. **Rule from the user: no sideways-scrolling sub-navigation; it all goes in the "⋯" menu** (FilterChips now = current choice + ⋯). Light theme is the default (already was). Build only what the backend supports. Font swap (Source Sans 3) still to do.
+- 2026-11-20 (fc2b37a): palette retuned (navy ink, cream page, gold CTA, blue selected), blue roles + gradients (`primary`, `selected()`, `pageHeader`), Material scheme primary = blue. Shared widgets updated: bottom nav (blue active pill, gold square +), check rows, segmented toggle, step progress, info banner, avatars, text/search focus, ⋯ menu active row, sub-page headers. **Rule from the user: no sideways-scrolling sub-navigation; it all goes in the "⋯" menu** (FilterChips now = current choice + ⋯). Light theme is the default (already was). Build only what the backend supports. **Font stays Bricolage Grotesque (user, 2026-11-20): no font change.**
+
+- 2026-11-20 batch 2 (b. `screens`): caregroup header = white bar + round pale-blue Search/⋯; post like/comment = pale-blue pills, questions get gold Answer; hub + My profile soft-gold header; quiz page header.
+- batch 3: onboarding/sign-in on cream page, blue "STEP n OF 3"; role badges (super-mentor gold, mentor soft gold, others pale blue); pale-blue icon tiles (Settings, Create menu, Manage, Resources, Activity), privacy note.
+- batch 4: gold "I prayed" (soft gold once prayed); Create chips selected = blue; question tips pale blue.
+- batch 5: caregroup chips/avatars/meeting rows/specific-slot tile pale blue.
+- Not yet: dark-mode render check of the new roles; text changes (Caregroup rename etc. still waiting on decisions in Part C).
 
 ## Part A: changes that touch every screen (do these first)
 
@@ -46,7 +52,7 @@ gold buttons, blue for "selected" and links**. Values taken from the prototype:
 - [ ] Remove literal colours left on screens while doing this.
 
 ### A2. New font
-- [ ] The prototype uses **Source Sans 3** (400–900). The app bundles Bricolage Grotesque. Bundle Source Sans 3 (OFL) in `assets/fonts`, update `AppFonts.family` and pubspec. Headings in the prototype are 800–900, so ship the 800 and 900 weights too.
+- [x] Not changing (user decision). The prototype uses **Source Sans 3** (400–900). The app bundles Bricolage Grotesque. Bundle Source Sans 3 (OFL) in `assets/fonts`, update `AppFonts.family` and pubspec. Headings in the prototype are 800–900, so ship the 800 and 900 weights too.
 
 ### A3. New names in the text
 - [?] **"Community" becomes "Caregroup"** everywhere the user can see it (about 260 strings in `lib/features`). Examples: "Caregroups" tab, "General caregroup", "Join caregroup", "Leave caregroup", "Caregroup charter", "Search posts, people, caregroups".
