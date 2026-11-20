@@ -5,9 +5,9 @@ import 'package:focus_1/core/theme/app_colors.dart';
 import 'package:focus_1/core/theme/app_text_styles.dart';
 import 'package:focus_1/core/theme/app_theme.dart';
 
-/// Roadmap v2 brand rules: Bricolage Grotesque everywhere, headings 700+,
-/// brand gold primary in both themes (deepened in dark mode so light text
-/// stays readable on it).
+/// Brand rules: Bricolage Grotesque everywhere, headings 700+. Carebook
+/// (2026-11-20): Material primary is the blue selected-state colour; gold
+/// stays on call-to-action buttons via AppGradients.brand.
 void main() {
   final themes = {'light': AppTheme.light(), 'dark': AppTheme.dark()};
   final palettes = {'light': AppPalette.light, 'dark': AppPalette.dark};
@@ -24,8 +24,10 @@ void main() {
       ]) {
         expect(style?.fontFamily, AppFonts.family);
       }
-      expect(theme.colorScheme.primary, palettes[name]!.amberLight);
-      expect(theme.colorScheme.onPrimary, palettes[name]!.ink);
+      expect(theme.colorScheme.primary, palettes[name]!.primary);
+      // Text on the blue stays readable: white in light, dark in dark mode.
+      final onLum = theme.colorScheme.onPrimary.computeLuminance();
+      expect(name == 'light' ? onLum > 0.9 : onLum < 0.1, isTrue);
     });
   }
 

@@ -6,6 +6,10 @@ Status per item: `[ ]` to do, `[x]` done, `[?]` needs a decision first.
 
 ---
 
+## Progress log
+
+- 2026-11-20 (fc2b37a): palette retuned (navy ink, cream page, gold CTA, blue selected), blue roles + gradients (`primary`, `selected()`, `pageHeader`), Material scheme primary = blue. Shared widgets updated: bottom nav (blue active pill, gold square +), check rows, segmented toggle, step progress, info banner, avatars, text/search focus, ⋯ menu active row, sub-page headers. **Rule from the user: no sideways-scrolling sub-navigation; it all goes in the "⋯" menu** (FilterChips now = current choice + ⋯). Light theme is the default (already was). Build only what the backend supports. Font swap (Source Sans 3) still to do.
+
 ## Part A: changes that touch every screen (do these first)
 
 ### A1. New colour palette (biggest change)
@@ -35,8 +39,8 @@ gold buttons, blue for "selected" and links**. Values taken from the prototype:
 | Placeholder | `#6A6A6A` | same |
 | Text on gold buttons | navy `#1F2D3D` | ink |
 
-- [ ] Add blue roles to `AppPalette` (`primary`, `primaryGradient`, `blueSoft`, `blueChip`, `border`, `muted`) and retune the gold roles to the new values.
-- [ ] Change `ink` to `#1F2D3D` and `inputBorder` to `#CFE0F3`.
+- [x] Add blue roles to `AppPalette` (`primary`, `primaryGradient`, `blueSoft`, `blueChip`, `border`, `muted`) and retune the gold roles to the new values.
+- [x] Change `ink` to `#1F2D3D` and `inputBorder` to `#CFE0F3`.
 - [ ] New gradients in `AppGradients`: `cta` (gold), `primary` (blue), `chip` (blue soft), `goldSoft`, `hubHeader`, `pageHeader` (blue→yellow), `celebration`, `pageFade`.
 - [ ] **Dark theme:** the prototype only shows light. We need dark values for every new role (a navy-black page, slightly lighter cards, a lighter blue `#4C98E6`-ish for selected states and links so they stay readable, and the same gold CTA a bit deeper). Render every screen in light and dark, as before.
 - [ ] Remove literal colours left on screens while doing this.
@@ -53,10 +57,10 @@ gold buttons, blue for "selected" and links**. Values taken from the prototype:
 ### A4. Shared widgets
 - [ ] **Bottom nav:** white floating bar (radius 30, shadow). The active tab is a blue-gradient pill around the icon with the label under it. The centre **+** is a raised gold-gradient square button. Tabs: Home · Caregroups · + · Messages · Profile.
 - [ ] **Caregroup header** (feed, prayer wall, testimonies, resources, pathways, info): white bar with the name, "[12] online · Tue 5:00 PM", and three round soft-blue buttons: **theme toggle (sun)**, search, bell with a gold dot. The theme toggle in the header is new.
-- [ ] **Section tabs:** white pills with a light-blue border. The selected one is a blue gradient with white text (today it's amber).
+- [x] **Section tabs:** white pills with a light-blue border. The selected one is a blue gradient with white text (today it's amber).
 - [ ] **Sub-page header** (Settings, Help, Messages, Meetings, Activity, Privacy, Manage, New members, Reports, Notifications, Member profile, Quiz): back arrow, large navy 900-weight title, and a subtitle on the blue-to-yellow gradient, which fades into the cream page.
 - [ ] **Buttons:** primary = gold gradient, navy text, radius about 14. Secondary = white with a 2px navy border. Tertiary = blue underlined link.
-- [ ] **Info banner:** soft blue `#E3F0FD` with a blue "i" icon (today it's cream/amber).
+- [x] **Info banner:** soft blue `#E3F0FD` with a blue "i" icon (today it's cream/amber).
 - [ ] **Icon tiles in list rows:** a rounded square with the blue chip gradient and a blue icon (Settings, Privacy, Create menu, Search, Manage).
 - [ ] **Avatars:** initials on the blue chip gradient. The super-mentor gets a gold gradient and the mentor soft gold. Online dot is gold.
 - [ ] **Role badges:** "Super-mentor" on gold, "Mentor" on soft gold, "Member" and "General caregroup" on soft blue.
