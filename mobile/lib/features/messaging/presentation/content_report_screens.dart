@@ -186,9 +186,9 @@ class _ContentReportSentScreenState
     }
     return ReportSentView(
       message:
-          'Thank you for helping keep the community safe. A moderator will '
+          'Thank you for helping keep the caregroup safe. A moderator will '
           'review it.',
-      primaryLabel: isUser ? 'Back to profile' : 'Back to community',
+      primaryLabel: isUser ? 'Back to profile' : 'Back to caregroup',
       onPrimary: () => context.go(widget.back),
       secondaryLabel: secondaryLabel,
       secondaryLoading: _hiding,

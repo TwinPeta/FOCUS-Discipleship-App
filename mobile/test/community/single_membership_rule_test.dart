@@ -88,7 +88,7 @@ Widget _wrapDetail(Membership membership, String communityId) {
 
 void main() {
   testWidgets(
-    'hub: while pending, other communities are locked and cannot be opened',
+    'hub: while pending, other caregroups are locked and cannot be opened',
     (tester) async {
       await tester.pumpWidget(
         _wrapHub(
@@ -132,7 +132,7 @@ void main() {
     expect(searchField.enabled, isFalse);
   });
 
-  testWidgets('detail: no join button while pending in another community', (
+  testWidgets('detail: no join button while pending in another caregroup', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -149,7 +149,7 @@ void main() {
     expect(find.text('Request to join'), findsNothing);
     expect(find.text("You're already in Growth Circle"), findsOneWidget);
     expect(
-      find.text('A student can be in only one specific community.'),
+      find.text('A student can be in only one specific caregroup.'),
       findsOneWidget,
     );
   });
@@ -173,7 +173,7 @@ void main() {
     expect(find.text('Request to join'), findsNothing);
   });
 
-  testWidgets('detail: a member here gets "Go to community"', (tester) async {
+  testWidgets('detail: a member here gets "Go to caregroup"', (tester) async {
     await tester.pumpWidget(
       _wrapDetail(
         const Membership(
@@ -186,7 +186,7 @@ void main() {
     await settle(tester);
 
     expect(find.text("You're a member"), findsOneWidget);
-    await tester.tap(find.text('Go to community'));
+    await tester.tap(find.text('Go to caregroup'));
     await settle(tester);
     expect(find.text('FEED:growth-circle'), findsOneWidget);
   });

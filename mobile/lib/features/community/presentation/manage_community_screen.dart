@@ -66,7 +66,7 @@ class ManageCommunityScreen extends ConsumerWidget {
     return AmberHeaderScaffold(
       title: community.hasValue
           ? 'Manage ${community.requireValue.name}'
-          : 'Manage community',
+          : 'Manage caregroup',
       subtitle: 'Only super-mentors see this.',
       body: body,
     );
@@ -125,7 +125,7 @@ class _ManageBody extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'Cover photos and community creation are managed by the admin '
+          'Cover photos and caregroup creation are managed by the admin '
           'team.',
           style: AppTextStyles.body.copyWith(color: AppColors.placeholder),
           textAlign: TextAlign.center,

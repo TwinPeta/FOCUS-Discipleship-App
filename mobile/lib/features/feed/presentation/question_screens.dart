@@ -32,9 +32,9 @@ import 'widgets/post_photo_view.dart';
 /// Where "Answer" opens the full-screen answer (screen 65).
 String answerRoute(String postId) => '/post/$postId/answer';
 
-/// "General community" or the community's name.
+/// "General caregroup" or the community's name.
 String? _placeOf(WidgetRef ref, Post q) => q.scope == PostScope.general
-    ? 'General community'
+    ? 'General caregroup'
     : ref.watch(communityByIdProvider(q.communityId)).valueOrNull?.name;
 
 String answersLabel(int n) => switch (n) {

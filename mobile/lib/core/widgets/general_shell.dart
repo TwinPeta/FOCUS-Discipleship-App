@@ -11,7 +11,7 @@ import 'update_banner.dart';
 import 'app_bottom_nav.dart';
 
 /// The amber header used by the General feed: same chrome as
-/// [CommunityShell] but without a tab bar. Tapping the "specific community"
+/// [CommunityShell] but without a tab bar. Tapping the "specific caregroup"
 /// segment goes to the user's approved community, or to the hub if they
 /// don't have one yet.
 class GeneralShell extends ConsumerWidget {
@@ -49,7 +49,7 @@ class GeneralShell extends ConsumerWidget {
         child: Column(
           children: [
             CommunityHeaderChrome(
-              title: 'General community',
+              title: 'General caregroup',
               sectionLabel: sectionLabel,
               showBack: false,
               menuItems: communityMenuItems(

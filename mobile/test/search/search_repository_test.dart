@@ -25,7 +25,7 @@ void main() {
     );
   }
 
-  test('matches community names case-insensitively', () async {
+  test('matches caregroup names case-insensitively', () async {
     final r = await repo().search('CIRCLE', scope);
     final names = r.communities.map((c) => c.name);
     expect(names, containsAll(['Growth Circle', 'Life & Faith Circle']));
@@ -50,7 +50,7 @@ void main() {
     expect(r.isEmpty, isTrue);
   });
 
-  test('people come only from the communities in scope', () async {
+  test('people come only from the caregroups in scope', () async {
     const none = SearchScope(
       institutionId: 'mak',
       institutionName: 'Makerere University',

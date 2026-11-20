@@ -35,7 +35,7 @@ final generalCommunityProvider = FutureProvider<Community>((ref) async {
   final profile = ref.watch(currentProfileProvider);
   final institutionId = ref.watch(currentInstitutionIdProvider);
   if (profile == null || institutionId == null) {
-    throw StateError('A profile is required to load the General community.');
+    throw StateError('A profile is required to load the General caregroup.');
   }
   return ref
       .watch(communityRepositoryProvider)

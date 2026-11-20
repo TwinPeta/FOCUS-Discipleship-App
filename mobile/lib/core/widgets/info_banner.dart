@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 /// Cream banner with a leading icon, used for informational copy such as the
-/// "only one specific community" rule.
+/// "only one specific caregroup" rule.
 class InfoBanner extends StatelessWidget {
   const InfoBanner({
     super.key,

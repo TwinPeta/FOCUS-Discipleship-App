@@ -80,7 +80,7 @@ class _GuardianScreenState extends ConsumerState<GuardianScreen> {
           );
       ref.invalidate(guardianRequestProvider);
       if (!mounted) return;
-      context.go('/communities');
+      context.go('/join/done');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request sent to your guardian.')),
       );
@@ -139,7 +139,7 @@ class _GuardianScreenState extends ConsumerState<GuardianScreen> {
               icon: Icons.mark_email_unread_outlined,
               child: Text(
                 'We will email them a link to confirm. Until they do, you '
-                'can browse your communities but cannot message mentors or '
+                'can browse your caregroups but cannot message mentors or '
                 'other adults.',
               ),
             ),

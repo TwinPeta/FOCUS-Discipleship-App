@@ -144,7 +144,7 @@ void main() {
     await tester.runAsync(() async {
       final old = await notifications.add(
         type: NotificationType.meetingReminder,
-        title: 'Your community meets tomorrow',
+        title: 'Your caregroup meets tomorrow',
         targetRoute: '/communities',
       );
       await notifications.markRead(old!.id);

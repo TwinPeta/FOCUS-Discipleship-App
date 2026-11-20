@@ -155,6 +155,7 @@ class OnboardingIncompleteGuard extends RouteGuard {
       '/join/consent' when !draft.emailVerified => '/join/verify',
       // The guardian step needs the account it belongs to.
       '/join/guardian' => '/',
+      '/join/done' => '/',
       _ => null,
     };
   }

@@ -73,11 +73,11 @@ class RemoteJoinRequestRepository implements JoinRequestRepository {
     } on ApiException catch (e) {
       if (e.code == 'not_pending') throw JoinRequestNotPending(id);
       if (e.code == 'community_limit_reached') {
-        // The server says which one: "This student already belongs to <community>".
+        // The server says which one: "This student already belongs to <caregroup>".
         final name = RegExp(r'belongs to (.+)$')
             .firstMatch(e.message ?? '')
             ?.group(1);
-        throw StudentAlreadyInCommunity(name ?? 'another community');
+        throw StudentAlreadyInCommunity(name ?? 'another caregroup');
       }
       if (e.status == 403) throw const NotSuperMentor('');
       rethrow;

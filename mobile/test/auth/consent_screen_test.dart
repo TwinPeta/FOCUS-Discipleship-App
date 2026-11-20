@@ -42,9 +42,9 @@ void main() {
       expect(join().onPressed, isNull);
 
       await tester.ensureVisible(
-        find.textContaining('I accept the community charter'),
+        find.textContaining('I accept the caregroup charter'),
       );
-      await tester.tap(find.textContaining('I accept the community charter'));
+      await tester.tap(find.textContaining('I accept the caregroup charter'));
       await tester.pump();
       expect(join().onPressed, isNull);
 
@@ -61,8 +61,8 @@ void main() {
         reason: 'the optional box is not enough',
       );
 
-      await tester.ensureVisible(find.textContaining('community spaces'));
-      await tester.tap(find.textContaining('community spaces'));
+      await tester.ensureVisible(find.textContaining('caregroup spaces'));
+      await tester.tap(find.textContaining('caregroup spaces'));
       await tester.pump();
       expect(
         join().onPressed,

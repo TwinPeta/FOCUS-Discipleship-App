@@ -93,7 +93,7 @@ class CommunityCover extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '$institutionName · Specific community',
+                        '$institutionName · Specific caregroup',
                         style: AppTextStyles.body.copyWith(
                           fontSize: 12.5,
                           color: AppColors.inkDeemphasized80,

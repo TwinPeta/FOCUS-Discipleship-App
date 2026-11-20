@@ -56,6 +56,7 @@ import '../../features/pathways/presentation/pathway_steps_screen.dart';
 import '../../features/pathways/presentation/pathways_screen.dart';
 import '../../features/prayer/presentation/prayer_request_screen.dart';
 import '../../features/prayer/presentation/prayer_wall_screen.dart';
+import '../../features/profile/presentation/join_done_screen.dart';
 import '../../features/profile/presentation/join_form_screen.dart';
 import '../../features/profile/presentation/join_start_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
@@ -172,6 +173,10 @@ final List<RouteBase> appRoutes = [
       GoRoute(
         path: 'guardian',
         builder: (context, state) => const GuardianScreen(),
+      ),
+      GoRoute(
+        path: 'done',
+        builder: (context, state) => const JoinDoneScreen(),
       ),
     ],
   ),

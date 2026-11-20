@@ -57,6 +57,8 @@ class _SecurePasswordScreenState extends ConsumerState<SecurePasswordScreen> {
     final details = ref.watch(signUpControllerProvider).details;
     return OnboardingScaffold(
       step: 2,
+      xp: 10,
+      xpReward: 10,
       title: 'Secure your account',
       subtitle: const Text('Choose a password for your account.'),
       body: AutofillGroup(

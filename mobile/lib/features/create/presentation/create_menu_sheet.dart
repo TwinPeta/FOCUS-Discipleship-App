@@ -37,13 +37,13 @@ class CreateMenuSheet extends ConsumerWidget {
         CreateMenuRow(
           icon: Icons.help_outline_rounded,
           title: 'Ask a question',
-          subtitle: 'Get answers from the community',
+          subtitle: 'Get answers from the caregroup',
           onTap: () => open('/create?type=question'),
         ),
         CreateMenuRow(
           icon: Icons.question_answer_outlined,
           title: 'Answer a question',
-          subtitle: 'Help someone in your community',
+          subtitle: 'Help someone in your caregroup',
           onTap: () => open('/questions'),
         ),
         CreateMenuRow(
@@ -55,7 +55,7 @@ class CreateMenuSheet extends ConsumerWidget {
         CreateMenuRow(
           icon: Icons.volunteer_activism_outlined,
           title: 'Prayer request',
-          subtitle: 'Ask the community to pray',
+          subtitle: 'Ask the caregroup to pray',
           onTap: () => open('/create?type=prayer'),
         ),
         CreateMenuRow(

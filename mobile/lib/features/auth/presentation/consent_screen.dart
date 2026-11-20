@@ -51,7 +51,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       if (!mounted) return;
       // The campus General community is derived from the profile, so it is
       // joined as soon as the profile exists.
-      context.go(isMinor(profile) ? '/join/guardian' : '/communities');
+      context.go(isMinor(profile) ? '/join/guardian' : '/join/done');
     } catch (e) {
       if (!mounted) return;
       setState(() => _joining = false);
@@ -90,6 +90,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     final minor = details != null && isMinor(details);
     return OnboardingScaffold(
       step: 3,
+      xp: 30,
+      xpReward: 20,
       title: 'Before you join',
       subtitle: const Text('Please read and accept to continue.'),
       body: Column(
@@ -104,7 +106,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Community charter', style: AppTextStyles.cardTitle),
+                Text('Caregroup charter', style: AppTextStyles.cardTitle),
                 const SizedBox(height: 8),
                 for (final rule in CharterScreen.summary)
                   Padding(
@@ -137,13 +139,13 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
           ),
           const SizedBox(height: 16),
           CheckRow(
-            label: 'I accept the community charter (required)',
+            label: 'I accept the caregroup charter (required)',
             value: _charter,
             onChanged: (v) => setState(() => _charter = v),
           ),
           const SizedBox(height: 10),
           CheckRow(
-            label: 'I agree to take part in community spaces (required)',
+            label: 'I agree to take part in caregroup spaces (required)',
             value: _participation,
             onChanged: (v) => setState(() => _participation = v),
           ),

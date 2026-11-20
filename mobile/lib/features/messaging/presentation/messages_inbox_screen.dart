@@ -128,7 +128,7 @@ class _MessagesInboxScreenState extends ConsumerState<MessagesInboxScreen> {
               return EmptyState(
                 icon: Icons.chat_bubble_outline_rounded,
                 title: 'No messages yet',
-                body: 'Say hello to a mentor or a member of your community.',
+                body: 'Say hello to a mentor or a member of your caregroup.',
                 actionLabel: 'Find a member',
                 onAction: () => context.push('/messages/new'),
               );

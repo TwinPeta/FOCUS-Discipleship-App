@@ -78,12 +78,12 @@ class _FindCommunityPromo extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Join a specific community to meet in person and grow with your mentors.',
+            'Join a specific caregroup to meet in person and grow with your mentors.',
             style: AppTextStyles.bodyMedium.copyWith(height: 1.4),
           ),
           const SizedBox(height: 14),
           AppSecondaryButton(
-            label: 'Find a specific community',
+            label: 'Find a specific caregroup',
             height: 46,
             onPressed: () => context.push('/communities'),
           ),

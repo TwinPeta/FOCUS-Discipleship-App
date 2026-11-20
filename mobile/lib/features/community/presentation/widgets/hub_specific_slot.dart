@@ -11,7 +11,7 @@ import '../../domain/membership.dart';
 import '../providers/community_providers.dart';
 import '../../../../core/theme/app_gradients.dart';
 
-/// The hub's right-hand "specific community" slot, driven by
+/// The hub's right-hand "specific caregroup" slot, driven by
 /// [MembershipStatus] (section 6.3, "Membership states of the specific
 /// slot").
 class HubSpecificSlot extends ConsumerWidget {
@@ -108,7 +108,7 @@ class _NoneSlot extends StatelessWidget {
             ),
             const Spacer(),
             FittedBoxWords(
-              'Specific community',
+              'Specific caregroup',
               style: AppTextStyles.cardTitle,
             ),
             const SizedBox(height: 4),
@@ -187,7 +187,7 @@ class _ApprovedSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '$name, your specific community, joined',
+      label: '$name, your specific caregroup, joined',
       child: InkWell(
         onTap: () => context.push('/community/$communityId/feed'),
         borderRadius: BorderRadius.circular(20),

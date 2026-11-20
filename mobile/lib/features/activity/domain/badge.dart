@@ -3,6 +3,7 @@
 /// Every badge the app knows, unearned. One list for the activity rules
 /// and for the badges shown on member profiles.
 const kBadgeCatalog = [
+  AppBadge(id: 'newcomer', name: 'Newcomer'),
   AppBadge(id: 'first-steps', name: 'First steps'),
   AppBadge(id: 'quiz-finisher', name: 'Quiz finisher'),
   AppBadge(id: 'prayer-partner', name: 'Prayer partner'),

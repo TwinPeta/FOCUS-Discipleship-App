@@ -125,6 +125,8 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     final locked = _lockedUntil != null;
     return OnboardingScaffold(
       step: 2,
+      xp: 20,
+      xpReward: 10,
       title: 'Check your email',
       subtitle: Text.rich(
         TextSpan(

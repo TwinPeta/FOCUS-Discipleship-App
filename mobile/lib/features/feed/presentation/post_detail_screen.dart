@@ -137,7 +137,7 @@ class _PostBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final commentsAsync = ref.watch(postCommentsProvider(post.id));
     final communityName = post.scope == PostScope.general
-        ? 'General community'
+        ? 'General caregroup'
         : ref.watch(communityByIdProvider(post.communityId)).valueOrNull?.name;
     final photo = postPhotoView(context, post.photo);
     final comments = commentsAsync.valueOrNull ?? const <Comment>[];

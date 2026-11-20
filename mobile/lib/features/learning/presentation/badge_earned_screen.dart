@@ -17,6 +17,7 @@ class BadgeEarnedScreen extends ConsumerWidget {
   final String badgeId;
 
   static String reasonFor(String badgeId) => switch (badgeId) {
+    'newcomer' => 'You finished signing up and earned your first points.',
     'first-steps' => 'You recorded your first activity. Keep going!',
     'quiz-finisher' => 'You finished your first quiz. Keep going!',
     'prayer-partner' =>

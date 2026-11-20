@@ -19,7 +19,7 @@ class LandingHeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.brand,
+        gradient: AppGradients.celebration,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
       ),
       clipBehavior: Clip.antiAlias,
@@ -29,43 +29,72 @@ class LandingHeroSection extends StatelessWidget {
         24,
         0,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      // Carebook: a blue circle peeks in at the top right, behind the logo
+      // row's Sign in button.
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          const _LogoRow(),
-          const SizedBox(height: 32),
-          // One line each, as designed: shrink to the width rather than
-          // breaking inside a word on small phones or with large text.
-          for (final line in const ['Find your people.', 'Grow. Succeed.'])
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                line,
-                style: AppTextStyles.landingHeroHeadline,
-                maxLines: 1,
+          Positioned(
+            top: -MediaQuery.paddingOf(context).top - 100,
+            right: -100,
+            child: IgnorePointer(
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
-          const SizedBox(height: 18),
-          Text(
-            'Connect with students on your campus who share your values, learn '
-            'together and build the future you want.',
-            style: AppTextStyles.body.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
           ),
-          const SizedBox(height: 22),
-          LandingPillButton(
-            label: 'Explore communities',
-            trailingArrow: true,
-            onPressed: () => context.push('/join/start'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _LogoRow(),
+              const SizedBox(height: 32),
+              // One line each, as designed: shrink to the width rather than
+              // breaking inside a word on small phones or with large text.
+              // "Grow. Succeed." in blue, as designed.
+              for (final (line, blue) in const [
+                ('Find your people.', false),
+                ('Grow. Succeed.', true),
+              ])
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    line,
+                    style: blue
+                        ? AppTextStyles.landingHeroHeadline.copyWith(
+                            color: AppColors.primary,
+                          )
+                        : AppTextStyles.landingHeroHeadline,
+                    maxLines: 1,
+                  ),
+                ),
+              const SizedBox(height: 18),
+              Text(
+                'Connect with students on your campus who share your values, learn '
+                'together and build the future you want.',
+                style: AppTextStyles.body.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 22),
+              LandingPillButton(
+                label: 'Explore caregroups',
+                trailingArrow: true,
+                onPressed: () => context.push('/join/start'),
+              ),
+              const SizedBox(height: 12),
+              _WatchStoriesLink(onTap: onWatchStories),
+              const SizedBox(height: 28),
+              const Center(child: CommunityPreview()),
+            ],
           ),
-          const SizedBox(height: 12),
-          _WatchStoriesLink(onTap: onWatchStories),
-          const SizedBox(height: 28),
-          const Center(child: CommunityPreview()),
         ],
       ),
     );
@@ -149,7 +178,11 @@ class _WatchStoriesLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.play_arrow_rounded, size: 20, color: AppColors.ink),
+              Icon(
+                Icons.play_arrow_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -158,6 +191,8 @@ class _WatchStoriesLink extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     decoration: TextDecoration.underline,
+                    color: AppColors.primary,
+                    decorationColor: AppColors.primary,
                   ),
                 ),
               ),

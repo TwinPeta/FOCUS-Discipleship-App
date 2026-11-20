@@ -54,7 +54,7 @@ class JoinRequestsScreen extends ConsumerWidget {
           children: [
             const OfflineBanner(),
             Text(
-              'A student can be in only one specific community.',
+              'A student can be in only one specific caregroup.',
               style: AppTextStyles.body,
             ),
             const SizedBox(height: 12),

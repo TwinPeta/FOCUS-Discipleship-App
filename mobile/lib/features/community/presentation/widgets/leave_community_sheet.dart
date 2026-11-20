@@ -43,7 +43,7 @@ class _LeaveCommunitySheetState extends ConsumerState<_LeaveCommunitySheet> {
     (Icons.article_outlined, 'Your posts stay unless you delete them.'),
     (
       Icons.swap_horiz_rounded,
-      'You can then request another specific community. You can be in only '
+      'You can then request another specific caregroup. You can be in only '
           'one.',
     ),
   ];
@@ -115,7 +115,7 @@ class _LeaveCommunitySheetState extends ConsumerState<_LeaveCommunitySheet> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text(
-                    'Leave community',
+                    'Leave caregroup',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
           ),

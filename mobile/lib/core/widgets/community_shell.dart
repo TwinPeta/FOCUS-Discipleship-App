@@ -67,7 +67,7 @@ class CommunityShell extends ConsumerWidget {
                   extraAction: isSuperMentor
                       ? RoundIconButton(
                           icon: Icons.tune_rounded,
-                          semanticLabel: 'Manage community',
+                          semanticLabel: 'Manage caregroup',
                           onPressed: () =>
                               context.push('/community/$communityId/manage'),
                         )

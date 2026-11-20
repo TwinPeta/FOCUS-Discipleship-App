@@ -114,8 +114,8 @@ class AppBottomNav extends ConsumerWidget {
                 AppTab.communities,
                 Icons.groups_outlined,
                 Icons.groups_rounded,
-                'Communities',
-                'Your community',
+                'Caregroups',
+                'Your caregroup',
                 // Icon only (product decision); screen readers still hear it.
                 showLabel: false,
               ),

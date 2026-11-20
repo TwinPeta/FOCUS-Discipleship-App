@@ -23,7 +23,7 @@ void main() {
     expect(AppConfig.fromJson(null).autoApproveJoin, isFalse);
   });
 
-  testWidgets('4: auto-approval on: "Join community"; off: "Request to join"', (
+  testWidgets('4: auto-approval on: "Join caregroup"; off: "Request to join"', (
     tester,
   ) async {
     final auto = await pumpFcuApp(
@@ -36,8 +36,8 @@ void main() {
       ],
     );
     await goTo(tester, auto, '/communities/life-faith-circle');
-    expect(find.text('Join community'), findsOneWidget);
-    expect(find.textContaining('You join straight away'), findsOneWidget);
+    expect(find.text('Join caregroup'), findsOneWidget);
+    expect(find.textContaining('You join instantly'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
   });
 

@@ -429,13 +429,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     if (_type == CreateType.prayer) ...[
                       const SizedBox(height: 10),
                       const _Note(
-                        'Your community will be able to pray and respond.',
+                        'Your caregroup will be able to pray and respond.',
                       ),
                     ],
                     if (_type == CreateType.story) ...[
                       const SizedBox(height: 14),
                       CheckRow(
-                        label: 'I agree to share my story with my community.',
+                        label: 'I agree to share my story with my caregroup.',
                         value: _consent,
                         onChanged: (v) => setState(() => _consent = v),
                       ),
@@ -600,13 +600,13 @@ class _TargetPicker extends StatelessWidget {
           children: [
             _TargetChip(
               icon: Icons.public_rounded,
-              label: 'General community',
+              label: 'General caregroup',
               selected: selected == generalTarget,
               onTap: () => onChanged(generalTarget),
             ),
             _TargetChip(
               icon: Icons.groups_rounded,
-              label: myCommunityName ?? 'My community',
+              label: myCommunityName ?? 'My caregroup',
               selected: myCommunityId != null && selected == myCommunityId,
               onTap: myCommunityId == null
                   ? null
@@ -617,7 +617,7 @@ class _TargetPicker extends StatelessWidget {
         const SizedBox(height: 6),
         _Note(
           myCommunityId == null
-              ? 'Join a specific community to post there too.'
+              ? 'Join a specific caregroup to post there too.'
               : selected == generalTarget
               ? 'Everyone on your campus can see it.'
               : 'Only members of ${myCommunityName ?? 'your community'} can '

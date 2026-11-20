@@ -55,7 +55,7 @@ class _ReportSentScreenState extends ConsumerState<ReportSentScreen> {
   Widget build(BuildContext context) {
     return ReportSentView(
       message:
-          'Thank you for helping keep the community safe. Our moderation '
+          'Thank you for helping keep the caregroup safe. Our moderation '
           'team will review your report.',
       primaryLabel: 'Back to messages',
       onPrimary: () => context.go('/messages'),

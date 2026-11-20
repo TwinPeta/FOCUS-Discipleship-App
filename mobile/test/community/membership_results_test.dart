@@ -37,7 +37,7 @@ void main() {
   );
 
   test(
-    'decline keeps the message; choosing another community resets to none',
+    'decline keeps the message; choosing another caregroup resets to none',
     () async {
       await repo.requestToJoin('growth-circle');
       final declined = await repo.reject(message: 'Group is full');
@@ -82,7 +82,7 @@ void main() {
     expect(find.text('You are in!'), findsNothing);
   });
 
-  testWidgets('the declined result offers another community', (tester) async {
+  testWidgets('the declined result offers another caregroup', (tester) async {
     final app = await pumpFcuApp(
       tester,
       membership: MembershipStatus.rejected,
@@ -92,7 +92,7 @@ void main() {
     await settle(tester);
     expect(find.text('Request not accepted'), findsOneWidget);
     expect(find.textContaining('Group is full'), findsOneWidget);
-    await tester.tap(find.text('Choose another community'));
+    await tester.tap(find.text('Choose another caregroup'));
     await settle(tester);
     expect(find.text('Request not accepted'), findsNothing);
   });

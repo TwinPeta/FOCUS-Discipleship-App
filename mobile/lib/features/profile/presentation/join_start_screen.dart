@@ -61,7 +61,7 @@ class JoinStartScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'You can add a profile photo too (optional). Next you set a '
-            'password, confirm your email and accept the community charter.',
+            'password, confirm your email and accept the caregroup charter.',
             style: AppTextStyles.body.copyWith(
               color: AppColors.inkDeemphasized80,
             ),

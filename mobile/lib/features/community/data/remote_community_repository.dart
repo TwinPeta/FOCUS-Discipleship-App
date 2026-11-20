@@ -21,7 +21,7 @@ class RemoteCommunityRepository implements CommunityRepository {
     final summary = objectOf(general?['community']);
     final id = summary?['id'] as String?;
     if (id == null) {
-      throw StateError('No General community for this account yet.');
+      throw StateError('No General caregroup for this account yet.');
     }
     return getCommunityById(id);
   }

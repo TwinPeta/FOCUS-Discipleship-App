@@ -23,7 +23,7 @@ CreateMenuRow _row(WidgetTester tester, String title) =>
     tester.widget<CreateMenuRow>(find.widgetWithText(CreateMenuRow, title));
 
 void main() {
-  testWidgets('Home, Communities, Messages, Profile tabs (approved member)', (
+  testWidgets('Home, Caregroups, Messages, Profile tabs (approved member)', (
     tester,
   ) async {
     final container = await pumpFcuApp(tester);
@@ -56,7 +56,7 @@ void main() {
     expect(container.read(routerProvider).canPop(), isFalse);
   });
 
-  testWidgets('Communities goes to the hub without a community', (
+  testWidgets('Caregroups goes to the hub without a caregroup', (
     tester,
   ) async {
     final container = await pumpFcuApp(

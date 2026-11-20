@@ -32,6 +32,8 @@ class BadgeRules {
   static bool earns(String badgeId, List<ActivityEvent> events) {
     int count(ActivityType t) => events.where((e) => e.type == t).length;
     return switch (badgeId) {
+      // Carebook: every member who finished sign-up is a newcomer.
+      'newcomer' => true,
       'first-steps' => events.isNotEmpty,
       'quiz-finisher' => count(ActivityType.quizCompleted) >= 1,
       'prayer-partner' => count(ActivityType.prayed) >= prayerPartnerThreshold,

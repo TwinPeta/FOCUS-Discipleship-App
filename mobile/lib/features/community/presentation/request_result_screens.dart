@@ -158,7 +158,7 @@ class _RequestApprovedScreenState extends ConsumerState<RequestApprovedScreen>
         ],
         actions: [
           AppPrimaryButton(
-            label: 'Open my community',
+            label: 'Open my caregroup',
             onPressed: () => context.go('/community/${community.id}/feed'),
           ),
           if (mentor != null)
@@ -223,14 +223,14 @@ class _RequestDeclinedScreenState extends ConsumerState<RequestDeclinedScreen>
             ),
             const SizedBox(height: 12),
             const Text(
-              'You can request another specific community. You are still '
-              'part of your general campus community.',
+              'You can request another specific caregroup. You are still '
+              'part of your general campus caregroup.',
             ),
           ],
         ),
         actions: [
           AppPrimaryButton(
-            label: 'Choose another community',
+            label: 'Choose another caregroup',
             isLoading: _busy,
             onPressed: _chooseAnother,
           ),

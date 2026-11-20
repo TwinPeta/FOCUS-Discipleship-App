@@ -73,7 +73,7 @@ class InfoMembersScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Community info',
+                'Caregroup info',
                 style: AppTextStyles.cardTitle.copyWith(fontSize: 15),
               ),
               const SizedBox(height: 8),
@@ -203,7 +203,7 @@ class _LeaveButton extends StatelessWidget {
         onPressed: onPressed,
         icon: const Icon(Icons.logout_rounded),
         label: const Text(
-          'Leave community',
+          'Leave caregroup',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         style: OutlinedButton.styleFrom(
