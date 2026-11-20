@@ -58,7 +58,7 @@ class AmberHeaderScaffold extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              gradient: AppGradients.brand,
+              gradient: AppGradients.pageHeader,
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(AppRadii.headerBottom),
               ),

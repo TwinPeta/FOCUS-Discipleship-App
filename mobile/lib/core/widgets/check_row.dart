@@ -40,13 +40,20 @@ class CheckRow extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   color: value ? null : AppColors.white,
-                  gradient: AppGradients.when(value),
+                  gradient: AppGradients.selected(value),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.ink, width: 2),
+                  border: Border.all(
+                    color: value ? AppColors.primary : AppColors.inputBorder,
+                    width: 2,
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: value
-                    ? Icon(Icons.check, size: 14, color: AppColors.ink)
+                    ? const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: AppColors.onPrimary,
+                      )
                     : null,
               ),
               const SizedBox(width: 12),

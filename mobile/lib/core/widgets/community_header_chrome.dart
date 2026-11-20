@@ -234,7 +234,7 @@ Future<void> showSectionMenu(
             ),
             for (final item in items) ...[
               if (item.dividerBefore)
-                Divider(height: 16, color: AppColors.cream),
+                Divider(height: 16, color: AppColors.inputBorder),
               _SectionRow(
                 item: item,
                 onTap: () {
@@ -267,7 +267,7 @@ class _SectionRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Material(
-          color: active ? AppColors.honey : Colors.transparent,
+          color: active ? AppColors.primarySoft : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             onTap: onTap,
@@ -282,7 +282,7 @@ class _SectionRow extends StatelessWidget {
                     height: 28,
                     margin: const EdgeInsets.only(left: 6, right: 10),
                     decoration: BoxDecoration(
-                      color: active ? AppColors.amberDark : Colors.transparent,
+                      color: active ? AppColors.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

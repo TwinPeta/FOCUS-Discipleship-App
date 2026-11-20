@@ -26,7 +26,7 @@ class SegmentedToggle<T> extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(height / 2),
       ),
       child: Row(
@@ -39,7 +39,7 @@ class SegmentedToggle<T> extends StatelessWidget {
                 duration: const Duration(milliseconds: 150),
                 decoration: BoxDecoration(
                   color: selected ? null : Colors.transparent,
-                  gradient: AppGradients.when(selected),
+                  gradient: AppGradients.selected(selected),
                   borderRadius: BorderRadius.circular((height - 8) / 2),
                 ),
                 alignment: Alignment.center,
@@ -48,6 +48,7 @@ class SegmentedToggle<T> extends StatelessWidget {
                   style: AppTextStyles.chip.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
+                    color: selected ? AppColors.onPrimary : AppColors.ink,
                   ),
                 ),
               ),

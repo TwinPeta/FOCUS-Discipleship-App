@@ -8,6 +8,7 @@ import '../../features/community/domain/membership.dart';
 import '../../features/create/presentation/create_menu_sheet.dart';
 import '../../features/messaging/presentation/providers/messaging_providers.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
 import '../push/app_icon_badge.dart';
@@ -94,7 +95,7 @@ class AppBottomNav extends ConsumerWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.cream)),
+        border: Border(top: BorderSide(color: AppColors.inputBorder)),
       ),
       child: SafeArea(
         top: false,
@@ -186,7 +187,8 @@ class _NavTab extends StatelessWidget {
                 vertical: 6,
               ),
               decoration: BoxDecoration(
-                color: selected ? AppColors.honey : Colors.transparent,
+                color: selected ? null : Colors.transparent,
+                gradient: AppGradients.selected(selected),
                 borderRadius: BorderRadius.circular(AppRadii.pill),
               ),
               child: Column(
@@ -197,7 +199,7 @@ class _NavTab extends StatelessWidget {
                     children: [
                       Icon(
                         selected ? selectedIcon : icon,
-                        color: AppColors.ink,
+                        color: selected ? AppColors.onPrimary : AppColors.ink,
                       ),
                       if (badge > 0)
                         Positioned(
@@ -218,7 +220,7 @@ class _NavTab extends StatelessWidget {
                           .clamp(maxScaleFactor: _maxLabelScale),
                       style: AppTextStyles.chip.copyWith(
                         fontSize: 11,
-                        color: AppColors.ink,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                 ],
@@ -245,17 +247,30 @@ class _CreateButton extends StatelessWidget {
         excludeSemantics: true,
         child: Tooltip(
           message: 'Create',
+          // Design: a raised gold-gradient rounded square.
           child: Material(
-            color: AppColors.amberDark,
-            shape: const CircleBorder(),
-            elevation: 2,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => unawaited(showCreateMenu(context)),
-              child: SizedBox(
-                width: _createSize,
-                height: _createSize,
-                child: Icon(Icons.add_rounded, size: 30, color: AppColors.ink),
+            color: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            elevation: 3,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppGradients.brand,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => unawaited(showCreateMenu(context)),
+                child: SizedBox(
+                  width: _createSize,
+                  height: _createSize,
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 30,
+                    color: AppColors.ink,
+                  ),
+                ),
               ),
             ),
           ),

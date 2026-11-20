@@ -24,7 +24,7 @@ class InitialsAvatar extends StatelessWidget {
   final Color? backgroundColor;
 
   /// [backgroundColor], or the theme's cream.
-  Color get _backgroundColor => backgroundColor ?? AppColors.cream;
+  Color get _backgroundColor => backgroundColor ?? AppColors.primarySoft;
   final Color? borderColor;
   final double borderWidth;
   final BoxShape shape;

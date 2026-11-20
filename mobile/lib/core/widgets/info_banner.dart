@@ -22,13 +22,13 @@ class InfoBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.ink),
+          Icon(icon, size: 20, color: AppColors.primary),
           const SizedBox(width: 10),
           Expanded(
             child: DefaultTextStyle(
