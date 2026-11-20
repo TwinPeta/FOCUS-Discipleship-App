@@ -653,12 +653,13 @@ class _TargetChip extends StatelessWidget {
       child: Opacity(
         opacity: onTap == null ? 0.45 : 1,
         child: Material(
-          color: selected ? AppColors.honey : AppColors.white,
+          // Carebook: the selected chip is blue with white text.
+          color: selected ? AppColors.primary : AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: BorderSide(
-              color: selected ? AppColors.amberDark : AppColors.inputBorder,
-              width: selected ? 2 : 1.5,
+              color: selected ? AppColors.primary : AppColors.inputBorder,
+              width: 1.5,
             ),
           ),
           child: InkWell(
@@ -674,7 +675,7 @@ class _TargetChip extends StatelessWidget {
                     Icon(
                       selected ? Icons.check_circle_rounded : icon,
                       size: 18,
-                      color: AppColors.ink,
+                      color: selected ? AppColors.onPrimary : AppColors.ink,
                     ),
                     const SizedBox(width: 6),
                     Flexible(
@@ -684,6 +685,7 @@ class _TargetChip extends StatelessWidget {
                           fontWeight: selected
                               ? FontWeight.w800
                               : FontWeight.w600,
+                          color: selected ? AppColors.onPrimary : AppColors.ink,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -765,7 +767,7 @@ class _Tips extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

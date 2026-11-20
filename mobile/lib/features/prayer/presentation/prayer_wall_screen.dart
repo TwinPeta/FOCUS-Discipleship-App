@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../core/connectivity/connectivity_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -263,54 +264,62 @@ class PrayedButton extends StatelessWidget {
       excludeSemantics: true,
       child: Opacity(
         opacity: enabled ? 1 : 0.5,
+        // Carebook: gold "I prayed" button; soft gold once you prayed.
         child: Material(
-          color: prayed ? AppColors.honey : AppColors.cream,
+          color: Colors.transparent,
           borderRadius: radius,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 40),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      prayed
-                          ? Icons.volunteer_activism
-                          : Icons.volunteer_activism_outlined,
-                      size: 18,
-                      color: AppColors.ink,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      prayed ? 'Prayed' : 'I prayed',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w800,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: prayed ? AppColors.honey : null,
+              gradient: prayed ? null : AppGradients.brand,
+              borderRadius: radius,
+            ),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: radius,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 40),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        prayed
+                            ? Icons.volunteer_activism
+                            : Icons.volunteer_activism_outlined,
+                        size: 18,
+                        color: AppColors.ink,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      constraints: const BoxConstraints(minWidth: 28),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: prayed ? AppColors.amberDark : AppColors.white,
-                        borderRadius: radius,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$count',
-                        style: AppTextStyles.chip.copyWith(
-                          color: AppColors.ink,
+                      const SizedBox(width: 6),
+                      Text(
+                        prayed ? 'Prayed' : 'I prayed',
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Container(
+                        constraints: const BoxConstraints(minWidth: 28),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: radius,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$count',
+                          style: AppTextStyles.chip.copyWith(
+                            color: AppColors.ink,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
