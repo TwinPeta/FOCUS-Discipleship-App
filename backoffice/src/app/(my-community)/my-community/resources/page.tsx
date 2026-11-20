@@ -39,14 +39,14 @@ export default function MyCommunityResourcesPage() {
   }, []);
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {loadError && <ErrorState message={loadError} />}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Resources — {communityName || "your community"}
+        <h1 className="text-[34px] leading-[1.05]">
+          Resources — {communityName || "your caregroup"}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Read-only published discipleship materials available to your community.
+          Read-only published discipleship materials available to your caregroup.
         </p>
       </div>
 
@@ -63,11 +63,11 @@ export default function MyCommunityResourcesPage() {
               </span>
               <span>{res.publishedAt}</span>
             </div>
-            <h2 className="text-sm font-semibold text-foreground">{res.title}</h2>
+            <h2 className="eyebrow">{res.title}</h2>
             <p className="text-xs text-muted">Pathway: {res.pathway}</p>
           </article>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

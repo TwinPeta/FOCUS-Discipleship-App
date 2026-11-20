@@ -1,9 +1,10 @@
-export type Institution = { id: string; name: string; type: "university" | "high_school"; country?: string };
+export type Institution = { id: string; name: string; type: "university" | "institute" | "high_school"; country?: string };
 
 export type Profile = {
   id: string;
   full_name: string;
   username: string;
+  show_username_only?: boolean;
   photo_url: string | null;
   email: string | null;
   phone: string | null;

@@ -100,6 +100,28 @@ function ProfileForm() {
   );
 }
 
+/** Lets a student appear as @username (no name, no photo) to other students. Staff still see who they are. */
+function Privacy() {
+  const { user, setUser } = useAuth();
+  const save = useAction();
+  if (!user) return null;
+  const on = !!user.show_username_only;
+  return (
+    <Panel title="How others see you">
+      <label className="switch"><span>Show my username instead of my name</span>
+        <input type="checkbox" checked={on} disabled={save.busy}
+          onChange={() => save.run(async () => setUser(await patch<Profile>("/me", { show_username_only: !on })))} /></label>
+      <p className="meta" style={{ marginTop: 8 }}>
+        {on
+          ? `Other students see @${user.username} on your posts, comments and messages, with no photo.`
+          : "Other students see your name and photo on your posts, comments and messages."}{" "}
+        The FCU team can always see who you are, to keep everyone safe.
+      </p>
+      <ErrorText>{save.error}</ErrorText>
+    </Panel>
+  );
+}
+
 const CATEGORIES: [string, string][] = [
   ["joinRequestUpdates", "Updates on my request to join a community"],
   ["replies", "Replies to my posts"],
@@ -239,6 +261,7 @@ export default function Settings() {
     <>
       <PageTitle title="Settings" back={{ href: "/profile", label: "Profile" }} />
       <ProfileForm />
+      <Privacy />
       {user && user.minor_status !== "adult" ? <GuardianForm /> : null}
       <NotificationPrefs />
       <Blocked />

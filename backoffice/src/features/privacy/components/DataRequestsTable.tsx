@@ -17,6 +17,8 @@ import {
 import { RequestStatus } from "@/types/enums";
 import { DeadlineBadge } from "./DeadlineBadge";
 import { ProcessRequestDialog } from "./ProcessRequestDialog";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import { useRemoteItems } from "@/lib/hooks/useRemoteItems";
 import { fetchDataRequests } from "@/features/privacy/queries";
 
@@ -38,6 +40,7 @@ export function DataRequestsTable({ initialItems }: DataRequestsTableProps) {
   return (
     <>
       <div className="overflow-x-auto rounded-card border border-border bg-white">
+        <h2 className="eyebrow mb-1">Data requests</h2>
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
             <tr>
@@ -60,15 +63,20 @@ export function DataRequestsTable({ initialItems }: DataRequestsTableProps) {
               items.map((item) => (
                 <tr key={item.id} className="hover:bg-surface/60">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{item.memberName}</p>
-                    <p className="text-xs text-muted-foreground">{item.memberEmail}</p>
+                    <div className="flex items-center gap-2.5">
+                      <InitialsAvatar name={item.memberName} />
+                      <div>
+                        <p className="text-base font-extrabold">{item.memberName}</p>
+                        <p className="text-[13px] opacity-80">{item.memberEmail}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">{item.type}</td>
                   <td className="px-4 py-3 text-muted-foreground">{item.requestedAt}</td>
                   <td className="px-4 py-3">
                     <DeadlineBadge deadlineAt={item.deadlineAt} status={item.status} />
                   </td>
-                  <td className="px-4 py-3">{item.status}</td>
+                  <td className="px-4 py-3"><StatusPill status={String(item.status).toLowerCase().replace("_", " ")} variant={item.status === RequestStatus.Done ? "active" : "pending"} /></td>
                   <td className="px-4 py-3 text-right">
                     {item.status !== RequestStatus.Done && (
                       <button

@@ -25,7 +25,7 @@ const OPTIONS: { type: ContentType; label: string }[] = [
 
 export function ContentTypeSwitch({ value, onChange }: ContentTypeSwitchProps) {
   return (
-    <div className="inline-flex flex-wrap gap-1 rounded-md border border-border bg-surface p-1" role="tablist">
+    <div className="flex flex-wrap gap-2" role="tablist">
       {OPTIONS.map((opt) => (
         <button
           key={opt.type}
@@ -33,11 +33,6 @@ export function ContentTypeSwitch({ value, onChange }: ContentTypeSwitchProps) {
           role="tab"
           aria-selected={value === opt.type}
           onClick={() => onChange(opt.type)}
-          className={`rounded px-3 py-1.5 text-sm font-medium transition ${
-            value === opt.type
-              ? "bg-white text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
         >
           {opt.label}
         </button>

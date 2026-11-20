@@ -49,11 +49,11 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={`overflow-x-auto rounded-xl border border-border bg-white shadow-xs ${className}`}>
-      <table className="w-full border-collapse text-left text-sm">
+    <div className={`card overflow-x-auto ${className}`}>
+      <table className="data-table w-full text-left">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
-          <tr className="border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wider text-muted">
+          <tr>
             {columns.map((col) => {
               const alignClass =
                 col.align === "center"
@@ -62,23 +62,16 @@ export function DataTable<T>({
                     ? "text-right"
                     : "text-left";
               return (
-                <th
-                  key={col.key}
-                  scope="col"
-                  className={`px-4 py-3.5 ${alignClass} ${col.className ?? ""}`}
-                >
+                <th key={col.key} scope="col" className={`${alignClass} ${col.className ?? ""}`}>
                   {col.header}
                 </th>
               );
             })}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody>
           {data.map((item) => (
-            <tr
-              key={keyExtractor(item)}
-              className="hover:bg-slate-50/50 transition-colors"
-            >
+            <tr key={keyExtractor(item)}>
               {columns.map((col) => {
                 const alignClass =
                   col.align === "center"
@@ -87,10 +80,7 @@ export function DataTable<T>({
                       ? "text-right"
                       : "text-left";
                 return (
-                  <td
-                    key={col.key}
-                    className={`px-4 py-3.5 ${alignClass} ${col.className ?? ""}`}
-                  >
+                  <td key={col.key} className={`${alignClass} ${col.className ?? ""}`}>
                     {col.cell(item)}
                   </td>
                 );

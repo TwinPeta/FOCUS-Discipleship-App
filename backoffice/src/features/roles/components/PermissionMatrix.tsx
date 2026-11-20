@@ -10,152 +10,93 @@
 "use client";
 
 import { useState } from "react";
-import { ROLE_LABELS } from "@/lib/permissions/roles";
-import {
-  B30_LEGEND,
-  B30_PERMISSION_GROUPS,
-  B30_ROLE_ORDER,
-  type PermissionCode,
-} from "../queries";
-
-const CODE_STYLES: Record<PermissionCode, string> = {
-  V: "bg-slate-100 text-slate-800 border-slate-300",
-  C: "bg-emerald-50 text-emerald-800 border-emerald-300",
-  E: "bg-sky-50 text-sky-800 border-sky-300",
-  A: "bg-amber-50 text-amber-800 border-amber-300",
-  D: "bg-rose-50 text-rose-800 border-rose-300",
-  X: "bg-violet-50 text-violet-800 border-violet-300",
-};
+import { useRemoteData } from "@/lib/hooks/useRemoteData";
+import { B30_LEGEND, B30_PERMISSION_GROUPS, type PermissionCode } from "../queries";
+import { fetchRoles, MODULE_HINTS, type RoleDef } from "../api";
 
 export function PermissionMatrix() {
   const [highlightCode, setHighlightCode] = useState<PermissionCode | null>(null);
+  const { data } = useRemoteData(fetchRoles);
+  // Roles without Backoffice access keep their column so the whole picture is visible
+  const roles = data?.items ?? [];
+  const modules = data?.modules ?? [];
+  const groups = B30_PERMISSION_GROUPS.map((g) => ({ group: g.group, modules: g.rows.map((r) => r.module).filter((m) => modules.includes(m)) }));
 
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-white p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">
-            Backoffice permissions matrix (B30)
-          </h2>
-          <p className="mt-1 text-xs text-muted">
-            Click a permission code to highlight all modules where that capability applies.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Permission legend">
-          {B30_LEGEND.map((item) => {
-            const active = highlightCode === item.code;
-            return (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => setHighlightCode(active ? null : item.code)}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition ${
-                  active
-                    ? "border-primary bg-primary-soft font-semibold text-foreground"
-                    : "border-border bg-white text-muted hover:text-foreground"
-                }`}
-              >
-                <span
-                  className={`inline-flex h-4 w-4 items-center justify-center rounded border text-[10px] font-bold ${CODE_STYLES[item.code]}`}
-                >
-                  {item.code}
-                </span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-          <span className="ml-1 inline-flex items-center rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-muted">
-            (own) = only their own community
-          </span>
-        </div>
+    <section className="card flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2" role="group" aria-label="Permission legend">
+        {B30_LEGEND.map((item) => {
+          const active = highlightCode === item.code;
+          return (
+            <button
+              key={item.code}
+              type="button"
+              onClick={() => setHighlightCode(active ? null : item.code)}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm ${active ? "bg-grad-select" : ""}`}
+            >
+              <b className="grid h-6 w-6 place-items-center rounded-md border-2 border-ink bg-white text-xs font-black">{item.code}</b>
+              <span>{item.label.toLowerCase()}</span>
+            </button>
+          );
+        })}
+        <span className="text-sm">
+          <b>(own)</b> only their own caregroup. A dash means no access.
+        </span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full border-collapse text-left text-xs">
+      <div className="overflow-x-auto">
+        <table className="plain-table w-full border-collapse text-left text-[15px]">
           <thead>
-            <tr className="border-b border-border bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-muted">
-              <th className="px-3 py-2.5">Module</th>
-              {B30_ROLE_ORDER.map((role) => (
-                <th key={role} className="px-3 py-2.5 text-center">
-                  {ROLE_LABELS[role]}
+            <tr className="border-b-2 border-ink">
+              <th className="px-2 py-2" />
+              {roles.map((r) => (
+                <th key={r.id} id={r.slug} className="px-2 py-2 text-center text-[13px] font-black">
+                  {r.name}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {B30_PERMISSION_GROUPS.map((group) => (
-              <GroupRows
-                key={group.group}
-                group={group.group}
-                rows={group.rows}
-                highlightCode={highlightCode}
-              />
+            {groups.map((g) => (
+              <Group key={g.group} group={g.group} modules={g.modules} roles={roles} highlightCode={highlightCode} />
             ))}
           </tbody>
         </table>
       </div>
 
-      <p className="text-xs italic text-muted">
-        Proposed matrix, to be validated with FOCUS Uganda.
-      </p>
+      <p className="text-sm italic">Built-in roles start from the proposed matrix, to be validated with FOCUS Uganda. Edited roles show what is in force now.</p>
     </section>
   );
 }
 
-function GroupRows({
-  group,
-  rows,
-  highlightCode,
-}: {
-  group: string;
-  rows: (typeof B30_PERMISSION_GROUPS)[number]["rows"];
-  highlightCode: PermissionCode | null;
-}) {
+function Group({ group, modules, roles, highlightCode }: { group: string; modules: string[]; roles: RoleDef[]; highlightCode: PermissionCode | null }) {
   return (
     <>
-      <tr className="border-b border-border bg-slate-50/70">
-        <td
-          colSpan={B30_ROLE_ORDER.length + 1}
-          className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground"
-        >
+      <tr>
+        <td colSpan={roles.length + 1} className="px-2 pb-1 pt-4 text-[13px] font-black uppercase tracking-[0.08em]">
           {group}
         </td>
       </tr>
-      {rows.map((row) => (
-        <tr key={row.module} className="border-b border-border last:border-b-0 hover:bg-slate-50/50">
-          <td className="px-3 py-2.5 font-medium text-foreground">{row.module}</td>
-          {B30_ROLE_ORDER.map((role) => {
-            const entry = row.cells[role];
-            const hasCodes = entry.codes.length > 0;
-            const dimmed =
-              highlightCode !== null && !entry.codes.includes(highlightCode);
-
+      {modules.map((module) => (
+        <tr key={module} className="border-b border-blue-soft">
+          <td className="px-2 py-2.5">
+            <p className="text-[15px] font-extrabold leading-tight">{module}</p>
+            {MODULE_HINTS[module] && <p className="text-xs opacity-80">{MODULE_HINTS[module]}</p>}
+          </td>
+          {roles.map((r) => {
+            const cell = r.matrix[module];
+            const has = Boolean(cell && cell.codes.length);
+            const dimmed = highlightCode !== null && !(cell && cell.codes.includes(highlightCode));
             return (
-              <td
-                key={role}
-                className={`px-3 py-2.5 text-center transition-opacity ${
-                  dimmed ? "opacity-30" : "opacity-100"
-                }`}
-              >
-                {hasCodes ? (
-                  <div className="inline-flex flex-wrap items-center justify-center gap-1">
-                    {entry.codes.map((code) => (
-                      <span
-                        key={code}
-                        className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded border px-1 text-[11px] font-semibold ${CODE_STYLES[code]}`}
-                      >
-                        {code}
-                      </span>
-                    ))}
-                    {entry.ownOnly && (
-                      <span className="ml-0.5 rounded bg-slate-100 px-1 py-0.5 text-[10px] font-medium text-muted">
-                        (own)
-                      </span>
-                    )}
-                  </div>
+              <td key={r.id} className={`px-2 py-2.5 text-center transition-opacity ${dimmed ? "opacity-25" : ""}`}>
+                {has ? (
+                  <span className="font-extrabold">
+                    {cell.codes.join(" ")}
+                    {cell.own && <span className="ml-1 font-semibold opacity-80">(own)</span>}
+                  </span>
                 ) : (
-                  <span className="text-muted">–</span>
+                  <span className="opacity-60">–</span>
                 )}
               </td>
             );

@@ -132,6 +132,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onTap: () => unawaited(showAppearanceSheet(context)),
                 ),
                 const SizedBox(height: 10),
+                const _UsernameOnlyRow(),
+                const SizedBox(height: 10),
                 for (final row in _rows) ...[
                   SettingsRow(
                     icon: row.icon,
@@ -161,6 +163,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+/// Choose to appear as @username instead of your name to other students.
+class _UsernameOnlyRow extends ConsumerStatefulWidget {
+  const _UsernameOnlyRow();
+
+  @override
+  ConsumerState<_UsernameOnlyRow> createState() => _UsernameOnlyRowState();
+}
+
+class _UsernameOnlyRowState extends ConsumerState<_UsernameOnlyRow> {
+  var _saving = false;
+
+  Future<void> _set(bool value) async {
+    final profile = ref.read(profileControllerProvider).value;
+    if (profile == null || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(profileControllerProvider.notifier)
+          .save(profile.copyWith(showUsernameOnly: value));
+    } catch (_) {
+      if (mounted) showErrorSnack(context);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = ref.watch(profileControllerProvider).value;
+    if (profile == null) return const SizedBox.shrink();
+    final on = profile.showUsernameOnly;
+    return SettingsRow(
+      icon: Icons.alternate_email_rounded,
+      title: 'Show my username',
+      subtitle: on
+          ? 'Others see @${profile.username}, not your name or photo'
+          : 'Others see your name and photo',
+      trailing: Switch(
+        value: on,
+        activeThumbColor: AppColors.ink,
+        onChanged: _saving ? null : _set,
+      ),
     );
   }
 }
@@ -267,12 +315,16 @@ class SettingsRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+
+  /// Replaces the chevron (for example a switch).
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -289,9 +341,11 @@ class SettingsRow extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       onTap: onTap,
-      trailing: onTap == null
-          ? null
-          : Icon(Icons.chevron_right_rounded, color: AppColors.ink),
+      trailing:
+          trailing ??
+          (onTap == null
+              ? null
+              : Icon(Icons.chevron_right_rounded, color: AppColors.ink)),
     );
   }
 }

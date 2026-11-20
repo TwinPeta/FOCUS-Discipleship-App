@@ -20,7 +20,7 @@ export const institutionTypeLabel = (t: string): InstitutionTypeLabel =>
 export type InstitutionType = (typeof InstitutionType)[keyof typeof InstitutionType];
 
 export const institutionSchema = z.object({
-  name: z.string().trim().min(2, "Institution name is required"),
+  name: z.string().trim().min(2, "Campus name is required"),
   type: z.enum([InstitutionType.University, InstitutionType.Institute, InstitutionType.HighSchool]),
   country: z.string().trim().min(2, "Country is required").default("Uganda"),
   city: z.string().trim().min(2, "City is required"),

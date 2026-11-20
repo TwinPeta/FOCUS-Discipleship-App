@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createMember } from "@/features/members/queries";
@@ -26,12 +26,15 @@ interface AddUserFormProps {
   institutions?: { id: string; name: string }[];
   communities?: { id: string; name: string }[];
   onSuccess?: () => void;
+  /** Lets the page show help for the role being chosen */
+  onRoleChange?: (role: Role) => void;
 }
 
 export function AddUserForm({
   institutions: institutionsProp,
   communities: communitiesProp,
   onSuccess,
+  onRoleChange,
 }: AddUserFormProps) {
   const lookups = useLookups({ institutions: true, communities: true });
   const institutions = institutionsProp ?? lookups.institutions;
@@ -55,6 +58,9 @@ export function AddUserForm({
       role: Role.Student,
       institutionId: institutions[0]?.id ?? "",
       communityId: "",
+      country: "Uganda",
+      yearOfStudy: "",
+      localChurch: "",
       guardianConsentReceived: false,
       sendInvitation: true,
     },
@@ -69,6 +75,10 @@ export function AddUserForm({
   const role = watch("role");
   const isMinor = isMinorBirthdate(birthdate);
 
+  useEffect(() => {
+    onRoleChange?.(role);
+  }, [role, onRoleChange]);
+
   async function onSubmit(values: AddUserInput) {
     setError(null);
     try {
@@ -80,165 +90,130 @@ export function AddUserForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
-        >
+        <div role="alert" className="rounded-lg bg-danger-soft px-3.5 py-2.5 text-sm font-semibold text-danger">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="add-fullName" className="block text-sm font-medium text-foreground">
-            Full name
-          </label>
-          <input
-            id="add-fullName"
-            type="text"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("fullName")}
-          />
-          {errors.fullName && (
-            <p role="alert" className="text-xs text-red-700">
-              {errors.fullName.message}
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="add-email" className="block text-sm font-medium text-foreground">
-            Email
-          </label>
-          <input
-            id="add-email"
-            type="email"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p role="alert" className="text-xs text-red-700">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-black">Role</h2>
+        <RoleSelector variant="chips" id="add-role" value={role} onChange={(next) => setValue("role", next)} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="add-phone" className="block text-sm font-medium text-foreground">
-            Phone (optional)
-          </label>
-          <input
-            id="add-phone"
-            type="tel"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("phone")}
-          />
-        </div>
+      <h2 className="mt-1 text-lg font-black">Profile</h2>
 
-        <div className="space-y-1.5">
-          <label htmlFor="add-birthdate" className="block text-sm font-medium text-foreground">
-            Birthdate
-          </label>
-          <input
-            id="add-birthdate"
-            type="date"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("birthdate")}
-          />
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="add-fullName" label="Full name" error={errors.fullName?.message}>
+          <input id="add-fullName" type="text" placeholder="[Full name]" className="w-full px-3.5" {...register("fullName")} />
+        </Field>
+        <Field id="add-email" label="Email" error={errors.email?.message}>
+          <input id="add-email" type="email" placeholder="name@example.com" className="w-full px-3.5" {...register("email")} />
+        </Field>
+        <Field id="add-phone" label="Phone number">
+          <input id="add-phone" type="tel" placeholder="+256 700 000 000" className="w-full px-3.5" {...register("phone")} />
+        </Field>
+        <Field id="add-birthdate" label="Birthdate">
+          <input id="add-birthdate" type="date" className="w-full px-3.5" {...register("birthdate")} />
+        </Field>
       </div>
+
+      <Field id="add-country" label="Country">
+        <select id="add-country" className="w-full px-3.5" {...register("country")}>
+          {["Uganda", "Kenya", "Rwanda"].map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </Field>
 
       {isMinor && (
-        <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <p className="font-medium">
-            This user is under 18. Guardian consent is required before the account
-            is fully active.
+        <div className="flex flex-col gap-2 rounded-xl bg-[#FFF8E6] p-3.5 text-sm">
+          <p className="font-extrabold">
+            This user is under 18. Guardian consent is required before the account is fully active.
           </p>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-border accent-primary"
-              {...register("guardianConsentReceived")}
-            />
+          <label className="flex items-center gap-2.5 font-semibold">
+            <input type="checkbox" {...register("guardianConsentReceived")} />
             <span>Guardian consent already received</span>
           </label>
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <label htmlFor="add-role" className="block text-sm font-medium text-foreground">
-            Role
-          </label>
-          <RoleSelector
-            id="add-role"
-            value={role}
-            onChange={(next) => setValue("role", next)}
-          />
-        </div>
+      <Field id="add-institution" label="Campus" error={errors.institutionId?.message}>
+        <select id="add-institution" className="w-full px-3.5" {...register("institutionId")}>
+          <option value="">Select a campus</option>
+          {institutions.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-        <div className="space-y-1.5">
-          <label htmlFor="add-institution" className="block text-sm font-medium text-foreground">
-            Institution
-          </label>
-          <select
-            id="add-institution"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("institutionId")}
-          >
-            <option value="">Select institution</option>
-            {institutions.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-          {errors.institutionId && (
-            <p role="alert" className="text-xs text-red-700">
-              {errors.institutionId.message}
-            </p>
-          )}
-        </div>
+      <Field id="add-year" label="Year / class">
+        <select id="add-year" className="w-full px-3.5" {...register("yearOfStudy")}>
+          <option value="">Select a year</option>
+          {[1, 2, 3, 4, 5, 6, 7].map((y) => (
+            <option key={y} value={String(y)}>
+              Year {y}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-        <div className="space-y-1.5">
-          <label htmlFor="add-community" className="block text-sm font-medium text-foreground">
-            Community (optional)
-          </label>
-          <select
-            id="add-community"
-            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
-            {...register("communityId")}
-          >
-            <option value="">General community only</option>
-            {communities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <Field id="add-church" label="Local church (optional)">
+        <input id="add-church" type="text" placeholder="[Church name]" className="w-full px-3.5" {...register("localChurch")} />
+      </Field>
 
-      <label className="flex items-center gap-2 text-sm text-foreground">
-        <input
-          type="checkbox"
-          className="h-4 w-4 rounded border-border accent-primary"
-          {...register("sendInvitation")}
-        />
-        <span>Send invitation email so the user can set their password</span>
+      <Field id="add-community" label="Specific caregroup (optional)">
+        <select id="add-community" className="w-full px-3.5" {...register("communityId")}>
+          <option value="">General caregroup only</option>
+          {communities.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <label className="flex items-center gap-2.5 text-base font-semibold">
+        <input type="checkbox" {...register("sendInvitation")} />
+        <span>Send an invitation email so the user can set their password</span>
       </label>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
-      >
-        {isSubmitting ? "Creating user..." : "Create user"}
-      </button>
+      <div className="flex flex-wrap gap-2.5">
+        <button type="submit" disabled={isSubmitting} className="btn btn-primary">
+          {isSubmitting ? "Creating user..." : "Create user"}
+        </button>
+      </div>
     </form>
+  );
+}
+
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[13px] font-extrabold">
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p role="alert" className="text-xs font-semibold text-danger">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

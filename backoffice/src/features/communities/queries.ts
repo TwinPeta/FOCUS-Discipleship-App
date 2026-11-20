@@ -11,14 +11,14 @@ import type { Community, CommunityInput } from "./schemas";
 
 export async function fetchCommunities(): Promise<Community[]> {
   const res = await fetch("/api/proxy/communities", { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load communities");
+  if (!res.ok) throw new Error("Failed to load caregroups");
   const data = (await res.json()) as { items?: Community[] };
   return data.items ?? [];
 }
 
 export async function fetchCommunity(id: string): Promise<Community> {
   const res = await fetch(`/api/proxy/communities/${id}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load community");
+  if (!res.ok) throw new Error("Failed to load caregroup");
   return (await res.json()) as Community;
 }
 
@@ -28,7 +28,7 @@ export async function createCommunity(input: CommunityInput): Promise<Community>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Failed to create community");
+  if (!res.ok) throw new Error("Failed to create caregroup");
   return (await res.json()) as Community;
 }
 
@@ -41,6 +41,6 @@ export async function updateCommunity(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Failed to update community");
+  if (!res.ok) throw new Error("Failed to update caregroup");
   return (await res.json()) as Community;
 }

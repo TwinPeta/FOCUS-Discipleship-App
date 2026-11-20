@@ -38,7 +38,7 @@ export function ExportMenu({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {exportNotice && (
-        <span className="text-[11px] text-emerald-700 font-medium" role="status">
+        <span className="text-[11px] text-ink font-medium" role="status">
           {exportNotice}
         </span>
       )}
@@ -47,7 +47,7 @@ export function ExportMenu({
           type="button"
           onClick={handleCsv}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50 disabled:opacity-50 transition"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint disabled:opacity-50 transition"
         >
           <Download className="h-3.5 w-3.5" />
           <span>Export CSV</span>
@@ -58,7 +58,7 @@ export function ExportMenu({
           type="button"
           onClick={handlePdf}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50 disabled:opacity-50 transition"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint disabled:opacity-50 transition"
         >
           <FileText className="h-3.5 w-3.5" />
           <span>Export PDF</span>

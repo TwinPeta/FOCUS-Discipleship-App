@@ -42,7 +42,7 @@ void main() {
     ]) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
-    await tester.ensureVisible(find.text(appVersionLabel));
+    await tester.scrollUntilVisible(find.text(appVersionLabel), 200);
     expect(find.text(appVersionLabel), findsOneWidget);
 
     await tester.tap(find.text('Sign out'));

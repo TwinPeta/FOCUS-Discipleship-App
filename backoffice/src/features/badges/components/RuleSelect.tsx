@@ -41,9 +41,9 @@ export function RuleSelect({
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-slate-50/50 p-4">
+    <div className="space-y-4 rounded-lg border border-border bg-blue-tint p-4">
       <div className="space-y-1.5">
-        <label htmlFor="badge-rule-type" className="block text-sm font-medium text-foreground">
+        <label htmlFor="badge-rule-type" className="block text-[13px] font-extrabold">
           Earning rule
         </label>
         <select
@@ -63,7 +63,7 @@ export function RuleSelect({
 
       {requiresCount && (
         <div className="space-y-1.5">
-          <label htmlFor="badge-rule-count" className="block text-sm font-medium text-foreground">
+          <label htmlFor="badge-rule-count" className="block text-[13px] font-extrabold">
             Target number required
           </label>
           <input

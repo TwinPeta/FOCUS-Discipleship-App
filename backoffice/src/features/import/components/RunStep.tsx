@@ -55,7 +55,7 @@ export function RunStep({ rows }: RunStepProps) {
       <div className="space-y-4">
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
           {error}
         </div>
@@ -74,7 +74,7 @@ export function RunStep({ rows }: RunStepProps) {
     <div className="space-y-4">
       <div
         role="status"
-        className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        className="rounded-md border border-blue/30 bg-blue-soft px-4 py-3 text-sm text-ink"
       >
         Import complete: <strong>{result?.createdCount ?? 0}</strong> created,{" "}
         <strong>{result?.skippedCount ?? 0}</strong> skipped.

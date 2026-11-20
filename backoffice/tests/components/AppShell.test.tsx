@@ -1,7 +1,7 @@
 /**
  * tests/components/AppShell.test.tsx
  *
- * WHAT: Sidebar collapse/expand persistence, command palette open/search/keyboard navigation
+ * WHAT: Sidebar groups and user chip, command palette open/search/keyboard navigation
  * REQUIREMENTS: FR-12
  * SPEC: docs/features/16-shared-ui-brand.md
  * STATUS: implemented
@@ -45,32 +45,27 @@ function renderShell(ui: React.ReactNode, role: Role = Role.SystemAdmin) {
 describe("Sidebar", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("starts collapsed and remembers when expanded", async () => {
-    const user = userEvent.setup();
-    const { unmount } = renderShell(<Sidebar />);
-
-    const toggle = screen.getByRole("button", { name: /expand sidebar/i });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(toggle);
-    expect(screen.getByRole("button", { name: /collapse sidebar/i })).toHaveAttribute("aria-expanded", "true");
-    expect(window.localStorage.getItem("fcu-sidebar-expanded")).toBe("1");
-
-    unmount();
+  it("lists every group with its labels and the signed-in user", () => {
     renderShell(<Sidebar />);
-    expect(await screen.findByRole("button", { name: /collapse sidebar/i })).toBeInTheDocument();
+    for (const group of ["Overview", "Caregroup", "Content", "Safety", "Admin"]) {
+      expect(screen.getByRole("group", { name: group })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("link", { name: "New members" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Campuses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "My account" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
   it("marks the current section and keeps labels available to screen readers", () => {
     renderShell(<Sidebar />);
-    const link = screen.getByRole("link", { name: "Communities" });
+    const link = screen.getByRole("link", { name: "Caregroups" });
     expect(link).toHaveAttribute("aria-current", "page");
   });
 
   it("hides admin-only links from content admins", () => {
     renderShell(<Sidebar />, Role.ContentAdmin);
     expect(screen.queryByRole("link", { name: "Members" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Content library" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Content" })).toBeInTheDocument();
   });
 });
 
@@ -105,12 +100,12 @@ describe("CommandPalette", () => {
 
     await user.type(input, "instit");
     const options = within(screen.getByRole("listbox")).getAllByRole("option");
-    expect(options[0]).toHaveTextContent("Institutions");
+    expect(options[0]).toHaveTextContent("Campuses");
     expect(options[0]).toHaveAttribute("aria-selected", "true");
 
     await user.keyboard("{ArrowDown}");
     expect(options[1]).toHaveAttribute("aria-selected", "true");
-    expect(options[1]).toHaveTextContent("Add institution");
+    expect(options[1]).toHaveTextContent("Add campus");
 
     await user.keyboard("{Enter}");
     expect(pushMock).toHaveBeenCalledWith("/institutions/new");

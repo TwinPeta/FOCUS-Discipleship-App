@@ -720,6 +720,27 @@ test('resources: a private reflection, and the last quiz attempt with my own ans
   assert.equal((await call('GET', `/v1/quizzes/${quizRes.id}`, { token: me })).body.my_last_attempt, null, 'per member');
 });
 
+test('refresh: parallel refreshes both work, an old token does not, logout ends it all', async () => {
+  const login = await call('POST', '/v1/auth/login', { body: { identifier: 'student@fcu.test', password: DEMO_PASSWORD } });
+  assert.equal(login.status, 200);
+  const rt = login.body.refresh_token;
+  // two tabs refresh with the same token at once
+  const [a, b] = await Promise.all([1, 2].map(() => call('POST', '/v1/auth/refresh', { body: { refresh_token: rt } })));
+  assert.equal(a.status, 200);
+  assert.equal(b.status, 200);
+  assert.notEqual(a.body.refresh_token, b.body.refresh_token);
+  // the new tokens carry on
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: a.body.refresh_token } })).status, 200);
+  // outside the grace window the replaced token is refused
+  store.col('refreshTokens').filter((t) => t.usedAt).forEach((t) => { t.usedAt -= 120000; });
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: rt } })).status, 401);
+  // logging out also ends the token that was just replaced
+  const c = await call('POST', '/v1/auth/login', { body: { identifier: 'student@fcu.test', password: DEMO_PASSWORD } });
+  const d = await call('POST', '/v1/auth/refresh', { body: { refresh_token: c.body.refresh_token } });
+  assert.equal((await call('POST', '/v1/auth/logout', { token: d.body.access_token, body: { refresh_token: d.body.refresh_token } })).status, 204);
+  assert.equal((await call('POST', '/v1/auth/refresh', { body: { refresh_token: c.body.refresh_token } })).status, 401);
+});
+
 test('contract sweep: remaining operations return what the spec says', async () => {
   const ok = (r, ...codes) => assert.ok(codes.includes(r.status), `expected ${codes} got ${r.status} ${JSON.stringify(r.body)}`);
   const token = await login('student@fcu.test');
@@ -734,6 +755,12 @@ test('contract sweep: remaining operations return what the spec says', async () 
   assert.equal(typeof appConfig.body.join_requests.auto_approve, 'boolean');
   ok(await call('GET', '/v1/lookups/institutions?type=university'), 200);
   ok(await call('GET', '/v1/auth/username-available?username=somebody_new'), 200);
+  const free = await call('GET', '/v1/auth/email-available?email=brand.new@fcu.test');
+  ok(free, 200);
+  assert.equal(free.body.available, true);
+  const taken = await call('GET', '/v1/auth/email-available?email=Student@FCU.test');
+  assert.equal(taken.body.available, false); // case does not matter
+  ok(await call('GET', '/v1/auth/email-available?email=not-an-email'), 422);
   ok(await call('POST', '/v1/auth/otp/request', { body: { channel: 'email', destination: 'x@fcu.test', purpose: 'verify_contact' } }), 202);
   ok(await call('POST', '/v1/auth/otp/verify', { body: { destination: 'x@fcu.test', code: '000000', purpose: 'verify_contact' } }), 400);
   ok(await call('POST', '/v1/auth/password/reset', { body: { destination: 'x@fcu.test', code: '000000', new_password: 'A-brand-new-pass-1' } }), 400); // success: password-reset.test.js
@@ -812,4 +839,41 @@ test('contract sweep: remaining operations return what the spec says', async () 
 // Keeps the docs honest: an operation documented but never called by a test has an unchecked schema.
 test('zz every documented operation is exercised by a test (WebSocket aside)', async () => {
   assert.deepEqual(contract.unexercised(spec), ['GET /realtime']);
+});
+
+test('show username only: other students see @username, staff and the owner still see the name', async () => {
+  const student = await login('student@fcu.test');
+  const sm = await login('super@fcu.test');
+  const me = (await call('GET', '/v1/me', { token: student })).body;
+  assert.equal(me.show_username_only, false);
+
+  const on = await call('PATCH', '/v1/me', { token: student, body: { show_username_only: true } });
+  assert.equal(on.status, 200);
+  assert.equal(on.body.show_username_only, true);
+  assert.equal(on.body.full_name, me.full_name); // the owner still sees their own name
+
+  const post = await call('POST', `/v1/communities/${ctx.generalMak.id}/posts`, { token: student, body: { text: 'Posting as my username' } });
+  assert.equal(post.status, 201);
+  assert.equal(post.body.author.full_name, `@${me.username}`);
+  assert.equal(post.body.author.photo_url, null);
+
+  const seenByOther = await call('GET', `/v1/posts/${post.body.id}`, { token: sm });
+  assert.equal(seenByOther.body.author.full_name, `@${me.username}`);
+  assert.ok(!JSON.stringify(seenByOther.body).includes(me.full_name));
+
+  const pal = await login('david@fcu.test');
+  const started = await call('POST', '/v1/conversations', { token: pal, body: { user_id: me.id } });
+  assert.equal(started.status, 201);
+  const inbox = await call('GET', '/v1/conversations', { token: pal });
+  const theirs = inbox.body.items.find((c) => c.participant.id === me.id);
+  assert.ok(theirs, 'conversation with the student is listed');
+  assert.equal(theirs.participant.full_name, `@${me.username}`);
+
+  // Staff in the back office always see who it is.
+  const stored = store.get('users', me.id);
+  assert.equal(stored.fullName, me.full_name);
+
+  const off = await call('PATCH', '/v1/me', { token: student, body: { show_username_only: false } });
+  assert.equal(off.body.show_username_only, false);
+  assert.equal((await call('GET', `/v1/posts/${post.body.id}`, { token: sm })).body.author.full_name, me.full_name);
 });

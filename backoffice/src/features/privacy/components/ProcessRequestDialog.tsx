@@ -59,7 +59,7 @@ export function ProcessRequestDialog({
         </p>
 
         {isDeletion ? (
-          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          <div className="rounded-md border border-primary bg-primary-soft p-3 text-xs text-ink">
             Personal profile data will be deleted or anonymised. Immutable audit log
             entries required for legal compliance are retained without personal
             contact details.
@@ -85,7 +85,7 @@ export function ProcessRequestDialog({
             onClick={handleConfirm}
             className={`rounded-md px-3 py-1.5 text-sm font-semibold disabled:opacity-60 ${
               isDeletion
-                ? "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-danger text-white hover:brightness-95"
                 : "bg-primary text-foreground hover:brightness-95"
             }`}
           >

@@ -56,7 +56,7 @@ export function EmailDeliveryCard() {
     <div className="space-y-4 text-sm">
       <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">Email service</dt>
-        <dd className={data.configured ? "text-emerald-800" : "font-medium text-red-700"}>
+        <dd className={data.configured ? "text-ink" : "font-medium text-danger"}>
           {data.configured ? "Connected (API key set)" : "Not set up: RESEND_API_KEY is missing"}
         </dd>
         <dt className="text-muted-foreground">Sends from</dt>
@@ -68,7 +68,7 @@ export function EmailDeliveryCard() {
       </dl>
 
       {data.problems.length > 0 && (
-        <ul role="alert" className="space-y-1 rounded-md border border-red-300 bg-red-50 p-3 text-red-800">
+        <ul role="alert" className="space-y-1 rounded-md border border-danger/40 bg-danger-soft p-3 text-danger">
           {data.problems.map((p) => (
             <li key={p}>{p}</li>
           ))}
@@ -85,7 +85,7 @@ export function EmailDeliveryCard() {
           {sending ? "Sending..." : "Send me a test email"}
         </button>
         {result && (
-          <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-emerald-800" : "text-red-700"}>
+          <p role={result.ok ? "status" : "alert"} className={result.ok ? "text-ink" : "text-danger"}>
             {result.message}
           </p>
         )}
@@ -100,9 +100,9 @@ export function EmailDeliveryCard() {
             {data.recent.map((r, i) => (
               <li key={`${r.at}-${i}`} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                 <span>
-                  <span className={r.ok ? "text-emerald-800" : "font-medium text-red-700"}>{r.ok ? "Sent" : "Failed"}</span>{" "}
+                  <span className={r.ok ? "text-ink" : "font-medium text-danger"}>{r.ok ? "Sent" : "Failed"}</span>{" "}
                   · {r.template} · {r.to}
-                  {r.error && <span className="block text-xs text-red-700">{r.error}</span>}
+                  {r.error && <span className="block text-xs text-danger">{r.error}</span>}
                 </span>
                 <span className="text-xs text-muted-foreground">{new Date(r.at).toLocaleString()}</span>
               </li>

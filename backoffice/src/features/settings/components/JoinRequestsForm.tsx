@@ -41,7 +41,7 @@ export function JoinRequestsForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {saved && (
-        <p role="status" className="text-xs font-medium text-emerald-800">
+        <p role="status" className="text-xs font-medium text-ink">
           Join request setting saved.
         </p>
       )}
@@ -53,7 +53,7 @@ export function JoinRequestsForm() {
           onChange={(e) => setAutoApprove(e.target.checked)}
         />
         <span>
-          Approve requests to join a specific community automatically
+          Approve requests to join a specific caregroup automatically
           <span className="block text-xs text-muted-foreground">
             Students join at once. Turn off to have super-mentors approve each request (Join requests list).
           </span>

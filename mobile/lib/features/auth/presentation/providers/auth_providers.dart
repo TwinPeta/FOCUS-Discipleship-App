@@ -7,7 +7,8 @@ import '../../../profile/domain/user_profile.dart';
 import '../../../profile/presentation/profile_providers.dart';
 import '../../domain/auth_models.dart';
 
-/// The in-memory session (no secure storage yet, by decision).
+/// The signed-in session. It is kept in secure storage, so a student signs in
+/// once and stays signed in until they log out.
 class AuthController extends AsyncNotifier<AuthSession?> {
   @override
   Future<AuthSession?> build() =>

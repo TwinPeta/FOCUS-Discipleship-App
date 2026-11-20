@@ -147,6 +147,22 @@ void main() {
       expect(session.email, 'grace@fcu.test');
     });
 
+    test('isEmailAvailable asks the API and reads the answer', () async {
+      final taken = repo((request) async {
+        expect(request.url.path, '/v1/auth/email-available');
+        expect(request.url.queryParameters['email'], 'grace@fcu.test');
+        return _json(200, {'available': false});
+      });
+      expect(await taken.isEmailAvailable(' Grace@FCU.test '), isFalse);
+      final free = repo((_) async => _json(200, {'available': true}));
+      expect(await free.isEmailAvailable('new@fcu.test'), isTrue);
+    });
+
+    test('isEmailAvailable lets the step go on when the check fails', () async {
+      final limited = repo((_) async => _json(429, {'code': 'rate_limited'}));
+      expect(await limited.isEmailAvailable('a@fcu.test'), isTrue);
+    });
+
     test('signIn turns a 401 into InvalidCredentials', () async {
       final auth = repo((_) async => _json(401, {'code': 'unauthorized'}));
       await expectLater(

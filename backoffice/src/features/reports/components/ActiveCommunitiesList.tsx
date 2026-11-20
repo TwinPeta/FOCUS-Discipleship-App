@@ -17,8 +17,8 @@ export function ActiveCommunitiesList({
   return (
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div>
-        <h2 className="text-base font-semibold text-foreground">
-          Most active communities
+        <h2 className="eyebrow">
+          Most active caregroups
         </h2>
         <p className="text-xs text-muted">
           Ranked by percentage of members active in the selected period.
@@ -39,7 +39,7 @@ export function ActiveCommunitiesList({
                 {comm.activePercent}%
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-blue-tint">
               <div
                 className="h-full rounded-full bg-primary"
                 style={{ width: `${comm.activePercent}%` }}

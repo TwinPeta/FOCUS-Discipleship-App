@@ -53,7 +53,7 @@ export function InstitutionForm({
     try {
       await onSubmit(values);
     } catch {
-      setError("Could not save institution. Please try again.");
+      setError("Could not save campus. Please try again.");
     }
   }
 
@@ -62,15 +62,15 @@ export function InstitutionForm({
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {error}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="inst-name" className="block text-sm font-medium text-foreground">
-          Institution name
+        <label htmlFor="inst-name" className="block text-[13px] font-extrabold">
+          Campus name
         </label>
         <input
           id="inst-name"
@@ -79,7 +79,7 @@ export function InstitutionForm({
           {...register("name")}
         />
         {errors.name && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.name.message}
           </p>
         )}
@@ -87,7 +87,7 @@ export function InstitutionForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="inst-type" className="block text-sm font-medium text-foreground">
+          <label htmlFor="inst-type" className="block text-[13px] font-extrabold">
             Type
           </label>
           <select
@@ -102,7 +102,7 @@ export function InstitutionForm({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="inst-country" className="block text-sm font-medium text-foreground">
+          <label htmlFor="inst-country" className="block text-[13px] font-extrabold">
             Country
           </label>
           <input
@@ -112,7 +112,7 @@ export function InstitutionForm({
             {...register("country")}
           />
           {errors.country && (
-            <p role="alert" className="text-xs text-red-700">
+            <p role="alert" className="text-xs text-danger">
               {errors.country.message}
             </p>
           )}
@@ -120,7 +120,7 @@ export function InstitutionForm({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="inst-city" className="block text-sm font-medium text-foreground">
+        <label htmlFor="inst-city" className="block text-[13px] font-extrabold">
           City
         </label>
         <input
@@ -130,15 +130,15 @@ export function InstitutionForm({
           {...register("city")}
         />
         {errors.city && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.city.message}
           </p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="inst-cover" className="block text-sm font-medium text-foreground">
-          General community cover URL
+        <label htmlFor="inst-cover" className="block text-[13px] font-extrabold">
+          General caregroup cover URL
         </label>
         <input
           id="inst-cover"
@@ -167,7 +167,7 @@ export function InstitutionForm({
           disabled={isSubmitting}
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
         >
-          {isSubmitting ? "Saving..." : initial ? "Save changes" : "Create institution"}
+          {isSubmitting ? "Saving..." : initial ? "Save changes" : "Create campus"}
         </button>
         {onCancel && (
           <button

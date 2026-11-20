@@ -23,7 +23,7 @@ export function ScheduledReportsTable({
   return (
     <section className="space-y-3 rounded-xl border border-border bg-white p-5">
       <div>
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="eyebrow">
           Scheduled reports
         </h2>
         <p className="text-xs text-muted">
@@ -37,7 +37,7 @@ export function ScheduledReportsTable({
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-muted">
+              <tr className="border-b border-border bg-blue-tint text-xs font-semibold uppercase tracking-wide text-muted">
                 <th className="px-4 py-2.5">Report</th>
                 <th className="px-4 py-2.5">Cadence</th>
                 <th className="px-4 py-2.5">Recipient</th>
@@ -58,8 +58,8 @@ export function ScheduledReportsTable({
                       onClick={() => onToggleActive(s.id)}
                       className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         s.active
-                          ? "bg-emerald-50 text-emerald-800"
-                          : "bg-slate-100 text-muted"
+                          ? "bg-blue-soft text-ink"
+                          : "bg-blue-tint text-muted"
                       }`}
                     >
                       {s.active ? "Active" : "Paused"}

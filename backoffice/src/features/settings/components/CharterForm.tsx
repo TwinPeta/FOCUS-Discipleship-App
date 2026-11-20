@@ -28,7 +28,7 @@ export function CharterForm() {
     defaultValues: {
       version: "1.0",
       effectiveDate: "2026-01-01",
-      text: "We commit to honouring Christ, supporting one another in humility, and keeping our communities safe and welcoming.",
+      text: "We commit to honouring Christ, supporting one another in humility, and keeping our caregroups safe and welcoming.",
       requireAcceptance: true,
       repromptOnChange: true,
     },
@@ -53,14 +53,14 @@ export function CharterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {saved && (
-        <p role="status" className="text-xs font-medium text-emerald-800">
+        <p role="status" className="text-xs font-medium text-ink">
           Charter settings saved.
         </p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="charter-version" className="block text-sm font-medium">
+          <label htmlFor="charter-version" className="block text-[13px] font-extrabold">
             Version
           </label>
           <input
@@ -70,14 +70,14 @@ export function CharterForm() {
             {...register("version")}
           />
           {errors.version && (
-            <p role="alert" className="text-xs text-red-700">
+            <p role="alert" className="text-xs text-danger">
               {errors.version.message}
             </p>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="charter-date" className="block text-sm font-medium">
+          <label htmlFor="charter-date" className="block text-[13px] font-extrabold">
             Effective date
           </label>
           <input
@@ -90,7 +90,7 @@ export function CharterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="charter-text" className="block text-sm font-medium">
+        <label htmlFor="charter-text" className="block text-[13px] font-extrabold">
           Charter text shown at sign-up
         </label>
         <textarea
@@ -100,7 +100,7 @@ export function CharterForm() {
           {...register("text")}
         />
         {errors.text && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {errors.text.message}
           </p>
         )}

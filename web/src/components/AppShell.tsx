@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { onNotification, onMessage } from "@/lib/realtime";
 import { useAction, useGet } from "@/lib/hooks";
 import { Avatar } from "./ui";
 
@@ -30,8 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (status === "signedOut") router.replace(`/login`);
   }, [status, router]);
 
-  const notes = useGet<{ unread_count: number }>(ready ? "/me/notifications?limit=1" : null, 30000);
-  const chats = useGet<{ unread_total: number }>(ready ? "/conversations?limit=1" : null, 30000);
+  const notes = useGet<{ unread_count: number }>(ready ? "/me/notifications?limit=1" : null, onNotification);
+  const chats = useGet<{ unread_total: number }>(ready ? "/conversations?limit=1" : null, onMessage);
   const warnings = useGet<{ items: Warning[] }>(ready ? "/me/warnings" : null);
   const suspension = useGet<{ suspension: { reason: string; until: string | null } | null }>(ready ? "/me/suspension" : null);
   const ack = useAction();

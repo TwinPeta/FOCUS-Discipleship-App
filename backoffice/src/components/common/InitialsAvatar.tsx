@@ -18,8 +18,8 @@ interface InitialsAvatarProps {
 }
 
 const SIZE_CLASSES = {
-  sm: "h-7 w-7 text-[11px]",
-  md: "h-9 w-9 text-xs",
+  sm: "h-8 w-8 text-[11px]",
+  md: "h-[38px] w-[38px] text-[13px]",
   lg: "h-11 w-11 text-sm font-semibold",
   xl: "h-16 w-16 text-lg",
 } as const;
@@ -47,7 +47,7 @@ export function InitialsAvatar({
     <div
       role="img"
       aria-label={`Avatar for ${name}`}
-      className={`inline-flex items-center justify-center rounded-full bg-slate-900 font-bold text-white tracking-wider select-none shrink-0 ${sizeClasses} ${className}`}
+      className={`avatar font-extrabold select-none shrink-0 ${sizeClasses} ${className}`}
     >
       {getInitials(name)}
     </div>
@@ -59,7 +59,7 @@ export function InitialsAvatar({
     <SmartImage
       src={avatarUrl}
       alt={`Avatar for ${name}`}
-      className={`rounded-full shrink-0 ring-1 ring-black/5 ${sizeClasses} ${className}`}
+      className={`rounded-full shrink-0 ${sizeClasses} ${className}`}
       fallback={initials}
     />
   );

@@ -161,6 +161,25 @@ paths:
               schema:
                 type: object
                 properties: { available: { type: boolean } }
+  /auth/email-available:
+    get:
+      tags: [Auth]
+      operationId: checkEmail
+      summary: Check email availability
+      description: Sign-up forms ask this first, so a duplicate email shows at the start and not after the last step. Rate limited.
+      security: []
+      parameters:
+        - { name: email, in: query, required: true, schema: { type: string, format: email } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { available: { type: boolean } }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /auth/register:
     post:
       tags: [Auth]
@@ -425,6 +444,7 @@ paths:
                 email: { type: string, format: email }
                 institution_id: { type: string }
                 year_of_study: { type: integer, minimum: 1, maximum: 7 }
+                show_username_only: { type: boolean, description: 'Show my @username instead of my name (and no photo) to other students. Staff still see who I am.' }
                 home_church:
                   type: object
                   required: [name, location, pastor]
@@ -2203,6 +2223,7 @@ components:
         id: { type: string }
         full_name: { type: string }
         username: { type: string }
+        show_username_only: { type: boolean }
         photo_url: { type: [string, 'null'], format: uri }
         email: { type: [string, 'null'], format: email }
         phone: { type: [string, 'null'] }

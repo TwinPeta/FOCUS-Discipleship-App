@@ -10,7 +10,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Megaphone } from "lucide-react";
 import {
   createAnnouncement,
   type Announcement,
@@ -77,22 +76,19 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2">
-        <Megaphone className="h-5 w-5 text-primary" />
-        <h2 className="text-base font-semibold text-foreground">Compose Announcement</h2>
-      </div>
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4">
+      <h2 className="text-[22px] font-black">New announcement</h2>
 
       {error && (
-        <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
+        <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-2.5 text-xs text-danger">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="ann-audience" className="block text-xs font-medium text-muted">
-            Target Audience
+          <label htmlFor="ann-audience" className="block text-[13px] font-extrabold">
+            Audience
           </label>
           <select
             id="ann-audience"
@@ -101,15 +97,15 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
             onChange={(e) => setAudienceType(e.target.value as "all" | "community")}
             className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary"
           >
-            <option value="all">All Fellowship Communities</option>
-            <option value="community">Specific Community</option>
+            <option value="all">All caregroups</option>
+            <option value="community">Specific Caregroup</option>
           </select>
         </div>
 
         {audienceType === "community" && (
           <div className="space-y-1.5">
-            <label htmlFor="ann-community" className="block text-xs font-medium text-muted">
-              Select Community
+            <label htmlFor="ann-community" className="block text-[13px] font-extrabold">
+              Select Caregroup
             </label>
             <select
               id="ann-community"
@@ -129,7 +125,7 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="ann-title" className="block text-xs font-medium text-muted">
+        <label htmlFor="ann-title" className="block text-[13px] font-extrabold">
           Title
         </label>
         <input
@@ -144,7 +140,7 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="ann-message" className="block text-xs font-medium text-muted">
+        <label htmlFor="ann-message" className="block text-[13px] font-extrabold">
           Message body
         </label>
         <textarea
@@ -160,7 +156,7 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
 
       <div className="grid gap-4 sm:grid-cols-2 pt-1">
         <div className="space-y-1.5">
-          <label htmlFor="ann-timing" className="block text-xs font-medium text-muted">
+          <label htmlFor="ann-timing" className="block text-[13px] font-extrabold">
             Publish Timing
           </label>
           <select
@@ -176,7 +172,7 @@ export function AnnouncementForm({ onCreated, userCommunityId }: AnnouncementFor
 
         {publishTiming === "scheduled" && (
           <div className="space-y-1.5">
-            <label htmlFor="ann-scheduled-time" className="block text-xs font-medium text-muted">
+            <label htmlFor="ann-scheduled-time" className="block text-[13px] font-extrabold">
               Scheduled Date & Time
             </label>
             <input

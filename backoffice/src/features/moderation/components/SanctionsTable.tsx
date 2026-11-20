@@ -10,6 +10,9 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { StatusPill } from "@/components/data-table/StatusPill";
 import { reinstateSanction } from "@/features/moderation/queries";
 import type { SanctionRecord } from "@/features/moderation/schemas";
 import { ReinstateDialog } from "./ReinstateDialog";
@@ -23,6 +26,8 @@ interface SanctionsTableProps {
 export function SanctionsTable({ initialItems }: SanctionsTableProps) {
   const [items, setItems] = useRemoteItems<SanctionRecord>(initialItems, fetchSanctions);
   const [target, setTarget] = useState<SanctionRecord | null>(null);
+  const [search, setSearch] = useState("");
+  const shown = items.filter((i) => i.userName.toLowerCase().includes(search.trim().toLowerCase()));
 
   async function handleReinstate(reason: string) {
     if (!target) return;
@@ -34,55 +39,76 @@ export function SanctionsTable({ initialItems }: SanctionsTableProps) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-card border border-border bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Sanction</th>
-              <th className="px-4 py-3">Reason</th>
-              <th className="px-4 py-3">Issued by</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {items.length === 0 ? (
+      <section className="card flex flex-col gap-2">
+        <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" aria-hidden="true" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search a user"
+              aria-label="Search sanctions"
+              className="field-soft w-full pl-10 pr-3"
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  No sanctions recorded.
-                </td>
+                <th>User</th>
+                <th>Sanction</th>
+                <th>Reason</th>
+                <th>Date</th>
+                <th>By</th>
+                <th className="text-right">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ) : (
-              items.map((item) => (
-                <tr key={item.id} className="hover:bg-surface/60">
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {item.userName}
-                  </td>
-                  <td className="px-4 py-3">{item.type}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.reason}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.issuedBy}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.issuedAt}</td>
-                  <td className="px-4 py-3">
-                    {item.active ? "Active" : "Reinstated"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {item.active && (
-                      <button
-                        type="button"
-                        onClick={() => setTarget(item)}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface"
-                      >
-                        Reinstate
-                      </button>
-                    )}
+            </thead>
+            <tbody>
+              {shown.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted-foreground">
+                    No sanctions recorded.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                shown.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="flex items-center gap-2.5">
+                        <InitialsAvatar name={item.userName} />
+                        <p className="text-base font-extrabold">{item.userName}</p>
+                      </div>
+                    </td>
+                    <td>
+                      <StatusPill status={item.active ? String(item.type).toLowerCase() : "reinstated"} variant={item.active ? "suspended" : "inactive"} />
+                    </td>
+                    <td>{item.reason}</td>
+                    <td className="whitespace-nowrap text-sm">{item.issuedAt}</td>
+                    <td>{item.issuedBy}</td>
+                    <td className="text-right">
+                      {item.active && (
+                        <button type="button" onClick={() => setTarget(item)} className="rounded-md border border-border px-2.5 py-1 text-xs font-medium">
+                          Reinstate
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="notice mt-4">
+        <span>
+          <b>Escalation levels.</b> Level 1: super-mentors and mentors hide a message or warn a member. Level 2: admins
+          suspend an account or delete permanently. Every sanction keeps its reason, author and date.
+        </span>
       </div>
 
       <ReinstateDialog

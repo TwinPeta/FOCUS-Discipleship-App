@@ -10,6 +10,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { CommunityForm } from "@/features/communities/components/CommunityForm";
 import { createCommunity } from "@/features/communities/queries";
 import type { CommunityInput } from "@/features/communities/schemas";
@@ -25,20 +26,36 @@ export default function NewCommunityPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">New community</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create a community, assign a super-mentor and mentors, and upload a
-          cover photo.
-        </p>
-      </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title="New caregroup"
+        description="Create a caregroup, assign a super-mentor and mentors, and upload a cover photo."
+        backHref={ROUTES.communities}
+        backLabel="Back to caregroups"
+      />
 
-      <div className="rounded-card border border-border bg-white p-6">
-        <CommunityForm
-          onSubmit={handleCreate}
-          onCancel={() => router.push(ROUTES.communities)}
-        />
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="card min-w-0 flex-[999_1_520px]">
+          <CommunityForm onSubmit={handleCreate} onCancel={() => router.push(ROUTES.communities)} />
+        </div>
+
+        <aside className="flex min-w-0 flex-[1_1_280px] flex-col gap-4 lg:max-w-[360px]">
+          <section className="card flex flex-col gap-2">
+            <h2 className="eyebrow">How it works</h2>
+            <ul className="flex flex-col gap-2 text-[15px]">
+              <li>Students join instantly.</li>
+              <li>A student can join only one specific caregroup.</li>
+              <li>Mentors help the super-mentor guide the group.</li>
+            </ul>
+          </section>
+          <section className="card flex flex-col gap-2">
+            <h2 className="eyebrow">Visible in the app</h2>
+            <ul className="flex flex-col gap-2 text-[15px]">
+              <li>Caregroups list for the campus, with day, time and place.</li>
+              <li>Caregroup feed, prayer wall and resources.</li>
+            </ul>
+          </section>
+        </aside>
       </div>
     </div>
   );

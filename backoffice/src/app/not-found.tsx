@@ -20,7 +20,7 @@ export default function NotFound() {
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-primary mb-4">
         <Compass className="h-8 w-8" aria-hidden="true" />
       </div>
-      <h1 className="text-3xl font-extrabold tracking-tight">404 — Page Not Found</h1>
+      <h1 className="text-[34px] leading-[1.05]">404 — Page Not Found</h1>
       <p className="mt-2 text-sm text-muted max-w-md">
         The backoffice page or resource you are looking for does not exist or may have been moved.
       </p>

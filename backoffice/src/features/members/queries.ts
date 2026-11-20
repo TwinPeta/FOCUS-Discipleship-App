@@ -27,17 +27,23 @@ export async function createMember(input: AddUserInput): Promise<Member> {
   const res = await fetch("/api/proxy/members", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      country: input.country || undefined,
+      localChurch: input.localChurch || undefined,
+      yearOfStudy: input.yearOfStudy ? Number(input.yearOfStudy) : undefined,
+    }),
   });
   if (!res.ok) throw new Error("Failed to create member");
   return (await res.json()) as Member;
 }
 
-export async function changeMemberRole(id: string, role: Role): Promise<Member> {
+export async function changeMemberRole(id: string, role: Role | { customRoleId: string }, reason?: string): Promise<Member> {
+  const target = typeof role === "string" ? { role } : role;
   const res = await fetch(`/api/proxy/members/${id}/role`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify(reason?.trim() ? { ...target, reason: reason.trim() } : target),
   });
   if (!res.ok) throw new Error("Failed to change member role");
   return (await res.json()) as Member;
@@ -52,7 +58,7 @@ export async function moveMemberCommunity(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ communityId }),
   });
-  if (!res.ok) throw new Error("Failed to move member community");
+  if (!res.ok) throw new Error("Failed to move member caregroup");
   return (await res.json()) as Member;
 }
 

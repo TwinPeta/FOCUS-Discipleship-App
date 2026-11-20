@@ -35,16 +35,16 @@ export default function EditPathwayPage({
 
   if (loading) {
     return (
-      <main className="p-8 text-center text-sm text-muted">
+      <div className="p-8 text-center text-sm text-muted">
         Loading pathway details…
-      </main>
+      </div>
     );
   }
 
   if (error || !pathway) {
     return (
-      <main className="space-y-4">
-        <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+      <div className="space-y-4">
+        <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
           {error ?? "Pathway not found."}
         </div>
         <Link
@@ -54,12 +54,12 @@ export default function EditPathwayPage({
           <ArrowLeft className="h-4 w-4" />
           <span>Back to pathways</span>
         </Link>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
           <Link
@@ -69,13 +69,13 @@ export default function EditPathwayPage({
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to pathways</span>
           </Link>
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-[34px] leading-[1.05]">
             Edit Pathway: {pathway.name}
           </h1>
         </div>
       </div>
 
       <PathwayEditor initialPathway={pathway} />
-    </main>
+    </div>
   );
 }

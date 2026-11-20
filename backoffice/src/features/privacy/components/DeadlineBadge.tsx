@@ -17,7 +17,7 @@ interface DeadlineBadgeProps {
 export function DeadlineBadge({ deadlineAt, status }: DeadlineBadgeProps) {
   if (status === RequestStatus.Done) {
     return (
-      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+      <span className="inline-flex rounded-full bg-blue-soft px-2.5 py-0.5 text-xs font-medium text-ink">
         Completed
       </span>
     );
@@ -35,7 +35,7 @@ export function DeadlineBadge({ deadlineAt, status }: DeadlineBadgeProps) {
 
   if (diffDays < 0) {
     return (
-      <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+      <span className="inline-flex rounded-full bg-danger-soft px-2.5 py-0.5 text-xs font-semibold text-danger">
         Overdue ({Math.abs(diffDays)}d)
       </span>
     );
@@ -43,14 +43,14 @@ export function DeadlineBadge({ deadlineAt, status }: DeadlineBadgeProps) {
 
   if (diffDays <= 5) {
     return (
-      <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+      <span className="inline-flex rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-ink">
         Due in {diffDays}d
       </span>
     );
   }
 
   return (
-    <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-800">
+    <span className="inline-flex rounded-full bg-blue-tint px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
       {diffDays}d left
     </span>
   );

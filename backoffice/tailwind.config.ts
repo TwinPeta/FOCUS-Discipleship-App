@@ -23,6 +23,12 @@ const config: Config = {
         "muted-foreground": token("muted-foreground"),
         // `text-muted` is used widely across pages; alias it to the muted text token.
         muted: token("muted-foreground"),
+        ink: token("ink"),
+        blue: token("blue"),
+        "blue-mid": token("blue-mid"),
+        "blue-light": token("blue-light"),
+        "blue-soft": token("blue-soft"),
+        "blue-tint": token("blue-tint"),
         primary: token("primary"),
         "primary-hover": token("primary-hover"),
         "primary-soft": token("primary-soft"),
@@ -38,7 +44,19 @@ const config: Config = {
         "info-soft": token("info-soft"),
       },
       fontFamily: { sans: ["var(--font-sans)", "system-ui", "sans-serif"] },
-      borderRadius: { nav: "var(--radius-nav)", card: "var(--radius-card)" },
+      borderRadius: {
+        md: "12px",
+        lg: "14px",
+        xl: "18px",
+        nav: "var(--radius-nav)",
+        card: "var(--radius-card)",
+      },
+      boxShadow: { card: "var(--shadow-card)" },
+      backgroundImage: {
+        "grad-yellow": "var(--grad-yellow)",
+        "grad-blue": "var(--grad-blue)",
+        "grad-select": "var(--grad-select)",
+      },
       width: {
         sidebar: "var(--sidebar-width)",
         "sidebar-collapsed": "var(--sidebar-collapsed-width)",

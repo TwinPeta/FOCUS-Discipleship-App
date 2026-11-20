@@ -27,8 +27,8 @@ export function TabsWithCount<T extends string = string>({
   className = "",
 }: TabsWithCountProps<T>) {
   return (
-    <div className={`border-b border-border ${className}`}>
-      <nav role="tablist" aria-label="Status filter tabs" className="flex space-x-6">
+    <div className={className}>
+      <nav role="tablist" aria-label="Status filter tabs" className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -38,23 +38,11 @@ export function TabsWithCount<T extends string = string>({
               aria-selected={isActive}
               type="button"
               onClick={() => onChange(tab.id)}
-              className={`flex items-center gap-2 border-b-2 py-3 text-sm font-semibold transition ${
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted hover:border-slate-300 hover:text-foreground"
-              }`}
+              className="tab"
             >
               <span>{tab.label}</span>
               {typeof tab.count === "number" && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                    isActive
-                      ? "bg-primary-soft text-foreground"
-                      : "bg-slate-100 text-muted"
-                  }`}
-                >
-                  {tab.count}
-                </span>
+                <span className="opacity-80">{tab.count.toLocaleString("en-US")}</span>
               )}
             </button>
           );

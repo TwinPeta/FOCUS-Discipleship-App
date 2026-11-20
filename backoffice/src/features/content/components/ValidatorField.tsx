@@ -17,7 +17,7 @@ interface ValidatorFieldProps {
 export function ValidatorField({ value, onChange }: ValidatorFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor="validator-name" className="block text-sm font-medium text-foreground">
+      <label htmlFor="validator-name" className="block text-[13px] font-extrabold">
         Validator (pastor or committee)
       </label>
       <input

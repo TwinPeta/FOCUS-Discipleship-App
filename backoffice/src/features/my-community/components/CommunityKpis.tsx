@@ -36,15 +36,11 @@ export function CommunityKpis({ kpis }: { kpis: CommunityKpiSummary }) {
   ];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Community KPIs">
+    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Caregroup KPIs">
       {cards.map((card) => (
-        <Link
-          key={card.label}
-          href={card.href}
-          className="rounded-xl border border-border bg-white p-4 transition hover:border-primary"
-        >
-          <p className="text-xs font-medium text-muted">{card.label}</p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">{card.value}</p>
+        <Link key={card.label} href={card.href} className="card flex flex-col gap-1 transition hover:shadow-md">
+          <p className="eyebrow">{card.label}</p>
+          <p className="text-[34px] font-black leading-none tracking-tight">{card.value}</p>
         </Link>
       ))}
     </section>

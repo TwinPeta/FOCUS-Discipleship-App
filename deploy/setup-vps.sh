@@ -111,7 +111,7 @@ BASE_URL=https://${API_DOMAIN}
 CORS_ORIGINS=${CORS}
 JWT_SECRET=$(openssl rand -hex 48)
 ACCESS_TOKEN_TTL=15m
-REFRESH_TOKEN_TTL_DAYS=30
+REFRESH_TOKEN_TTL_DAYS=365
 # --- Fill these in, then restart the API ---
 # PostgreSQL via Prisma, e.g. postgresql://user:pass@host:5432/focus?sslmode=require&connection_limit=10
 # (without it the API falls back to memory and loses data on restart). After setting it run: npm run db:deploy

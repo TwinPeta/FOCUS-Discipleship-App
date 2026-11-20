@@ -83,14 +83,14 @@ export function ScheduleReportDialog({
         {error && (
           <div
             role="alert"
-            className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800"
+            className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-xs text-danger"
           >
             {error}
           </div>
         )}
 
         <div className="space-y-1">
-          <label htmlFor="sched-type" className="block text-xs font-medium text-muted">
+          <label htmlFor="sched-type" className="block text-[13px] font-extrabold">
             Report type
           </label>
           <select
@@ -102,13 +102,13 @@ export function ScheduleReportDialog({
             className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground"
           >
             <option value="discipleship_summary">Discipleship summary</option>
-            <option value="community_health">Community health &amp; attendance</option>
+            <option value="community_health">Caregroup health &amp; attendance</option>
             <option value="content_completions">Content completions</option>
           </select>
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="sched-cadence" className="block text-xs font-medium text-muted">
+          <label htmlFor="sched-cadence" className="block text-[13px] font-extrabold">
             Cadence
           </label>
           <select
@@ -126,7 +126,7 @@ export function ScheduleReportDialog({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="sched-email" className="block text-xs font-medium text-muted">
+          <label htmlFor="sched-email" className="block text-[13px] font-extrabold">
             Recipient email
           </label>
           <input
@@ -144,7 +144,7 @@ export function ScheduleReportDialog({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-slate-50"
+            className="rounded-md border border-border px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-blue-tint"
           >
             Cancel
           </button>

@@ -60,14 +60,14 @@ export default function MyCommunityHomePage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="flex flex-col gap-5">
       {error && <ErrorState message={error} onRetry={reload} />}
       {!data && loading && <PanelSkeleton />}
       {data && (
         <>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-[34px] leading-[1.05]">
               {data.communityName}
             </h1>
             <p className="mt-1 text-sm text-muted">
@@ -95,6 +95,6 @@ export default function MyCommunityHomePage() {
         <FollowUpList members={data.followUpMembers} />
         </>
       )}
-    </main>
+    </div>
   );
 }

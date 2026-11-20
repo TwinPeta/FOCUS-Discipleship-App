@@ -10,7 +10,7 @@ import type { Comment, Page, PrayerRequest } from "@/lib/types";
 export default function PrayerPage() {
   const { id } = useParams<{ id: string }>();
   const got = useGet<PrayerRequest>(`/prayer-requests/${id}`);
-  const responses = useGet<Page<Comment>>(`/prayer-requests/${id}/responses?limit=100`, 30000);
+  const responses = useGet<Page<Comment>>(`/prayer-requests/${id}/responses?limit=100`);
   return (
     <>
       <PageTitle title="Prayer request" back={{ href: got.data ? `/community/${got.data.community_id}?tab=prayer` : "/community", label: "Back to the prayer wall" }} />

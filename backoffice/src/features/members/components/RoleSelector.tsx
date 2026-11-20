@@ -18,6 +18,8 @@ interface RoleSelectorProps {
   onChange: (role: Role) => void;
   roles?: Role[];
   disabled?: boolean;
+  /** "chips" shows the roles as radio pills (Add user); "select" is the compact dropdown */
+  variant?: "select" | "chips";
 }
 
 const DEFAULT_ROLES: Role[] = [
@@ -35,7 +37,36 @@ export function RoleSelector({
   onChange,
   roles = DEFAULT_ROLES,
   disabled = false,
+  variant = "select",
 }: RoleSelectorProps) {
+  if (variant === "chips") {
+    return (
+      <div role="radiogroup" id={id} className="flex flex-wrap gap-2.5">
+        {roles.map((r) => {
+          const selected = r === value;
+          return (
+            <button
+              key={r}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              onClick={() => onChange(r)}
+              className={`inline-flex min-h-[40px] items-center gap-2 rounded-full px-3.5 text-base font-bold ${
+                selected ? "border-2 border-ink bg-grad-yellow" : "border-2 border-ink bg-white font-semibold"
+              }`}
+            >
+              <span className="grid h-[18px] w-[18px] place-items-center rounded-full border-2 border-ink bg-white">
+                {selected && <span className="h-2 w-2 rounded-full bg-ink" />}
+              </span>
+              {ROLE_LABELS[r]}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <select
       id={id}

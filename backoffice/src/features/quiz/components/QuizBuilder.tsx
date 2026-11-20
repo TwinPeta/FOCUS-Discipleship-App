@@ -85,7 +85,7 @@ export function QuizBuilder({ onSave }: QuizBuilderProps) {
       {validationErrors.length > 0 && (
         <div
           role="alert"
-          className="space-y-1 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+          className="space-y-1 rounded-md border border-danger/40 bg-danger-soft p-4 text-sm text-danger"
         >
           <p className="font-semibold">Please fix the following before saving:</p>
           <ul className="list-disc pl-5 text-xs">
@@ -99,7 +99,7 @@ export function QuizBuilder({ onSave }: QuizBuilderProps) {
       {saved && (
         <div
           role="status"
-          className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          className="rounded-md border border-blue/30 bg-blue-soft px-4 py-3 text-sm text-ink"
         >
           Quiz saved.
         </div>

@@ -21,7 +21,7 @@ const sourceSans = Source_Sans_3({
 
 export const metadata = {
   title: "FCU Backoffice",
-  description: "Manage communities, mentors, content and moderation for student communities.",
+  description: "Manage caregroups, mentors, content and moderation for student caregroups.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

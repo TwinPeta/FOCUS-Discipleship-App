@@ -21,6 +21,7 @@ router.patch('/', (req, res, next) => {
       email: { type: 'string', email: true },
       institution_id: { type: 'string' },
       year_of_study: { type: 'number' },
+      show_username_only: { type: 'boolean' },
     });
     const u = req.user;
     const errs = [];
@@ -48,6 +49,7 @@ router.patch('/', (req, res, next) => {
       u.photoMediaId = b.photo_media_id || null;
     }
     if (b.full_name) u.fullName = b.full_name.trim();
+    if (b.show_username_only !== undefined) u.showUsernameOnly = b.show_username_only;
     if (b.country) u.country = b.country;
     if (homeChurch) u.homeChurch = homeChurch;
     if (year !== undefined && year !== null) u.yearOfStudy = year;

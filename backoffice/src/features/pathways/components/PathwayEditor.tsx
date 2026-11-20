@@ -26,6 +26,9 @@ import {
 
 interface PathwayEditorProps {
   initialPathway?: Pathway | null;
+  /** When given, the editor stays on the page (inline panel) instead of navigating away */
+  onSaved?: (saved: Pathway) => void;
+  onCancel?: () => void;
 }
 
 const AVAILABLE_BADGES = [
@@ -35,7 +38,7 @@ const AVAILABLE_BADGES = [
   { id: "bdg-4", name: "Prayer Champion" },
 ];
 
-export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
+export function PathwayEditor({ initialPathway, onSaved, onCancel }: PathwayEditorProps) {
   const router = useRouter();
   const [name, setName] = useState(initialPathway?.name ?? "");
   const [theme, setTheme] = useState(initialPathway?.theme ?? "");
@@ -71,7 +74,7 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
 
     setSaving(true);
     try {
-      await savePathway(
+      const saved = await savePathway(
         {
           name: name.trim(),
           theme: theme.trim(),
@@ -84,8 +87,12 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
         },
         initialPathway?.id,
       );
-      router.push(ROUTES.pathways);
-      router.refresh();
+      if (onSaved) {
+        onSaved(saved);
+      } else {
+        router.push(ROUTES.pathways);
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save pathway.");
     } finally {
@@ -96,17 +103,17 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
   const existingContentIds = steps.map((s) => s.contentId);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+        <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft p-3 text-sm text-danger">
           {error}
         </div>
       )}
 
-      <div className="grid gap-6 rounded-xl border border-border bg-white p-6 shadow-sm md:grid-cols-2">
+      <div className="card flex flex-col gap-4">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="pathway-name" className="block text-sm font-medium text-foreground">
+            <label htmlFor="pathway-name" className="block text-[13px] font-extrabold">
               Pathway name
             </label>
             <input
@@ -122,7 +129,7 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="pathway-theme" className="block text-sm font-medium text-foreground">
+              <label htmlFor="pathway-theme" className="block text-[13px] font-extrabold">
                 Theme / Ministry area
               </label>
               <input
@@ -137,7 +144,7 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="pathway-level" className="block text-sm font-medium text-foreground">
+              <label htmlFor="pathway-level" className="block text-[13px] font-extrabold">
                 Difficulty level
               </label>
               <select
@@ -154,7 +161,7 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="pathway-description" className="block text-sm font-medium text-foreground">
+            <label htmlFor="pathway-description" className="block text-[13px] font-extrabold">
               Description
             </label>
             <textarea
@@ -172,7 +179,7 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
           <UnlockRuleSelect value={unlockRule} onChange={setUnlockRule} />
 
           <div className="space-y-1.5">
-            <label htmlFor="pathway-badge" className="block text-sm font-medium text-foreground">
+            <label htmlFor="pathway-badge" className="block text-[13px] font-extrabold">
               Badge awarded upon completion
             </label>
             <select
@@ -207,10 +214,10 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
         </div>
       </div>
 
-      <section className="space-y-3 rounded-xl border border-border bg-white p-6 shadow-sm">
+      <section className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Pathway steps</h2>
+            <h2 className="eyebrow">Pathway steps</h2>
             <p className="text-xs text-muted">
               Add devotionals, videos, documents, or quizzes in sequential order.
             </p>
@@ -224,20 +231,19 @@ export function PathwayEditor({ initialPathway }: PathwayEditorProps) {
         <StepList steps={steps} onChange={setSteps} />
       </section>
 
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-        <Link
-          href={ROUTES.pathways}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-slate-50"
-        >
-          Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+      <div className="flex flex-wrap items-center gap-2.5">
+        <button type="submit" disabled={saving} className="btn btn-primary">
           {saving ? "Saving…" : initialPathway ? "Update pathway" : "Create pathway"}
         </button>
+        {onCancel ? (
+          <button type="button" onClick={onCancel} className="btn btn-secondary">
+            Cancel
+          </button>
+        ) : (
+          <Link href={ROUTES.pathways} className="btn btn-secondary">
+            Cancel
+          </Link>
+        )}
       </div>
     </form>
   );

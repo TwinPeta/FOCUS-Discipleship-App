@@ -80,11 +80,11 @@ export function VideoUploader({ value, onUploaded }: VideoUploaderProps) {
         </div>
       )}
 
-      {status === "done" && <p className="text-xs font-medium text-emerald-800">Video uploaded.</p>}
+      {status === "done" && <p className="text-xs font-medium text-ink">Video uploaded.</p>}
 
       {error && (
         <div className="flex items-center justify-between gap-2">
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs text-danger">
             {error}
           </p>
           {lastFile && status === "error" && (

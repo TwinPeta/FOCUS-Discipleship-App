@@ -56,7 +56,7 @@ export function ChangeRoleDialog({
         </h2>
 
         <div className="space-y-1.5">
-          <label htmlFor="new-role-select" className="block text-sm font-medium">
+          <label htmlFor="new-role-select" className="block text-[13px] font-extrabold">
             New role
           </label>
           <RoleSelector id="new-role-select" value={role} onChange={setRole} />

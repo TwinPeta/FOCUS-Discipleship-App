@@ -9,6 +9,7 @@
 
 "use client";
 
+import { Search } from "lucide-react";
 import { ContentType } from "@/types/enums";
 
 interface ContentFiltersProps {
@@ -25,15 +26,18 @@ export function ContentFilters({
   onTypeChange,
 }: ContentFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+      <div className="relative min-w-[220px] flex-1">
+      <Search className="pointer-events-none absolute left-3.5 top-3.5 h-[18px] w-[18px] text-muted" aria-hidden="true" />
       <input
         type="search"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search by title or Bible character/text..."
+        placeholder="Search by title or Bible character or text"
         aria-label="Search content"
-        className="w-full max-w-sm rounded-md border border-border bg-white px-3 py-2 text-sm"
+        className="field-soft w-full pl-10 pr-3"
       />
+      </div>
 
       <select
         value={typeFilter}

@@ -17,10 +17,10 @@ export default function ForbiddenPage() {
       role="main"
       className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-background text-foreground"
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 mb-4">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-amber-600 mb-4">
         <ShieldAlert className="h-8 w-8" aria-hidden="true" />
       </div>
-      <h1 className="text-3xl font-extrabold tracking-tight">403 — Access Restricted</h1>
+      <h1 className="text-[34px] leading-[1.05]">403 — Access Restricted</h1>
       <p className="mt-2 text-sm text-muted max-w-md">
         Your staff account does not have sufficient permissions to access this backoffice area. Contact a System Administrator if you believe your account role needs updating.
       </p>

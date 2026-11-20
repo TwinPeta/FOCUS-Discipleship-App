@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateProfile } from "@/features/account/queries";
 import { useSession } from "@/features/auth/hooks/useSession";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { uploadFile } from "@/lib/upload";
 import { ROLE_LABELS } from "@/lib/permissions/roles";
 
 const profileSchema = z.object({
@@ -28,10 +30,13 @@ export function ProfileForm() {
   const { user, updateUser } = useSession();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -40,6 +45,8 @@ export function ProfileForm() {
       avatarUrl: user?.avatarUrl ?? "",
     },
   });
+
+  const avatarUrl = watch("avatarUrl");
 
   async function onSubmit(values: ProfileValues) {
     setSaved(false);
@@ -54,93 +61,82 @@ export function ProfileForm() {
     }
   }
 
+  async function onPhoto(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      setValue("avatarUrl", await uploadFile(file, "avatar"), { shouldDirty: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not upload the photo.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       {saved && (
-        <div
-          role="status"
-          className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
-        >
-          Profile updated.
+        <div role="status" className="notice">
+          <span>Profile updated.</span>
         </div>
       )}
       {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
-        >
+        <div role="alert" className="rounded-lg bg-danger-soft px-3.5 py-2.5 text-sm font-semibold text-danger">
           {error}
         </div>
       )}
 
-      <div className="space-y-1.5">
-        <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
+      <div className="flex items-center gap-4">
+        <InitialsAvatar name={user?.fullName ?? ""} avatarUrl={avatarUrl || null} size="xl" />
+        <div className="flex flex-col items-start gap-1">
+          <label htmlFor="avatar-file" className="btn btn-secondary btn-sm cursor-pointer">
+            {uploading ? "Uploading…" : "Change photo"}
+          </label>
+          <input
+            id="avatar-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(e) => onPhoto(e.target.files?.[0])}
+          />
+          <p className="text-xs opacity-80">JPG, PNG or WebP, up to 2 MB.</p>
+        </div>
+      </div>
+      <input type="hidden" {...register("avatarUrl")} />
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="fullName" className="text-[13px] font-extrabold">
           Full name
         </label>
-        <input
-          id="fullName"
-          type="text"
-          aria-invalid={Boolean(errors.fullName)}
-          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          {...register("fullName")}
-        />
+        <input id="fullName" type="text" aria-invalid={Boolean(errors.fullName)} className="w-full px-3.5" {...register("fullName")} />
         {errors.fullName && (
-          <p role="alert" className="text-xs text-red-700">
+          <p role="alert" className="text-xs font-semibold text-danger">
             {errors.fullName.message}
           </p>
         )}
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="avatarUrl" className="block text-sm font-medium text-foreground">
-          Photo URL
-        </label>
-        <input
-          id="avatarUrl"
-          type="url"
-          placeholder="https://..."
-          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          {...register("avatarUrl")}
-        />
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="email-readonly" className="block text-sm font-medium text-muted-foreground">
-            Work email
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email-readonly" className="text-[13px] font-extrabold">
+            Email
           </label>
-          <input
-            id="email-readonly"
-            type="email"
-            value={user?.email ?? ""}
-            readOnly
-            disabled
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-muted-foreground"
-          />
+          <input id="email-readonly" type="email" value={user?.email ?? ""} readOnly disabled className="w-full px-3.5" />
         </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="role-readonly" className="block text-sm font-medium text-muted-foreground">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="role-readonly" className="text-[13px] font-extrabold">
             Role
           </label>
-          <input
-            id="role-readonly"
-            type="text"
-            value={user?.role ? ROLE_LABELS[user.role] : ""}
-            readOnly
-            disabled
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-muted-foreground"
-          />
+          <input id="role-readonly" type="text" value={user?.role ? ROLE_LABELS[user.role] : ""} readOnly disabled className="w-full px-3.5" />
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground transition hover:brightness-95 disabled:opacity-60"
-      >
-        {isSubmitting ? "Saving..." : "Save changes"}
-      </button>
+      <div className="flex flex-wrap gap-2.5">
+        <button type="submit" disabled={isSubmitting || uploading} className="btn btn-primary">
+          {isSubmitting ? "Saving..." : "Save changes"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -67,7 +67,7 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+        <label htmlFor="email" className="block text-[13px] font-extrabold">
           Work email
         </label>
         <input
@@ -81,7 +81,7 @@ export function ForgotPasswordForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" role="alert" className="text-xs text-red-700">
+          <p id="email-error" role="alert" className="text-xs text-danger">
             {errors.email.message}
           </p>
         )}

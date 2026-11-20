@@ -1,19 +1,22 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Composer, Confirm, Load, PageTitle, Panel, ReportButton } from "@/components/ui";
 import { post, postOnce, put } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
 import { useGet } from "@/lib/hooks";
+import { useRealtime, type LiveEvent } from "@/lib/realtime";
 import type { Message, Page, UserRef } from "@/lib/types";
 
 export default function Thread() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  // Newest first from the API; checked every few seconds while the page is open.
-  const got = useGet<Page<Message> & { participant: UserRef }>(`/conversations/${id}/messages?limit=100`, 4000);
+  const { publish } = useRealtime();
+  // Newest first from the API; loaded once, then updated when a message arrives in this chat.
+  const onThisChat = useCallback((e: LiveEvent) => (e.event === "message.created" || e.event === "message.read") && (!e.data.conversation_id || e.data.conversation_id === id), [id]);
+  const got = useGet<Page<Message> & { participant: UserRef }>(`/conversations/${id}/messages?limit=100`, onThisChat);
   const end = useRef<HTMLDivElement>(null);
   const [blocking, setBlocking] = useState(false);
   const items = got.data ? [...got.data.items].reverse() : [];
@@ -25,8 +28,8 @@ export default function Thread() {
   }, [newest]);
 
   useEffect(() => {
-    if (unread) post(`/conversations/${id}/read`, {}).catch(() => undefined);
-  }, [unread, id, newest]);
+    if (unread) post(`/conversations/${id}/read`, {}).then(() => publish({ event: "local.messages", data: {} })).catch(() => undefined);
+  }, [unread, id, newest, publish]);
 
   const other = got.data?.participant;
   return (

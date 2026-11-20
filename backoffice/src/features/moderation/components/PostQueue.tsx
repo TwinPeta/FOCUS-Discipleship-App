@@ -10,6 +10,8 @@
 "use client";
 
 import { useState } from "react";
+import { QueueList } from "@/components/common/QueueList";
+import { formatRelativeTime } from "@/lib/format/date";
 import { actOnPost } from "@/features/moderation/queries";
 import type { ModerationPost, PostAction } from "@/features/moderation/schemas";
 import { PostReview } from "./PostReview";
@@ -36,50 +38,20 @@ export function PostQueue({ initialItems }: PostQueueProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className={selected ? "lg:col-span-2" : "lg:col-span-3"}>
-        <div className="overflow-x-auto rounded-card border border-border bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Author</th>
-                <th className="px-4 py-3">Community</th>
-                <th className="px-4 py-3">Reports</th>
-                <th className="px-4 py-3">Visibility</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No prayer requests or posts awaiting review.
-                  </td>
-                </tr>
-              ) : (
-                items.map((post) => (
-                  <tr key={post.id} className="hover:bg-surface/60">
-                    <td className="px-4 py-3 font-medium text-foreground">{post.kind}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{post.authorName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{post.communityName}</td>
-                    <td className="px-4 py-3">{post.reportCount}</td>
-                    <td className="px-4 py-3">{post.hidden ? "Hidden" : "Visible"}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(post)}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface"
-                      >
-                        Review
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+    <div className="flex flex-wrap items-start gap-4">
+      <div className="min-w-0 flex-[999_1_560px]">
+        <QueueList
+          items={items.map((post) => ({
+            id: post.id,
+            title: post.kind === "PRAYER" ? "Prayer request" : post.kind === "POST" ? "Feed post" : "Comment",
+            status: post.hidden ? "Hidden" : "Flagged",
+            variant: post.hidden ? "inactive" : "pending",
+            lines: [`${post.authorName} · ${post.communityName}`, `${post.reportCount} ${post.reportCount === 1 ? "report" : "reports"} · ${formatRelativeTime(post.createdAt)}`],
+          }))}
+          selectedId={selected?.id}
+          onSelect={(id) => setSelected(items.find((p) => p.id === id) ?? null)}
+          emptyText="No prayer requests or posts awaiting review."
+        />
       </div>
 
       {selected && (

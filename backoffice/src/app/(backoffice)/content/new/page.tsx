@@ -10,6 +10,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { ContentTypeSwitch } from "@/features/content/components/ContentTypeSwitch";
@@ -78,23 +79,21 @@ export default function NewContentPage({
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">New content</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            All content requires validation before it is published to students.
-          </p>
-        </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title={type === ContentType.Quiz ? "Quiz builder" : "New content"}
+        description="All content requires validation before it is published to students."
+        backHref={ROUTES.content}
+        backLabel="Back to content"
+      />
 
-        <ContentTypeSwitch value={type} onChange={setType} />
-      </div>
+      <ContentTypeSwitch value={type} onChange={setType} />
 
       {type === ContentType.Quiz ? (
         <QuizBuilder />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 rounded-card border border-border bg-white p-6 lg:col-span-2">
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="card flex min-w-0 flex-[999_1_520px] flex-col gap-6">
             <DetailsFields
               title={title}
               onTitleChange={setTitle}
@@ -126,6 +125,7 @@ export default function NewContentPage({
             )}
           </div>
 
+          <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-4 lg:max-w-[380px]">
           <PublishingCard
             status={ContentStatus.Draft}
             authorName={user?.fullName ?? "Staff author"}
@@ -137,6 +137,14 @@ export default function NewContentPage({
             onSaveDraft={() => handleSave(false)}
             onSubmitForReview={() => handleSave(true)}
           />
+          <aside className="card flex flex-col gap-2">
+            <h2 className="eyebrow">Shown in the app</h2>
+            <ul className="flex flex-col gap-2 text-[15px]">
+              <li>Resources, under the content type and the linked Bible character or text.</li>
+              <li>Pathway steps, if you add it to a pathway.</li>
+            </ul>
+          </aside>
+          </div>
         </div>
       )}
     </div>

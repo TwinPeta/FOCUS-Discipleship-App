@@ -25,11 +25,11 @@ export default function NewInstitutionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">New institution</h1>
+        <h1 className="text-[34px] leading-[1.05]">New campus</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add a university or high school. A general community will be created
+          Add a university or high school. A general caregroup will be created
           automatically.
         </p>
       </div>

@@ -39,7 +39,15 @@ export interface ScheduledReport {
   active: boolean;
 }
 
+export interface ReportsSummary {
+  members: { value: number; changePercent: number };
+  active: { value: number; changePercent: number };
+  meetingsAttended: { value: number; changePercent: number };
+  reportsHandled: { value: number; averageAnswerHours: number };
+}
+
 export interface ReportsData {
+  summary?: ReportsSummary;
   membersOverTime: MembersTimePoint[];
   completionsByType: CompletionByTypePoint[];
   activeCommunities: ActiveCommunityStat[];
@@ -48,7 +56,7 @@ export interface ReportsData {
 
 export const REPORT_TYPE_LABELS: Record<ScheduleReportInput["reportType"], string> = {
   discipleship_summary: "Discipleship summary",
-  community_health: "Community health & attendance",
+  community_health: "Caregroup health & attendance",
   content_completions: "Content completions",
 };
 
@@ -78,7 +86,7 @@ export async function exportReportFile(
 
   if (format === "csv") {
     const lines = [
-      "Community,Campus,Members,ActivePercent",
+      "Caregroup,Campus,Members,ActivePercent",
       ...data.activeCommunities.map(
         (c) => `"${c.name}","${c.campus}",${c.memberCount},${c.activePercent}%`,
       ),

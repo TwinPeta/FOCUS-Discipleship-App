@@ -89,7 +89,7 @@ export function CommunityForm({
     try {
       await onSubmit(values);
     } catch {
-      setError("Could not save community. Please try again.");
+      setError("Could not save caregroup. Please try again.");
     }
   }
 
@@ -98,7 +98,7 @@ export function CommunityForm({
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
         >
           {error}
         </div>
@@ -108,15 +108,15 @@ export function CommunityForm({
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="institutionId" className="block text-sm font-medium text-foreground">
-                Institution
+              <label htmlFor="institutionId" className="block text-[13px] font-extrabold">
+                Campus
               </label>
               <select
                 id="institutionId"
                 className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
                 {...register("institutionId")}
               >
-                <option value="">Select institution</option>
+                <option value="">Select campus</option>
                 {institutions.map((inst) => (
                   <option key={inst.id} value={inst.id}>
                     {inst.name}
@@ -124,15 +124,15 @@ export function CommunityForm({
                 ))}
               </select>
               {errors.institutionId && (
-                <p role="alert" className="text-xs text-red-700">
+                <p role="alert" className="text-xs text-danger">
                   {errors.institutionId.message}
                 </p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="kind" className="block text-sm font-medium text-foreground">
-                Community type
+              <label htmlFor="kind" className="block text-[13px] font-extrabold">
+                Caregroup type
               </label>
               <select
                 id="kind"
@@ -146,8 +146,8 @@ export function CommunityForm({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="comm-name" className="block text-sm font-medium text-foreground">
-              Community name
+            <label htmlFor="comm-name" className="block text-[13px] font-extrabold">
+              Caregroup name
             </label>
             <input
               id="comm-name"
@@ -156,14 +156,14 @@ export function CommunityForm({
               {...register("name")}
             />
             {errors.name && (
-              <p role="alert" className="text-xs text-red-700">
+              <p role="alert" className="text-xs text-danger">
                 {errors.name.message}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="comm-desc" className="block text-sm font-medium text-foreground">
+            <label htmlFor="comm-desc" className="block text-[13px] font-extrabold">
               Description
             </label>
             <textarea
@@ -202,7 +202,7 @@ export function CommunityForm({
                 className="h-4 w-4 rounded border-border accent-primary"
                 {...register("openForJoinRequests")}
               />
-              Open for join requests
+              Open for new members
             </label>
 
             <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export function CommunityForm({
           disabled={isSubmitting}
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
         >
-          {isSubmitting ? "Saving..." : initial ? "Save changes" : "Create community"}
+          {isSubmitting ? "Saving..." : initial ? "Save changes" : "Create caregroup"}
         </button>
         {onCancel && (
           <button
