@@ -56,6 +56,17 @@ class AppGradients {
     colors: [Color(0xFF1C2B3C), Color(0xFF22272E), Color(0xFF2A2412)],
   );
 
+  static const _hubHeaderLight = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFEDB0), Color(0xFFFFD25E), Color(0xFFF5B72E)],
+    stops: [0, 0.55, 1],
+  );
+
+  /// Caregroups hub and My profile header: soft gold.
+  static LinearGradient get hubHeader =>
+      AppColors.isDark ? _dark : _hubHeaderLight;
+
   /// Sub-page header (Settings, Help, Messages...): blue to soft yellow.
   static LinearGradient get pageHeader =>
       AppColors.isDark ? _pageHeaderDark : _pageHeaderLight;

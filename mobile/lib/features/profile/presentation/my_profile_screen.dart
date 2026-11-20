@@ -97,7 +97,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.brand,
+        gradient: AppGradients.hubHeader,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
