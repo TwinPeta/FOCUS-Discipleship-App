@@ -91,12 +91,12 @@ class InfoMembersScreen extends ConsumerWidget {
                     AppChip(
                       label:
                           '${community.meetingDay} · ${community.meetingTime}',
-                      backgroundColor: AppColors.honey,
+                      backgroundColor: AppColors.primarySoft,
                     ),
                   if (community.room != null)
                     AppChip(
                       label: community.room!,
-                      backgroundColor: AppColors.cream,
+                      backgroundColor: AppColors.primarySoft,
                     ),
                 ],
               ),
@@ -137,7 +137,7 @@ class InfoMembersScreen extends ConsumerWidget {
                             ? AppColors.amber
                             : onlineMembers[i].role == PersonRole.mentor
                             ? AppColors.honey
-                            : AppColors.cream,
+                            : AppColors.primarySoft,
                       ),
                     ),
                   if (otherOnlineCount > 0)

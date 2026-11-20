@@ -258,7 +258,7 @@ class _InfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -378,7 +378,7 @@ class _JoinStatusBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: status == _JoinStatus.member
                       ? AppColors.honey
-                      : AppColors.cream,
+                      : AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(

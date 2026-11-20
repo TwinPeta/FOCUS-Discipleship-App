@@ -96,13 +96,13 @@ class _NoneSlot extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.honey,
+                color: AppColors.primarySoft,
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Icon(
                 Icons.diversity_3_rounded,
-                color: AppColors.ink,
+                color: AppColors.primary,
                 size: 22,
               ),
             ),
