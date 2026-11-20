@@ -67,6 +67,17 @@ class AppGradients {
   static LinearGradient get hubHeader =>
       AppColors.isDark ? _dark : _hubHeaderLight;
 
+  static const _celebrationLight = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFE9A8), Color(0xFFFFD25E), Color(0xFFF4B400)],
+    stops: [0, 0.5, 1],
+  );
+
+  /// Celebration screens (badge earned, joined): gold top area.
+  static LinearGradient get celebration =>
+      AppColors.isDark ? _dark : _celebrationLight;
+
   /// Sub-page header (Settings, Help, Messages...): blue to soft yellow.
   static LinearGradient get pageHeader =>
       AppColors.isDark ? _pageHeaderDark : _pageHeaderLight;

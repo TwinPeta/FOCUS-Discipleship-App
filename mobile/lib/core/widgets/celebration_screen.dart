@@ -37,57 +37,72 @@ class CelebrationScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Carebook: the message sits on a gold area with rounded
+            // bottom corners; the buttons stay on the page below.
             Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 112,
-                        height: 112,
-                        decoration: BoxDecoration(
-                          color: _iconBackground,
-                          gradient: _iconBackground == AppColors.amber
-                              ? AppGradients.brand
-                              : null,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(icon, size: 56, color: AppColors.ink),
-                      ),
-                      const SizedBox(height: 24),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.celebrationTitle,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 320),
-                        child: DefaultTextStyle.merge(
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.body.copyWith(
-                            fontSize: 18,
-                            height: 1.4,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.celebration,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                ),
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 112,
+                          height: 112,
+                          decoration: BoxDecoration(
+                            color: _iconBackground == AppColors.amber
+                                ? AppColors.white
+                                : _iconBackground,
+                            shape: BoxShape.circle,
                           ),
-                          child: body,
+                          child: Icon(
+                            icon,
+                            size: 56,
+                            color: _iconBackground == AppColors.amber
+                                ? AppColors.amberDark
+                                : AppColors.ink,
+                          ),
                         ),
-                      ),
-                      if (extra.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        ...extra,
+                        const SizedBox(height: 24),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.celebrationTitle,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: DefaultTextStyle.merge(
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.body.copyWith(
+                              fontSize: 18,
+                              height: 1.4,
+                            ),
+                            child: body,
+                          ),
+                        ),
+                        if (extra.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          ...extra,
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -105,7 +120,7 @@ class CelebrationScreen extends StatelessWidget {
   }
 }
 
-/// Cream info row used inside celebration screens (meeting day, room…).
+/// White info row used inside celebration screens (meeting day, room…).
 class CelebrationInfoRow extends StatelessWidget {
   const CelebrationInfoRow({
     super.key,
@@ -122,7 +137,7 @@ class CelebrationInfoRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

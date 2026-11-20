@@ -153,7 +153,7 @@ class _BadgeCard extends StatelessWidget {
       label: 'New badge: ${badge.name}. Open',
       excludeSemantics: true,
       child: Material(
-        color: AppColors.honey,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadii.cardSmall),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.cardSmall),
