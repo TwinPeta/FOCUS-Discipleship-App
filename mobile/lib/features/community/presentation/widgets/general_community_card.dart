@@ -14,7 +14,7 @@ class GeneralCommunityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'General community, joined automatically, open to all',
+      label: 'General caregroup, joined automatically, open to all',
       child: InkWell(
         onTap: () => context.push('/general-feed'),
         borderRadius: BorderRadius.circular(20),
@@ -44,7 +44,7 @@ class GeneralCommunityCard extends StatelessWidget {
               ),
               const Spacer(),
               FittedBoxWords(
-                'General community',
+                'General caregroup',
                 style: AppTextStyles.cardTitle,
               ),
               const SizedBox(height: 4),

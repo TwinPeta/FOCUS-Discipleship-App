@@ -115,7 +115,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('My communities', style: AppTextStyles.sectionHeading),
+                    Text('My caregroups', style: AppTextStyles.sectionHeading),
                     const SizedBox(height: 12),
                     IntrinsicHeight(
                       child: Row(
@@ -132,7 +132,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                     if (membership.status != MembershipStatus.approved) ...[
                       const SizedBox(height: 28),
                       Text(
-                        'Find a specific community',
+                        'Find a specific caregroup',
                         style: AppTextStyles.sectionHeading,
                       ),
                       const SizedBox(height: 12),
@@ -144,7 +144,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                               if (membership.status == MembershipStatus.pending)
                                 const TextSpan(
                                   text:
-                                      'Request sent to the super-mentor. Other communities are '
+                                      'Request sent to the super-mentor. Other caregroups are '
                                       'locked until you get an answer. You can join ',
                                 )
                               else
@@ -154,7 +154,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                                 style: TextStyle(fontWeight: FontWeight.w800),
                               ),
                               const TextSpan(
-                                text: ' specific community. Choose the one that fits you best.',
+                                text: ' specific caregroup. Choose the one that fits you best.',
                               ),
                             ],
                           ),
@@ -199,7 +199,7 @@ class _CommunitiesHubScreenState extends ConsumerState<CommunitiesHubScreen> {
                                   ),
                                   child: Center(
                                     child: Text(
-                                      'No communities match your search.',
+                                      'No caregroups match your search.',
                                       style: AppTextStyles.body,
                                     ),
                                   ),

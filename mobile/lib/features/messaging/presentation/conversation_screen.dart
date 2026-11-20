@@ -275,7 +275,7 @@ class _DaySeparator extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.cream,
+            color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(label, style: AppTextStyles.chip),
@@ -359,7 +359,7 @@ class _RestrictedBar extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cream,
+          color: AppColors.primarySoft,
           borderRadius: BorderRadius.circular(AppRadii.cardSmall),
         ),
         child: Row(

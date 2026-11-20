@@ -86,7 +86,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       onBack: () => context.go('/'),
       header: const _LogoBlock(),
       title: 'Welcome back',
-      subtitle: const Text('Sign in to see your communities.'),
+      subtitle: const Text('Sign in to see your caregroups.'),
       body: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -167,7 +167,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                   onPressed: () => context.go('/join/start'),
                   child: const Text(
-                    'Explore communities',
+                    'Explore caregroups',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       decoration: TextDecoration.underline,

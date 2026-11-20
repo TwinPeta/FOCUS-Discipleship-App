@@ -23,7 +23,7 @@ class AvatarWithPresence extends StatelessWidget {
   final Color? backgroundColor;
 
   /// [backgroundColor], or the theme's cream.
-  Color get _backgroundColor => backgroundColor ?? AppColors.cream;
+  Color get _backgroundColor => backgroundColor ?? AppColors.primarySoft;
 
   @override
   Widget build(BuildContext context) {

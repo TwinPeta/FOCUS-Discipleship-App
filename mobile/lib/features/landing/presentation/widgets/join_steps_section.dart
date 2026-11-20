@@ -26,11 +26,11 @@ const _steps = [
   _StepData(
     number: 2,
     title: 'Enter your campus',
-    description: 'You join the general community automatically.',
+    description: 'You join the general caregroup automatically.',
   ),
   _StepData(
     number: 3,
-    title: 'Pick one specific community',
+    title: 'Pick one specific caregroup',
     description: 'A smaller group with mentors. One per student.',
   ),
 ];

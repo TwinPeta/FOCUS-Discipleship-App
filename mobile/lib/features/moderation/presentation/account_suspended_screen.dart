@@ -73,7 +73,7 @@ class _AccountSuspendedScreenState
               ),
               const SizedBox(height: 10),
               Text(
-                'You can read the community charter or write to the support '
+                'You can read the caregroup charter or write to the support '
                 'team if you think this is a mistake.',
                 style: AppTextStyles.body,
                 textAlign: TextAlign.center,

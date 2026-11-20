@@ -37,13 +37,13 @@ class CreateMenuSheet extends ConsumerWidget {
         CreateMenuRow(
           icon: Icons.help_outline_rounded,
           title: 'Ask a question',
-          subtitle: 'Get answers from the community',
+          subtitle: 'Get answers from the caregroup',
           onTap: () => open('/create?type=question'),
         ),
         CreateMenuRow(
           icon: Icons.question_answer_outlined,
           title: 'Answer a question',
-          subtitle: 'Help someone in your community',
+          subtitle: 'Help someone in your caregroup',
           onTap: () => open('/questions'),
         ),
         CreateMenuRow(
@@ -55,7 +55,7 @@ class CreateMenuSheet extends ConsumerWidget {
         CreateMenuRow(
           icon: Icons.volunteer_activism_outlined,
           title: 'Prayer request',
-          subtitle: 'Ask the community to pray',
+          subtitle: 'Ask the caregroup to pray',
           onTap: () => open('/create?type=prayer'),
         ),
         CreateMenuRow(
@@ -125,10 +125,10 @@ class CreateMenuRow extends StatelessWidget {
                     width: _tileSize,
                     height: _tileSize,
                     decoration: BoxDecoration(
-                      color: AppColors.honey,
+                      color: AppColors.primarySoft,
                       borderRadius: BorderRadius.circular(AppRadii.tile),
                     ),
-                    child: Icon(icon, color: AppColors.ink),
+                    child: Icon(icon, color: AppColors.primary),
                   ),
                   const SizedBox(width: 14),
                   Expanded(

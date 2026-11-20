@@ -16,6 +16,9 @@ class AppPalette {
     required this.skeletonBlock,
     required this.inkDeemphasized85,
     required this.inkDeemphasized80,
+    required this.primary,
+    required this.primarySoft,
+    required this.muted,
   });
 
   final Color amberLight;
@@ -31,19 +34,33 @@ class AppPalette {
   final Color inkDeemphasized85;
   final Color inkDeemphasized80;
 
+  /// Carebook blue: selected tabs and chips, links, progress, checkboxes.
+  final Color primary;
+
+  /// Pale blue fill: info banners, icon tiles, avatars.
+  final Color primarySoft;
+
+  /// Secondary text (meta lines, captions).
+  final Color muted;
+
   static const light = AppPalette(
-    amberLight: Color(0xFFF5CE3E),
-    amberDark: Color(0xFFE5A90A),
+    // Carebook prototype (2026-11-20): gold call-to-action gradient,
+    // navy text, cream page, blue for selected states.
+    amberLight: Color(0xFFFFCB3D),
+    amberDark: Color(0xFFEE9A00),
     honey: Color(0xFFFDE68A),
-    cream: Color(0xFFFFF3C4),
-    page: Color(0xFFFFFBEA),
+    cream: Color(0xFFFFF1D4),
+    page: Color(0xFFFFFAF2),
     white: Color(0xFFFFFFFF),
-    ink: Color(0xFF111111),
-    inputBorder: Color(0xFFE6D48A),
+    ink: Color(0xFF1F2D3D),
+    inputBorder: Color(0xFFCFE0F3),
     placeholder: Color(0xFF6A6A6A),
     skeletonBlock: Color(0xFFEEEDE8),
-    inkDeemphasized85: Color(0xD9111111),
-    inkDeemphasized80: Color(0xCC111111),
+    inkDeemphasized85: Color(0xD91F2D3D),
+    inkDeemphasized80: Color(0xFF5B6B7D),
+    primary: Color(0xFF1E6AB8),
+    primarySoft: Color(0xFFE3F0FD),
+    muted: Color(0xFF6B7C90),
   );
 
   static const dark = AppPalette(
@@ -59,6 +76,9 @@ class AppPalette {
     skeletonBlock: Color(0xFF2A2822),
     inkDeemphasized85: Color(0xD9F2EFE6),
     inkDeemphasized80: Color(0xCCF2EFE6),
+    primary: Color(0xFF6AA8EE),
+    primarySoft: Color(0xFF1C2B3C),
+    muted: Color(0xFFA9B4C2),
   );
 }
 
@@ -101,6 +121,12 @@ class AppColors {
   static Color get skeletonBlock => _p.skeletonBlock;
   static Color get inkDeemphasized85 => _p.inkDeemphasized85;
   static Color get inkDeemphasized80 => _p.inkDeemphasized80;
+  static Color get primary => _p.primary;
+  static Color get primarySoft => _p.primarySoft;
+  static Color get muted => _p.muted;
+
+  /// Text and icons on [primary] / [AppGradients.primary].
+  static const onPrimary = Color(0xFFFFFFFF);
 
   /// Shadows stay dark in both themes.
   static const shadow = Color(0xFF000000);

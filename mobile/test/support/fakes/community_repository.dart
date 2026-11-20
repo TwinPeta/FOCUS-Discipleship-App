@@ -82,7 +82,7 @@ class FakeCommunityRepository implements CommunityRepository {
     await Future.delayed(_latency);
     return Community(
       id: 'general-$institutionId',
-      name: 'General community',
+      name: 'General caregroup',
       initials: initialsOf(institutionName),
       type: CommunityType.general,
       institutionId: institutionId,
@@ -103,7 +103,7 @@ class FakeCommunityRepository implements CommunityRepository {
     await Future.delayed(_latency);
     final community = _byId[id];
     if (community == null) {
-      throw ArgumentError('Unknown community id: $id');
+      throw ArgumentError('Unknown caregroup id: $id');
     }
     return community;
   }

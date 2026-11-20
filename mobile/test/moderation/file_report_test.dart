@@ -153,7 +153,7 @@ void main() {
   });
 
   test(
-    'the report repository files community content into the queue',
+    'the report repository files caregroup content into the queue',
     () async {
       final reports = FakeReportRepository(
         latency: Duration.zero,

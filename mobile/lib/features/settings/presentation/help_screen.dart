@@ -11,14 +11,14 @@ import '../../../core/widgets/app_secondary_button.dart';
 /// Question and answer pairs on Help & FAQ (screen 50).
 const helpFaq = <(String, String)>[
   (
-    'Why can I join only one specific community?',
+    'Why can I join only one specific caregroup?',
     'A smaller group lets mentors know you well. You stay in your general '
-        'campus community, and you can change by leaving your specific one '
+        'campus caregroup, and you can change by leaving your specific one '
         'first.',
   ),
   (
-    'How do I join a specific community?',
-    'Open Communities, choose a community at your campus and tap Request to '
+    'How do I join a specific caregroup?',
+    'Open Caregroups, choose a caregroup at your campus and tap Request to '
         'join. Its super-mentor approves or declines, and you get a '
         'notification either way.',
   ),

@@ -25,7 +25,7 @@ class HubHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.brand,
+        gradient: AppGradients.hubHeader,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),

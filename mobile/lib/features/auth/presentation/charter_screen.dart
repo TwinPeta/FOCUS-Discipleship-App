@@ -11,7 +11,7 @@ class CharterScreen extends StatelessWidget {
   /// Short version shown on the consent card.
   static const summary = [
     'Treat everyone with kindness and respect.',
-    'Keep what is shared in the community private.',
+    'Keep what is shared in the caregroup private.',
     'No harassment, hate or inappropriate content.',
     'Mentors guide; report anything that worries you.',
   ];
@@ -25,7 +25,7 @@ class CharterScreen extends StatelessWidget {
     (
       'Privacy',
       '[Placeholder] Prayer requests, testimonies and messages stay inside '
-          'the community. Do not share screenshots without permission.',
+          'the caregroup. Do not share screenshots without permission.',
     ),
     (
       'Safety',
@@ -42,7 +42,7 @@ class CharterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AmberHeaderScaffold(
-      title: 'Community charter',
+      title: 'Caregroup charter',
       subtitle: 'How we look after one another.',
       body: ListView(
         padding: const EdgeInsets.all(20),

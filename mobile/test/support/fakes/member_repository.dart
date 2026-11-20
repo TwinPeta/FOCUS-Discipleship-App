@@ -149,7 +149,7 @@ class FakeMemberRepository implements MemberRepository {
         ),
         username: 'fcu.campus',
         bio: 'News and events for everyone on campus.',
-        communityName: 'General community',
+        communityName: 'General caregroup',
       ),
       const MemberProfile(
         person: Person(
@@ -158,7 +158,7 @@ class FakeMemberRepository implements MemberRepository {
           role: PersonRole.member,
         ),
         username: 'joseph.m',
-        communityName: 'General community',
+        communityName: 'General caregroup',
       ),
       MemberProfile(
         person: const Person(
@@ -167,7 +167,7 @@ class FakeMemberRepository implements MemberRepository {
           role: PersonRole.member,
         ),
         username: 'patience.a',
-        communityName: 'General community',
+        communityName: 'General caregroup',
         badges: _earned(['first-steps']),
       ),
     ])

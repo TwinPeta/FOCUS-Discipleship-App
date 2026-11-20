@@ -77,11 +77,11 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
       body: communityId == null
           ? EmptyState(
               icon: Icons.groups_outlined,
-              title: 'Join a community first',
+              title: 'Join a caregroup first',
               body:
-                  'Mentors and members of your specific community appear '
+                  'Mentors and members of your specific caregroup appear '
                   'here once your request is approved.',
-              actionLabel: 'Find a community',
+              actionLabel: 'Find a caregroup',
               onAction: () => context.go('/communities'),
             )
           : _People(
@@ -180,7 +180,7 @@ class _People extends ConsumerWidget {
           const EmptyState(
             icon: Icons.search_off_rounded,
             title: 'No matches',
-            body: 'No one in your community matches your search.',
+            body: 'No one in your caregroup matches your search.',
           )
         else ...[
           if (mentors.isNotEmpty) ...[

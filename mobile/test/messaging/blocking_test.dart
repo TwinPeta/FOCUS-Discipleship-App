@@ -109,7 +109,7 @@ void main() {
   );
 
   test(
-    'community rosters leave blocked people out; profiles still resolve',
+    'caregroup rosters leave blocked people out; profiles still resolve',
     () async {
       final members = FakeMemberRepository(
         latency: Duration.zero,

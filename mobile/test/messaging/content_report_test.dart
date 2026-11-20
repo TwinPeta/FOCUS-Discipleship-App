@@ -72,7 +72,7 @@ void main() {
 
     final send = find.widgetWithText(ElevatedButton, 'Send report');
     expect(tester.widget<ElevatedButton>(send).onPressed, isNull);
-    await tester.tap(find.text('Breaking community rules'));
+    await tester.tap(find.text('Breaking caregroup rules'));
     await settle(tester);
     await tester.tap(send);
     await settle(tester, steps: 20);
@@ -194,7 +194,7 @@ void main() {
     expect(report.targetType, ReportTargetType.prayerRequest);
     expect(report.details, 'Asks for money');
 
-    await tester.tap(find.text('Back to community'));
+    await tester.tap(find.text('Back to caregroup'));
     await settle(tester);
     // Back on the wall: its title (and the header's section name).
     expect(find.text('Prayer wall'), findsWidgets);

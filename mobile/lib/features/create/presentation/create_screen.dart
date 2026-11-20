@@ -429,13 +429,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     if (_type == CreateType.prayer) ...[
                       const SizedBox(height: 10),
                       const _Note(
-                        'Your community will be able to pray and respond.',
+                        'Your caregroup will be able to pray and respond.',
                       ),
                     ],
                     if (_type == CreateType.story) ...[
                       const SizedBox(height: 14),
                       CheckRow(
-                        label: 'I agree to share my story with my community.',
+                        label: 'I agree to share my story with my caregroup.',
                         value: _consent,
                         onChanged: (v) => setState(() => _consent = v),
                       ),
@@ -600,13 +600,13 @@ class _TargetPicker extends StatelessWidget {
           children: [
             _TargetChip(
               icon: Icons.public_rounded,
-              label: 'General community',
+              label: 'General caregroup',
               selected: selected == generalTarget,
               onTap: () => onChanged(generalTarget),
             ),
             _TargetChip(
               icon: Icons.groups_rounded,
-              label: myCommunityName ?? 'My community',
+              label: myCommunityName ?? 'My caregroup',
               selected: myCommunityId != null && selected == myCommunityId,
               onTap: myCommunityId == null
                   ? null
@@ -617,7 +617,7 @@ class _TargetPicker extends StatelessWidget {
         const SizedBox(height: 6),
         _Note(
           myCommunityId == null
-              ? 'Join a specific community to post there too.'
+              ? 'Join a specific caregroup to post there too.'
               : selected == generalTarget
               ? 'Everyone on your campus can see it.'
               : 'Only members of ${myCommunityName ?? 'your community'} can '
@@ -653,12 +653,13 @@ class _TargetChip extends StatelessWidget {
       child: Opacity(
         opacity: onTap == null ? 0.45 : 1,
         child: Material(
-          color: selected ? AppColors.honey : AppColors.white,
+          // Carebook: the selected chip is blue with white text.
+          color: selected ? AppColors.primary : AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: BorderSide(
-              color: selected ? AppColors.amberDark : AppColors.inputBorder,
-              width: selected ? 2 : 1.5,
+              color: selected ? AppColors.primary : AppColors.inputBorder,
+              width: 1.5,
             ),
           ),
           child: InkWell(
@@ -674,7 +675,7 @@ class _TargetChip extends StatelessWidget {
                     Icon(
                       selected ? Icons.check_circle_rounded : icon,
                       size: 18,
-                      color: AppColors.ink,
+                      color: selected ? AppColors.onPrimary : AppColors.ink,
                     ),
                     const SizedBox(width: 6),
                     Flexible(
@@ -684,6 +685,7 @@ class _TargetChip extends StatelessWidget {
                           fontWeight: selected
                               ? FontWeight.w800
                               : FontWeight.w600,
+                          color: selected ? AppColors.onPrimary : AppColors.ink,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -765,7 +767,7 @@ class _Tips extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

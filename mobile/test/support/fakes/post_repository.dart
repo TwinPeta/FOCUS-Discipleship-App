@@ -114,7 +114,7 @@ class FakePostRepository implements PostRepository {
         roleLabel: 'Mentor',
         body:
             'Proud of how everyone showed up for each other during exam week. '
-            "Keep leaning on one another, that's what this community is for.",
+            "Keep leaning on one another, that's what this caregroup is for.",
         createdAt: now.subtract(const Duration(days: 1)),
         likeCount: 14,
       ),
@@ -151,7 +151,7 @@ class FakePostRepository implements PostRepository {
         roleLabel: 'Campus team',
         body:
             'Welcome to a new semester! Keep an eye here for campus-wide events, '
-            'and remember every specific community meets in person every week.',
+            'and remember every specific caregroup meets in person every week.',
         createdAt: now.subtract(const Duration(hours: 5)),
         likeCount: 21,
       ),
@@ -182,7 +182,7 @@ class FakePostRepository implements PostRepository {
         ),
         body:
             'Grateful for how my small group prayed with me through a hard week. '
-            "If you're new, don't be afraid to ask for a specific community.",
+            "If you're new, don't be afraid to ask for a specific caregroup.",
         createdAt: now.subtract(const Duration(days: 1)),
         likeCount: 3,
       ),

@@ -58,7 +58,7 @@ class CommunityPreview extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'General community',
+                                'General caregroup',
                                 style: AppTextStyles.cardTitle.copyWith(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w900,

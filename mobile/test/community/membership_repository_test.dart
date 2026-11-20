@@ -56,7 +56,7 @@ void main() {
   });
 
   group('FakeMembershipRepository', () {
-    test('a second request for another community is rejected', () async {
+    test('a second request for another caregroup is rejected', () async {
       final r = repo();
       await r.requestToJoin('c1');
       expect(

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_gradients.dart';
 import '../theme/app_radii.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_text_styles.dart';
@@ -188,18 +189,41 @@ class PostCard extends StatelessWidget {
               runSpacing: 6,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.ink,
-                    side: BorderSide(color: AppColors.inputBorder, width: 1.5),
-                    minimumSize: const Size(44, 40),
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: onCommentTap,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text(
-                    'Answer',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                // Design: gold "✎ Answer" button.
+                Material(
+                  color: Colors.transparent,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.brand,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: onCommentTap,
+                      borderRadius: BorderRadius.circular(12),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 18,
+                                color: AppColors.ink,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Answer',
+                                style: AppTextStyles.chip.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Text(
@@ -221,7 +245,7 @@ class PostCard extends StatelessWidget {
                   count: likeCount,
                   onTap: onLikeTap,
                 ),
-                const SizedBox(width: 18),
+                const SizedBox(width: 8),
                 PostActionButton.comment(
                   count: commentCount,
                   onTap: onCommentTap,
@@ -294,7 +318,7 @@ class PostActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlighted ? AppColors.error : AppColors.inkDeemphasized80;
+    final color = highlighted ? AppColors.error : AppColors.ink;
     return Semantics(
       button: true,
       enabled: onTap != null,
@@ -303,11 +327,16 @@ class PostActionButton extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(999),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+          // Design: a pale-blue pill around the icon and count.
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(999),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -316,7 +345,8 @@ class PostActionButton extends StatelessWidget {
                 Text(
                   '$count',
                   style: AppTextStyles.body.copyWith(
-                    fontSize: 12.5,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
                     color: color,
                   ),
                 ),

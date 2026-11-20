@@ -44,7 +44,7 @@ class _CommunityDetailScreenState extends ConsumerState<CommunityDetailScreen> {
       if (mounted) {
         showErrorSnack(
           context,
-          'You already have a pending request or a specific community.',
+          'You already have a pending request or a specific caregroup.',
         );
       }
       return;
@@ -258,7 +258,7 @@ class _InfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cream,
+        color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -280,9 +280,9 @@ class _InfoRow extends StatelessWidget {
 enum _JoinStatus { none, pending, member, elsewhere, declined }
 
 /// Bottom of screen 4: the student's join status for this community and
-/// what they can do. Not joined: "Join community" (auto-approval on) or
+/// what they can do. Not joined: "Join caregroup" (auto-approval on) or
 /// "Request to join". Pending here: status + Cancel request. Member here:
-/// "Go to community". In another community: why joining is off. Declined
+/// "Go to caregroup". In another community: why joining is off. Declined
 /// here: the note and a way to ask again.
 class _JoinStatusBar extends StatelessWidget {
   const _JoinStatusBar({
@@ -312,9 +312,9 @@ class _JoinStatusBar extends StatelessWidget {
         null,
         null,
         autoApprove
-            ? 'You can join only one specific community. You join straight '
-                  'away.'
-            : 'You can join only one specific community. Your request goes '
+            ? 'You can join only one specific caregroup. You join instantly '
+                  'and can leave at any time.'
+            : 'You can join only one specific caregroup. Your request goes '
                   'to the super-mentor for approval, and you will be '
                   'notified.',
       ),
@@ -327,21 +327,21 @@ class _JoinStatusBar extends StatelessWidget {
       _JoinStatus.member => (
         Icons.check_circle_rounded,
         "You're a member",
-        'This is your specific community.',
+        'This is your specific caregroup.',
       ),
       _JoinStatus.elsewhere => (
         Icons.info_outline_rounded,
         otherCommunityName == null
-            ? 'You already have a community'
+            ? 'You already have a caregroup'
             : "You're already in $otherCommunityName",
-        'A student can be in only one specific community.',
+        'A student can be in only one specific caregroup.',
       ),
       _JoinStatus.declined => (
         Icons.do_not_disturb_on_outlined,
         'Not accepted this time',
         (declineNote?.trim().isNotEmpty ?? false)
             ? '"${declineNote!.trim()}"'
-            : 'You can ask again or pick another community.',
+            : 'You can ask again or pick another caregroup.',
       ),
     };
 
@@ -349,12 +349,12 @@ class _JoinStatusBar extends StatelessWidget {
       _JoinStatus.none || _JoinStatus.declined => AppPrimaryButton(
         label: status == _JoinStatus.declined
             ? (autoApprove ? 'Join again' : 'Request again')
-            : (autoApprove ? 'Join community' : 'Request to join'),
+            : (autoApprove ? 'Join caregroup' : 'Request to join'),
         isLoading: isLoading,
         onPressed: onJoin,
       ),
       _JoinStatus.member => AppPrimaryButton(
-        label: 'Go to community',
+        label: 'Go to caregroup',
         onPressed: onOpen,
       ),
       _JoinStatus.pending || _JoinStatus.elsewhere => null,
@@ -378,7 +378,7 @@ class _JoinStatusBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: status == _JoinStatus.member
                       ? AppColors.honey
-                      : AppColors.cream,
+                      : AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(

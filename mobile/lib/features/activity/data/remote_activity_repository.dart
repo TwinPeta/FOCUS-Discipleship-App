@@ -42,12 +42,16 @@ class RemoteActivityRepository implements ActivityRepository {
         ? raw.whereType<Map<String, dynamic>>().toList()
         : <Map<String, dynamic>>[];
     final badges = [
+      // Newcomer is the app's sign-up badge (Carebook); the server does not
+      // list it, so every member gets it first.
+      const AppBadge(id: 'newcomer', name: 'Newcomer', earned: true),
       for (final b in list)
-        AppBadge(
-          id: slugify((b['name'] as String?) ?? ''),
-          name: (b['name'] as String?) ?? '',
-          earned: b['earned'] == true,
-        ),
+        if (slugify((b['name'] as String?) ?? '') != 'newcomer')
+          AppBadge(
+            id: slugify((b['name'] as String?) ?? ''),
+            name: (b['name'] as String?) ?? '',
+            earned: b['earned'] == true,
+          ),
     ];
     _earned = {
       for (final b in badges)

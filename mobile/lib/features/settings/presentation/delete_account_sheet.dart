@@ -88,7 +88,7 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
         ),
         const SizedBox(height: 6),
         Text(
-          'You leave all communities. This cannot be undone.',
+          'You leave all caregroups. This cannot be undone.',
           style: AppTextStyles.bodyMedium,
         ),
         const SizedBox(height: 16),

@@ -190,7 +190,7 @@ class FakeModerationQueueRepository implements ModerationQueueRepository {
       throw ArgumentError.value(
         report.targetType,
         'report',
-        'only community content with a community id is moderated here',
+        'only caregroup content with a caregroup id is moderated here',
       );
     }
     // Counting is per reporter, so a report must say who sent it.

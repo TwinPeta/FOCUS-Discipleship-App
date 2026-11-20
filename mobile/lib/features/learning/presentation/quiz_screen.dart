@@ -173,7 +173,7 @@ class _QuizViewState extends ConsumerState<_QuizView> {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  gradient: AppGradients.brand,
+                  gradient: AppGradients.pageHeader,
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(AppRadii.headerBottom),
                   ),

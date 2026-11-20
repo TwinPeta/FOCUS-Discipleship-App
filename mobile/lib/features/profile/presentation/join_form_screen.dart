@@ -11,6 +11,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/error_snack.dart';
+import '../../../core/widgets/onboarding_scaffold.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/step_progress.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
@@ -325,19 +326,28 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RoundIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    semanticLabel: 'Back',
-                    onPressed: () => context.pop(),
+                  Row(
+                    children: [
+                      RoundIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        semanticLabel: 'Back',
+                        onPressed: () => context.pop(),
+                      ),
+                      const Spacer(),
+                      if (!_isEditing) const XpPill(label: '0 XP'),
+                    ],
                   ),
                   if (!_isEditing) ...[
                     const SizedBox(height: 12),
                     const StepProgress(currentStep: 1),
                     const SizedBox(height: 6),
                     Text(
-                      'Step 1 of 3',
+                      'STEP 1 OF 3',
                       style: AppTextStyles.fieldLabel.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -366,7 +376,7 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Tell us who you are to join your campus community.',
+                                  'Tell us who you are to join your campus caregroup.',
                                   style: AppTextStyles.body,
                                 ),
                               ],
@@ -534,18 +544,28 @@ class _JoinFormScreenState extends ConsumerState<JoinFormScreen> {
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                border: Border(
-                  top: BorderSide(color: AppColors.cream, width: 1),
-                ),
-              ),
+              decoration: BoxDecoration(color: AppColors.page),
               child: SafeArea(
                 top: false,
-                child: AppPrimaryButton(
-                  label: _isEditing ? 'Save' : 'Continue',
-                  isLoading: _isSubmitting,
-                  onPressed: _submit,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!_isEditing) ...[
+                      const Center(
+                        child: XpPill(
+                          label: '+10 XP when you continue',
+                          soft: true,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    AppPrimaryButton(
+                      label: _isEditing ? 'Save' : 'Continue',
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                    ),
+                  ],
                 ),
               ),
             ),

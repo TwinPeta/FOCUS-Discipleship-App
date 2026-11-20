@@ -86,7 +86,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.cream,
+              color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Text(

@@ -51,7 +51,7 @@ void main() {
       expect(runGuards(_ctx('/messages/thread-1')), '/');
     });
 
-    test('community routes require approval in that exact community', () {
+    test('caregroup routes require approval in that exact caregroup', () {
       const pending = Membership(
         communityId: 'growth-circle',
         status: MembershipStatus.pending,

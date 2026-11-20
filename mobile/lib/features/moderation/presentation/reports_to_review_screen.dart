@@ -68,7 +68,7 @@ class ReportsToReviewScreen extends ConsumerWidget {
               const EmptyState(
                 icon: Icons.verified_user_rounded,
                 title: 'Nothing to review',
-                body: 'Reports from members of your community appear here.',
+                body: 'Reports from members of your caregroup appear here.',
               )
             else
               for (final c in items)

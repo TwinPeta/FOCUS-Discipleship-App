@@ -44,7 +44,7 @@ Post _newPost(String id) => Post(
 
 void main() {
   test(
-    'the General feed loads its posts (no specific-community lookup)',
+    'the General feed loads its posts (no specific-caregroup lookup)',
     () async {
       final c = _container(FakePostRepository(latency: Duration.zero));
       final posts = await c.read(feedPostsProvider(_general).future);

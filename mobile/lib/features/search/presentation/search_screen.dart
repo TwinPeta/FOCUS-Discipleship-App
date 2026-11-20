@@ -90,7 +90,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       title: 'Search',
       headerExtra: SearchField(
         controller: _controller,
-        hintText: 'Search posts, people, communities',
+        hintText: 'Search posts, people, caregroups',
         onChanged: _onChanged,
       ),
       body: Column(
@@ -112,7 +112,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return const EmptyState(
         icon: Icons.search_rounded,
         title: 'Search FCU',
-        body: 'Find communities and people by name or username.',
+        body: 'Find caregroups and people by name or username.',
       );
     }
     return _ResultList(
@@ -221,18 +221,18 @@ class _ResultList extends StatelessWidget {
       children: [
         ...header,
         if (results.communities.isNotEmpty) ...[
-          heading('Communities'),
+          heading('Caregroups'),
           for (final c in results.communities)
             Padding(
               padding: const EdgeInsets.only(bottom: _gap),
               child: Semantics(
                 button: true,
-                label: 'Open community ${c.name}',
+                label: 'Open caregroup ${c.name}',
                 child: ListRowCard(
                   leading: InitialsAvatar(initials: c.initials, size: 48),
                   title: c.name,
                   subtitle: c.type == CommunityType.general
-                      ? 'General community'
+                      ? 'General caregroup'
                       : c.meetingDay,
                   onTap: () => onCommunity(c),
                 ),

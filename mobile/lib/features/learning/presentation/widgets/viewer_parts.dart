@@ -138,8 +138,10 @@ class ViewerScaffold extends StatelessWidget {
 /// "Video" honey chip + optional topic cream chip.
 List<Widget> viewerChips(String kindLabel, {String? topic, String? extra}) => [
   AppChip(label: kindLabel, backgroundColor: AppColors.honey),
-  if (topic != null) AppChip(label: topic, backgroundColor: AppColors.cream),
-  if (extra != null) AppChip(label: extra, backgroundColor: AppColors.cream),
+  if (topic != null)
+    AppChip(label: topic, backgroundColor: AppColors.primarySoft),
+  if (extra != null)
+    AppChip(label: extra, backgroundColor: AppColors.primarySoft),
 ];
 
 /// Cream "Next in pathway" tile; locked until the current step is done.

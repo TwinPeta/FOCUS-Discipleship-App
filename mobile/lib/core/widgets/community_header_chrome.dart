@@ -1,9 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../features/community/presentation/widgets/community_cover_painter.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_gradients.dart';
 import '../theme/app_text_styles.dart';
 import 'round_icon_button.dart';
 import '../router/navigation.dart';
@@ -29,10 +27,9 @@ class SectionMenuItem {
   final bool dividerBefore;
 }
 
-/// The amber community header: back, the community name with the section
+/// The caregroup header: back, the community name with the section
 /// you are in, then Search and "⋯" (every section, the active one
-/// highlighted). Super-mentors also get [extraAction] (Manage). Painted
-/// over the cover art.
+/// highlighted). Super-mentors also get [extraAction] (Manage).
 class CommunityHeaderChrome extends StatelessWidget {
   const CommunityHeaderChrome({
     super.key,
@@ -76,123 +73,83 @@ class CommunityHeaderChrome extends StatelessWidget {
   }
 
   Widget _content(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Container(
-              color: AppColors.honey,
-              child: const RepaintBoundary(
-                child: CustomPaint(
-                  painter: CommunityCoverPainter(),
-                  size: Size.infinite,
-                ),
+    // Carebook header: a plain white bar, the name and where you are, then
+    // round pale-blue buttons (Search, "⋯").
+    RoundIconButton action(IconData icon, String label, VoidCallback onTap) =>
+        RoundIconButton(
+          icon: icon,
+          semanticLabel: label,
+          backgroundColor: AppColors.primarySoft,
+          onPressed: onTap,
+        );
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.primarySoft, width: 1.5),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Row(
+        children: [
+          if (showBack) ...[
+            action(
+              Icons.arrow_back_rounded,
+              'Back',
+              onBack ??
+                  () => context.canPop()
+                      ? context.pop()
+                      : context.go('/communities'),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Semantics(
+              header: true,
+              label: '$title, $sectionLabel',
+              excludeSemantics: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Whole name: shrinks with large text.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      title,
+                      style: AppTextStyles.cardTitle.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ),
+                  Text(
+                    sectionLabel,
+                    style: AppTextStyles.body.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.inkDeemphasized80,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-        // Brand gradient over the cover art, translucent so the art shows.
-        Container(
-          decoration: BoxDecoration(
-            gradient: AppGradients.brand.withOpacity(0.6),
+          if (extraAction != null) ...[const SizedBox(width: 8), extraAction!],
+          const SizedBox(width: 8),
+          action(Icons.search_rounded, 'Search', () => context.push('/search')),
+          const SizedBox(width: 8),
+          action(
+            Icons.more_horiz_rounded,
+            'Sections',
+            () => showSectionMenu(context, title, menuItems),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Row(
-            children: [
-              if (showBack) ...[
-                RoundIconButton(
-                  icon: Icons.arrow_back_rounded,
-                  semanticLabel: 'Back',
-                  onPressed:
-                      onBack ??
-                      () => context.canPop()
-                          ? context.pop()
-                          : context.go('/communities'),
-                ),
-                const SizedBox(width: 10),
-              ],
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  label: '$title, $sectionLabel',
-                  excludeSemantics: true,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Whole name: shrinks with large text.
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            title,
-                            style: AppTextStyles.cardTitle.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                            maxLines: 1,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: AppColors.amberDark,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                sectionLabel,
-                                style: AppTextStyles.body.copyWith(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (extraAction != null) ...[
-                const SizedBox(width: 8),
-                extraAction!,
-              ],
-              const SizedBox(width: 8),
-              RoundIconButton(
-                icon: Icons.search_rounded,
-                semanticLabel: 'Search',
-                onPressed: () => context.push('/search'),
-              ),
-              const SizedBox(width: 8),
-              RoundIconButton(
-                icon: Icons.more_horiz_rounded,
-                semanticLabel: 'Sections',
-                onPressed: () => showSectionMenu(context, title, menuItems),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -234,7 +191,7 @@ Future<void> showSectionMenu(
             ),
             for (final item in items) ...[
               if (item.dividerBefore)
-                Divider(height: 16, color: AppColors.cream),
+                Divider(height: 16, color: AppColors.inputBorder),
               _SectionRow(
                 item: item,
                 onTap: () {
@@ -267,7 +224,7 @@ class _SectionRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Material(
-          color: active ? AppColors.honey : Colors.transparent,
+          color: active ? AppColors.primarySoft : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             onTap: onTap,
@@ -282,7 +239,7 @@ class _SectionRow extends StatelessWidget {
                     height: 28,
                     margin: const EdgeInsets.only(left: 6, right: 10),
                     decoration: BoxDecoration(
-                      color: active ? AppColors.amberDark : Colors.transparent,
+                      color: active ? AppColors.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

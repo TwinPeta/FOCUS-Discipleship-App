@@ -25,7 +25,7 @@ void main() {
       );
 
   test(
-    'approving a student who is already in another community names it',
+    'approving a student who is already in another caregroup names it',
     () async {
       final r = repo(
         () => problem(

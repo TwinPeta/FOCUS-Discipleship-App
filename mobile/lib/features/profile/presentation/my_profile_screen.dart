@@ -70,7 +70,7 @@ class MyProfileScreen extends ConsumerWidget {
                   children: [
                     _DetailsCard(profile: profile),
                     const SizedBox(height: 28),
-                    Text('My communities', style: AppTextStyles.sectionHeading),
+                    Text('My caregroups', style: AppTextStyles.sectionHeading),
                     const SizedBox(height: 12),
                     _GeneralCommunityRow(profile: profile),
                     const SizedBox(height: 12),
@@ -97,7 +97,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.brand,
+        gradient: AppGradients.hubHeader,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -270,7 +270,7 @@ class _GeneralCommunityRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('General community', style: AppTextStyles.cardTitle),
+                  Text('General caregroup', style: AppTextStyles.cardTitle),
                   Text(
                     'Joined automatically',
                     style: AppTextStyles.body.copyWith(fontSize: 12),
@@ -334,7 +334,7 @@ class _SpecificCommunitySlot extends ConsumerWidget {
                     children: [
                       Text(community.name, style: AppTextStyles.cardTitle),
                       Text(
-                        'Your specific community',
+                        'Your specific caregroup',
                         style: AppTextStyles.body.copyWith(fontSize: 12),
                       ),
                     ],
@@ -368,7 +368,7 @@ class _PickCommunityRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Pick a specific community',
+                  'Pick a specific caregroup',
                   style: AppTextStyles.cardTitle,
                 ),
               ),

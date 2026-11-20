@@ -21,9 +21,10 @@ class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppPalette.light.amberLight,
-        primary: AppPalette.light.amberLight,
-        onPrimary: AppPalette.light.ink,
+        seedColor: AppPalette.light.primary,
+        // Carebook: blue for switches, radios, progress and focus.
+        primary: AppPalette.light.primary,
+        onPrimary: AppColors.onPrimary,
         secondary: AppPalette.light.amberDark,
         onSecondary: AppPalette.light.ink,
         surface: AppPalette.light.page,
@@ -49,11 +50,11 @@ class AppTheme {
   static ThemeData dark() {
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: AppPalette.dark.amberLight,
+          seedColor: AppPalette.dark.primary,
           brightness: Brightness.dark,
         ).copyWith(
-          primary: AppPalette.dark.amberLight,
-          onPrimary: AppPalette.dark.ink,
+          primary: AppPalette.dark.primary,
+          onPrimary: _Dark.page,
           secondary: AppPalette.dark.amberDark,
           onSecondary: AppPalette.dark.ink,
           surface: _Dark.surface,

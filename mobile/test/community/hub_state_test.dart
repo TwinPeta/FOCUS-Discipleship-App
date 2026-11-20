@@ -51,7 +51,7 @@ void main() {
     await tester.pumpWidget(_wrap(Membership.empty));
     await settle(tester);
 
-    expect(find.bySemanticsLabel('Specific community'), findsOneWidget);
+    expect(find.bySemanticsLabel('Specific caregroup'), findsOneWidget);
     expect(find.text('Only 1 allowed · Pick below'), findsOneWidget);
     expect(find.text('Growth Circle'), findsOneWidget);
     expect(find.text('Life & Faith Circle'), findsOneWidget);
@@ -60,7 +60,7 @@ void main() {
   });
 
   testWidgets(
-    'pending state: slot shows pending, requested community hidden from list',
+    'pending state: slot shows pending, requested caregroup hidden from list',
     (tester) async {
       await tester.pumpWidget(
         _wrap(
@@ -95,7 +95,7 @@ void main() {
     await settle(tester);
 
     expect(find.text('Joined'), findsOneWidget);
-    expect(find.text('Find a specific community'), findsNothing);
+    expect(find.text('Find a specific caregroup'), findsNothing);
     expect(find.text('Life & Faith Circle'), findsNothing);
   });
 }

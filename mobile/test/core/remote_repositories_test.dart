@@ -57,7 +57,7 @@ Map<String, dynamic> _user(String id, String name, String role) => {
 void main() {
   group('RemoteCommunityRepository', () {
     test(
-      'the General community carries leadership and meeting labels',
+      'the General caregroup carries leadership and meeting labels',
       () async {
         final api = _Api({
           'GET /v1/me/communities': (_) => _json(200, {
@@ -70,7 +70,7 @@ void main() {
           'GET /v1/communities/c-gen': (_) => _json(200, {
             'id': 'c-gen',
             'type': 'general',
-            'name': 'General community',
+            'name': 'General caregroup',
             'initials': 'GE',
             'description': 'Everyone',
             'institution': {'id': 'i1', 'name': 'Makerere University'},
@@ -157,7 +157,7 @@ void main() {
     });
 
     test(
-      'requesting while another community is active hits the limit',
+      'requesting while another caregroup is active hits the limit',
       () async {
         final api = _Api({
           'GET /v1/me/communities': (_) => _json(200, {

@@ -27,7 +27,7 @@ class _Approved extends MembershipController {
 }
 
 void main() {
-  testWidgets('search shows communities and people, then opens a profile', (
+  testWidgets('search shows caregroups and people, then opens a profile', (
     tester,
   ) async {
     final communities = FakeCommunityRepository();
@@ -70,7 +70,7 @@ void main() {
     // Debounce (300 ms) plus the shared fake's 400 ms latency per call.
     await tester.pump(const Duration(seconds: 2));
     await settle(tester, steps: 20);
-    expect(find.text('Communities'), findsOneWidget);
+    expect(find.text('Caregroups'), findsOneWidget);
     expect(find.text('Growth Circle'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'okello');

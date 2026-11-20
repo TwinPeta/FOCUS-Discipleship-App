@@ -104,13 +104,13 @@ class _QuestionsScreenState extends ConsumerState<QuestionsScreen> {
     String label(_Where w) => switch (w) {
       _Where.all => 'All',
       _Where.general => 'General',
-      _Where.mine => mineName ?? 'My community',
+      _Where.mine => mineName ?? 'My caregroup',
     };
 
     return AmberHeaderScaffold(
       title: 'Questions for you',
       subtitle: _where == _Where.all
-          ? 'People in your community are waiting for an answer.'
+          ? 'People in your caregroup are waiting for an answer.'
           : label(_where),
       backFallback: '/general-feed',
       headerAction: RoundIconButton(
@@ -151,8 +151,8 @@ class _QuestionsScreenState extends ConsumerState<QuestionsScreen> {
                   key: ValueKey(q.id),
                   question: q,
                   place: q.scope == PostScope.general
-                      ? 'General community'
-                      : (mineName ?? 'Your community'),
+                      ? 'General caregroup'
+                      : (mineName ?? 'Your caregroup'),
                   onPass: () {
                     final messenger = ScaffoldMessenger.of(context);
                     Future<void> choose({required bool passed}) => ref

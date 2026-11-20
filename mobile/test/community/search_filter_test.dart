@@ -78,9 +78,9 @@ void main() {
     await tester.pumpWidget(_wrap());
     await settle(tester);
 
-    await tester.enterText(find.byType(TextField).last, 'no such community');
+    await tester.enterText(find.byType(TextField).last, 'no such caregroup');
     await settle(tester);
 
-    expect(find.text('No communities match your search.'), findsOneWidget);
+    expect(find.text('No caregroups match your search.'), findsOneWidget);
   });
 }

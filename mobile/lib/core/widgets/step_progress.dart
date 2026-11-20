@@ -25,8 +25,8 @@ class StepProgress extends StatelessWidget {
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: isActive ? null : AppColors.cream,
-                gradient: AppGradients.when(isActive),
+                color: isActive ? null : AppColors.primarySoft,
+                gradient: AppGradients.selected(isActive),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

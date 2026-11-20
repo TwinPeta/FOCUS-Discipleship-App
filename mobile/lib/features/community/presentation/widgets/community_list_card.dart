@@ -64,11 +64,12 @@ class CommunityListCard extends StatelessWidget {
                       AppChip(
                         label:
                             '${community.meetingDay} · ${community.meetingTime}',
+                        backgroundColor: AppColors.primarySoft,
                       ),
                     if (community.room != null)
                       AppChip(
                         label: community.room!,
-                        backgroundColor: AppColors.cream,
+                        backgroundColor: AppColors.primarySoft,
                       ),
                   ],
                 ),

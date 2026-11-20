@@ -83,7 +83,7 @@ void main() {
       expect(blank.message, isNull);
     });
 
-    test('a student already in another community cannot be approved', () async {
+    test('a student already in another caregroup cannot be approved', () async {
       final pending = await repo.getPending(_community, actorRole: _sm);
       final peter = pending.firstWhere((r) => r.id == 'jr-3');
       expect(peter.canApprove, isFalse);
@@ -149,7 +149,7 @@ void main() {
 
     expect(find.byType(JoinRequestsScreen), findsOneWidget);
     expect(
-      find.text('A student can be in only one specific community.'),
+      find.text('A student can be in only one specific caregroup.'),
       findsOneWidget,
     );
     expect(find.text('Already in Life & Faith Circle'), findsOneWidget);

@@ -133,7 +133,7 @@ void main() {
     });
 
     test(
-      '409 community_limit_reached reports the community the server knows',
+      '409 community_limit_reached reports the caregroup the server knows',
       () async {
         var requested = false;
         final api = _Api({

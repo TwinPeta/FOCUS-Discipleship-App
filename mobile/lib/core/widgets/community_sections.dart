@@ -71,7 +71,7 @@ List<SectionMenuItem> communityMenuItems(
     ),
     if (communityId == null)
       SectionMenuItem(
-        label: 'Find a specific community',
+        label: 'Find a specific caregroup',
         icon: Icons.travel_explore_rounded,
         dividerBefore: true,
         onSelected: () => context.go('/communities'),

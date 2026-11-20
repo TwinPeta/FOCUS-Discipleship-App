@@ -97,13 +97,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('"⋯" switches the type; without a community only General', (
+  testWidgets('"⋯" switches the type; without a caregroup only General', (
     tester,
   ) async {
     final app = await pumpFcuApp(tester, membership: MembershipStatus.none);
     await goTo(tester, app, '/create?type=post');
     expect(find.text('Add a photo (optional)'), findsOneWidget);
-    expect(find.textContaining('Join a specific community'), findsOneWidget);
+    expect(find.textContaining('Join a specific caregroup'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.more_horiz_rounded));
     await settle(tester);

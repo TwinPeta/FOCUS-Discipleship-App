@@ -10,7 +10,7 @@ extension ReportReasonLabel on ReportReason {
   String get label => switch (this) {
     ReportReason.harassment => 'Harassment or bullying',
     ReportReason.offensiveContent => 'Offensive or inappropriate content',
-    ReportReason.breakingRules => 'Breaking community rules',
+    ReportReason.breakingRules => 'Breaking caregroup rules',
     ReportReason.spamOrFakeProfile => 'Spam or fake profile',
     ReportReason.somethingElse => 'Something else',
   };

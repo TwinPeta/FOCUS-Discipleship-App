@@ -197,11 +197,11 @@ class _ActivityRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.cream,
+              color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, color: AppColors.ink, size: 20),
+            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(event.label, style: AppTextStyles.bodyMedium)),
