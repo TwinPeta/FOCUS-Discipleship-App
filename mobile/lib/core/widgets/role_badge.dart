@@ -10,15 +10,18 @@ class RoleBadge extends StatelessWidget {
 
   final String label;
 
-  static const _honeyLabels = {'Super-mentor', 'Campus team'};
+  // Carebook: super-mentor gold, mentor soft gold, everyone else pale blue.
+  static const _goldLabels = {'Super-mentor', 'Campus team'};
 
   @override
   Widget build(BuildContext context) {
     return AppChip(
       label: label,
-      backgroundColor: _honeyLabels.contains(label)
+      backgroundColor: _goldLabels.contains(label)
+          ? AppColors.amberLight
+          : label == 'Mentor'
           ? AppColors.honey
-          : AppColors.cream,
+          : AppColors.primarySoft,
     );
   }
 }

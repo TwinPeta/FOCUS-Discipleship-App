@@ -195,10 +195,10 @@ class _ManageCard extends StatelessWidget {
           width: _tileSize,
           height: _tileSize,
           decoration: BoxDecoration(
-            color: AppColors.honey,
+            color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(AppRadii.tile),
           ),
-          child: Icon(icon, color: AppColors.ink),
+          child: Icon(icon, color: AppColors.primary),
         ),
         title: title,
         subtitle: subtitle,

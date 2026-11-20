@@ -49,10 +49,8 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
     ResourceType.document => Icons.description_outlined,
   };
 
-  Color _tileColor(ResourceType type) => switch (type) {
-    ResourceType.video || ResourceType.quiz => AppColors.honey,
-    ResourceType.devotional || ResourceType.document => AppColors.cream,
-  };
+  // Carebook: every type gets the pale-blue tile with a blue icon.
+  Color _tileColor(ResourceType type) => AppColors.primarySoft;
 
   void _openResource(Resource resource) {
     // Completion (and its activity) is recorded by the viewer itself.
@@ -127,7 +125,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                     alignment: Alignment.center,
                     child: Icon(
                       _typeIcon(filtered[i].type),
-                      color: AppColors.ink,
+                      color: AppColors.primary,
                     ),
                   ),
                   title: filtered[i].title,

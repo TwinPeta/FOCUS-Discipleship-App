@@ -37,7 +37,7 @@ class OnboardingScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.page,
       body: SafeArea(
         child: Column(
           // Full width, so Back stays on the left even without the step bar.
@@ -51,7 +51,7 @@ class OnboardingScaffold extends StatelessWidget {
                   RoundIconButton(
                     icon: Icons.arrow_back_rounded,
                     semanticLabel: 'Back',
-                    backgroundColor: AppColors.cream,
+                    backgroundColor: AppColors.white,
                     onPressed:
                         onBack ??
                         () =>
@@ -62,9 +62,12 @@ class OnboardingScaffold extends StatelessWidget {
                     StepProgress(currentStep: step!),
                     const SizedBox(height: 6),
                     Text(
-                      'Step $step of 3',
+                      'STEP $step OF 3',
                       style: AppTextStyles.fieldLabel.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -101,10 +104,7 @@ class OnboardingScaffold extends StatelessWidget {
             if (bottom != null)
               Container(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  border: Border(top: BorderSide(color: AppColors.cream)),
-                ),
+                decoration: BoxDecoration(color: AppColors.page),
                 child: bottom,
               ),
           ],
