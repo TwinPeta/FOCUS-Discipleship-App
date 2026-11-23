@@ -281,7 +281,7 @@ enum _JoinStatus { none, pending, member, elsewhere, declined }
 
 /// Bottom of screen 4: the student's join status for this community and
 /// what they can do. Not joined: "Join caregroup" (auto-approval on) or
-/// "Request to join". Pending here: status + Cancel request. Member here:
+/// "Join". Pending here: status + Cancel request. Member here:
 /// "Go to caregroup". In another community: why joining is off. Declined
 /// here: the note and a way to ask again.
 class _JoinStatusBar extends StatelessWidget {
@@ -349,7 +349,7 @@ class _JoinStatusBar extends StatelessWidget {
       _JoinStatus.none || _JoinStatus.declined => AppPrimaryButton(
         label: status == _JoinStatus.declined
             ? (autoApprove ? 'Join again' : 'Request again')
-            : (autoApprove ? 'Join caregroup' : 'Request to join'),
+            : (autoApprove ? 'Join caregroup' : 'Join'),
         isLoading: isLoading,
         onPressed: onJoin,
       ),

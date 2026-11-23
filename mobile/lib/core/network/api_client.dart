@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../connectivity/connectivity_service.dart';
+import '../storage/json_patch.dart';
 import '../storage/local_database.dart';
 import 'token_vault.dart';
 
@@ -191,6 +192,27 @@ class ApiClient {
     ]..sort();
     final owner = shared ? 'public' : (tokens.accountId ?? 'anon');
     return '$owner|GET $path${params.isEmpty ? '' : '?${params.join('&')}'}';
+  }
+
+  /// The item with [id] inside any saved reply of this account (a post in
+  /// a saved feed, a request in a saved prayer wall), for opening it
+  /// offline when its own page was never saved. [where] narrows the saved
+  /// replies searched.
+  Future<Map<String, dynamic>?> findSaved(
+    String id, {
+    bool Function(String key)? where,
+  }) async {
+    final db = cache;
+    final account = tokens.accountId;
+    if (db == null || account == null) return null;
+    Map<String, dynamic>? found;
+    try {
+      await db.updateCaches(account, (_, json) {
+        found ??= findEntity(json, id);
+        return json; // read only
+      }, where: where);
+    } catch (_) {}
+    return found;
   }
 
   static bool _cacheable(String path) =>

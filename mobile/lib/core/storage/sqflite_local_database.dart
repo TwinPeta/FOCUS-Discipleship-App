@@ -321,6 +321,14 @@ class SqfliteLocalDatabase implements LocalDatabase {
       '(SELECT cache_key FROM cache_entries ORDER BY updated_at DESC LIMIT ?)',
       [maxEntries],
     );
+    // Temp-id pairs are only needed while writes that use them wait.
+    await _db.delete(
+      'id_mappings',
+      where: 'created_at < ?',
+      whereArgs: [
+        DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch,
+      ],
+    );
     // Give the freed pages back to the phone (no-op on an older file
     // without auto-vacuum).
     await _db.execute('PRAGMA incremental_vacuum');

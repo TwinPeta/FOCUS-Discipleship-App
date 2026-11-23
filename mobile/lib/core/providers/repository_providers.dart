@@ -213,7 +213,10 @@ final testimonyRepositoryProvider = Provider<TestimonyRepository>(
 );
 
 final pathwayRepositoryProvider = Provider<PathwayRepository>(
-  (ref) => RemotePathwayRepository(ref.watch(apiClientProvider)),
+  (ref) => RemotePathwayRepository(
+    ref.watch(apiClientProvider),
+    outbox: ref.watch(outboxProvider),
+  ),
 );
 
 final messagingRepositoryProvider = Provider<MessagingRepository>(

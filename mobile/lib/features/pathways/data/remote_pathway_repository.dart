@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
 import '../domain/pathway.dart';
 import '../domain/pathway_step.dart';
 import 'pathway_repository.dart';
@@ -6,9 +8,42 @@ import 'pathway_repository.dart';
 /// [PathwayRepository] backed by the FCU API. Starting a pathway (the
 /// server's "enrollment") happens automatically with the first step.
 class RemotePathwayRepository implements PathwayRepository {
-  RemotePathwayRepository(this._api);
+  RemotePathwayRepository(this._api, {Outbox? outbox})
+    : _outbox = outbox ?? Outbox(api: _api);
 
   final ApiClient _api;
+  final Outbox _outbox;
+
+  /// The saved pathway page with [stepId] done and the following step made
+  /// current, so the step advances offline too.
+  static Object? Function(String, Object?) _advance(
+    String pathwayId,
+    String stepId,
+  ) => (key, json) {
+    if (cachedPathOf(key) == '/pathways') {
+      return patchEntity(json, pathwayId, (p) {
+        p['steps_completed'] = ((p['steps_completed'] as int?) ?? 0) + 1;
+        p['status'] ??= 'in_progress';
+        return p;
+      });
+    }
+    if (json is! Map<String, dynamic> || json['id'] != pathwayId) return json;
+    final steps = [
+      for (final s in (json['steps'] as List?) ?? const [])
+        if (s is Map<String, dynamic>) Map<String, dynamic>.of(s),
+    ];
+    final i = steps.indexWhere((s) => s['id'] == stepId);
+    if (i == -1 || steps[i]['status'] == 'done') return json;
+    steps[i]['status'] = 'done';
+    if (i + 1 < steps.length && steps[i + 1]['status'] != 'done') {
+      steps[i + 1]['status'] = 'current';
+    }
+    return {
+      ...json,
+      'steps': steps,
+      'steps_completed': ((json['steps_completed'] as int?) ?? 0) + 1,
+    };
+  };
 
   @override
   Future<List<Pathway>> getPathways() async {
@@ -91,14 +126,39 @@ class RemotePathwayRepository implements PathwayRepository {
   @override
   Future<StepCompletion> completeStep(String pathwayId, String stepId) async {
     try {
+      final stamp = DateTime.now().microsecondsSinceEpoch;
       try {
-        await _api.put('/pathways/$pathwayId/enrollment');
+        await _outbox.write(
+          OfflineWrite(
+            method: 'PUT',
+            endpoint: '/pathways/$pathwayId/enrollment',
+            entityType: 'pathway_enroll',
+            clientId: 'enroll-$pathwayId-$stamp',
+            coalesceKey: 'pathway_enroll:$pathwayId',
+          ),
+        );
       } on ApiException catch (e) {
         if (e.code != 'already_enrolled') rethrow;
       }
-      final result = objectOf(
-        await _api.post('/pathways/$pathwayId/steps/$stepId/complete'),
+      final steps0 = await getSteps(pathwayId).catchError((_) => <PathwayStep>[]);
+      final i = steps0.indexWhere((s) => s.id == stepId);
+      final written = await _outbox.write(
+        OfflineWrite(
+          method: 'POST',
+          endpoint: '/pathways/$pathwayId/steps/$stepId/complete',
+          entityType: 'pathway_step',
+          clientId: 'step-$stepId-$stamp',
+          coalesceKey: 'pathway_step:$pathwayId:$stepId',
+          // Offline: the next step (if any) as the server would say.
+          optimistic: {
+            'next_step_id': i != -1 && i + 1 < steps0.length
+                ? steps0[i + 1].id
+                : null,
+          },
+          patch: _advance(pathwayId, stepId),
+        ),
       );
+      final result = objectOf(written.json);
       final steps = await getSteps(pathwayId);
       final step = steps.firstWhere(
         (s) => s.id == stepId,

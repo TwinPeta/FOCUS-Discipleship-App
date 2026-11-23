@@ -185,7 +185,8 @@ abstract class LocalDatabase {
 class MemoryLocalDatabase implements LocalDatabase {
   final Map<String, ({String? account, String json, DateTime at})> _cache = {};
   final List<OutboxJob> _jobs = [];
-  final Map<String, ({String server, String type})> _mappings = {};
+  final Map<String, ({String server, String type, DateTime at})> _mappings =
+      {};
   final Map<String, PendingMedia> _media = {};
   int _nextId = 1;
 
@@ -266,7 +267,11 @@ class MemoryLocalDatabase implements LocalDatabase {
     String clientId,
     String serverId,
     String entityType,
-  ) async => _mappings[clientId] = (server: serverId, type: entityType);
+  ) async => _mappings[clientId] = (
+    server: serverId,
+    type: entityType,
+    at: DateTime.now(),
+  );
 
   @override
   Future<Map<String, String>> mappings() async => {
@@ -304,6 +309,8 @@ class MemoryLocalDatabase implements LocalDatabase {
   }) async {
     final cutoff = DateTime.now().subtract(maxAge);
     _cache.removeWhere((_, row) => row.at.isBefore(cutoff));
+    final mappingCutoff = DateTime.now().subtract(const Duration(days: 7));
+    _mappings.removeWhere((_, m) => m.at.isBefore(mappingCutoff));
     if (_cache.length > maxEntries) {
       final oldest = _cache.entries.toList()
         ..sort((a, b) => a.value.at.compareTo(b.value.at));

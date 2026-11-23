@@ -125,15 +125,32 @@ class RemotePrayerRepository implements PrayerRepository {
       return _request(json, known?.communityId ?? '');
     } on ApiException catch (e) {
       if (e.status == 404) return null;
+      if (e.isNetwork) {
+        // Offline and this request's page was never saved (or it was
+        // written offline): use its copy from a saved prayer wall.
+        final known = _seen[requestId];
+        if (known != null) return known;
+        final saved = await _api.findSaved(
+          requestId,
+          where: (key) =>
+              (cachedPathOf(key) ?? '').contains('/prayer-requests'),
+        );
+        if (saved != null) return _request(saved, '');
+      }
       rethrow;
     }
   }
 
   @override
   Future<List<PrayerResponse>> getResponses(String requestId) async {
-    final items = await _api.getAllItems(
-      '/prayer-requests/$requestId/responses',
-    );
+    final List<Map<String, dynamic>> items;
+    try {
+      items = await _api.getAllItems('/prayer-requests/$requestId/responses');
+    } on ApiException catch (e) {
+      // Offline with no saved responses yet: show none rather than fail.
+      if (e.isNetwork) return const [];
+      rethrow;
+    }
     return [for (final j in items) _response(j, requestId)];
   }
 

@@ -8,6 +8,8 @@ import 'package:focus_1/core/storage/json_patch.dart';
 import 'package:focus_1/core/storage/local_database.dart';
 import 'package:focus_1/core/storage/media_stash.dart';
 import 'package:focus_1/core/sync/outbox.dart';
+import 'package:focus_1/features/activity/data/remote_activity_repository.dart';
+import 'package:focus_1/features/activity/domain/activity_event.dart';
 import 'package:focus_1/features/auth/data/remote_auth_repository.dart';
 import 'package:focus_1/features/community/data/remote_membership_repository.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
@@ -581,6 +583,68 @@ void main() {
       expect(page.items.single.commentCount, 1);
       final comments = await repo.getComments('p1');
       expect(comments.single.text, 'Amen');
+    });
+  });
+
+  group('opening saved items offline', () {
+    test('a post never opened online opens from the saved feed', () async {
+      final server = _Server((r) {
+        if (r.url.path.endsWith('/communities/c1/posts')) {
+          return _json(200, {
+            'items': [
+              {
+                'id': 'p9',
+                'community_id': 'c1',
+                'author': {'id': 'u2', 'full_name': 'Peter'},
+                'text': 'Saved in the feed',
+              },
+            ],
+          });
+        }
+        return _json(200, {'id': 'c1', 'type': 'specific'});
+      });
+      final c = _client(server);
+      await c.api.get('/communities/c1/posts', query: {'limit': '20'});
+      server.up = false;
+      c.net.setOnline(false);
+      // A fresh repository: nothing remembered in memory (app restarted).
+      final repo = RemotePostRepository(
+        c.api,
+        MediaUploader(c.api),
+        PeopleDirectory(),
+      );
+      final post = await repo.getPost('p9');
+      expect(post?.body, 'Saved in the feed');
+      expect(await repo.getComments('p9'), isEmpty);
+    });
+
+    test('a badge check offline returns no badges instead of failing', () async {
+      final server = _Server((_) => _json(200, {}))..up = false;
+      final c = _client(server, online: false);
+      final badges = await RemoteActivityRepository(c.api).record(
+        ActivityEvent(
+          type: ActivityType.values.first,
+          label: 'Prayed',
+          at: DateTime(2026),
+        ),
+      );
+      expect(badges, isEmpty);
+    });
+
+    test('findEntity finds nested items', () {
+      expect(
+        findEntity({
+          'items': [
+            {'id': 'a'},
+            {
+              'id': 'b',
+              'child': {'id': 'c', 'n': 1},
+            },
+          ],
+        }, 'c'),
+        {'id': 'c', 'n': 1},
+      );
+      expect(findEntity({'items': []}, 'x'), isNull);
     });
   });
 

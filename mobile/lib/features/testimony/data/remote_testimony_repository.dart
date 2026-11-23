@@ -172,6 +172,15 @@ class RemoteTestimonyRepository implements TestimonyRepository {
       return _track(_map(json, _communityOf[id] ?? ''));
     } on ApiException catch (e) {
       if (e.status == 404) return null;
+      if (e.isNetwork) {
+        // Offline and this story's page was never saved: use its copy from
+        // a saved list (an excerpt rather than the full text).
+        final saved = await _api.findSaved(
+          id,
+          where: (key) => (cachedPathOf(key) ?? '').contains('/testimonies'),
+        );
+        if (saved != null) return _track(_map(saved, _communityOf[id] ?? ''));
+      }
       rethrow;
     }
   }

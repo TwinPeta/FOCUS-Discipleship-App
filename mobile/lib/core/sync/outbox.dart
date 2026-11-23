@@ -312,6 +312,9 @@ class Outbox {
     _changed();
   }
 
+  /// Refusals that mean the write already happened.
+  static const _alreadyDone = {'already_enrolled'};
+
   /// Sends the queued writes, oldest first. One drain at a time: a second
   /// call while one runs gets the same result.
   Future<DrainResult> drain() =>
@@ -369,6 +372,13 @@ class Outbox {
         await _dropMedia(db, job);
         sent++;
       } on ApiException catch (e) {
+        if (_alreadyDone.contains(e.code)) {
+          // Done meanwhile (another device, or an earlier attempt): sent.
+          await db.deleteJob(job.id!);
+          await _dropMedia(db, job);
+          sent++;
+          continue;
+        }
         final retry =
             e.isNetwork || e.status >= 500 || e.status == 429 || e.status == 401;
         if (retry) {

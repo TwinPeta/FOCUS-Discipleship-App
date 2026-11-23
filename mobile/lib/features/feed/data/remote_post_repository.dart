@@ -196,13 +196,39 @@ class RemotePostRepository implements PostRepository {
       return _visible(post) ? post : null;
     } on ApiException catch (e) {
       if (e.status == 404) return null;
+      if (e.isNetwork) {
+        // Offline and this post's own page was never saved (or it was
+        // written offline): use its copy from a saved feed.
+        final known = _seen[postId];
+        if (known != null) return _visible(known) ? known : null;
+        final saved = await _api.findSaved(
+          postId,
+          where: (key) => (cachedPathOf(key) ?? '').contains('/posts'),
+        );
+        if (saved != null) {
+          final scope = await _scopeOf(
+            (saved['community_id'] as String?) ?? '',
+          ).catchError((_) => PostScope.specific);
+          final post = _remember(
+            postFromApi(saved, scope, remember: _directory),
+          );
+          return _visible(post) ? post : null;
+        }
+      }
       rethrow;
     }
   }
 
   @override
   Future<List<Comment>> getComments(String postId) async {
-    final items = await _api.getAllItems('/posts/$postId/comments');
+    final List<Map<String, dynamic>> items;
+    try {
+      items = await _api.getAllItems('/posts/$postId/comments');
+    } on ApiException catch (e) {
+      // Offline with no saved comments yet: show none rather than fail.
+      if (e.isNetwork) return const [];
+      rethrow;
+    }
     return [
       for (final j in items)
         _comments[j['id'] as String] = commentFromApi(

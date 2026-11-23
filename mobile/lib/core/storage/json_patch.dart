@@ -70,3 +70,20 @@ Object? removeEntity(Object? json, String id) {
   }
   return json;
 }
+
+/// The first map in [json] whose `id` is [id], or null.
+Map<String, dynamic>? findEntity(Object? json, String id) {
+  if (json is Map<String, dynamic>) {
+    if (json['id'] == id) return json;
+    for (final value in json.values) {
+      final found = findEntity(value, id);
+      if (found != null) return found;
+    }
+  } else if (json is List) {
+    for (final value in json) {
+      final found = findEntity(value, id);
+      if (found != null) return found;
+    }
+  }
+  return null;
+}
