@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/safeguarding.dart';
+import '../../../../core/connectivity/offline_cache.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../../core/utils/password_policy.dart';
 import '../../../profile/domain/user_profile.dart';
@@ -41,6 +42,7 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     await ref.read(deviceRegistrationProvider)?.unregister();
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncValue.data(null);
+    ref.read(offlineCacheProvider).clear();
     if (accountId != null) await ref.read(outboxProvider).wipe(accountId);
   }
 

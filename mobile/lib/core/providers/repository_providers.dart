@@ -103,6 +103,7 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
     ref.watch(apiClientProvider),
     auth,
     ref.watch(mediaUploaderProvider),
+    outbox: ref.watch(outboxProvider),
   );
 });
 
