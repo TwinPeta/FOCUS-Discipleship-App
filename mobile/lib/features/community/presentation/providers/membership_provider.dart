@@ -44,6 +44,18 @@ class MembershipController extends AsyncNotifier<Membership> {
     return membership;
   }
 
+  /// Reloads without passing through "loading" (see
+  /// `ProfileController.refreshQuietly`). Keeps the current state on
+  /// failure.
+  Future<void> refreshQuietly() async {
+    if (state.isLoading) return;
+    try {
+      state = AsyncValue.data(
+        await ref.read(membershipRepositoryProvider).getMembership(),
+      );
+    } catch (_) {}
+  }
+
   Future<void> _write(Future<Membership> Function() call) async {
     state = AsyncValue.data(await call());
   }

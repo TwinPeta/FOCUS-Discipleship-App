@@ -80,10 +80,20 @@ class RemoteActivityRepository implements ActivityRepository {
   @override
   Future<List<AppBadge>> getBadges() async => _badges(await _activity());
 
+  /// The server records activity itself; this only reloads it to spot
+  /// newly earned badges. Offline with nothing saved, there is nothing to
+  /// compare: no badges now (they show once back online), and the action
+  /// that was just saved must not look failed.
   @override
   Future<List<AppBadge>> record(ActivityEvent event) async {
     final before = _earned;
-    final badges = _badges(await _activity());
+    final List<AppBadge> badges;
+    try {
+      badges = _badges(await _activity());
+    } on ApiException catch (e) {
+      if (e.isNetwork || e.status >= 500) return const [];
+      rethrow;
+    }
     if (before == null) return const [];
     return [
       for (final b in badges)

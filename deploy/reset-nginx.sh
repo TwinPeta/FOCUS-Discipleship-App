@@ -64,6 +64,25 @@ mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /etc/nginx/conf.d
 
 proxy_block() { # name domain port [websocket]
   local name="$1" domain="$2" port="$3" ws="${4:-}"
+  # Live updates: older apps send the sign-in token in the query string,
+  # so that location is never written to the access log.
+  local realtime=""
+  if [[ -n "$ws" ]]; then
+    realtime="
+    location /v1/realtime {
+        access_log off;
+        proxy_pass http://127.0.0.1:${port};
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \"upgrade\";
+        proxy_read_timeout 3600s;
+    }
+"
+  fi
   cat > "/etc/nginx/sites-available/$name" <<EOF
 server {
     listen 80;
@@ -71,7 +90,7 @@ server {
     server_name ${domain};
 
     client_max_body_size 200m;
-
+${realtime}
     location / {
         proxy_pass http://127.0.0.1:${port};
         proxy_http_version 1.1;

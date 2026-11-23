@@ -6,12 +6,32 @@ const store = require('../db/store');
 const sockets = new Map(); // userId -> Set<ws>
 let wss = null;
 
+// The app sends its access token as a WebSocket subprotocol
+// ("fcu.bearer", <token>), so it is not in the URL that proxies log. Older
+// apps still send ?token=, which stays accepted.
+const BEARER_PROTOCOL = 'fcu.bearer';
+
+function tokenOf(req) {
+  const offered = String(req.headers['sec-websocket-protocol'] || '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const at = offered.indexOf(BEARER_PROTOCOL);
+  if (at !== -1 && offered[at + 1]) return offered[at + 1];
+  return new URL(req.url, 'http://x').searchParams.get('token');
+}
+
 function attach(server) {
-  wss = new WebSocketServer({ server, path: '/v1/realtime' });
+  wss = new WebSocketServer({
+    server,
+    path: '/v1/realtime',
+    // Answer with the marker only, never echo the token back.
+    handleProtocols: (protocols) => (protocols.has(BEARER_PROTOCOL) ? BEARER_PROTOCOL : false),
+  });
   wss.on('connection', (ws, req) => {
     let userId;
     try {
-      const token = new URL(req.url, 'http://x').searchParams.get('token');
+      const token = tokenOf(req);
       userId = jwt.verify(token, config.jwtSecret).sub;
       if (!store.get('users', userId)) throw new Error('no user');
     } catch {

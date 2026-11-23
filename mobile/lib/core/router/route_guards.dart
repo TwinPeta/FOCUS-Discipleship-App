@@ -72,8 +72,10 @@ const publicPaths = <String>{
 bool isPublic(String path) =>
     publicPaths.contains(path) || path.startsWith('/join/');
 
-/// Sign-up/sign-in pages a fully signed-in user is sent away from.
+/// Sign-up/sign-in pages (and the landing page) a fully signed-in user is
+/// sent away from.
 const _signedOutOnly = <String>{
+  '/',
   '/join',
   '/join/start',
   '/join/password',
@@ -142,6 +144,12 @@ class OnboardingIncompleteGuard extends RouteGuard {
   String? redirect(GuardContext context) {
     final path = context.path;
     if (context.signedIn) {
+      // The profile could not be loaded (offline with nothing saved, or the
+      // server failing): that is not "no profile yet", so never send a
+      // signed-in student back to sign-up for it.
+      if (context.profile.hasError && !context.hasProfile) {
+        return _signedOutOnly.contains(path) ? '/communities' : null;
+      }
       if (!context.hasProfile && !path.startsWith('/join')) return '/join';
       if (context.hasProfile && _signedOutOnly.contains(path)) {
         return '/communities';
@@ -175,6 +183,13 @@ class MembershipGuard extends RouteGuard {
   String? redirect(GuardContext context) {
     final match = communityPath.firstMatch(context.path);
     if (match == null) return null;
+    // Could not be loaded (offline, nothing saved): let the page show its
+    // own offline state instead of throwing the member out.
+    if (context.membership.hasError && !context.membership.hasValue) {
+      return _manageTools.hasMatch(context.path)
+          ? '/community/${match.group(1)}/feed'
+          : null;
+    }
     final membership = context.membership.valueOrNull ?? Membership.empty;
     final approved =
         membership.status == MembershipStatus.approved &&

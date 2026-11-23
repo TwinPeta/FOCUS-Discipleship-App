@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../connectivity/connectivity_service.dart';
+import '../../sync/sync_engine.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radii.dart';
 import '../../theme/app_text_styles.dart';
@@ -14,6 +15,8 @@ class OfflineBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     if (online) return const SizedBox.shrink();
+    // Writes made offline that wait in the outbox (see SyncEngine).
+    final waiting = ref.watch(pendingWritesProvider).valueOrNull ?? 0;
 
     final fg = AppColors.isDark ? AppColors.ink : AppColors.white;
     return Semantics(
@@ -43,7 +46,14 @@ class OfflineBanner extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'Showing saved content. Posting is paused.',
+                    waiting > 0
+                        ? 'Showing saved content. $waiting '
+                              '${waiting == 1 ? 'change waits' : 'changes wait'}'
+                              ' on your phone and will be sent when you are '
+                              'back online.'
+                        : 'Showing saved content. What you post, pray, '
+                              'comment or message is saved on your phone and '
+                              'sent when you are back online.',
                     style: AppTextStyles.body.copyWith(
                       color: fg,
                       fontSize: 12.5,

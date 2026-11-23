@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
 import '../../community/data/community_api_mapper.dart';
 import '../../community/data/people_directory.dart';
 import '../../feed/domain/post.dart' show PostPhoto;
@@ -15,7 +17,30 @@ class RemoteTestimonyRepository implements TestimonyRepository {
     this._directory, {
     bool Function(String testimonyId)? isHidden,
     this.uploader,
-  }) : _isHidden = isHidden ?? _never;
+    Outbox? outbox,
+  }) : _isHidden = isHidden ?? _never,
+       _outbox = outbox ?? Outbox(api: _api, uploader: uploader);
+
+  final Outbox _outbox;
+
+  Future<Map<String, dynamic>?> _write(OfflineWrite write) async =>
+      objectOf((await _outbox.write(write)).json);
+
+  static String _stamp() => '${DateTime.now().microsecondsSinceEpoch}';
+
+  /// Flips a `<flag>` / `<count>` pair on the saved copies of [id].
+  static Object? Function(String, Object?) _toggle(
+    String id,
+    String flag,
+    String count,
+    bool on,
+  ) => (_, json) => patchEntity(json, id, (m) {
+    if ((m[flag] == true) == on) return m;
+    m[flag] = on;
+    final n = ((m[count] as int?) ?? 0) + (on ? 1 : -1);
+    m[count] = n < 0 ? 0 : n;
+    return m;
+  });
 
   /// Uploads a story's photo and video (null in tests without uploads).
   final MediaUploader? uploader;
@@ -90,35 +115,45 @@ class RemoteTestimonyRepository implements TestimonyRepository {
     Testimony testimony, {
     StoryAttachments attachments = StoryAttachments.none,
   }) async {
-    final mediaIds = <String>[];
-    final uploader = this.uploader;
-    if (uploader != null) {
-      if (attachments.photoPath != null) {
-        mediaIds.add(
-          await uploader.uploadPhoto(
-            attachments.photoPath!,
-            purpose: 'testimony_photo',
-          ),
-        );
-      }
-      if (attachments.videoPath != null && attachments.videoLength != null) {
-        mediaIds.add(
-          await uploader.uploadVideo(
-            attachments.videoPath!,
-            duration: attachments.videoLength!,
-          ),
-        );
-      }
-    }
-    final json = objectOf(
-      await _api.post(
-        '/communities/${testimony.communityId}/testimonies',
+    final media = <LocalMedia>[
+      if (uploader != null && attachments.photoPath != null)
+        LocalMedia(path: attachments.photoPath!, purpose: 'testimony_photo'),
+      if (uploader != null &&
+          attachments.videoPath != null &&
+          attachments.videoLength != null)
+        LocalMedia(
+          path: attachments.videoPath!,
+          purpose: 'testimony_video',
+          duration: attachments.videoLength,
+        ),
+    ];
+    final listPath = '/communities/${testimony.communityId}/testimonies';
+    // Waits for review either way, so it is not shown in the saved list.
+    final optimistic = <String, dynamic>{
+      'id': testimony.id,
+      'community_id': testimony.communityId,
+      'title': testimony.title,
+      'body': testimony.excerpt ?? '',
+      'status': 'pending',
+      'created_at': apiNow(),
+      if (testimony.authorId != null)
+        'author': {'id': testimony.authorId, 'full_name': testimony.authorName},
+      'pending': true,
+    };
+    final json = await _write(
+      OfflineWrite(
+        method: 'POST',
+        endpoint: listPath,
+        entityType: 'testimony',
+        clientId: testimony.id,
+        creates: true,
         body: {
           'title': testimony.title,
           'body': testimony.excerpt ?? '',
           'consent': true,
-          if (mediaIds.isNotEmpty) 'media_ids': mediaIds,
         },
+        media: media,
+        optimistic: optimistic,
       ),
     );
     if (json == null) throw const ApiException(500, message: 'Empty reply');
@@ -137,15 +172,32 @@ class RemoteTestimonyRepository implements TestimonyRepository {
       return _track(_map(json, _communityOf[id] ?? ''));
     } on ApiException catch (e) {
       if (e.status == 404) return null;
+      if (e.isNetwork) {
+        // Offline and this story's page was never saved: use its copy from
+        // a saved list (an excerpt rather than the full text).
+        final saved = await _api.findSaved(
+          id,
+          where: (key) => (cachedPathOf(key) ?? '').contains('/testimonies'),
+        );
+        if (saved != null) return _track(_map(saved, _communityOf[id] ?? ''));
+      }
       rethrow;
     }
   }
 
   @override
   Future<Testimony> setEncouraged(String id, {required bool encouraged}) async {
-    encouraged
-        ? await _api.put('/testimonies/$id/encourage')
-        : await _api.delete('/testimonies/$id/encourage');
+    await _outbox.write(
+      OfflineWrite(
+        method: encouraged ? 'PUT' : 'DELETE',
+        endpoint: '/testimonies/$id/encourage',
+        entityType: 'testimony_encourage',
+        clientId: 'encourage-$id-${_stamp()}',
+        coalesceKey: 'testimony_encourage:$id',
+        patch: _toggle(id, 'encouraged_by_me', 'encouraged_count', encouraged),
+      ),
+    );
+    // Offline, the saved copy already carries the change.
     final t = await getTestimony(id, viewerId: null);
     if (t == null) throw const ApiException(404, code: 'not_found');
     return t;

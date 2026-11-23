@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 
+import '../media/image_disk_cache.dart';
+
 import 'local_file_image.dart'
     if (dart.library.js_interop) 'local_file_image_web.dart';
 
@@ -15,14 +17,19 @@ bool isPhotoUrl(String path) =>
 
 /// A photo decoded at (roughly) the size it is shown, not at camera
 /// resolution: a 12 MP picture in a 40px avatar would otherwise cost ~48 MB.
-/// [path] may be a device file, a server URL, or a web `blob:` URL.
+/// [path] may be a device file, a server URL, or a web `blob:` URL. Server
+/// photos come through the phone's photo cache ([cachedNetworkImage]), so
+/// they also show offline.
 ImageProvider sizedFileImage(
   BuildContext context,
   String path, {
   required double logicalSize,
 }) {
   final pixels = (logicalSize * MediaQuery.devicePixelRatioOf(context)).round();
-  final ImageProvider source = kIsWeb || isPhotoUrl(path)
+  final ImageProvider source = path.startsWith('http://') ||
+          path.startsWith('https://')
+      ? cachedNetworkImage(path)
+      : kIsWeb || isPhotoUrl(path)
       ? NetworkImage(path)
       : localFileImage(path);
   return ResizeImage(source, width: pixels, policy: ResizeImagePolicy.fit);

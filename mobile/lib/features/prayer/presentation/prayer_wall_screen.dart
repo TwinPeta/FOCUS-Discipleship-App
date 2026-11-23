@@ -58,7 +58,8 @@ class PrayerWallScreen extends ConsumerWidget {
       return ErrorView(onRetry: () => ref.invalidate(provider));
     }
     final requests = requestsAsync.valueOrNull ?? const <PrayerRequest>[];
-    // Offline: sharing and "I prayed" are disabled, not hidden (screen 56).
+    // Offline: sharing and "I prayed" still work; they are sent when the
+    // app is back online.
     final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     void newRequest() =>
         context.push('/create?type=prayer&to=${createTarget ?? communityId}');
@@ -91,8 +92,8 @@ class PrayerWallScreen extends ConsumerWidget {
                     title: 'Prayer wall',
                     actionLabel: online
                         ? 'Share a request'
-                        : 'Share a request. Paused while offline',
-                    onAction: online ? newRequest : null,
+                        : 'Share a request. Sent when back online',
+                    onAction: newRequest,
                   ),
                   if (!online) ...[
                     const SizedBox(height: 8),
@@ -108,7 +109,7 @@ class PrayerWallScreen extends ConsumerWidget {
               title: 'No prayer requests yet',
               body: 'Be the first to share one.',
               actionLabel: 'Share a request',
-              onAction: online ? newRequest : null,
+              onAction: newRequest,
             );
           }
           final request = requests[index - 1];
@@ -117,7 +118,7 @@ class PrayerWallScreen extends ConsumerWidget {
             child: _PrayerCard(
               key: ValueKey(request.id),
               request: request,
-              onPrayedTap: online ? () => onPrayed(request) : null,
+              onPrayedTap: () => onPrayed(request),
               onRespondTap: () => context.push('/prayer/${request.id}'),
               // Not on the user's own (named) requests.
               onReportTap: request.authorId != null && request.authorId == me

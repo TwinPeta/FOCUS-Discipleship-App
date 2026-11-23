@@ -43,7 +43,12 @@ Post postFromApi(
         DateTime.tryParse((j['created_at'] as String?) ?? '') ?? DateTime.now(),
     // No role badge on an anonymous post: it would hint at who wrote it.
     roleLabel: j['anonymous'] == true ? null : roleLabelFor(author),
-    photo: urls.isEmpty ? null : PostPhoto.network(urls.first),
+    // A post still waiting to be sent shows the photo from the phone.
+    photo: urls.isEmpty
+        ? null
+        : (_isLocal(urls.first)
+              ? PostPhoto.file(urls.first)
+              : PostPhoto.network(urls.first)),
     media: urls.length > 1 ? urls.sublist(1) : const [],
     likeCount: (j['like_count'] as int?) ?? 0,
     likedByMe: j['liked_by_me'] == true,
@@ -57,6 +62,11 @@ Post postFromApi(
     passedByMe: j['passed_by_me'] == true,
   );
 }
+
+bool _isLocal(String url) =>
+    !url.startsWith('http://') &&
+    !url.startsWith('https://') &&
+    !url.startsWith('blob:');
 
 Comment commentFromApi(
   Map<String, dynamic> j,

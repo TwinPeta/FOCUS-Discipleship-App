@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/safeguarding.dart';
+import '../../../../core/connectivity/offline_cache.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../../core/utils/password_policy.dart';
 import '../../../profile/domain/user_profile.dart';
@@ -11,8 +12,18 @@ import '../../domain/auth_models.dart';
 /// once and stays signed in until they log out.
 class AuthController extends AsyncNotifier<AuthSession?> {
   @override
-  Future<AuthSession?> build() =>
-      ref.watch(authRepositoryProvider).currentSession();
+  Future<AuthSession?> build() {
+    // The server refusing the saved session (anywhere in the app) signs
+    // out at once.
+    final tokens = ref.watch(tokenStoreProvider);
+    void onCleared(String? accountId) {
+      if (state.valueOrNull != null) state = const AsyncValue.data(null);
+    }
+
+    tokens.addClearListener(onCleared);
+    ref.onDispose(() => tokens.removeClearListener(onCleared));
+    return ref.watch(authRepositoryProvider).currentSession();
+  }
 
   /// Throws `InvalidCredentials` (generic) on failure.
   Future<void> signIn(String email, String password) async {
@@ -22,11 +33,31 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     state = AsyncValue.data(session);
   }
 
+  /// Signs out and removes what this account saved on the phone (saved
+  /// content, writes still waiting to be sent, their photos). Screens ask
+  /// first when writes are waiting (see [pendingWritesProvider]).
   Future<void> signOut() async {
+    final accountId = state.valueOrNull?.accountId;
     // While the tokens are still valid, so the DELETE /devices is signed.
     await ref.read(deviceRegistrationProvider)?.unregister();
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncValue.data(null);
+    ref.read(offlineCacheProvider).clear();
+    if (accountId != null) await ref.read(outboxProvider).wipe(accountId);
+    // The API-backed repositories remember what this account saw (posts,
+    // people, threads) for the whole session: start the next one empty.
+    // (Tests keep their in-memory doubles across sign-out.)
+    if (ref.read(liveApiEnabledProvider)) {
+      ref
+        ..invalidate(peopleDirectoryProvider)
+        ..invalidate(postRepositoryProvider)
+        ..invalidate(prayerRepositoryProvider)
+        ..invalidate(testimonyRepositoryProvider)
+        ..invalidate(messagingRepositoryProvider)
+        ..invalidate(meetingRepositoryProvider)
+        ..invalidate(learningRepositoryProvider)
+        ..invalidate(membershipRepositoryProvider);
+    }
   }
 
   void setSession(AuthSession session) => state = AsyncValue.data(session);

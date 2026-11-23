@@ -189,7 +189,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
                               label: 'I am going',
                               height: 48,
                               isLoading: _rsvpBusy,
-                              onPressed: online && !_rsvpBusy
+                              onPressed: !_rsvpBusy
                                   ? () => _toggleGoing(next)
                                   : null,
                             )
@@ -197,7 +197,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
                               label: 'I am going',
                               height: 48,
                               isLoading: _rsvpBusy,
-                              onPressed: online && !_rsvpBusy
+                              onPressed: !_rsvpBusy
                                   ? () => _toggleGoing(next)
                                   : null,
                             ),

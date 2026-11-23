@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/config/app_info.dart';
+import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
@@ -39,11 +40,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _signOut() async {
     if (_signingOut) return;
+    // Writes made offline that are not sent yet are lost on sign-out.
+    final waiting = await ref.read(outboxProvider).pendingCount();
+    if (!mounted) return;
     final ok = await showConfirmDialog(
       context,
       title: 'Sign out?',
-      message: 'You can sign back in any time with your email and password.',
-      confirmLabel: 'Sign out',
+      message: waiting == 0
+          ? 'You can sign back in any time with your email and password.'
+          : 'You have $waiting ${waiting == 1 ? 'thing' : 'things'} saved '
+                'offline that ${waiting == 1 ? 'has' : 'have'} not been sent '
+                'yet. Signing out deletes ${waiting == 1 ? 'it' : 'them'}. '
+                'Connect to the internet first to send '
+                '${waiting == 1 ? 'it' : 'them'}.',
+      confirmLabel: waiting == 0 ? 'Sign out' : 'Sign out and delete',
+      destructive: waiting > 0,
     );
     if (!ok || !mounted) return;
     setState(() => _signingOut = true);

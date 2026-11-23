@@ -51,6 +51,13 @@ android {
         }
     }
 
+    // Release builds run Android lint over every plugin first; that lint
+    // crashes on firebase_core ("Unexpected failure during lint analysis",
+    // a bug in lint itself). Flutter's own checks cover the app.
+    lint {
+        checkReleaseBuilds = false
+    }
+
     buildTypes {
         debug {
             if (hasFcuKey) signingConfig = signingConfigs.getByName("fcu")

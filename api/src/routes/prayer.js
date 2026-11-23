@@ -3,6 +3,7 @@ const store = require('../db/store');
 const { check } = require('../utils/validate');
 const { notFound } = require('../utils/errors');
 const { paginate, byNewest } = require('../utils/pagination');
+const { idempotency } = require('../middleware/idempotency');
 const { requireMember } = require('../middleware/auth');
 const { logEvent, awardBadge } = require('../utils/activity');
 const S = require('../utils/serialize');
@@ -22,7 +23,7 @@ router.get('/communities/:communityId/prayer-requests', requireMember, (req, res
   res.json({ items: page.items.map((r) => S.prayerRequest(r, req.user.id)), next_cursor: page.next_cursor });
 });
 
-router.post('/communities/:communityId/prayer-requests', requireMember, (req, res, next) => {
+router.post('/communities/:communityId/prayer-requests', requireMember, idempotency, (req, res, next) => {
   try {
     const b = check(req.body, { text: { required: true, type: 'string', min: 1, max: 2000 }, anonymous: { type: 'boolean' } });
     // authorId is stored so moderators can act on abuse, but is never serialized for anonymous requests.
@@ -70,7 +71,7 @@ router.get('/prayer-requests/:prayerRequestId/responses', loadRequest, (req, res
   res.json({ items: page.items.map((c) => responseDto(c, req.prayer)), next_cursor: page.next_cursor });
 });
 
-router.post('/prayer-requests/:prayerRequestId/responses', loadRequest, (req, res, next) => {
+router.post('/prayer-requests/:prayerRequestId/responses', loadRequest, idempotency, (req, res, next) => {
   try {
     const b = check(req.body, { text: { required: true, type: 'string', min: 1, max: 2000 } });
     const c = store.insert('prayerResponses', { prayerRequestId: req.prayer.id, authorId: req.user.id, text: b.text.trim() });

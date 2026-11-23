@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:focus_1/core/router/app_router.dart';
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/notifications/domain/app_notification.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
 import '../support/fakes.dart';
+
+/// Signed-in members are sent from the landing page to the hub; start on a
+/// neutral page so the test decides when the hub (or inbox) first loads.
+final _startElsewhere = [initialLocationProvider.overrideWithValue('/help')];
 
 void main() {
   late FakeNotificationRepository notifications;
@@ -72,6 +77,7 @@ void main() {
       tester,
       membership: MembershipStatus.approved,
       resultSeen: false,
+      overrides: _startElsewhere,
     );
     await goTo(tester, app, '/communities');
     await settle(tester);
@@ -87,6 +93,7 @@ void main() {
       tester,
       membership: MembershipStatus.rejected,
       resultSeen: false,
+      overrides: _startElsewhere,
     );
     await goTo(tester, app, '/communities');
     await settle(tester);

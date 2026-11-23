@@ -23,8 +23,10 @@ void main() {
         .setOnline(false);
     await settle(tester);
 
-    expect(find.text('You are offline'), findsWidgets); // banner + hint
-    expect(tester.widget<TextField>(field).enabled, isFalse);
+    expect(find.text('You are offline'), findsOneWidget); // the banner
+    // Offline messages wait on the phone and are sent later.
+    expect(tester.widget<TextField>(field).enabled, isTrue);
+    expect(find.text('Write a message (sent when back online)'), findsOneWidget);
     // Earlier messages stay readable.
     expect(find.textContaining('checking in'), findsOneWidget);
   });

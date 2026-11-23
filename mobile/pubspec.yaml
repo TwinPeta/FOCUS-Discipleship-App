@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0-beta.6+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.14.0
@@ -38,7 +38,6 @@ dependencies:
 
   go_router: ^16.0.0
   flutter_riverpod: ^2.6.1
-  google_fonts: ^6.2.1
   image_picker: ^1.1.2
   file_picker: ^8.1.2
   http: ^1.6.0
@@ -54,6 +53,10 @@ dependencies:
   app_badge_plus: ^1.4.0
   flutter_image_compress: ^2.5.1
   flutter_secure_storage: ^10.3.4
+  sqflite: ^2.4.6
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  connectivity_plus: ^7.3.2
 
 dev_dependencies:
   flutter_test:
@@ -81,8 +84,6 @@ flutter:
   # Bricolage Grotesque (OFL, assets/fonts/OFL.txt) is the app font,
   # bundled so text renders offline. assets/fonts/ is also listed as an
   # asset folder so tests and the licence page can load the files.
-  # (The old Source Sans 3 files in assets/google_fonts/ are no longer
-  # bundled.)
   assets:
     - assets/fonts/
 

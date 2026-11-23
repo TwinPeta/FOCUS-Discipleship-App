@@ -1,12 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:focus_1/core/router/app_router.dart';
 import 'package:focus_1/core/providers/repository_providers.dart';
 import 'package:focus_1/features/messaging/presentation/conversation_screen.dart';
 import 'package:focus_1/features/messaging/presentation/new_message_screen.dart';
 
 import '../support/app_harness.dart';
 import '../support/pump_utils.dart';
+
+/// Signed-in members are sent from the landing page to the hub; start on a
+/// neutral page so the test decides when the hub (or inbox) first loads.
+final _startElsewhere = [initialLocationProvider.overrideWithValue('/help')];
 
 void main() {
   testWidgets('43: a mentor profile, then block with undo', (tester) async {
@@ -82,7 +87,7 @@ void main() {
   });
 
   testWidgets('55: blocked users can be unblocked', (tester) async {
-    final container = await pumpFcuApp(tester);
+    final container = await pumpFcuApp(tester, overrides: _startElsewhere);
     await tester.runAsync(
       () => container.read(moderationRepositoryProvider).blockUser('member-2'),
     );
@@ -96,7 +101,7 @@ void main() {
   });
 
   testWidgets('58: an empty inbox offers Find a member', (tester) async {
-    final container = await pumpFcuApp(tester);
+    final container = await pumpFcuApp(tester, overrides: _startElsewhere);
     await tester.runAsync(() async {
       final blocks = container.read(moderationRepositoryProvider);
       await blocks.blockUser('sm-1');

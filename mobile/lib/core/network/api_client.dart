@@ -3,6 +3,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../connectivity/connectivity_service.dart';
+import '../storage/json_patch.dart';
+import '../storage/local_database.dart';
 import 'token_vault.dart';
 
 /// A failed call to the backend. [status] is 0 when the server could not be
@@ -52,9 +55,26 @@ class TokenStore {
 
   bool get hasSession => refreshToken != null;
 
+  final List<void Function(String? accountId)> _onCleared = [];
+
+  /// Called when the session ends: sign-out, or the server refusing the
+  /// refresh token (the app then goes back to the landing page).
+  void addClearListener(void Function(String? accountId) listener) =>
+      _onCleared.add(listener);
+
+  void removeClearListener(void Function(String? accountId) listener) =>
+      _onCleared.remove(listener);
+
+  /// Told whether a session is saved, each time that changes (`main` keeps
+  /// it in plain preferences so a signed-out launch can skip the vault).
+  void Function(bool hasSession)? onSavedChanged;
+
   /// Loads the saved session at launch. A vault that cannot be read just means
-  /// signing in again.
-  Future<void> restore() async {
+  /// signing in again. [knownEmpty] (a previous launch recorded that nothing
+  /// is saved) skips the vault: on Android its first use sets up a Keystore
+  /// key, which is slow.
+  Future<void> restore({bool knownEmpty = false}) async {
+    if (knownEmpty) return;
     try {
       final saved = await vault?.read();
       if (saved == null) return;
@@ -79,11 +99,19 @@ class TokenStore {
   }
 
   void clear() {
+    final had = refreshToken != null || accountId != null;
+    final account = accountId;
     accessToken = null;
     refreshToken = null;
     accountId = null;
     email = null;
     vault?.clear().catchError((_) {});
+    onSavedChanged?.call(false);
+    if (had) {
+      for (final listener in List.of(_onCleared)) {
+        listener(account);
+      }
+    }
   }
 
   void _persist() {
@@ -91,6 +119,7 @@ class TokenStore {
     final access = accessToken;
     final refresh = refreshToken;
     if (vault == null || access == null || refresh == null) return;
+    onSavedChanged?.call(true);
     vault
         .write(
           SavedSession(
@@ -106,12 +135,20 @@ class TokenStore {
 
 /// Thin JSON client for the FCU API: bearer auth, one automatic token
 /// refresh on a 401, and problem+json errors turned into [ApiException].
+///
+/// With a [cache], every successful GET reply is saved on the phone, and a
+/// GET that cannot reach the server (offline, timeout, 5xx) returns the
+/// saved reply instead. While [connectivity] already knows the app is
+/// offline, a saved reply is returned at once without waiting for the
+/// network. Requests that cannot reach the server tell [connectivity].
 class ApiClient {
   ApiClient({
     required String baseUrl,
     http.Client? client,
     TokenStore? tokens,
     this.timeout = const Duration(seconds: 20),
+    this.cache,
+    this.connectivity,
   }) : baseUrl = baseUrl.endsWith('/')
            ? baseUrl.substring(0, baseUrl.length - 1)
            : baseUrl,
@@ -123,7 +160,106 @@ class ApiClient {
   final Duration timeout;
   final http.Client _http;
 
+  /// Saved GET replies (null: nothing is saved).
+  final LocalDatabase? cache;
+
+  /// Told when the server is (un)reachable; asked whether it is.
+  final ConnectivityService? connectivity;
+
   Future<bool>? _refreshing;
+
+  /// Query parameters that change on every call (a clock) and so are left
+  /// out of the saved reply's key.
+  static const _volatileQuery = {'now'};
+
+  /// Endpoints the API serves without sign-in (landing stories, school and
+  /// app-config lookups). Their saved replies are shared by every account
+  /// and the signed-out landing/sign-up pages, and survive sign-out.
+  static bool isPublicPath(String path) =>
+      path.startsWith('/public/') || path.startsWith('/lookups/');
+
+  /// Who saved replies belong to: the signed-in account, or null (public)
+  /// for sign-in-free endpoints.
+  String? cacheAccount(String path, {bool auth = true}) =>
+      auth && !isPublicPath(path) ? tokens.accountId : null;
+
+  /// The key a GET reply is saved under.
+  String cacheKey(String path, {Map<String, String>? query, bool auth = true}) {
+    final shared = !auth || isPublicPath(path);
+    final params = <String>[
+      for (final e in (query ?? const <String, String>{}).entries)
+        if (!_volatileQuery.contains(e.key)) '${e.key}=${e.value}',
+    ]..sort();
+    final owner = shared ? 'public' : (tokens.accountId ?? 'anon');
+    return '$owner|GET $path${params.isEmpty ? '' : '?${params.join('&')}'}';
+  }
+
+  /// The item with [id] inside any saved reply of this account (a post in
+  /// a saved feed, a request in a saved prayer wall), for opening it
+  /// offline when its own page was never saved. [where] narrows the saved
+  /// replies searched.
+  Future<Map<String, dynamic>?> findSaved(
+    String id, {
+    bool Function(String key)? where,
+  }) async {
+    final db = cache;
+    final account = tokens.accountId;
+    if (db == null || account == null) return null;
+    Map<String, dynamic>? found;
+    try {
+      await db.updateCaches(account, (_, json) {
+        found ??= findEntity(json, id);
+        return json; // read only
+      }, where: where);
+    } catch (_) {}
+    return found;
+  }
+
+  static bool _cacheable(String path) =>
+      !path.startsWith('/auth/') && !path.startsWith('/health');
+
+  Future<Object?> _cachedGet(
+    String path,
+    Map<String, String>? query,
+    bool auth,
+    Map<String, String>? headers,
+  ) async {
+    final db = cache!;
+    final key = cacheKey(path, query: query, auth: auth);
+    if (connectivity?.isOnline == false) {
+      final saved = await _readSaved(db, key);
+      if (saved != null) return saved.value;
+    }
+    try {
+      final json = await _network('GET', path, query, null, auth, headers);
+      final public = !auth || isPublicPath(path);
+      final account = cacheAccount(path, auth: auth);
+      if (public || account != null) {
+        try {
+          await db.writeCache(key, json, accountId: account);
+        } catch (_) {}
+      }
+      return json;
+    } on ApiException catch (e) {
+      if (e.isNetwork || e.status >= 500) {
+        final saved = await _readSaved(db, key);
+        if (saved != null) return saved.value;
+      }
+      rethrow;
+    }
+  }
+
+  static Future<({Object? value})?> _readSaved(
+    LocalDatabase db,
+    String key,
+  ) async {
+    try {
+      final saved = await db.readCache(key);
+      return saved == null ? null : (value: saved);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<Object?> get(String path, {Map<String, String>? query}) =>
       send('GET', path, query: query);
@@ -174,6 +310,20 @@ class ApiClient {
     bool auth = true,
     Map<String, String>? headers,
   }) async {
+    if (method == 'GET' && cache != null && _cacheable(path)) {
+      return _cachedGet(path, query, auth, headers);
+    }
+    return _network(method, path, query, body, auth, headers);
+  }
+
+  Future<Object?> _network(
+    String method,
+    String path,
+    Map<String, String>? query,
+    Object? body,
+    bool auth,
+    Map<String, String>? headers,
+  ) async {
     var response = await _once(method, path, query, body, auth, headers);
     if (response.statusCode == 401 && auth && tokens.hasSession) {
       if (await _refresh()) {
@@ -208,8 +358,13 @@ class ApiClient {
     }
     try {
       final streamed = await _http.send(request).timeout(timeout);
-      return await http.Response.fromStream(streamed).timeout(timeout);
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(timeout);
+      if (response.statusCode < 500) connectivity?.reportReachable();
+      return response;
     } catch (_) {
+      connectivity?.reportUnreachable();
       throw const ApiException(0, message: 'Could not reach the server');
     }
   }

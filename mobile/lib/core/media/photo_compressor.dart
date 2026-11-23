@@ -51,9 +51,11 @@ class PhotoCompressor {
       if (out.isNotEmpty && out.length <= UploadPolicy.maxPhotoBytes) {
         final name = 'fcu_${DateTime.now().microsecondsSinceEpoch}.webp';
         final path = await saveTempPhoto(out, name);
-        return path == null
-            ? picked
-            : XFile(path, mimeType: 'image/webp', name: name);
+        if (path == null) return picked;
+        // The picker's own copy is no longer needed (only the WebP is
+        // shown and uploaded).
+        await deleteTempPhoto(picked.path);
+        return XFile(path, mimeType: 'image/webp', name: name);
       }
     }
     return null;
@@ -72,6 +74,14 @@ class PhotoCompressor {
     }
   }
 }
+
+/// Deletes a temporary photo this app made (a removed or sent photo).
+Future<void> discardTempPhoto(String path) =>
+    kIsWeb ? Future.value() : deleteTempPhoto(path);
+
+/// Clears leftover temporary photos older than a day (at app start).
+Future<void> sweepStaleTempPhotos() =>
+    kIsWeb ? Future.value() : sweepTempPhotos();
 
 /// Tests swap this for one that does not call the platform.
 final photoCompressorProvider = Provider<PhotoCompressor>(

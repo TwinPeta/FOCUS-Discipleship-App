@@ -1,5 +1,6 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/network/media_uploader.dart';
+import '../../../core/sync/outbox.dart';
 import '../../../core/widgets/sized_file_image.dart' show isPhotoUrl;
 import '../../../core/utils/slug.dart';
 import '../../auth/data/remote_auth_repository.dart';
@@ -10,26 +11,37 @@ import 'profile_repository.dart';
 /// [ProfileRepository] backed by the FCU API. Signing up creates the profile
 /// and the account in one call, through [RemoteAuthRepository.register].
 class RemoteProfileRepository implements ProfileRepository {
-  RemoteProfileRepository(this._api, this._auth, this._uploader);
+  RemoteProfileRepository(
+    this._api,
+    this._auth,
+    this._uploader, {
+    Outbox? outbox,
+  }) : _outbox = outbox ?? Outbox(api: _api, uploader: _uploader);
 
   final ApiClient _api;
+  final Outbox _outbox;
   final RemoteAuthRepository _auth;
   final MediaUploader _uploader;
 
   /// A photo picked on this device (not yet on the server) is uploaded and
   /// its media id returned; a server photo, or none, needs nothing.
   Future<String?> _uploadPhoto(String? path) async {
-    if (path == null ||
-        path.isEmpty ||
-        (isPhotoUrl(path) && !path.startsWith('blob:'))) {
-      return null;
-    }
-    return _uploader.uploadPhoto(path, purpose: 'profile_photo');
+    if (!_needsUpload(path)) return null;
+    return _uploader.uploadPhoto(path!, purpose: 'profile_photo');
   }
+
+  static bool _needsUpload(String? path) =>
+      path != null &&
+      path.isNotEmpty &&
+      !(isPhotoUrl(path) && !path.startsWith('blob:'));
 
   UserProfile? _cached;
   Future<UserProfile>? _inFlightCreate;
 
+  /// `GET /me`. Offline (or when the server fails) the copy saved on the
+  /// phone is returned by the [ApiClient]; with no saved copy the network
+  /// error is thrown, never turned into "no profile" (that would send a
+  /// signed-in student back to sign-up).
   @override
   Future<UserProfile?> getProfile(String accountId) async {
     try {
@@ -150,12 +162,16 @@ class RemoteProfileRepository implements ProfileRepository {
     final errors = validateProfile(profile);
     if (errors.isNotEmpty) throw ProfileValidationError(errors);
     try {
-      final institutionId = await _institutionId(profile);
-      final photoMediaId = await _uploadPhoto(profile.photoPath);
-      final json = await _api.patch(
-        '/me',
-        body: {
-          'photo_media_id': ?photoMediaId,
+      String? institutionId;
+      try {
+        institutionId = await _institutionId(profile);
+      } on ApiException catch (e) {
+        // Offline and this school's lookup was never saved: keep the
+        // institution the profile already has.
+        if (!e.isNetwork) rethrow;
+      }
+      final photo = _needsUpload(profile.photoPath) ? profile.photoPath : null;
+      final body = <String, dynamic>{
           'full_name': profile.fullName.trim(),
           'show_username_only': profile.showUsernameOnly,
           'country': countryCodeOf(profile.country),
@@ -168,9 +184,39 @@ class RemoteProfileRepository implements ProfileRepository {
             'year_of_study': profile.yearOfStudy,
           if (profile.homeChurch != null)
             'home_church': homeChurchToApi(profile.homeChurch!),
-        },
-      ) as Map<String, dynamic>;
-      return _cached = profileFromApi(json);
+      };
+      final before = _cached;
+      final result = await _outbox.write(
+        OfflineWrite(
+          method: 'PATCH',
+          endpoint: '/me',
+          entityType: 'profile',
+          clientId: 'profile-${DateTime.now().microsecondsSinceEpoch}',
+          coalesceKey: 'profile_update',
+          body: body,
+          media: [
+            if (photo != null)
+              LocalMedia(
+                path: photo,
+                purpose: 'profile_photo',
+                field: 'photo_media_id',
+                single: true,
+              ),
+          ],
+          patchWhere: (key) => cachedPathOf(key) == '/me',
+          patch: (_, json) => json is Map<String, dynamic>
+              ? {...json, ...body, 'photo_url': ?photo}
+              : json,
+        ),
+      );
+      if (result.queued) {
+        // Saved for later: show the edit now, from the phone.
+        return _cached = profile.copyWith(
+          id: before?.id ?? profile.id,
+          username: before?.username ?? profile.username,
+        );
+      }
+      return _cached = profileFromApi(result.json as Map<String, dynamic>);
     } on ApiException catch (e) {
       if (e.code == 'email_taken') {
         throw const ProfileValidationError({

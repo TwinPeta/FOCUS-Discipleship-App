@@ -50,7 +50,7 @@ void main() {
     });
   });
 
-  testWidgets('offline feed: banner tip, saved marker, posting disabled', (
+  testWidgets('offline feed: banner tip, saved marker, posting still works', (
     tester,
   ) async {
     final container = await pumpFcuApp(tester);
@@ -68,8 +68,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Saved'), findsOneWidget);
-    expect(find.text('Posting paused'), findsOneWidget);
-    // The composer's shortcuts are disabled, not hidden.
+    expect(find.text('Share something (sent later)…'), findsOneWidget);
+    // The composer's shortcuts stay usable: writes are sent later.
     for (final tip in ['Ask a question', 'Prayer request']) {
       final button = tester.widget<IconButton>(
         find.widgetWithIcon(
@@ -79,7 +79,7 @@ void main() {
               : Icons.volunteer_activism_outlined,
         ),
       );
-      expect(button.onPressed, isNull, reason: tip);
+      expect(button.onPressed, isNotNull, reason: tip);
     }
 
     net.setOnline(true);
@@ -88,7 +88,7 @@ void main() {
     expect(find.text('Saved'), findsNothing);
   });
 
-  testWidgets('offline prayer wall: "I prayed" disabled, not hidden', (
+  testWidgets('offline prayer wall: "I prayed" and sharing still work', (
     tester,
   ) async {
     final container = await pumpFcuApp(tester);
@@ -100,12 +100,12 @@ void main() {
 
     final pills = tester.widgetList<PrayedButton>(find.byType(PrayedButton));
     expect(pills, isNotEmpty);
-    expect(pills.every((p) => p.onTap == null), isTrue);
+    expect(pills.every((p) => p.onTap != null), isTrue);
     expect(find.text('Saved'), findsOneWidget);
     final header = tester.widget<TabSectionHeader>(
       find.byType(TabSectionHeader),
     );
-    expect(header.onAction, isNull);
-    expect(header.actionLabel, 'Share a request. Paused while offline');
+    expect(header.onAction, isNotNull);
+    expect(header.actionLabel, 'Share a request. Sent when back online');
   });
 }

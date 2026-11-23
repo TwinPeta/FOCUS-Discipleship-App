@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
 import '../domain/learning_models.dart';
 import 'learning_repository.dart';
 
@@ -8,9 +10,22 @@ import 'learning_repository.dart';
 /// the server (correct answers never reach the app). The last attempt
 /// (score and the member's own choices) comes back with the quiz.
 class RemoteLearningRepository implements LearningRepository {
-  RemoteLearningRepository(this._api);
+  RemoteLearningRepository(this._api, {Outbox? outbox})
+    : _outbox = outbox ?? Outbox(api: _api);
 
   final ApiClient _api;
+  final Outbox _outbox;
+
+  static String _stamp() => '${DateTime.now().microsecondsSinceEpoch}';
+
+  /// Merges [fields] into `my_progress` of the saved copies of [id].
+  static Object? Function(String, Object?) _progress(
+    String id,
+    Map<String, Object> fields,
+  ) => (_, json) => patchEntity(json, id, (m) {
+    m['my_progress'] = {...?objectOf(m['my_progress']), ...fields};
+    return m;
+  });
 
   final Map<String, List<List<String>>> _optionIds =
       {}; // quiz -> question -> option ids
@@ -188,8 +203,22 @@ class RemoteLearningRepository implements LearningRepository {
 
   @override
   Future<Reflection> saveReflection(String contentId, String text) async {
+    final saved = <String, dynamic>{'text': text, 'updated_at': apiNow()};
+    final path = '/resources/$contentId/reflection';
     final json = objectOf(
-      await _api.put('/resources/$contentId/reflection', body: {'text': text}),
+      (await _outbox.write(
+        OfflineWrite(
+          method: 'PUT',
+          endpoint: path,
+          entityType: 'reflection',
+          clientId: 'reflection-$contentId-${_stamp()}',
+          coalesceKey: 'reflection:$contentId',
+          body: {'text': text},
+          optimistic: saved,
+          patchWhere: (key) => cachedPathOf(key) == path,
+          patch: (_, _) => saved,
+        ),
+      )).json,
     );
     return _reflectionFrom(contentId, json) ??
         Reflection(contentId: contentId, text: text, updatedAt: DateTime.now());
@@ -204,9 +233,16 @@ class RemoteLearningRepository implements LearningRepository {
 
   @override
   Future<void> saveResumePosition(String videoId, Duration position) async {
-    await _api.put(
-      '/resources/$videoId/progress',
-      body: {'position_seconds': position.inSeconds},
+    await _outbox.write(
+      OfflineWrite(
+        method: 'PUT',
+        endpoint: '/resources/$videoId/progress',
+        entityType: 'video_progress',
+        clientId: 'position-$videoId-${_stamp()}',
+        coalesceKey: 'video_progress:$videoId',
+        body: {'position_seconds': position.inSeconds},
+        patch: _progress(videoId, {'position_seconds': position.inSeconds}),
+      ),
     );
   }
 
@@ -247,7 +283,17 @@ class RemoteLearningRepository implements LearningRepository {
 
   @override
   Future<void> markComplete(String contentId) async {
-    await _api.put('/resources/$contentId/progress', body: {'completed': true});
+    await _outbox.write(
+      OfflineWrite(
+        method: 'PUT',
+        endpoint: '/resources/$contentId/progress',
+        entityType: 'progress',
+        clientId: 'complete-$contentId-${_stamp()}',
+        coalesceKey: 'progress:$contentId',
+        body: {'completed': true},
+        patch: _progress(contentId, {'completed': true}),
+      ),
+    );
   }
 
   @override

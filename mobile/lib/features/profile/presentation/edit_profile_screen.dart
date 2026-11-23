@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/connectivity/connectivity_service.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -179,7 +178,6 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
 
   @override
   Widget build(BuildContext context) {
-    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     final errors = _errors;
     String? shown(String key, TextEditingController c) =>
         c.text.isEmpty ? null : errors[key];
@@ -279,7 +277,7 @@ class _EditProfileFormState extends ConsumerState<_EditProfileForm> {
       bottomBar: AppPrimaryButton(
         label: 'Save changes',
         isLoading: _saving,
-        onPressed: online && _changed && _valid && !_saving ? _save : null,
+        onPressed: _changed && _valid && !_saving ? _save : null,
       ),
     );
   }

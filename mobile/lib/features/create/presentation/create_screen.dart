@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/connectivity/connectivity_service.dart';
+import '../../../core/media/photo_compressor.dart';
 import '../../../core/media/photo_picker.dart';
 import '../../../core/router/navigation.dart';
 import '../../../core/theme/app_colors.dart';
@@ -310,7 +313,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             children: [
               _TopBar(
                 type: _type,
-                canSend: _ready && online,
+                canSend: _ready,
                 sending: _sending,
                 onClose: _close,
                 onMenu: _openTypeMenu,
@@ -394,7 +397,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                             setState(() => _photo = picked.path);
                           }
                         },
-                        onRemove: () => setState(() => _photo = null),
+                        onRemove: () {
+                          final removed = _photo;
+                          setState(() => _photo = null);
+                          if (removed != null) {
+                            unawaited(discardTempPhoto(removed));
+                          }
+                        },
                       ),
                     ],
                     if (_type.canHaveVideo) ...[
@@ -447,7 +456,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     ],
                     if (!online) ...[
                       const SizedBox(height: 14),
-                      const _Note('You are offline. Sending is paused.'),
+                      const _Note(
+                        'You are offline. Your post will be saved and sent '
+                        'automatically when you reconnect.',
+                      ),
                     ],
                   ],
                 ),

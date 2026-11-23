@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/open_link.dart';
+import '../../../../core/widgets/sized_file_image.dart';
 import '../landing_card.dart';
 import '../providers/stories_provider.dart';
 import '../../../../core/theme/app_shadows.dart';
@@ -136,8 +137,12 @@ class _StoryCard extends StatelessWidget {
                     ),
                     if (card.thumbnailUrl != null)
                       Positioned.fill(
-                        child: Image.network(
-                          card.thumbnailUrl!,
+                        child: Image(
+                          image: sizedFileImage(
+                            context,
+                            card.thumbnailUrl!,
+                            logicalSize: 238,
+                          ),
                           fit: BoxFit.cover,
                           excludeFromSemantics: true,
                           errorBuilder: (context, error, stack) =>

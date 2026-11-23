@@ -146,7 +146,7 @@ void main() {
     );
     await settle(tester);
 
-    expect(find.text('Request to join'), findsNothing);
+    expect(find.text('Join'), findsNothing);
     expect(find.text("You're already in Growth Circle"), findsOneWidget);
     expect(
       find.text('A student can be in only one specific caregroup.'),
@@ -170,7 +170,7 @@ void main() {
 
     expect(find.text('Request pending'), findsOneWidget);
     expect(find.text('Cancel request'), findsOneWidget);
-    expect(find.text('Request to join'), findsNothing);
+    expect(find.text('Join'), findsNothing);
   });
 
   testWidgets('detail: a member here gets "Go to caregroup"', (tester) async {
@@ -211,17 +211,17 @@ void main() {
   });
 
   testWidgets(
-    'detail: Request to join is enabled when the user has no membership',
+    'detail: Join is enabled when the user has no membership',
     (tester) async {
       await tester.pumpWidget(_wrapDetail(Membership.empty, 'growth-circle'));
       await settle(tester);
 
       final button = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Request to join'),
+        find.widgetWithText(ElevatedButton, 'Join'),
       );
       expect(button.onPressed, isNotNull);
 
-      await tester.tap(find.text('Request to join'));
+      await tester.tap(find.text('Join'));
       await settle(tester);
 
       expect(find.text('HUB'), findsOneWidget);

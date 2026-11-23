@@ -39,9 +39,18 @@ class RemoteAuthRepository implements AuthRepository {
     refresh: json['refresh_token'] as String,
   );
 
+  /// The saved sign-in, at once: the app opens without waiting for the
+  /// network. `GET /me` (the profile load right after) checks it with the
+  /// server; if the server refuses the session, the tokens are cleared and
+  /// the app signs out (see `TokenStore.addClearListener`). Only an old
+  /// saved session without its account id asks the server first.
   @override
   Future<AuthSession?> currentSession() async {
     if (!_api.tokens.hasSession) return null;
+    final saved = _api.tokens.accountId;
+    if (saved != null) {
+      return AuthSession(accountId: saved, email: _api.tokens.email ?? '');
+    }
     try {
       final me = await _api.get('/me') as Map<String, dynamic>;
       final session = _sessionFrom(me, _api.tokens.email ?? '');

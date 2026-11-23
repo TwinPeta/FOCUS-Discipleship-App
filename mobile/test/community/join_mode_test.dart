@@ -23,7 +23,7 @@ void main() {
     expect(AppConfig.fromJson(null).autoApproveJoin, isFalse);
   });
 
-  testWidgets('4: auto-approval on: "Join caregroup"; off: "Request to join"', (
+  testWidgets('4: auto-approval on: "Join caregroup"; off: "Join"', (
     tester,
   ) async {
     final auto = await pumpFcuApp(
@@ -41,12 +41,12 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('4: manual approval keeps "Request to join" (3b pending flow)', (
+  testWidgets('4: manual approval shows "Join" (3b pending flow)', (
     tester,
   ) async {
     final manual = await pumpFcuApp(tester, membership: MembershipStatus.none);
     await goTo(tester, manual, '/communities/life-faith-circle');
-    expect(find.text('Request to join'), findsOneWidget);
+    expect(find.text('Join'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -59,7 +59,7 @@ void main() {
       find.bySemanticsLabel(RegExp(r'^Messages, \d+ unread$')),
       findsNWidgets(2),
     );
-    expect(find.byIcon(Icons.chat_outlined), findsNWidgets(2));
+    expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNWidgets(2));
     await tester.pump(const Duration(seconds: 2));
   });
 }
