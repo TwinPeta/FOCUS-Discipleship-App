@@ -66,7 +66,22 @@ abstract class RealtimeChannel {
 }
 
 class WebSocketRealtimeChannel implements RealtimeChannel {
-  WebSocketRealtimeChannel(Uri uri) : _channel = WebSocketChannel.connect(uri);
+  /// The token also goes as a subprotocol (`fcu.bearer`, <token>), which
+  /// proxies do not log. The API reads it from there first; `?token=` is
+  /// kept until every server accepts the subprotocol, then can be dropped.
+  WebSocketRealtimeChannel(Uri uri)
+    : _channel = WebSocketChannel.connect(
+        uri,
+        protocols: [
+          if (uri.queryParameters['token'] case final token?) ...[
+            bearerProtocol,
+            token,
+          ],
+        ],
+      );
+
+  /// The subprotocol marker the API answers with.
+  static const bearerProtocol = 'fcu.bearer';
 
   final WebSocketChannel _channel;
 

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'core/diagnostics/crash_log.dart';
 import 'core/media/image_disk_cache.dart';
 import 'core/media/photo_compressor.dart';
 import 'core/network/api_client.dart';
@@ -75,6 +76,9 @@ Future<void> main() async {
       } catch (_) {}
     }(),
   ]);
+  // Unexpected errors are recorded on the phone (last 20) instead of lost;
+  // see CrashLog.install.
+  CrashLog(prefs).install();
   // Housekeeping after the first frame: old downloaded photos and leftover
   // temporary photo files.
   WidgetsBinding.instance.addPostFrameCallback((_) {

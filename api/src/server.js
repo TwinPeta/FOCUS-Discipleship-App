@@ -6,8 +6,10 @@ const store = require('./db/store');
 const pg = require('./db/prisma');
 const { ensureAdmin } = require('./db/bootstrap');
 
-if (config.env === 'production' && config.jwtSecret === 'dev-only-change-me') {
-  console.error('Refusing to start: set JWT_SECRET in production.');
+// Tokens are signed with JWT_SECRET (HS256): in production it must be set and
+// long enough not to be guessed (the deploy scripts make a 96-character one).
+if (config.env === 'production' && (config.jwtSecret === 'dev-only-change-me' || config.jwtSecret.length < 32)) {
+  console.error('Refusing to start: set a strong JWT_SECRET (at least 32 characters) in production.');
   process.exit(1);
 }
 
