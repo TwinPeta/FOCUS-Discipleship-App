@@ -95,7 +95,7 @@ class _ChatsButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadMessageCountProvider);
     return _HeaderIconButton(
-      icon: Icons.chat_outlined,
+      icon: Icons.chat_bubble_outline_rounded,
       label: unread == 0 ? 'Messages' : 'Messages, $unread unread',
       count: unread,
       onTap: () => context.go('/messages'),

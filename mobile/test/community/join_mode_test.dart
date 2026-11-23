@@ -59,7 +59,7 @@ void main() {
       find.bySemanticsLabel(RegExp(r'^Messages, \d+ unread$')),
       findsNWidgets(2),
     );
-    expect(find.byIcon(Icons.chat_outlined), findsNWidgets(2));
+    expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNWidgets(2));
     await tester.pump(const Duration(seconds: 2));
   });
 }
