@@ -66,7 +66,7 @@ abstract class RealtimeChannel {
 }
 
 class WebSocketRealtimeChannel implements RealtimeChannel {
-  /// The token also goes as a subprotocol (`fcu.bearer`, <token>), which
+  /// The token also goes as a subprotocol (`fcu.bearer` then the token), which
   /// proxies do not log. The API reads it from there first; `?token=` is
   /// kept until every server accepts the subprotocol, then can be dropped.
   WebSocketRealtimeChannel(Uri uri)
