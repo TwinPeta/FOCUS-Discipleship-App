@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
 import '../../community/domain/person.dart';
 import '../domain/message.dart';
 import '../domain/thread.dart';
@@ -13,9 +15,12 @@ class RemoteMessagingRepository implements MessagingRepository {
     this._api, {
     required this._myId,
     bool Function()? isRestricted,
-  }) : _isRestricted = isRestricted ?? _never;
+    Outbox? outbox,
+  }) : _isRestricted = isRestricted ?? _never,
+       _outbox = outbox ?? Outbox(api: _api);
 
   final ApiClient _api;
+  final Outbox _outbox;
   final String? Function() _myId;
   final bool Function() _isRestricted;
   static bool _never() => false;
@@ -53,6 +58,8 @@ class RemoteMessagingRepository implements MessagingRepository {
       text: (j['text'] as String?) ?? '',
       sentAt:
           DateTime.tryParse((j['sent_at'] as String?) ?? '') ?? DateTime.now(),
+      // Written offline: waits on the phone until it can be sent.
+      status: j['pending'] == true ? MessageStatus.sending : MessageStatus.sent,
     );
   }
 
@@ -125,13 +132,36 @@ class RemoteMessagingRepository implements MessagingRepository {
     // prayer requests, which key on the client-side id).
     final key =
         '$threadId-${clientId ?? DateTime.now().microsecondsSinceEpoch}';
+    final listPath = '/conversations/$threadId/messages';
+    final now = apiNow();
+    final optimistic = <String, dynamic>{
+      'id': key,
+      'sender_id': _myId(),
+      'text': text,
+      'sent_at': now,
+      'pending': true,
+    };
     try {
       final json = objectOf(
-        await _api.post(
-          '/conversations/$threadId/messages',
-          headers: {'Idempotency-Key': key},
-          body: {'text': text},
-        ),
+        (await _outbox.write(
+          OfflineWrite(
+            method: 'POST',
+            endpoint: listPath,
+            entityType: 'message',
+            clientId: key,
+            creates: true,
+            body: {'text': text},
+            optimistic: optimistic,
+            // Newest first in the saved reply; the thread list shows it too.
+            patch: (k, json) => cachedPathOf(k) == listPath
+                ? (k.contains('cursor=') ? json : insertItem(json, optimistic))
+                : patchEntity(json, threadId, (m) {
+                    m['last_message'] = text;
+                    m['last_message_at'] = now;
+                    return m;
+                  }),
+          ),
+        )).json,
       );
       if (json == null) throw const ApiException(500, message: 'Empty reply');
       return _message(json, threadId);

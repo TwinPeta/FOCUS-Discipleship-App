@@ -138,7 +138,9 @@ void main() {
     (container.read(connectivityServiceProvider) as FakeConnectivityService)
         .setOnline(false);
     await settle(tester);
-    expect(tester.widget<TextField>(field).enabled, isFalse);
-    expect(find.text('You are offline'), findsWidgets);
+    // Offline comments are saved and sent once back online.
+    expect(tester.widget<TextField>(field).enabled, isTrue);
+    expect(find.text('You are offline'), findsOneWidget); // the banner
+    expect(find.text('Write a comment (sent when back online)'), findsOneWidget);
   });
 }

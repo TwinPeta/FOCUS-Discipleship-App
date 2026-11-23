@@ -114,9 +114,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           : MessageInputBar(
               controller: _commentController,
               onSend: _sendComment,
-              hintText: online ? 'Write a comment' : 'You are offline',
+              hintText: online
+                  ? 'Write a comment'
+                  : 'Write a comment (sent when back online)',
               sendLabel: 'Send comment',
-              enabled: online,
             ),
     );
   }
@@ -190,7 +191,7 @@ class _PostBody extends ConsumerWidget {
                   PostActionButton.like(
                     liked: post.likedByMe,
                     count: post.likeCount,
-                    onTap: online ? onLike : null,
+                    onTap: onLike,
                   ),
                   PostActionButton.comment(count: post.commentCount),
                 ],

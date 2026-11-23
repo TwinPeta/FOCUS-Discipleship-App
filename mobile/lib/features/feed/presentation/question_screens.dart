@@ -118,9 +118,7 @@ class QuestionBody extends ConsumerWidget {
               Row(
                 children: [
                   FilledButton.icon(
-                    onPressed: online
-                        ? () => context.push(answerRoute(question.id))
-                        : null,
+                    onPressed: () => context.push(answerRoute(question.id)),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.amber,
                       foregroundColor: AppColors.ink,
@@ -298,8 +296,8 @@ class _AnswerCard extends StatelessWidget {
             _HelpfulButton(
               count: answer.voteCount,
               voted: answer.votedByMe,
-              // Not on your own answer; not offline.
-              onTap: mine || !online ? null : onVote,
+              // Not on your own answer.
+              onTap: mine ? null : onVote,
             ),
           ],
         ),
@@ -329,13 +327,13 @@ class WriteAnswerBar extends ConsumerWidget {
           ),
           child: InkWell(
             customBorder: const StadiumBorder(),
-            onTap: online ? () => context.push(answerRoute(questionId)) : null,
+            onTap: () => context.push(answerRoute(questionId)),
             child: Container(
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 18),
               alignment: Alignment.centerLeft,
               child: Text(
-                online ? 'Write an answer…' : 'You are offline',
+                online ? 'Write an answer…' : 'Write an answer (sent later)…',
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.placeholder,
                 ),
@@ -395,8 +393,7 @@ class _WriteAnswerScreenState extends ConsumerState<WriteAnswerScreen> {
   Widget build(BuildContext context) {
     final question = ref.watch(postDetailProvider(widget.questionId));
     final me = ref.watch(currentProfileProvider);
-    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
-    final canPost = online && !_sending && _text.text.trim().isNotEmpty;
+    final canPost = !_sending && _text.text.trim().isNotEmpty;
     final q = question.valueOrNull;
 
     return AmberHeaderScaffold(
@@ -499,19 +496,17 @@ class _FollowButton extends ConsumerWidget {
     return Semantics(
       toggled: following,
       child: OutlinedButton.icon(
-        onPressed: online
-            ? () async {
-                try {
-                  await ref
-                      .read(postDetailProvider(question.id).notifier)
-                      .toggleFollow();
-                } catch (_) {
-                  if (context.mounted) {
-                    showErrorSnack(context, 'Could not save. Try again.');
-                  }
-                }
-              }
-            : null,
+        onPressed: () async {
+          try {
+            await ref
+                .read(postDetailProvider(question.id).notifier)
+                .toggleFollow();
+          } catch (_) {
+            if (context.mounted) {
+              showErrorSnack(context, 'Could not save. Try again.');
+            }
+          }
+        },
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.ink,
           backgroundColor: following ? AppColors.honey : null,

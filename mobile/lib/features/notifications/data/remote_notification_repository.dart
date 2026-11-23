@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
 import '../domain/app_notification.dart';
 import '../domain/notification_preferences.dart';
 import 'notification_repository.dart';
@@ -8,9 +10,13 @@ import 'notification_repository.dart';
 /// replies) and honours the user's settings, so [add] does nothing here and
 /// notifications for other people are not readable.
 class RemoteNotificationRepository implements NotificationRepository {
-  RemoteNotificationRepository(this._api);
+  RemoteNotificationRepository(this._api, {Outbox? outbox})
+    : _outbox = outbox ?? Outbox(api: _api);
 
   final ApiClient _api;
+  final Outbox _outbox;
+
+  static String _stamp() => '${DateTime.now().microsecondsSinceEpoch}';
 
   /// The app's type for the API's `type` string; null for an unknown one.
   static NotificationType? typeOf(String? t) => _type(t);
@@ -75,12 +81,33 @@ class RemoteNotificationRepository implements NotificationRepository {
 
   @override
   Future<void> markRead(String id) async {
-    await _api.post('/me/notifications/$id/read');
+    await _outbox.write(
+      OfflineWrite(
+        method: 'POST',
+        endpoint: '/me/notifications/$id/read',
+        entityType: 'notification_read',
+        clientId: 'read-$id-${_stamp()}',
+        coalesceKey: 'notification_read:$id',
+        patch: (_, json) => patchEntity(json, id, (m) {
+          m['read'] = true;
+          m['read_at'] ??= apiNow();
+          return m;
+        }),
+      ),
+    );
   }
 
   @override
   Future<void> markAllRead() async {
-    await _api.post('/me/notifications/read-all');
+    await _outbox.write(
+      OfflineWrite(
+        method: 'POST',
+        endpoint: '/me/notifications/read-all',
+        entityType: 'notification_read_all',
+        clientId: 'read-all-${_stamp()}',
+        coalesceKey: 'notification_read_all',
+      ),
+    );
   }
 
   NotificationPreferences _prefs(Object? json) {
@@ -108,13 +135,26 @@ class RemoteNotificationRepository implements NotificationRepository {
   Future<NotificationPreferences> savePreferences(
     NotificationPreferences preferences, {
     String? recipientId,
-  }) async => _prefs(
-    await _api.put(
-      '/me/notification-preferences',
-      body: {
-        'channels': [for (final c in preferences.channels) c.name],
-        'muted': [for (final c in preferences.muted) c.name],
-      },
-    ),
-  );
+  }) async {
+    const path = '/me/notification-preferences';
+    final body = <String, dynamic>{
+      'channels': [for (final c in preferences.channels) c.name],
+      'muted': [for (final c in preferences.muted) c.name],
+    };
+    return _prefs(
+      (await _outbox.write(
+        OfflineWrite(
+          method: 'PUT',
+          endpoint: path,
+          entityType: 'notification_prefs',
+          clientId: 'prefs-${_stamp()}',
+          coalesceKey: 'notification_prefs',
+          body: body,
+          optimistic: body,
+          patchWhere: (key) => cachedPathOf(key) == path,
+          patch: (_, _) => body,
+        ),
+      )).json,
+    );
+  }
 }

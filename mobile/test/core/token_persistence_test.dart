@@ -115,6 +115,26 @@ void main() {
       final store = TokenStore(vault: MemoryTokenVault())
         ..save(access: 'a1', refresh: 'r1')
         ..remember(accountId: 'u1', email: 'grace@fcu.test');
+      final cleared = <String?>[];
+      store.addClearListener(cleared.add);
+      final api = ApiClient(
+        baseUrl: 'https://api.test/v1',
+        tokens: store,
+        client: MockClient((_) async => _json(401, {'code': 'unauthorized'})),
+      );
+      final auth = RemoteAuthRepository(api);
+      // The app opens at once from the saved sign-in...
+      expect((await auth.currentSession())?.accountId, 'u1');
+      // ...and the profile load that follows finds the session refused.
+      await expectLater(api.get('/me'), throwsA(isA<ApiException>()));
+      expect(store.hasSession, isFalse);
+      expect(cleared, ['u1'], reason: 'the app is told to sign out');
+      expect(await auth.currentSession(), isNull);
+    });
+
+    test('a session saved without its account id is checked first', () async {
+      final store = TokenStore(vault: MemoryTokenVault())
+        ..save(access: 'a1', refresh: 'r1');
       final auth = RemoteAuthRepository(
         ApiClient(
           baseUrl: 'https://api.test/v1',

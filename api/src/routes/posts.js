@@ -111,7 +111,7 @@ router.get('/posts/:postId/comments', loadPost, (req, res) => {
   res.json({ items: page.items.map((c) => S.comment(c, req.post.communityId, req.user.id)), next_cursor: page.next_cursor });
 });
 
-router.post('/posts/:postId/comments', loadPost, (req, res, next) => {
+router.post('/posts/:postId/comments', loadPost, idempotency, (req, res, next) => {
   try {
     const b = check(req.body, { text: { required: true, type: 'string', min: 1, max: 2000 } });
     const c = store.insert('comments', { postId: req.post.id, authorId: req.user.id, text: b.text.trim() });

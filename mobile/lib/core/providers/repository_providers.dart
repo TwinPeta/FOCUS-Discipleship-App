@@ -21,6 +21,9 @@ import '../config/api_config.dart';
 import '../push/firebase_push.dart';
 import '../permissions/app_permissions.dart';
 import '../network/api_client.dart';
+import '../connectivity/connectivity_service.dart';
+import '../storage/local_database.dart';
+import '../sync/outbox.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/community/data/community_repository.dart';
 import '../../features/community/data/people_directory.dart';
@@ -63,10 +66,18 @@ import '../../features/testimony/data/testimony_repository.dart';
 /// storage; tests and anything else get an empty, memory-only store.
 final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
 
+/// The phone's offline store (saved replies, queued writes). `main`
+/// replaces it with the SQLite one; tests and the web keep it in memory.
+final localDatabaseProvider = Provider<LocalDatabase>(
+  (ref) => MemoryLocalDatabase(),
+);
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   final client = ApiClient(
     baseUrl: ApiConfig.baseUrl,
     tokens: ref.watch(tokenStoreProvider),
+    cache: ref.watch(localDatabaseProvider),
+    connectivity: ref.watch(connectivityServiceProvider),
   );
   ref.onDispose(client.close);
   return client;
@@ -117,7 +128,10 @@ final memberRepositoryProvider = Provider<MemberRepository>(
 );
 
 final notificationRepositoryProvider = Provider<NotificationRepository>(
-  (ref) => RemoteNotificationRepository(ref.watch(apiClientProvider)),
+  (ref) => RemoteNotificationRepository(
+    ref.watch(apiClientProvider),
+    outbox: ref.watch(outboxProvider),
+  ),
 );
 
 final membershipRepositoryProvider = Provider<MembershipRepository>(
@@ -147,12 +161,26 @@ final mediaUploaderProvider = Provider<MediaUploader>(
   (ref) => MediaUploader(ref.watch(apiClientProvider)),
 );
 
+/// Writes that wait on the phone while offline and are sent later (see
+/// `SyncEngine`).
+final outboxProvider = Provider<Outbox>((ref) {
+  final outbox = Outbox(
+    api: ref.watch(apiClientProvider),
+    db: ref.watch(localDatabaseProvider),
+    uploader: ref.watch(mediaUploaderProvider),
+    connectivity: ref.watch(connectivityServiceProvider),
+  );
+  ref.onDispose(outbox.dispose);
+  return outbox;
+});
+
 final postRepositoryProvider = Provider<PostRepository>(
   (ref) => RemotePostRepository(
     ref.watch(apiClientProvider),
     ref.watch(mediaUploaderProvider),
     ref.watch(peopleDirectoryProvider),
     isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+    outbox: ref.watch(outboxProvider),
   ),
 );
 
@@ -169,6 +197,7 @@ final prayerRepositoryProvider = Provider<PrayerRepository>(
     ref.watch(apiClientProvider),
     ref.watch(peopleDirectoryProvider),
     isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
+    outbox: ref.watch(outboxProvider),
   ),
 );
 
@@ -178,6 +207,7 @@ final testimonyRepositoryProvider = Provider<TestimonyRepository>(
     ref.watch(peopleDirectoryProvider),
     isHidden: ref.read(moderationQueueRepositoryProvider).isHidden,
     uploader: ref.watch(mediaUploaderProvider),
+    outbox: ref.watch(outboxProvider),
   ),
 );
 
@@ -190,6 +220,7 @@ final messagingRepositoryProvider = Provider<MessagingRepository>(
     ref.watch(apiClientProvider),
     myId: () => ref.read(authControllerProvider).valueOrNull?.accountId,
     isRestricted: () => ref.read(messagingRestrictedProvider),
+    outbox: ref.watch(outboxProvider),
   ),
 );
 
@@ -222,11 +253,17 @@ final activityRepositoryProvider = Provider<ActivityRepository>(
 );
 
 final learningRepositoryProvider = Provider<LearningRepository>(
-  (ref) => RemoteLearningRepository(ref.watch(apiClientProvider)),
+  (ref) => RemoteLearningRepository(
+    ref.watch(apiClientProvider),
+    outbox: ref.watch(outboxProvider),
+  ),
 );
 
 final meetingRepositoryProvider = Provider<MeetingRepository>(
-  (ref) => RemoteMeetingRepository(ref.watch(apiClientProvider)),
+  (ref) => RemoteMeetingRepository(
+    ref.watch(apiClientProvider),
+    outbox: ref.watch(outboxProvider),
+  ),
 );
 
 final privacyRepositoryProvider = Provider<PrivacyRepository>(

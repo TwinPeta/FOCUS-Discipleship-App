@@ -30,7 +30,7 @@ class ComposerRow extends ConsumerWidget {
 
     Widget shortcut(IconData icon, String label, String type) => IconButton(
       tooltip: label,
-      onPressed: online ? () => create(type) : null,
+      onPressed: () => create(type),
       constraints: const BoxConstraints(minWidth: 40, minHeight: 44),
       padding: EdgeInsets.zero,
       icon: Icon(icon, size: 22, color: AppColors.inkDeemphasized80),
@@ -55,13 +55,12 @@ class ComposerRow extends ConsumerWidget {
           Expanded(
             child: Semantics(
               button: true,
-              enabled: online,
               label: online
                   ? 'New post'
-                  : 'New post. Posting is paused while offline',
+                  : 'New post. It is sent when you are back online',
               excludeSemantics: true,
               child: InkWell(
-                onTap: online ? () => create('post') : null,
+                onTap: () => create('post'),
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 44),
@@ -75,7 +74,7 @@ class ComposerRow extends ConsumerWidget {
                   ),
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    online ? 'Share something…' : 'Posting paused',
+                    online ? 'Share something…' : 'Share something (sent later)…',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.placeholder,
                     ),

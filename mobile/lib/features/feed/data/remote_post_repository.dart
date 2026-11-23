@@ -1,5 +1,8 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/network/media_uploader.dart';
+import '../../../core/storage/json_patch.dart';
+import '../../../core/sync/outbox.dart';
+import '../../community/domain/person.dart';
 import '../../community/data/people_directory.dart';
 import '../domain/comment.dart';
 import '../domain/post.dart';
@@ -14,13 +17,16 @@ import 'post_repository.dart';
 class RemotePostRepository implements PostRepository {
   RemotePostRepository(
     this._api,
-    this._uploader,
+    MediaUploader uploader,
     this._directory, {
     bool Function(String postId)? isHidden,
-  }) : _isHidden = isHidden ?? _never;
+    Outbox? outbox,
+  }) : _isHidden = isHidden ?? _never,
+       _outbox = outbox ?? Outbox(api: _api, uploader: uploader);
 
   final ApiClient _api;
-  final MediaUploader _uploader;
+  final Outbox _outbox;
+  final Map<String, Comment> _comments = {};
   final PeopleDirectory _directory;
   final bool Function(String postId) _isHidden;
   static bool _never(String _) => false;
@@ -70,12 +76,58 @@ class RemotePostRepository implements PostRepository {
     );
   }
 
+  /// Saves [write]; while offline it waits in the outbox and [write]'s
+  /// optimistic reply is returned.
+  Future<Map<String, dynamic>?> _write(OfflineWrite write) async =>
+      objectOf((await _outbox.write(write)).json);
+
+  static String _stamp() => '${DateTime.now().microsecondsSinceEpoch}';
+
+  /// Flips a `<flag>` / `<count>` pair on the saved copies of [id].
+  static Object? Function(String, Object?) _toggle(
+    String id,
+    String flag,
+    String? count,
+    bool on,
+  ) => (_, json) => patchEntity(json, id, (m) {
+    if ((m[flag] == true) == on) return m;
+    m[flag] = on;
+    if (count != null) {
+      final n = ((m[count] as int?) ?? 0) + (on ? 1 : -1);
+      m[count] = n < 0 ? 0 : n;
+    }
+    return m;
+  });
+
+  static int? _guess(int? count, bool was, bool now) =>
+      count == null || was == now ? count : count + (now ? 1 : -1);
+
+  Map<String, dynamic> _authorJson(Person author) => {
+    'id': author.id,
+    'full_name': author.name,
+    'community_role': switch (author.role) {
+      PersonRole.superMentor => 'super_mentor',
+      PersonRole.mentor => 'mentor',
+      _ => 'member',
+    },
+  };
+
   @override
   Future<Post> setLiked(String postId, {required bool liked}) async {
-    final json = objectOf(
-      liked
-          ? await _api.put('/posts/$postId/like')
-          : await _api.delete('/posts/$postId/like'),
+    final known = _seen[postId];
+    final json = await _write(
+      OfflineWrite(
+        method: liked ? 'PUT' : 'DELETE',
+        endpoint: '/posts/$postId/like',
+        entityType: 'post_like',
+        clientId: 'like-$postId-${_stamp()}',
+        coalesceKey: 'post_like:$postId',
+        optimistic: {
+          'like_count': ?_guess(known?.likeCount, known?.likedByMe ?? !liked, liked),
+          'liked_by_me': liked,
+        },
+        patch: _toggle(postId, 'liked_by_me', 'like_count', liked),
+      ),
     );
     final base = _seen[postId] ?? await getPost(postId);
     if (base == null) throw const ApiException(404, code: 'not_found');
@@ -93,20 +145,41 @@ class RemotePostRepository implements PostRepository {
       if (post.photo?.path != null) post.photo!.path!,
       ...post.media,
     ];
-    final mediaIds = <String>[];
-    for (final path in paths) {
-      mediaIds.add(await _uploader.uploadPhoto(path, purpose: 'post_photo'));
-    }
-    final json = objectOf(
-      await _api.post(
-        '/communities/${post.communityId}/posts',
-        headers: {'Idempotency-Key': post.id},
+    final listPath = '/communities/${post.communityId}/posts';
+    final optimistic = <String, dynamic>{
+      'id': post.id,
+      'community_id': post.communityId,
+      if (!post.anonymous) 'author': _authorJson(post.author),
+      'text': post.body,
+      'created_at': apiNow(),
+      'kind': post.kind == PostKind.question ? 'question' : 'post',
+      'anonymous': post.anonymous,
+      'is_mine': true,
+      // Shown from the phone until it is sent.
+      'media': [
+        for (final path in paths) {'url': path, 'kind': 'image'},
+      ],
+      'pending': true,
+    };
+    final json = await _write(
+      OfflineWrite(
+        method: 'POST',
+        endpoint: listPath,
+        entityType: 'post',
+        clientId: post.id,
+        creates: true,
         body: {
           'text': post.body,
-          if (mediaIds.isNotEmpty) 'media_ids': mediaIds,
           if (post.kind == PostKind.question) 'kind': 'question',
           if (post.anonymous) 'anonymous': true,
         },
+        media: [
+          for (final path in paths)
+            LocalMedia(path: path, purpose: 'post_photo'),
+        ],
+        optimistic: optimistic,
+        patchWhere: firstPageOf(listPath),
+        patch: (_, json) => insertItem(json, optimistic),
       ),
     );
     if (json == null) throw const ApiException(500, message: 'Empty reply');
@@ -131,39 +204,82 @@ class RemotePostRepository implements PostRepository {
   Future<List<Comment>> getComments(String postId) async {
     final items = await _api.getAllItems('/posts/$postId/comments');
     return [
-      for (final j in items) commentFromApi(j, postId, remember: _directory),
+      for (final j in items)
+        _comments[j['id'] as String] = commentFromApi(
+          j,
+          postId,
+          remember: _directory,
+        ),
     ];
   }
 
   @override
   Future<Comment> addComment(Comment comment) async {
-    final json = objectOf(
-      await _api.post(
-        '/posts/${comment.postId}/comments',
+    final listPath = '/posts/${comment.postId}/comments';
+    final optimistic = <String, dynamic>{
+      'id': comment.id,
+      'post_id': comment.postId,
+      'author': _authorJson(comment.author),
+      'text': comment.text,
+      'created_at': apiNow(),
+      'pending': true,
+    };
+    final json = await _write(
+      OfflineWrite(
+        method: 'POST',
+        endpoint: listPath,
+        entityType: 'comment',
+        clientId: comment.id,
+        creates: true,
         body: {'text': comment.text},
+        optimistic: optimistic,
+        patch: (key, json) => cachedPathOf(key) == listPath
+            ? insertItem(json, optimistic, atEnd: true)
+            : patchEntity(json, comment.postId, (m) {
+                m['comment_count'] = ((m['comment_count'] as int?) ?? 0) + 1;
+                return m;
+              }),
       ),
     );
     if (json == null) throw const ApiException(500, message: 'Empty reply');
     return commentFromApi(json, comment.postId, remember: _directory);
   }
 
+  Future<void> _setHidden(String postId, bool hidden) => _write(
+    OfflineWrite(
+      method: hidden ? 'PUT' : 'DELETE',
+      endpoint: '/posts/$postId/hide',
+      entityType: 'post_hide',
+      clientId: 'hide-$postId-${_stamp()}',
+      coalesceKey: 'post_hide:$postId',
+      patch: hidden ? (_, json) => removeEntity(json, postId) : null,
+    ),
+  );
+
   @override
   Future<void> hidePost(String postId) async {
-    await _api.put('/posts/$postId/hide');
+    await _setHidden(postId, true);
     _hiddenForMe.add(postId);
   }
 
   @override
   Future<void> unhidePost(String postId) async {
-    await _api.delete('/posts/$postId/hide');
+    await _setHidden(postId, false);
     _hiddenForMe.remove(postId);
   }
 
   @override
   Future<void> setPassed(String postId, {required bool passed}) async {
-    passed
-        ? await _api.put('/posts/$postId/pass')
-        : await _api.delete('/posts/$postId/pass');
+    await _write(
+      OfflineWrite(
+        method: passed ? 'PUT' : 'DELETE',
+        endpoint: '/posts/$postId/pass',
+        entityType: 'post_pass',
+        clientId: 'pass-$postId-${_stamp()}',
+        coalesceKey: 'post_pass:$postId',
+        patch: _toggle(postId, 'passed_by_me', null, passed),
+      ),
+    );
     final seen = _seen[postId];
     if (seen != null) _remember(seen.copyWith(passedByMe: passed));
   }
@@ -181,10 +297,24 @@ class RemotePostRepository implements PostRepository {
 
   @override
   Future<Post> setFollowing(String postId, {required bool following}) async {
-    final json = objectOf(
-      following
-          ? await _api.put('/posts/$postId/follow')
-          : await _api.delete('/posts/$postId/follow'),
+    final known = _seen[postId];
+    final json = await _write(
+      OfflineWrite(
+        method: following ? 'PUT' : 'DELETE',
+        endpoint: '/posts/$postId/follow',
+        entityType: 'post_follow',
+        clientId: 'follow-$postId-${_stamp()}',
+        coalesceKey: 'post_follow:$postId',
+        optimistic: {
+          'following': following,
+          'follower_count': ?_guess(
+            known?.followerCount,
+            known?.following ?? !following,
+            following,
+          ),
+        },
+        patch: _toggle(postId, 'following', 'follower_count', following),
+      ),
     );
     final base = _seen[postId] ?? await getPost(postId);
     if (base == null) throw const ApiException(404, code: 'not_found');
@@ -202,10 +332,24 @@ class RemotePostRepository implements PostRepository {
     required bool voted,
   }) async {
     try {
-      final json = objectOf(
-        voted
-            ? await _api.put('/comments/$commentId/vote')
-            : await _api.delete('/comments/$commentId/vote'),
+      final known = _comments[commentId];
+      final json = await _write(
+        OfflineWrite(
+          method: voted ? 'PUT' : 'DELETE',
+          endpoint: '/comments/$commentId/vote',
+          entityType: 'comment_vote',
+          clientId: 'vote-$commentId-${_stamp()}',
+          coalesceKey: 'comment_vote:$commentId',
+          optimistic: {
+            'voted_by_me': voted,
+            'vote_count': ?_guess(
+              known?.voteCount,
+              known?.votedByMe ?? !voted,
+              voted,
+            ),
+          },
+          patch: _toggle(commentId, 'voted_by_me', 'vote_count', voted),
+        ),
       );
       return (
         count: (json?['vote_count'] as int?) ?? 0,

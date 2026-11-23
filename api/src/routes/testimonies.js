@@ -3,6 +3,7 @@ const store = require('../db/store');
 const { check } = require('../utils/validate');
 const { notFound, validation } = require('../utils/errors');
 const { paginate, byNewest } = require('../utils/pagination');
+const { idempotency } = require('../middleware/idempotency');
 const { requireMember } = require('../middleware/auth');
 const { logEvent } = require('../utils/activity');
 const S = require('../utils/serialize');
@@ -20,7 +21,7 @@ router.get('/communities/:communityId/testimonies', requireMember, (req, res) =>
   });
 });
 
-router.post('/communities/:communityId/testimonies', requireMember, (req, res, next) => {
+router.post('/communities/:communityId/testimonies', requireMember, idempotency, (req, res, next) => {
   try {
     const b = check(req.body, {
       title: { required: true, type: 'string', min: 1, max: 120 },

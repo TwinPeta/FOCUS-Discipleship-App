@@ -15,6 +15,20 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     return ref.watch(profileRepositoryProvider).getProfile(session.accountId);
   }
 
+  /// Reloads without passing through "loading" (which would send the
+  /// router to its loading page): after coming back online, or after
+  /// queued writes were sent. Keeps the current state on failure.
+  Future<void> refreshQuietly() async {
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null || state.isLoading) return;
+    try {
+      final profile = await ref
+          .read(profileRepositoryProvider)
+          .getProfile(session.accountId);
+      if (profile != null) state = AsyncValue.data(profile);
+    } catch (_) {}
+  }
+
   Future<UserProfile> create(UserProfile profile) async {
     final saved = await ref
         .read(profileRepositoryProvider)

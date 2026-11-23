@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/connectivity/connectivity_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_shadows.dart';
@@ -86,7 +85,6 @@ class _Body extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final online = ref.watch(isOnlineProvider).valueOrNull ?? true;
     final mine = t.isAuthoredBy(ref.watch(currentProfileProvider)?.id);
     final encouraged = t.encouragedCount == 1
         ? '1 person encouraged'
@@ -140,13 +138,13 @@ class _Body extends ConsumerWidget {
                 ? AppPrimaryButton(
                     label: 'Encouraged',
                     height: 48,
-                    onPressed: online ? onEncourage : null,
+                    onPressed: onEncourage,
                   )
                 : AppSecondaryButton(
                     label: 'Encouraged',
                     icon: Icons.favorite_border_rounded,
                     height: 48,
-                    onPressed: online ? onEncourage : null,
+                    onPressed: onEncourage,
                   ),
           ),
           const SizedBox(height: 6),

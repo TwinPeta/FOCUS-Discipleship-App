@@ -25,5 +25,11 @@ class FakeConnectivityService implements ConnectivityService {
     _controller.add(online);
   }
 
+  @override
+  void reportUnreachable() => setOnline(false);
+
+  @override
+  void reportReachable() => setOnline(true);
+
   void dispose() => _controller.close();
 }

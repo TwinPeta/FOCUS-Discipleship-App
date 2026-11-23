@@ -181,12 +181,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               else
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  // Offline: visible but inactive, like every other write.
+                  // Offline: the message waits on the phone and is sent
+                  // when the app is back online.
                   child: MessageInputBar(
                     controller: _textController,
                     onSend: _send,
-                    hintText: online ? 'Write a message' : 'You are offline',
-                    enabled: online,
+                    hintText: online
+                        ? 'Write a message'
+                        : 'Write a message (sent when back online)',
                   ),
                 ),
           ],

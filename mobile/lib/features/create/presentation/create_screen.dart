@@ -310,7 +310,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             children: [
               _TopBar(
                 type: _type,
-                canSend: _ready && online,
+                canSend: _ready,
                 sending: _sending,
                 onClose: _close,
                 onMenu: _openTypeMenu,
@@ -447,7 +447,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     ],
                     if (!online) ...[
                       const SizedBox(height: 14),
-                      const _Note('You are offline. Sending is paused.'),
+                      const _Note(
+                        'You are offline. Your post will be saved and sent '
+                        'automatically when you reconnect.',
+                      ),
                     ],
                   ],
                 ),

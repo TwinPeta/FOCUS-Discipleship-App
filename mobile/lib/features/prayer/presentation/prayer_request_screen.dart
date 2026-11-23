@@ -139,9 +139,9 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
               onSend: _send,
               hintText: online
                   ? 'Write an encouraging response'
-                  : 'You are offline',
+                  : 'Write a response (sent when back online)',
               sendLabel: 'Send response',
-              enabled: online && !_sending,
+              enabled: !_sending,
             ),
     );
   }
@@ -223,7 +223,7 @@ class _Body extends ConsumerWidget {
                   PrayedButton(
                     prayed: request.prayedByMe,
                     count: request.prayedCount,
-                    onTap: online && !praying ? onPray : null,
+                    onTap: !praying ? onPray : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
