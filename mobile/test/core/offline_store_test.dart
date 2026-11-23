@@ -12,6 +12,7 @@ import 'package:focus_1/features/community/data/remote_membership_repository.dar
 import 'package:focus_1/features/community/domain/membership.dart';
 import 'package:focus_1/features/community/domain/person.dart';
 import 'package:focus_1/features/feed/data/remote_post_repository.dart';
+import 'package:focus_1/features/landing/data/remote_stories_repository.dart';
 import 'package:focus_1/features/feed/domain/comment.dart';
 import 'package:focus_1/features/feed/domain/post.dart';
 import 'package:focus_1/features/community/data/people_directory.dart';
@@ -138,6 +139,47 @@ void main() {
       c.api.tokens.remember(accountId: 'u2', email: 'b@fcu.test');
       server.up = false;
       await expectLater(c.api.get('/me'), throwsA(isA<ApiException>()));
+    });
+  });
+
+  group('public replies (landing stories, lookups)', () {
+    test('saved while signed out, shown offline, kept after sign-out', () async {
+      final server = _Server(
+        (_) => _json(200, {
+          'stories': [
+            {'id': 's1', 'quote': 'Found my people', 'student_name': 'Ann'},
+          ],
+        }),
+      );
+      final c = _client(server);
+      c.api.tokens.clear(); // signed out, like on the landing page
+      final stories = RemoteStoriesRepository(c.api);
+      expect(await stories.getStories(), hasLength(1));
+
+      // Signed in later: the same saved copy is used.
+      c.api.tokens
+        ..save(access: 'a1', refresh: 'r1')
+        ..remember(accountId: 'u1', email: 'grace@fcu.test');
+      expect(
+        c.api.cacheKey('/public/landing'),
+        startsWith('public|'),
+      );
+      await c.db.wipeAccount('u1'); // sign-out of u1
+
+      server.up = false;
+      c.api.tokens.clear();
+      final offline = await stories.getStories();
+      expect(offline.single.quote, 'Found my people');
+    });
+
+    test('school lookups are shared, not per account', () {
+      final c = _client(_Server((_) => _json(200, {})));
+      expect(
+        c.api.cacheKey('/lookups/institutions', query: {'q': 'Mak'}),
+        'public|GET /lookups/institutions?q=Mak',
+      );
+      expect(c.api.cacheAccount('/lookups/institutions'), isNull);
+      expect(c.api.cacheAccount('/me'), 'u1');
     });
   });
 

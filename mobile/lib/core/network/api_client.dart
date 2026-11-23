@@ -162,18 +162,25 @@ class ApiClient {
   /// out of the saved reply's key.
   static const _volatileQuery = {'now'};
 
-  /// Who saved replies belong to: the signed-in account, or `public` for
-  /// sign-in-free endpoints.
-  String? cacheAccount({bool auth = true}) =>
-      auth ? tokens.accountId : null;
+  /// Endpoints the API serves without sign-in (landing stories, school and
+  /// app-config lookups). Their saved replies are shared by every account
+  /// and the signed-out landing/sign-up pages, and survive sign-out.
+  static bool isPublicPath(String path) =>
+      path.startsWith('/public/') || path.startsWith('/lookups/');
+
+  /// Who saved replies belong to: the signed-in account, or null (public)
+  /// for sign-in-free endpoints.
+  String? cacheAccount(String path, {bool auth = true}) =>
+      auth && !isPublicPath(path) ? tokens.accountId : null;
 
   /// The key a GET reply is saved under.
   String cacheKey(String path, {Map<String, String>? query, bool auth = true}) {
+    final shared = !auth || isPublicPath(path);
     final params = <String>[
       for (final e in (query ?? const <String, String>{}).entries)
         if (!_volatileQuery.contains(e.key)) '${e.key}=${e.value}',
     ]..sort();
-    final owner = auth ? (tokens.accountId ?? 'anon') : 'public';
+    final owner = shared ? 'public' : (tokens.accountId ?? 'anon');
     return '$owner|GET $path${params.isEmpty ? '' : '?${params.join('&')}'}';
   }
 
@@ -194,8 +201,9 @@ class ApiClient {
     }
     try {
       final json = await _network('GET', path, query, null, auth, headers);
-      final account = cacheAccount(auth: auth);
-      if (!auth || account != null) {
+      final public = !auth || isPublicPath(path);
+      final account = cacheAccount(path, auth: auth);
+      if (public || account != null) {
         try {
           await db.writeCache(key, json, accountId: account);
         } catch (_) {}
