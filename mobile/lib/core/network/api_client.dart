@@ -64,9 +64,16 @@ class TokenStore {
   void removeClearListener(void Function(String? accountId) listener) =>
       _onCleared.remove(listener);
 
+  /// Told whether a session is saved, each time that changes (`main` keeps
+  /// it in plain preferences so a signed-out launch can skip the vault).
+  void Function(bool hasSession)? onSavedChanged;
+
   /// Loads the saved session at launch. A vault that cannot be read just means
-  /// signing in again.
-  Future<void> restore() async {
+  /// signing in again. [knownEmpty] (a previous launch recorded that nothing
+  /// is saved) skips the vault: on Android its first use sets up a Keystore
+  /// key, which is slow.
+  Future<void> restore({bool knownEmpty = false}) async {
+    if (knownEmpty) return;
     try {
       final saved = await vault?.read();
       if (saved == null) return;
@@ -98,6 +105,7 @@ class TokenStore {
     accountId = null;
     email = null;
     vault?.clear().catchError((_) {});
+    onSavedChanged?.call(false);
     if (had) {
       for (final listener in List.of(_onCleared)) {
         listener(account);
@@ -110,6 +118,7 @@ class TokenStore {
     final access = accessToken;
     final refresh = refreshToken;
     if (vault == null || access == null || refresh == null) return;
+    onSavedChanged?.call(true);
     vault
         .write(
           SavedSession(

@@ -44,6 +44,20 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     state = const AsyncValue.data(null);
     ref.read(offlineCacheProvider).clear();
     if (accountId != null) await ref.read(outboxProvider).wipe(accountId);
+    // The API-backed repositories remember what this account saw (posts,
+    // people, threads) for the whole session: start the next one empty.
+    // (Tests keep their in-memory doubles across sign-out.)
+    if (ref.read(liveApiEnabledProvider)) {
+      ref
+        ..invalidate(peopleDirectoryProvider)
+        ..invalidate(postRepositoryProvider)
+        ..invalidate(prayerRepositoryProvider)
+        ..invalidate(testimonyRepositoryProvider)
+        ..invalidate(messagingRepositoryProvider)
+        ..invalidate(meetingRepositoryProvider)
+        ..invalidate(learningRepositoryProvider)
+        ..invalidate(membershipRepositoryProvider);
+    }
   }
 
   void setSession(AuthSession session) => state = AsyncValue.data(session);

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:focus_1/core/network/api_client.dart';
 import 'package:focus_1/core/network/media_uploader.dart';
+import 'package:focus_1/core/network/token_vault.dart';
 import 'package:focus_1/core/storage/json_patch.dart';
 import 'package:focus_1/core/storage/local_database.dart';
 import 'package:focus_1/core/storage/media_stash.dart';
@@ -438,6 +439,90 @@ void main() {
     });
   });
 
+  group('staged photos are not left behind', () {
+    test('a replaced (coalesced) write drops its photo', () async {
+      final stash = _CountingStash();
+      final c = _client(_Server((_) => _json(200, {})), online: false);
+      final box = Outbox(
+        api: c.api,
+        db: c.db,
+        connectivity: c.net,
+        stash: stash,
+      );
+      for (final n in [1, 2]) {
+        await box.write(
+          OfflineWrite(
+            method: 'PATCH',
+            endpoint: '/me',
+            entityType: 'profile',
+            clientId: 'profile-$n',
+            coalesceKey: 'profile_update',
+            media: [
+              LocalMedia(
+                path: '/tmp/me-$n.webp',
+                purpose: 'profile_photo',
+                field: 'photo_media_id',
+                single: true,
+              ),
+            ],
+          ),
+        );
+      }
+      expect(stash.discarded, ['/tmp/me-1.webp']);
+      final jobs = await c.db.pendingJobs('u1');
+      expect(jobs.single.clientId, 'profile-2');
+      expect(await c.db.getMedia(jobs.single.media.single.localId), isNotNull);
+    });
+
+    test('dismissing a failed write drops its photo', () async {
+      final stash = _CountingStash();
+      final c = _client(
+        _Server((_) => _json(422, {'detail': 'Too big'})),
+        online: false,
+      );
+      final box = Outbox(
+        api: c.api,
+        db: c.db,
+        connectivity: c.net,
+        uploader: _FakeUploader(c.api, () {}),
+        stash: stash,
+      );
+      await box.write(
+        const OfflineWrite(
+          method: 'POST',
+          endpoint: '/communities/c1/posts',
+          entityType: 'post',
+          clientId: 'post-1',
+          media: [LocalMedia(path: '/tmp/a.webp', purpose: 'post_photo')],
+        ),
+      );
+      await box.drain();
+      final failed = (await box.failedJobs()).single;
+      await box.dismiss(failed);
+      expect(stash.discarded, ['/tmp/a.webp']);
+      expect(await c.db.getMedia(failed.media.single.localId), isNull);
+    });
+  });
+
+  group('TokenStore launch', () {
+    test('a launch known to be signed out skips the vault', () async {
+      final vault = _CountingVault();
+      await TokenStore(vault: vault).restore(knownEmpty: true);
+      expect(vault.reads, 0);
+      await TokenStore(vault: vault).restore();
+      expect(vault.reads, 1);
+    });
+
+    test('saving and clearing report whether a session is saved', () {
+      final seen = <bool>[];
+      final store = TokenStore(vault: MemoryTokenVault())
+        ..onSavedChanged = seen.add;
+      store.save(access: 'a', refresh: 'r');
+      store.clear();
+      expect(seen, [true, false]);
+    });
+  });
+
   group('RemotePostRepository offline', () {
     test('a like and a comment show at once and wait in the outbox', () async {
       final post = {
@@ -538,5 +623,23 @@ class _FakeUploader extends MediaUploader {
   Future<String> uploadPhoto(String path, {required String purpose}) async {
     onUpload();
     return 'uploaded-${++_n}';
+  }
+}
+
+class _CountingStash extends MediaStash {
+  _CountingStash();
+  final discarded = <String>[];
+  @override
+  Future<String> keep(String path, String localId) async => path;
+  @override
+  Future<void> discard(String path) async => discarded.add(path);
+}
+
+class _CountingVault extends MemoryTokenVault {
+  var reads = 0;
+  @override
+  Future<SavedSession?> read() {
+    reads++;
+    return super.read();
   }
 }

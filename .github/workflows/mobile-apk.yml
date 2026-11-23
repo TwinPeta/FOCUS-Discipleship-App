@@ -129,20 +129,28 @@ jobs:
           fi
 
       # APP_VERSION is what the app shows on Settings and compares for updates.
+      # Release mode: Dart compiled ahead of time (fast start, no debugger),
+      # for phone CPUs only (arm + arm64; x86_64 is for emulators). About a
+      # fifth of the debug APK's size, so it downloads and installs much
+      # faster. Signed with the same FCU key, so it installs over the debug
+      # builds testers already have.
       - name: Build APK
         env:
           FCU_KEYSTORE_PASSWORD: ${{ secrets.FCU_KEYSTORE_PASSWORD }}
           FCU_KEY_ALIAS: ${{ secrets.FCU_KEY_ALIAS }}
           FCU_KEY_PASSWORD: ${{ secrets.FCU_KEY_PASSWORD }}
         run: >-
-          flutter build apk --debug
+          flutter build apk --release
+          --target-platform android-arm,android-arm64
           --build-name=${{ needs.version.outputs.version }}
           --build-number=${{ needs.version.outputs.version_code }}
           --dart-define=APP_VERSION=${{ needs.version.outputs.version }}
           --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} ${{ env.FCM_DEFINES }}
 
       - name: Name the file
-        run: cp build/app/outputs/flutter-apk/app-debug.apk fcu.apk
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk fcu.apk
+          ls -lh fcu.apk
 
       - uses: actions/upload-artifact@v4
         with:

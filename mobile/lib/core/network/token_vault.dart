@@ -38,34 +38,40 @@ class SecureTokenVault implements TokenVault {
   static const _account = 'fcu.account';
   static const _email = 'fcu.email';
 
+  /// The four values are read at the same time (each read is a separate
+  /// trip to the Keystore / Keychain).
   @override
   Future<SavedSession?> read() async {
-    final access = await _storage.read(key: _access);
-    final refresh = await _storage.read(key: _refresh);
+    final values = await Future.wait([
+      for (final key in [_access, _refresh, _account, _email])
+        _storage.read(key: key),
+    ]);
+    final [access, refresh, account, email] = values;
     if (access == null || refresh == null) return null;
     return SavedSession(
       access: access,
       refresh: refresh,
-      accountId: await _storage.read(key: _account),
-      email: await _storage.read(key: _email),
+      accountId: account,
+      email: email,
     );
   }
 
   @override
   Future<void> write(SavedSession s) async {
-    await _storage.write(key: _access, value: s.access);
-    await _storage.write(key: _refresh, value: s.refresh);
-    if (s.accountId != null) {
-      await _storage.write(key: _account, value: s.accountId);
-    }
-    if (s.email != null) await _storage.write(key: _email, value: s.email);
+    await Future.wait([
+      _storage.write(key: _access, value: s.access),
+      _storage.write(key: _refresh, value: s.refresh),
+      if (s.accountId != null) _storage.write(key: _account, value: s.accountId),
+      if (s.email != null) _storage.write(key: _email, value: s.email),
+    ]);
   }
 
   @override
   Future<void> clear() async {
-    for (final key in [_access, _refresh, _account, _email]) {
-      await _storage.delete(key: key);
-    }
+    await Future.wait([
+      for (final key in [_access, _refresh, _account, _email])
+        _storage.delete(key: key),
+    ]);
   }
 }
 

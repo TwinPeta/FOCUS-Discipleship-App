@@ -17,6 +17,14 @@ class SqfliteLocalDatabase implements LocalDatabase {
     final db = await openDatabase(
       path,
       version: 1,
+      // WAL: writes (saving replies while scrolling) do not block reads.
+      // Incremental auto-vacuum (only takes effect on a new file) lets the
+      // file shrink after [prune].
+      onConfigure: (db) async {
+        await db.rawQuery('PRAGMA journal_mode = WAL');
+        await db.execute('PRAGMA synchronous = NORMAL');
+        await db.execute('PRAGMA auto_vacuum = INCREMENTAL');
+      },
       onCreate: (db, _) async {
         final batch = db.batch()
           ..execute('''
@@ -313,5 +321,8 @@ class SqfliteLocalDatabase implements LocalDatabase {
       '(SELECT cache_key FROM cache_entries ORDER BY updated_at DESC LIMIT ?)',
       [maxEntries],
     );
+    // Give the freed pages back to the phone (no-op on an older file
+    // without auto-vacuum).
+    await _db.execute('PRAGMA incremental_vacuum');
   }
 }

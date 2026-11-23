@@ -18,8 +18,14 @@ Widget? postPhotoView(BuildContext context, PostPhoto? photo) {
       ),
       fit: BoxFit.cover,
     ),
-    PostPhoto(:final url?) => Image.network(
-      url,
+    // Decoded at the width it is shown (not camera resolution), and kept
+    // on the phone so it shows offline.
+    PostPhoto(:final url?) => Image(
+      image: sizedFileImage(
+        context,
+        url,
+        logicalSize: MediaQuery.sizeOf(context).width,
+      ),
       fit: BoxFit.cover,
       width: double.infinity,
       errorBuilder: (_, _, _) => const SizedBox.shrink(),

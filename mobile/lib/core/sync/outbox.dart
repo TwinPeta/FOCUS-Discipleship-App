@@ -149,9 +149,12 @@ class Outbox {
     return db.failedJobs(account);
   }
 
-  /// Forgets a failed write.
+  /// Forgets a failed write, and its staged photos.
   Future<void> dismiss(OutboxJob job) async {
-    await db?.deleteJob(job.id!);
+    final db = this.db;
+    if (db == null) return;
+    await db.deleteJob(job.id!);
+    await _dropMedia(db, job);
     _changed();
   }
 
@@ -262,6 +265,14 @@ class Outbox {
     String endpoint,
     Map<String, dynamic>? body,
   ) async {
+    // A newer write replaces a waiting one with the same key (see
+    // [OfflineWrite.coalesceKey]): the replaced one's staged photos go too.
+    final key = w.coalesceKey;
+    if (key != null) {
+      for (final old in await db.pendingJobs(account)) {
+        if (old.coalesceKey == key) await _dropMedia(db, old);
+      }
+    }
     final refs = <MediaRef>[];
     final now = DateTime.now();
     for (final m in w.media) {

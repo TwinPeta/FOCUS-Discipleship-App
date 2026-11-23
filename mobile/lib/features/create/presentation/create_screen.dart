@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/connectivity/connectivity_service.dart';
+import '../../../core/media/photo_compressor.dart';
 import '../../../core/media/photo_picker.dart';
 import '../../../core/router/navigation.dart';
 import '../../../core/theme/app_colors.dart';
@@ -394,7 +397,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                             setState(() => _photo = picked.path);
                           }
                         },
-                        onRemove: () => setState(() => _photo = null),
+                        onRemove: () {
+                          final removed = _photo;
+                          setState(() => _photo = null);
+                          if (removed != null) {
+                            unawaited(discardTempPhoto(removed));
+                          }
+                        },
                       ),
                     ],
                     if (_type.canHaveVideo) ...[
